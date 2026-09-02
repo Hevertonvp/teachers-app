@@ -24,7 +24,7 @@ export const ListaPlanejamentosGestor = () => {
         </div>
 
         {/* Estatísticas */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <p className="text-gray-600 text-sm">Total</p>
             <p className="text-3xl font-bold text-slate-700">{planejamentos.length}</p>
@@ -50,7 +50,7 @@ export const ListaPlanejamentosGestor = () => {
         </div>
 
         {/* Filtros */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {['todos', 'concluído', 'em_andamento', 'pendente'].map(status => (
             <button
               key={status}

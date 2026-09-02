@@ -53,7 +53,7 @@ export const CalendarioPedagogico = () => {
         </div>
 
         {/* Legenda */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold">●</span>
@@ -116,7 +116,7 @@ export const CalendarioPedagogico = () => {
         {/* Resumo */}
         <Card className="bg-blue-50 border border-blue-200">
           <h2 className="text-lg font-bold text-blue-900 mb-3">Resumo do Ano Letivo</h2>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid gap-6 sm:grid-cols-3">
             <div>
               <p className="text-blue-600 text-sm font-medium">Eventos Programados</p>
               <p className="text-3xl font-bold text-blue-900">

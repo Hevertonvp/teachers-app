@@ -80,7 +80,7 @@ export const ProgressRing = ({ value, label }) => {
 
 export const DataTable = ({ columns, rows, emptyMessage = 'Nenhum registro encontrado', onRowClick }) => (
   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-    <div className="overflow-x-auto">
+    <div className="overflow-hidden">
       <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
         <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
           <tr>{columns.map(column => <th key={column.key} className="px-4 py-3">{column.header}</th>)}</tr>
@@ -90,7 +90,7 @@ export const DataTable = ({ columns, rows, emptyMessage = 'Nenhum registro encon
             <tr><td colSpan={columns.length} className="px-4 py-10 text-center text-slate-500">{emptyMessage}</td></tr>
           ) : rows.map(row => (
             <tr key={row.id} onClick={() => onRowClick?.(row)} className={onRowClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50'}>
-              {columns.map(column => <td key={column.key} className="px-4 py-3 align-top text-slate-700">{column.render ? column.render(row) : row[column.key]}</td>)}
+              {columns.map(column => <td key={column.key} data-label={column.header} className="px-4 py-3 align-top text-slate-700">{column.render ? column.render(row) : row[column.key]}</td>)}
             </tr>
           ))}
         </tbody>

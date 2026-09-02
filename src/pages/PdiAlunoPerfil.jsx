@@ -270,8 +270,8 @@ export const PdiAlunoPerfil = () => {
               <div className="rounded-lg bg-white p-3 shadow-sm"><p className="text-xs font-semibold uppercase text-slate-500">Último registro</p><p className="text-2xl font-bold text-slate-900">{chartPoints[chartPoints.length - 1]?.resposta ?? '-'}</p></div>
               <div className="rounded-lg bg-white p-3 shadow-sm"><p className="text-xs font-semibold uppercase text-slate-500">Tendência</p><div className="mt-1"><TrendBadge trend={trend} /></div></div>
             </div>
-            <div className="overflow-x-auto">
-              <svg viewBox="0 0 800 280" className="min-w-200 w-full" role="img" aria-label="Gráfico de desenvolvimento do aluno">
+            <div className="overflow-hidden">
+              <svg viewBox="0 0 800 280" className="block h-auto w-full" role="img" aria-label="Gráfico de desenvolvimento do aluno">
                 {[1, 2, 3, 4, 5].map(level => {
                   const y = 220 - ((level - 1) / 4) * 176;
                   return (
@@ -300,7 +300,7 @@ export const PdiAlunoPerfil = () => {
 
         <Card>
           <SectionHeader title="Histórico do desenvolvimento" description="Respostas vinculadas a aluno, pergunta e data. Este histórico alimenta o gráfico principal." />
-          <div className="overflow-x-auto">
+          <div className="overflow-hidden">
             <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr><th className="px-4 py-3">Data</th><th className="px-4 py-3">Área</th><th className="px-4 py-3">Indicador</th><th className="px-4 py-3">Resultado</th><th className="px-4 py-3">Detalhes</th></tr>
@@ -310,11 +310,11 @@ export const PdiAlunoPerfil = () => {
                   const pergunta = pdiPerguntas.find(item => item.id === resposta.perguntaId);
                   return (
                     <tr key={resposta.id}>
-                      <td className="px-4 py-3 text-slate-700">{formatDate(resposta.data)}</td>
-                      <td className="px-4 py-3 text-slate-700">{pergunta?.area}</td>
-                      <td className="px-4 py-3 text-slate-700">{pergunta?.indicador}</td>
-                      <td className="px-4 py-3 font-bold text-slate-900">{resposta.resposta}</td>
-                      <td className="px-4 py-3 text-slate-600">{resposta.observacao}</td>
+                      <td data-label="Data" className="px-4 py-3 text-slate-700">{formatDate(resposta.data)}</td>
+                      <td data-label="Área" className="px-4 py-3 text-slate-700">{pergunta?.area}</td>
+                      <td data-label="Indicador" className="px-4 py-3 text-slate-700">{pergunta?.indicador}</td>
+                      <td data-label="Resultado" className="px-4 py-3 font-bold text-slate-900">{resposta.resposta}</td>
+                      <td data-label="Detalhes" className="px-4 py-3 text-slate-600">{resposta.observacao}</td>
                     </tr>
                   );
                 })}

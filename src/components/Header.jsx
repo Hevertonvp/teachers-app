@@ -18,8 +18,8 @@ export const Header = ({ onMenuClick }) => {
       className={`sticky top-0 z-40 border-b backdrop-blur ${isDark ? 'border-slate-800 bg-slate-950/95' : 'border-slate-200 bg-white/95'}`}
       style={isDark ? { backgroundColor: 'rgba(15, 23, 42, 0.96)', borderColor: '#1e293b' } : undefined}
     >
-      <div className="flex items-center justify-between px-4 py-3 md:px-6">
-        <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3 px-4 py-3 md:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={onMenuClick}
@@ -29,13 +29,13 @@ export const Header = ({ onMenuClick }) => {
             ☰
           </button>
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">GP</div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
-            <p className="text-xs text-slate-500">Rede Municipal de Ensino</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
+            <p className="truncate text-xs text-slate-500">Rede Municipal de Ensino</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <button
             type="button"
             onClick={toggleTheme}
@@ -60,7 +60,7 @@ export const Header = ({ onMenuClick }) => {
           </div>
           <button
             onClick={handleLogout}
-            className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:px-4"
           >
             Sair
           </button>

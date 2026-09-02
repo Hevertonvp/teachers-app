@@ -10,8 +10,8 @@ export const MainLayout = ({ children }) => {
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <div className="flex">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <main className="flex-1 p-4 pt-6 md:ml-64 md:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="min-w-0 flex-1 p-4 pt-6 md:ml-64 md:p-8">
+          <div className="mx-auto w-full min-w-0 max-w-7xl">
             {children}
           </div>
         </main>
