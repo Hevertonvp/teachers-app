@@ -3,13 +3,15 @@ import { Button, Card } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { MainLayout } from '../layouts/Layouts';
-import { formatDate } from '../utils/pdi';
+import { formatFullDate, formDefinitions, formStatusClasses, formStatusLabel, getFormStatus } from '../utils/formAvailability';
 
 export const PdiHomePage = () => {
   const { user } = useAuth();
-  const { pdis } = useData();
+  const { formPeriods } = useData();
   const isGestor = user?.tipo === 'gestor';
-  const activePdis = pdis.filter(pdi => pdi.status === 'em_andamento');
+  const pdiForm = formPeriods.find(period => period.id === 'pdi');
+  const pdiStatus = pdiForm ? getFormStatus(pdiForm.startDate, pdiForm.endDate) : null;
+  const pdiVigente = pdiForm && pdiStatus === 'active';
 
   return (
     <MainLayout>
@@ -44,14 +46,18 @@ export const PdiHomePage = () => {
           </Card>
         </div>
 
-        {isGestor && <Card>
+        {isGestor && pdiVigente && <Card>
           <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div><h2 className="text-xl font-bold text-slate-950">PDIs ativos</h2><p className="mt-1 text-sm text-slate-600">Acompanhamentos em andamento na rede.</p></div>
-            <Link to="/pdi/alunos"><Button size="sm" variant="outline">Ver alunos</Button></Link>
+            <div><h2 className="text-xl font-bold text-slate-950">Formulários PDI vigentes</h2><p className="mt-1 text-sm text-slate-600">Períodos de preenchimento definidos pela gestão.</p></div>
+            <Link to="/pdi/formulario"><Button size="sm" variant="outline">Gerenciar formulário</Button></Link>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {activePdis.map(pdi => <Link key={pdi.id} to="/pdi/alunos" className="block rounded-xl border border-slate-200 p-4 transition hover:border-teal-200 hover:bg-teal-50/30"><p className="font-semibold text-slate-900">{pdi.aluno}</p><p className="mt-1 text-sm text-slate-600">{pdi.indicador}</p><div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500"><span>Criação: {formatDate(pdi.dataAcompanhamento)}</span><span>Prazo final: {formatDate(pdi.prazo)}</span></div></Link>)}
-          </div>
+          {pdiForm && <Link to="/pdi/formulario" className="block rounded-xl border border-slate-200 p-4 transition hover:border-teal-200 hover:bg-teal-50/30">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="font-semibold text-slate-900">{formDefinitions.pdi.title}</p><p className="mt-1 text-sm text-slate-600">{formDefinitions.pdi.subtitle}</p></div>
+              <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(pdiStatus)}`}>{formStatusLabel(pdiStatus)}</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500"><span>Início: {formatFullDate(pdiForm.startDate)}</span><span>Encerramento: {formatFullDate(pdiForm.endDate)}</span></div>
+          </Link>}
         </Card>}
       </div>
     </MainLayout>

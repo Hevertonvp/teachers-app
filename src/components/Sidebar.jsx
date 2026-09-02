@@ -50,7 +50,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
         className={`fixed inset-0 z-40 bg-slate-950/50 transition-opacity duration-300 md:hidden ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
       />
 
-      <aside className={`fixed bottom-0 left-0 top-0 z-50 w-72 max-w-[85vw] border-r border-slate-800 bg-slate-950 text-white shadow-2xl transition-transform duration-300 ease-out md:top-16.25 md:z-30 md:w-64 md:translate-x-0 md:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed bottom-0 left-0 top-0 z-50 w-72 max-w-[85vw] border-r border-slate-800 bg-slate-950 text-white shadow-2xl transition-transform duration-[900ms] ease-out md:top-16.25 md:z-30 md:w-64 md:translate-x-0 md:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <nav className="flex h-full flex-col p-4">
           <div className="mb-5 flex items-center justify-between md:hidden">
             <div>
