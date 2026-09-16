@@ -36,6 +36,12 @@ export const LoginPage = () => {
     } else if (tipo === 'gestor') {
       setEmail('gestor@escola.gov.br');
       setSenha('123456');
+    } else if (tipo === 'secretaria') {
+      setEmail('secretaria@escola.gov.br');
+      setSenha('123456');
+    } else if (tipo === 'diretora') {
+      setEmail('diretora@escola.gov.br');
+      setSenha('123456');
     }
   };
 
@@ -109,6 +115,18 @@ export const LoginPage = () => {
               className="w-full px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
             >
               Gestor/Supervisor
+            </button>
+            <button
+              onClick={() => preencherDados('secretaria')}
+              className="w-full px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
+            >
+              Secretaria de Educação
+            </button>
+            <button
+              onClick={() => preencherDados('diretora')}
+              className="w-full px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium"
+            >
+              Diretora
             </button>
           </div>
         </div>

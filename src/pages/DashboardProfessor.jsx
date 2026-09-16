@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card, ProgressRing, StatCard, StatusBadge } from '../components/Common';
+import { Badge, Button, Card, EmptyState, ProgressRing, StatCard, StatusBadge } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscola } from '../context/EscolaContext';
 import { disciplinaName, turmaName } from '../utils/display';
+import { filterByEscola, turmasDoProfessor } from '../utils/escolas';
 import { pdiSummary } from '../utils/pdi';
 import { deadlineText, formDefinitions, formStatusLabel, isFormAvailableForTeacher, teacherFillingStatus } from '../utils/formAvailability';
 import { MainLayout } from '../layouts/Layouts';
@@ -43,31 +45,41 @@ const noticiasProfessor = [
 
 export const DashboardProfessor = () => {
   const { user } = useAuth();
-  const { formularios, pdis, correcoes, turmas, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, formPeriods } = useData();
+  const { formularios, pdis, correcoes, turmas, turmaProfessores, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, formPeriods } = useData();
+  const { activeEscolaId, userEscolas } = useEscola();
 
-  const meusFormularios = formularios.filter(item => item.professorId === user?.id);
-  const meusPdis = pdis.filter(item => item.professorId === user?.id);
-  const minhasCorrecoes = correcoes.filter(item => item.professorId === user?.id);
-  const minhasTurmas = turmas.filter(turma => turma.professores.includes(user?.id));
-  const meusAlunosPdi = pdiAlunos.filter(aluno => aluno.professorId === user?.id);
+  if (userEscolas.length === 0) {
+    return (
+      <MainLayout>
+        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." />
+      </MainLayout>
+    );
+  }
+
+  const meusFormularios = filterByEscola(formularios, activeEscolaId, user).filter(item => item.professorId === user?.id);
+  const meusPdis = filterByEscola(pdis, activeEscolaId, user).filter(item => item.professorId === user?.id);
+  const minhasCorrecoes = filterByEscola(correcoes, activeEscolaId, user).filter(item => item.professorId === user?.id);
+  const minhasTurmas = turmasDoProfessor(filterByEscola(turmas, activeEscolaId, user), turmaProfessores, user?.id);
+  const meusAlunosPdi = filterByEscola(pdiAlunos, activeEscolaId, user).filter(aluno => aluno.professorId === user?.id);
   const resumoPdiProfessor = pdiSummary(meusAlunosPdi, pdiMetas, pdiRespostas.filter(resposta => Number.isFinite(Number(resposta.resposta))));
   const recordsByForm = {
     formulario_um_terco: meusFormularios,
     pdi: meusPdis,
     correcoes_simulados: minhasCorrecoes,
   };
-  const activeFormIds = new Set(formPeriods.filter(period => isFormAvailableForTeacher(period)).map(period => period.id));
+  const formPeriodsDaEscola = filterByEscola(formPeriods, activeEscolaId, user);
+  const activeFormIds = new Set(formPeriodsDaEscola.filter(period => isFormAvailableForTeacher(period)).map(period => period.id));
 
   const notificacoes = [
     ...(activeFormIds.has('formulario_um_terco') ? meusFormularios.map(item => ({ ...item, tipo: 'Formulário 1/3', titulo: item.conteudo, prazo: item.prazo, rota: '/formulario-um-terco' })) : []),
-    ...(activeFormIds.has('pdi') ? meusPdis.map(item => ({ ...item, tipo: 'PDI', titulo: `${item.aluno} - ${item.indicador}`, prazo: item.prazo, rota: '/pdi/alunos' })) : []),
+    ...(activeFormIds.has('pdi') ? meusPdis.map(item => ({ ...item, tipo: 'PDI', titulo: `${pdiAlunos.find(aluno => aluno.id === item.alunoId)?.nome || 'Aluno'} - ${item.indicador}`, prazo: item.prazo, rota: '/pdi/alunos' })) : []),
     ...(activeFormIds.has('correcoes_simulados') ? minhasCorrecoes.map(item => ({ ...item, tipo: 'Correção de simulado', titulo: item.simulado, prazo: item.prazoCorrecao, rota: '/correcoes-simulados' })) : []),
   ]
     .filter(item => item.status === 'em_atraso' || (item.status !== 'concluido' && daysUntil(item.prazo) <= 7))
     .sort((a, b) => daysUntil(a.prazo) - daysUntil(b.prazo));
 
   const eventosDashboard = proximosEventos.slice(0, 3);
-  const formulariosVigentes = formPeriods
+  const formulariosVigentes = formPeriodsDaEscola
     .filter(period => isFormAvailableForTeacher(period))
     .map(period => ({
       ...period,

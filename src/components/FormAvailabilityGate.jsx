@@ -1,16 +1,19 @@
 import { Button, Card } from './Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscola } from '../context/EscolaContext';
+import { isProfessor } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 import { formatFullDate, formDefinitions, getFormStatus, isFormAvailableForTeacher } from '../utils/formAvailability';
 
 export const FormAvailabilityGate = ({ formId, children }) => {
   const { user } = useAuth();
   const { formPeriods } = useData();
-  const period = formPeriods.find(item => item.id === formId);
+  const { activeEscolaId } = useEscola();
+  const period = formPeriods.find(item => item.id === formId && item.escolaId === activeEscolaId);
   const form = formDefinitions[formId];
 
-  if (user?.tipo !== 'professor' || !period || isFormAvailableForTeacher(period)) {
+  if (!isProfessor(user) || !period || isFormAvailableForTeacher(period)) {
     return children;
   }
 

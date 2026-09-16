@@ -1,23 +1,27 @@
+// escolaId: 1=Aurora, 2=Caminhos, 3=Modelo, 4=Esperança, 5=Primavera, 6=Horizonte (ver mockData.js).
+// Nota: o vínculo aluno->escola é preservado como estava informado originalmente (por nome),
+// e pode não coincidir com a escola da turma (turmas.escolaId) em alguns registros —
+// a base de dados de origem já não era consistente nesse ponto (ver ressalva na análise).
 const alunosBase = [
-  ['João Silva', '2014-03-12', 'Escola Municipal Aurora', 7, 5, '2022-02-03', '2026-08-05', 'TEA informado pela família', 'F84.0', 'ativo'],
-  ['Ana Costa', '2013-11-08', 'Escola Municipal Aurora', 9, 6, '2021-02-01', '2026-08-06', 'TDAH informado no cadastro', 'F90.0', 'ativo'],
-  ['Pedro Lima', '2015-01-20', 'Escola Municipal Caminhos', 5, 3, '2023-02-06', '2026-08-08', 'Acompanhamento pedagógico sem CID informado', '', 'ativo'],
-  ['Mariana Alves', '2014-07-02', 'Escola Municipal Caminhos', 1, 1, '2022-02-07', '2026-08-01', 'Dificuldade persistente de aprendizagem informada', '', 'ativo'],
-  ['Lucas Pereira', '2015-05-17', 'Escola Municipal Modelo', 2, 1, '2023-02-01', '2026-08-02', 'Necessidade de apoio pedagógico individualizado', '', 'ativo'],
-  ['Camila Ribeiro', '2013-09-29', 'Escola Municipal Modelo', 4, 2, '2021-02-08', '2026-08-07', 'Deficiência intelectual informada pela família', 'F79', 'ativo'],
-  ['Sofia Martins', '2014-12-10', 'Escola Municipal Esperança', 6, 4, '2022-02-02', '2026-08-09', 'Acompanhamento pedagógico sem CID informado', '', 'ativo'],
-  ['Gustavo Lima', '2012-06-14', 'Escola Municipal Esperança', 10, 11, '2020-02-03', '2026-08-03', 'Baixa visão informada no cadastro', 'H54.2', 'ativo'],
-  ['Isabela Rocha', '2015-04-25', 'Escola Municipal Primavera', 3, 12, '2023-02-06', '2026-08-11', 'Transtorno de linguagem informado', 'F80.9', 'ativo'],
-  ['Tiago Moreira', '2013-02-18', 'Escola Municipal Primavera', 8, 10, '2021-02-04', '2026-08-04', 'Acompanhamento pedagógico sem CID informado', '', 'ativo'],
-  ['Larissa Gomes', '2014-10-22', 'Escola Municipal Horizonte', 6, 15, '2022-02-01', '2026-08-10', 'Necessidade de apoio pedagógico individualizado', '', 'arquivado'],
-  ['Rafael Cardoso', '2015-08-19', 'Escola Municipal Horizonte', 5, 14, '2023-02-02', '2026-08-12', 'TEA informado pela família', 'F84.0', 'ativo'],
+  ['João Silva', '2014-03-12', 1, 7, 5, '2022-02-03', '2026-08-05', 'TEA informado pela família', 'F84.0', 'ativo'],
+  ['Ana Costa', '2013-11-08', 1, 9, 6, '2021-02-01', '2026-08-06', 'TDAH informado no cadastro', 'F90.0', 'ativo'],
+  ['Pedro Lima', '2015-01-20', 6, 5, 3, '2023-02-06', '2026-08-08', 'Acompanhamento pedagógico sem CID informado', '', 'ativo'],
+  ['Mariana Alves', '2014-07-02', 2, 1, 1, '2022-02-07', '2026-08-01', 'Dificuldade persistente de aprendizagem informada', '', 'ativo'],
+  ['Lucas Pereira', '2015-05-17', 3, 2, 1, '2023-02-01', '2026-08-02', 'Necessidade de apoio pedagógico individualizado', '', 'ativo'],
+  ['Camila Ribeiro', '2013-09-29', 3, 4, 2, '2021-02-08', '2026-08-07', 'Deficiência intelectual informada pela família', 'F79', 'ativo'],
+  ['Sofia Martins', '2014-12-10', 6, 6, 4, '2022-02-02', '2026-08-09', 'Acompanhamento pedagógico sem CID informado', '', 'ativo'],
+  ['Gustavo Lima', '2012-06-14', 4, 10, 11, '2020-02-03', '2026-08-03', 'Baixa visão informada no cadastro', 'H54.2', 'ativo'],
+  ['Isabela Rocha', '2015-04-25', 5, 3, 12, '2023-02-06', '2026-08-11', 'Transtorno de linguagem informado', 'F80.9', 'ativo'],
+  ['Tiago Moreira', '2013-02-18', 5, 8, 10, '2021-02-04', '2026-08-04', 'Acompanhamento pedagógico sem CID informado', '', 'ativo'],
+  ['Larissa Gomes', '2014-10-22', 6, 6, 15, '2022-02-01', '2026-08-10', 'Necessidade de apoio pedagógico individualizado', '', 'arquivado'],
+  ['Rafael Cardoso', '2015-08-19', 6, 5, 14, '2023-02-02', '2026-08-12', 'TEA informado pela família', 'F84.0', 'ativo'],
 ];
 
-export const pdiAlunos = alunosBase.map(([nome, dataNascimento, escola, turmaId, professorId, dataEntradaRede, dataInicio, condicaoInformada, cid, status], index) => ({
+export const pdiAlunos = alunosBase.map(([nome, dataNascimento, escolaId, turmaId, professorId, dataEntradaRede, dataInicio, condicaoInformada, cid, status], index) => ({
   id: index + 1,
   nome,
   dataNascimento,
-  escola,
+  escolaId,
   turmaId,
   professorId,
   dataEntradaRede,
@@ -98,10 +102,11 @@ export const pdiAcompanhamentosHistoricos = pdiAlunos.flatMap((aluno, alunoIndex
 });
 
 export const pdiRespostasAcompanhamento = pdiAlunos.flatMap((aluno, alunoIndex) => {
-  const perguntas = [1, 2, 4, 5];
+  const perguntas = [1, 2, 4];
   return perguntas.flatMap((perguntaId, perguntaIndex) => trendSeries[(alunoIndex + perguntaIndex) % trendSeries.length].map((resposta, mesIndex) => ({
     id: alunoIndex * 1000 + perguntaIndex * 100 + mesIndex + 1,
     alunoId: aluno.id,
+    professorId: aluno.professorId,
     perguntaId,
     data: `2026-${String(mesIndex + 1).padStart(2, '0')}-${String(10 + alunoIndex % 12).padStart(2, '0')}`,
     resposta,

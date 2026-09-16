@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { Card, Button } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
-import { disciplinas, turmas } from '../data/mockData';
+import { disciplinas, turmas, turmaProfessores } from '../data/mockData';
+import { turmasDoProfessor } from '../utils/escolas';
 
 export const NovoPlanejamento = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [carregando, setCarregando] = useState(false);
 
-  const minhasTurmas = turmas.filter(t => t.professores.includes(user?.id));
+  const minhasTurmas = turmasDoProfessor(turmas, turmaProfessores, user?.id);
 
   const [formData, setFormData] = useState({
     turmaId: minhasTurmas[0]?.id || '',
@@ -195,7 +196,7 @@ export const NovoPlanejamento = () => {
           </Card>
 
           {/* Botões */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button
               type="submit"
               variant="primary"

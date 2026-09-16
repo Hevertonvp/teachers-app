@@ -1,5 +1,14 @@
 import { ProfessorName } from './ProfessorName';
 
+// Nome + cargo abaixo, em fonte pequena — mesmo padrão visual de ProfessorName,
+// mas genérico (recebe nome/cargo prontos, sem lookup por id) para supervisor/diretor.
+export const PersonName = ({ nome, cargo, className = '', nameClassName = 'font-semibold text-slate-900', roleClassName = 'text-[10px] font-medium uppercase tracking-wide text-slate-400' }) => (
+  <span className={`inline-flex flex-col leading-tight ${className}`}>
+    <span className={nameClassName}>{nome}</span>
+    {cargo && <span className={roleClassName}>{cargo}</span>}
+  </span>
+);
+
 export const Card = ({ children, className = '' }) => (
   <div className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
     {children}

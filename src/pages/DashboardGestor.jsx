@@ -1,35 +1,73 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { MainLayout } from '../layouts/Layouts';
-import { Badge, Button, Card, FormField, Modal, NotificationCard, ProgressRing, StatCard, StatusBadge } from '../components/Common';
+import { Badge, Button, Card, EmptyState, FormField, Modal, NotificationCard, ProgressRing, StatCard, StatusBadge } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
+import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscola } from '../context/EscolaContext';
 import { inputClass, professorName } from '../utils/display';
-import { formatDate } from '../utils/pdi';
+import { filterByEscola, professoresDaEscola } from '../utils/escolas';
+import { formatDate, pdiSummary } from '../utils/pdi';
 import { deadlineText, formCompletionStats, formDefinitions, formStatusClasses, formStatusLabel, formatShortDate, getFormStatus } from '../utils/formAvailability';
 
 const pdiDevelopmentSeries = [58, 66, 74, 81];
+const completedStatuses = ['concluido', 'concluído'];
+const percentageComplete = (items) => {
+  if (!items.length) return 0;
+  return Math.round((items.filter(item => completedStatuses.includes(item.status)).length / items.length) * 100);
+};
 
 export const DashboardGestor = () => {
-  const { professores, formularios, pdis, correcoes, pendencias, indicadores, atividadesRecentes, proximosEventos, pdiAlunos, resumoPdi, formPeriods, updateFormPeriod } = useData();
+  const { user } = useAuth();
+  const { professores, formularios, pdis, correcoes, pendencias, atividadesRecentes, proximosEventos, pdiAlunos, pdiMetas, pdiRespostas, vinculosEscolares, formPeriods, updateFormPeriodForEscola } = useData();
+  const { activeEscolaId, userEscolas } = useEscola();
   const [editingPeriod, setEditingPeriod] = useState(null);
-  const pendenciasImportantes = pendencias.slice(0, 3);
+
+  if (userEscolas.length === 0) {
+    return (
+      <MainLayout>
+        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." />
+      </MainLayout>
+    );
+  }
+
+  const professoresDaEscolaAtiva = professoresDaEscola(professores, vinculosEscolares, activeEscolaId, user);
+  const professoresIds = new Set(professoresDaEscolaAtiva.map(professor => professor.id));
+  const formulariosDaEscola = filterByEscola(formularios, activeEscolaId, user);
+  const pdisDaEscola = filterByEscola(pdis, activeEscolaId, user);
+  const correcoesDaEscola = filterByEscola(correcoes, activeEscolaId, user);
+  const pdiAlunosDaEscola = filterByEscola(pdiAlunos, activeEscolaId, user);
+  const pertenceAEscola = item => item.escolaId !== undefined && item.escolaId !== null
+    ? item.escolaId === activeEscolaId
+    : professoresIds.has(item.professorId);
+  const pendenciasDaEscola = pendencias.filter(pertenceAEscola);
+  const atividadesDaEscola = atividadesRecentes.filter(pertenceAEscola);
+  const resumoPdi = pdiSummary(pdiAlunosDaEscola, pdiMetas, pdiRespostas.filter(resposta => Number.isFinite(Number(resposta.resposta))));
+  const indicadores = {
+    formulario: percentageComplete(formulariosDaEscola),
+    pdi: percentageComplete(pdisDaEscola),
+    correcoes: percentageComplete(correcoesDaEscola),
+    totalProfessores: professoresDaEscolaAtiva.length,
+    professoresComPendencias: new Set(pendenciasDaEscola.map(item => item.professorId)).size,
+  };
+  const pendenciasImportantes = pendenciasDaEscola.slice(0, 3);
   const eventosDashboard = proximosEventos.slice(0, 4);
   const formRecords = {
-    formulario_um_terco: formularios,
-    pdi: pdis,
-    correcoes_simulados: correcoes,
+    formulario_um_terco: formulariosDaEscola,
+    pdi: pdisDaEscola,
+    correcoes_simulados: correcoesDaEscola,
   };
-  const formPeriodCards = formPeriods.map(period => {
+  const formPeriodCards = formPeriods.filter(period => period.escolaId === activeEscolaId).map(period => {
     const form = formDefinitions[period.id];
     const status = getFormStatus(period.startDate, period.endDate);
-    const stats = formCompletionStats(formRecords[period.id] || [], professores.length);
+    const stats = formCompletionStats(formRecords[period.id] || [], professoresDaEscolaAtiva.length);
     return { ...period, form, status, stats };
   });
 
   const savePeriod = (event) => {
     event.preventDefault();
-    updateFormPeriod(editingPeriod.id, {
+    updateFormPeriodForEscola(editingPeriod.id, editingPeriod.escolaId, {
       startDate: editingPeriod.startDate,
       endDate: editingPeriod.endDate,
     });
@@ -49,7 +87,7 @@ export const DashboardGestor = () => {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard label="Professores" value={indicadores.totalProfessores} description="corpo docente ativo" />
               <StatCard label="Com pendências" value={indicadores.professoresComPendencias} description="professores em atraso" />
-              <StatCard label="Registros" value={formularios.length + pdis.length + correcoes.length} description="instrumentos monitorados" />
+              <StatCard label="Registros" value={formulariosDaEscola.length + pdisDaEscola.length + correcoesDaEscola.length} description="instrumentos monitorados" />
             </div>
           </div>
         </section>
@@ -143,7 +181,7 @@ export const DashboardGestor = () => {
           <Card>
             <h2 className="text-xl font-bold text-slate-950">Atividades recentes</h2>
             <div className="mt-4 space-y-4">
-              {atividadesRecentes.map(atividade => (
+              {atividadesDaEscola.map(atividade => (
                 <div key={atividade.id} className="flex gap-3 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
                   <div className="mt-1 h-2.5 w-2.5 rounded-full bg-teal-600" />
                   <div>
@@ -163,7 +201,7 @@ export const DashboardGestor = () => {
               <Link to="/correcoes-simulados"><Button variant="outline" size="sm">Acompanhar correções</Button></Link>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
-              {[{ label: 'Formulário 1/3', items: formularios }, { label: 'PDI', items: pdis }, { label: 'Correções', items: correcoes }].map(group => (
+              {[{ label: 'Formulário 1/3', items: formulariosDaEscola }, { label: 'PDI', items: pdisDaEscola }, { label: 'Correções', items: correcoesDaEscola }].map(group => (
                 <div key={group.label} className="rounded-xl border border-slate-200 p-4">
                   <p className="font-semibold text-slate-800">{group.label}</p>
                   <div className="mt-3 flex flex-wrap gap-2">

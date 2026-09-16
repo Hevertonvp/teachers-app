@@ -1,9 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { isDiretora, isProfessor, isSecretaria } from '../utils/roles';
+import { identityKey } from '../utils/mensagens';
 
 export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user } = useAuth();
+  const { mensagens } = useData();
   const location = useLocation();
+  const unreadCount = mensagens.filter(message => identityKey(message.destinatarioTipo, message.destinatarioId) === identityKey(user?.tipo, user?.id) && !message.lidaEm).length;
 
   const menuProfessor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'D' },
@@ -11,6 +16,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'PDI', path: '/pdi', icon: 'P' },
     { name: 'Correções', path: '/correcoes-simulados', icon: 'C' },
     { name: 'Eventos', path: '/eventos', icon: 'E' },
+    { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
   const menuGestor = [
@@ -20,9 +26,28 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Correções', path: '/correcoes-simulados', icon: 'C' },
     { name: 'Gestão de Professores', path: '/gestao-professores', icon: 'G' },
     { name: 'Eventos', path: '/eventos', icon: 'E' },
+    { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
-  const menu = user?.tipo === 'professor' ? menuProfessor : menuGestor;
+  const menuSecretaria = [
+    { name: 'Dashboard', path: '/dashboard', icon: 'D' },
+    { name: 'Gestão de Pessoas', path: '/pessoas', icon: 'GP' },
+    { name: 'Escolas', path: '/escolas', icon: 'Es' },
+    { name: 'Acompanhamento Escolar', path: '/acompanhamento-escolar', icon: 'Ae' },
+    { name: 'Formulário 1/3', path: '/formulario-um-terco', icon: 'F' },
+    { name: 'PDI', path: '/pdi', icon: 'P' },
+    { name: 'Correções', path: '/correcoes-simulados', icon: 'C' },
+    { name: 'Eventos', path: '/eventos', icon: 'E' },
+    { name: 'Mensagens', path: '/mensagens', icon: 'M' },
+  ];
+
+  const menuDiretora = [
+    { name: 'Dashboard', path: '/dashboard', icon: 'D' },
+    { name: 'Mensagens', path: '/mensagens', icon: 'M' },
+  ];
+
+  const menu = isProfessor(user) ? menuProfessor : isSecretaria(user) ? menuSecretaria : isDiretora(user) ? menuDiretora : menuGestor;
+  const menuWithUnread = menu.map(item => item.path === '/mensagens' ? { ...item, badge: unreadCount } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'U' }, { name: 'Configurações', path: '/configuracoes', icon: 'S' }];
 
   const renderLink = (item) => (
@@ -38,6 +63,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     >
       <span className="grid h-7 w-7 place-items-center rounded-md bg-white/10 text-xs">{item.icon}</span>
       <span>{item.name}</span>
+      {item.badge > 0 && <span className="ml-auto rounded-full bg-teal-300 px-2 py-0.5 text-xs font-bold text-slate-950">{item.badge}</span>}
     </Link>
   );
 
@@ -68,7 +94,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
           </div>
 
           <div className="space-y-1">
-            {menu.map(renderLink)}
+            {menuWithUnread.map(renderLink)}
           </div>
           <div className="mt-auto space-y-1 border-t border-slate-800 pt-4">
             {bottomMenu.map(renderLink)}

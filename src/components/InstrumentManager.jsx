@@ -42,12 +42,17 @@ export const InstrumentManager = ({ title, description, records, fields, columns
   };
 
   const handleChange = (field, value) => {
-    const parsedValue = field.type === 'number' || field.kind === 'select-number' ? Number(value) : value;
+    const parsedValue = field.kind === 'multi-select' ? (Array.isArray(value) ? value : []) : field.type === 'number' || field.kind === 'select-number' ? Number(value) : value;
     setForm(prev => ({ ...prev, [field.name]: parsedValue }));
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    const missingRequiredMultiSelect = fields.some(field => field.required && field.kind === 'multi-select' && !(form[field.name] || []).length);
+    if (missingRequiredMultiSelect) {
+      setMessage('Selecione ao menos uma opção nos campos obrigatórios.');
+      return;
+    }
     if (editing) {
       onUpdate(editing.id, form);
       setMessage('Registro atualizado com sucesso.');
@@ -68,7 +73,7 @@ export const InstrumentManager = ({ title, description, records, fields, columns
     key: 'acoes',
     header: 'Ações',
     render: (row) => (
-      <div className="flex gap-2" onClick={event => event.stopPropagation()}>
+      <div className="flex flex-wrap gap-2" onClick={event => event.stopPropagation()}>
         {canEdit && <Button variant="outline" size="sm" onClick={() => openEdit(row)}>{editLabel}</Button>}
         {canDelete && <Button variant="danger" size="sm" onClick={() => setDeleting(row)}>Excluir</Button>}
       </div>
@@ -116,7 +121,20 @@ export const InstrumentManager = ({ title, description, records, fields, columns
             <div className="grid gap-4 md:grid-cols-2">
               {fields.filter(field => !field.hidden).map(field => (
                 <FormField key={field.name} label={field.label}>
-                  {field.type === 'textarea' ? (
+                  {field.kind === 'multi-select' ? (
+                    <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
+                      {field.options.map(option => (
+                        <label key={option.value} className="flex items-center gap-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={(form[field.name] || []).includes(option.value)}
+                            onChange={event => handleChange(field, event.target.checked ? [...(form[field.name] || []), option.value] : (form[field.name] || []).filter(value => value !== option.value))}
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                    </div>
+                  ) : field.type === 'textarea' ? (
                     <textarea className={inputClass} rows="3" value={form[field.name]} onChange={event => handleChange(field, event.target.value)} required={field.required} />
                   ) : field.options ? (
                     <select className={inputClass} value={form[field.name]} onChange={event => handleChange(field, event.target.value)} required={field.required}>

@@ -1,17 +1,21 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Card, ConfirmDialog, DataTable, FormField, Modal } from '../components/Common';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { TrendBadge } from '../components/PdiControls';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscola } from '../context/EscolaContext';
 import { inputClass, professorName, turmaName } from '../utils/display';
+import { filterByEscola, professoresDaEscola, turmasDoProfessor } from '../utils/escolas';
 import { alunoStatusOptions, formatDate, latestAcompanhamento, pdiTrend } from '../utils/pdi';
+import { isDiretora, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico } from '../utils/roles';
+import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 import { MainLayout } from '../layouts/Layouts';
 
-const blankAluno = (professorId, turmaId) => ({
+const blankAluno = (professorId, turmaId, escolaId) => ({
   nome: '',
   dataNascimento: '',
-  escola: 'Escola Municipal Modelo',
+  escolaId,
   turmaId,
   professorId,
   dataEntradaRede: '',
@@ -29,14 +33,20 @@ export const PdiPage = () => {
     pdiAcompanhamentos,
     professores,
     turmas,
+    turmaProfessores,
+    escolas,
+    vinculosEscolares,
     createPdiAluno,
     updatePdiAluno,
     archivePdiAluno,
   } = useData();
+  const { activeEscolaId, userEscolas, isExplicitBatchSelection } = useEscola();
 
-  const isProfessor = user?.tipo === 'professor';
-  const canManage = user?.tipo === 'gestor';
-  const availableTurmas = isProfessor ? turmas.filter(turma => turma.professores.includes(user.id)) : turmas;
+  const isProfessor = isProfessorRole(user);
+  const canManage = canManagePedagogico(user);
+  const turmasDaEscola = filterByEscola(turmas, activeEscolaId, user);
+  const availableTurmas = isProfessor ? turmasDoProfessor(turmasDaEscola, turmaProfessores, user.id) : turmasDaEscola;
+  const professoresOptions = professoresDaEscola(professores, vinculosEscolares, activeEscolaId, user);
   const [search, setSearch] = useState('');
   const [turma, setTurma] = useState('todos');
   const [status, setStatus] = useState('ativo');
@@ -47,7 +57,8 @@ export const PdiPage = () => {
   const [archiving, setArchiving] = useState(null);
   const [message, setMessage] = useState('');
 
-  const scopedAlunos = isProfessor ? pdiAlunos.filter(aluno => availableTurmas.some(turma => turma.id === aluno.turmaId)) : pdiAlunos;
+  const alunosDaEscola = filterByEscola(pdiAlunos, activeEscolaId, user);
+  const scopedAlunos = isProfessor ? alunosDaEscola.filter(aluno => availableTurmas.some(turma => turma.id === aluno.turmaId)) : alunosDaEscola;
 
   const alunos = useMemo(() => scopedAlunos.filter(aluno => {
     const alunoTrend = pdiTrend(pdiAcompanhamentos.filter(item => item.alunoId === aluno.id)).key;
@@ -58,10 +69,26 @@ export const PdiPage = () => {
     return matchesSearch && matchesTurma && matchesStatus && matchesTrend;
   }), [scopedAlunos, pdiAcompanhamentos, search, turma, status, tendencia]);
 
+  if (!isSecretaria(user) && userEscolas.length === 0) {
+    return (
+      <MainLayout>
+        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." />
+      </MainLayout>
+    );
+  }
+
+  if (activeEscolaId !== null && !isEscolaAplicavel(RECURSOS.PDI, activeEscolaId)) {
+    return <MainLayout><EmptyState title="PDI não aplicável" description="Esta escola não utiliza o módulo PDI." /></MainLayout>;
+  }
+
   const openCreate = () => {
     if (!canManage) return;
+    if (activeEscolaId === null && !isExplicitBatchSelection) {
+      setMessage('Selecione uma escola específica antes de criar um aluno PDI.');
+      return;
+    }
     setEditing(null);
-    setForm(blankAluno(professores[0]?.id, availableTurmas[0]?.id));
+    setForm(blankAluno(professoresOptions[0]?.id, availableTurmas[0]?.id, activeEscolaId));
   };
 
   const openEdit = (aluno) => {
@@ -73,7 +100,11 @@ export const PdiPage = () => {
   const saveAluno = (event) => {
     event.preventDefault();
     if (!canManage) return;
-    const payload = form;
+    if (activeEscolaId === null && !isExplicitBatchSelection) {
+      setMessage('Selecione uma escola específica antes de salvar o aluno PDI.');
+      return;
+    }
+    const payload = { ...form, escolaId: activeEscolaId ?? form.escolaId };
     if (editing) {
       updatePdiAluno(editing.id, payload);
       setMessage('Aluno atualizado com sucesso.');
@@ -87,6 +118,8 @@ export const PdiPage = () => {
 
   const paginatedAlunos = alunos.slice((page - 1) * 10, page * 10);
   const totalPages = Math.max(1, Math.ceil(alunos.length / 10));
+
+  if (isSecretaria(user) || isDiretora(user)) return <Navigate to="/dashboard" replace />;
 
   const columns = [
     { key: 'nome', header: 'Aluno', render: row => <button className="font-semibold text-teal-700 hover:underline" onClick={event => { event.stopPropagation(); navigate(`/pdi/alunos/${row.id}`); }}>{row.nome}</button> },
@@ -145,9 +178,9 @@ export const PdiPage = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Nome completo"><input className={inputClass} value={form.nome} onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))} required /></FormField>
                 <FormField label="Data de nascimento"><input className={inputClass} type="date" value={form.dataNascimento} onChange={event => setForm(prev => ({ ...prev, dataNascimento: event.target.value }))} required /></FormField>
-                <FormField label="Escola"><input className={inputClass} value={form.escola} onChange={event => setForm(prev => ({ ...prev, escola: event.target.value }))} required /></FormField>
+                <FormField label="Escola"><select className={inputClass} value={form.escolaId} onChange={event => setForm(prev => ({ ...prev, escolaId: Number(event.target.value) }))} required disabled={activeEscolaId !== null}>{(activeEscolaId !== null ? escolas.filter(item => item.id === activeEscolaId) : escolas).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
                 <FormField label="Turma"><select className={inputClass} value={form.turmaId} onChange={event => setForm(prev => ({ ...prev, turmaId: Number(event.target.value) }))} required>{availableTurmas.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
-                {!isProfessor && <FormField label="Professor responsável"><select className={inputClass} value={form.professorId} onChange={event => setForm(prev => ({ ...prev, professorId: Number(event.target.value) }))} required>{professores.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>}
+                {!isProfessor && <FormField label="Professor responsável"><select className={inputClass} value={form.professorId} onChange={event => setForm(prev => ({ ...prev, professorId: Number(event.target.value) }))} required>{professoresOptions.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>}
                 <FormField label="Data de entrada na rede"><input className={inputClass} type="date" value={form.dataEntradaRede} onChange={event => setForm(prev => ({ ...prev, dataEntradaRede: event.target.value }))} required /></FormField>
                 <FormField label="Data de início do acompanhamento"><input className={inputClass} type="date" value={form.dataInicio} onChange={event => setForm(prev => ({ ...prev, dataInicio: event.target.value }))} required /></FormField>
                 <FormField label="Transtorno/condição informada"><input className={inputClass} value={form.condicaoInformada} onChange={event => setForm(prev => ({ ...prev, condicaoInformada: event.target.value }))} placeholder="Informação fictícia do cadastro" /></FormField>

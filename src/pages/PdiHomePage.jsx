@@ -2,14 +2,19 @@ import { Link } from 'react-router-dom';
 import { Button, Card } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscola } from '../context/EscolaContext';
 import { MainLayout } from '../layouts/Layouts';
 import { formatFullDate, formDefinitions, formStatusClasses, formStatusLabel, getFormStatus } from '../utils/formAvailability';
+import { canManagePedagogico } from '../utils/roles';
+import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 
 export const PdiHomePage = () => {
   const { user } = useAuth();
   const { formPeriods } = useData();
-  const isGestor = user?.tipo === 'gestor';
-  const pdiForm = formPeriods.find(period => period.id === 'pdi');
+  const { activeEscolaId } = useEscola();
+  const isGestor = canManagePedagogico(user);
+  const pdiAplicavel = activeEscolaId !== null && isEscolaAplicavel(RECURSOS.PDI, activeEscolaId);
+  const pdiForm = pdiAplicavel ? formPeriods.find(period => period.id === 'pdi' && period.escolaId === activeEscolaId) : null;
   const pdiStatus = pdiForm ? getFormStatus(pdiForm.startDate, pdiForm.endDate) : null;
   const pdiVigente = pdiForm && pdiStatus === 'active';
 

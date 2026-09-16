@@ -1,5 +1,5 @@
 import { createContext, useState, useContext } from 'react';
-import { usuarios, professores, gestores } from '../data/mockData';
+import { usuarios, professores, gestores, diretores, secretarias } from '../data/mockData';
 
 const AuthContext = createContext();
 
@@ -35,7 +35,18 @@ export const AuthProvider = ({ children }) => {
       } else if (usuario.tipo === 'gestor') {
         const gestor = gestores.find(g => g.id === usuario.gestorId);
         userData = { ...userData, ...gestor };
+      } else if (usuario.tipo === 'diretora') {
+        const diretora = diretores.find(d => d.id === usuario.diretoraId);
+        userData = { ...userData, ...diretora };
+      } else if (usuario.tipo === 'secretaria') {
+        const secretaria = secretarias.find(s => s.id === usuario.secretariaId);
+        userData = { ...userData, ...secretaria };
       }
+
+      // `id` acima é sobrescrito pelo id do perfil (professorId/gestorId/...) nos spreads
+      // acima — é o que o resto do app usa como "user.id" hoje. `usuarioId` preserva à parte
+      // o id da credencial de login (usuarios.id), que não deve ser perdido nessa fusão.
+      userData.usuarioId = usuario.id;
 
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));

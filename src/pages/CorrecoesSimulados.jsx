@@ -1,24 +1,47 @@
 import { MainLayout } from '../layouts/Layouts';
+import { Navigate } from 'react-router-dom';
 import { InstrumentManager, statusField } from '../components/InstrumentManager';
 import { ProfessorName } from '../components/ProfessorName';
-import { StatusBadge } from '../components/Common';
+import { EmptyState, StatusBadge } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscola } from '../context/EscolaContext';
 import { disciplinaName, professorName, turmaName } from '../utils/display';
+import { filterByEscola, professoresDaEscola, turmasDoProfessor } from '../utils/escolas';
+import { canManagePedagogico, isGestor, isProfessor as isProfessorRole, isSecretaria } from '../utils/roles';
+import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 
 export const CorrecoesSimulados = () => {
   const { user } = useAuth();
-  const { correcoes, professores, turmas, disciplinas, createCorrecao, updateCorrecao, deleteCorrecao } = useData();
-  const isProfessor = user?.tipo === 'professor';
-  const scopedCorrecoes = isProfessor ? correcoes.filter(item => item.professorId === user.id) : correcoes;
-  const availableTurmas = isProfessor ? turmas.filter(turma => turma.professores.includes(user.id)) : turmas;
+  const { correcoes, professores, turmas, turmaProfessores, disciplinas, vinculosEscolares, createCorrecao, updateCorrecao, deleteCorrecao } = useData();
+  const { activeEscolaId, userEscolas } = useEscola();
+  const isProfessor = isProfessorRole(user);
+  const correcoesDaEscola = filterByEscola(correcoes, activeEscolaId, user);
+  const scopedCorrecoes = isProfessor ? correcoesDaEscola.filter(item => item.professorId === user.id) : correcoesDaEscola;
+  const turmasDaEscola = filterByEscola(turmas, activeEscolaId, user);
+  const availableTurmas = isProfessor ? turmasDoProfessor(turmasDaEscola, turmaProfessores, user.id) : turmasDaEscola;
+  const availableProfessores = professoresDaEscola(professores, vinculosEscolares, activeEscolaId, user);
 
-  const professorOptions = professores.map(professor => ({ value: professor.id, label: professor.nome }));
+  if (!isProfessor && !isGestor(user)) return <Navigate to="/dashboard" replace />;
+
+  if (activeEscolaId !== null && !isEscolaAplicavel(RECURSOS.CORRECOES_SIMULADOS, activeEscolaId)) {
+    return <MainLayout><EmptyState title="Correções não aplicáveis" description="Esta escola não utiliza o módulo de correções de simulados." /></MainLayout>;
+  }
+
+  if (!isSecretaria(user) && userEscolas.length === 0) {
+    return (
+      <MainLayout>
+        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." />
+      </MainLayout>
+    );
+  }
+
+  const professorOptions = availableProfessores.map(professor => ({ value: professor.id, label: professor.nome }));
   const turmaOptions = availableTurmas.map(turma => ({ value: turma.id, label: turma.nome }));
   const disciplinaOptions = disciplinas.map(disciplina => ({ value: disciplina.id, label: disciplina.nome }));
 
   const fields = [
-    { name: 'professorId', label: 'Professor', required: true, kind: 'select-number', options: professorOptions, defaultValue: isProfessor ? user.id : professores[0]?.id, hidden: isProfessor },
+    { name: 'professorId', label: 'Professor', required: true, kind: 'select-number', options: professorOptions, defaultValue: isProfessor ? user.id : availableProfessores[0]?.id, hidden: isProfessor },
     { name: 'turmaId', label: 'Turma', required: true, kind: 'select-number', options: turmaOptions, defaultValue: availableTurmas[0]?.id },
     { name: 'disciplinaId', label: 'Disciplina', required: true, kind: 'select-number', options: disciplinaOptions, defaultValue: disciplinas[0]?.id },
     { name: 'simulado', label: 'Simulado', required: true, defaultValue: '1º Simulado Municipal' },
@@ -48,11 +71,11 @@ export const CorrecoesSimulados = () => {
         records={scopedCorrecoes}
         fields={fields}
         columns={columns}
-        onCreate={payload => createCorrecao(isProfessor ? { ...payload, professorId: user.id } : payload)}
-        onUpdate={(id, payload) => updateCorrecao(id, isProfessor ? { ...payload, professorId: user.id } : payload)}
+        onCreate={payload => createCorrecao({ ...(isProfessor ? { ...payload, professorId: user.id } : payload), escolaId: turmas.find(item => item.id === Number(payload.turmaId))?.escolaId })}
+        onUpdate={(id, payload) => updateCorrecao(id, { ...(isProfessor ? { ...payload, professorId: user.id } : payload), escolaId: turmas.find(item => item.id === Number(payload.turmaId))?.escolaId })}
         onDelete={deleteCorrecao}
-        canCreate={!isProfessor}
-        canDelete={!isProfessor}
+        canCreate={canManagePedagogico(user)}
+        canDelete={canManagePedagogico(user)}
         editLabel={isProfessor ? 'Preencher' : 'Editar'}
         submitLabel={isProfessor ? 'Enviar formulário' : 'Salvar'}
         emptyDescription={isProfessor ? 'Nenhuma correção foi disponibilizada pela gestão para seu perfil neste período vigente.' : 'Ajuste os filtros ou crie um novo registro para continuar.'}

@@ -3,18 +3,28 @@ import { MainLayout } from '../layouts/Layouts';
 import { Card, Badge, Button } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { planejamentos, professores, turmas, disciplinas } from '../data/mockData';
+import { getUserEscolaIds } from '../utils/escolas';
+import { isGestor, isProfessor } from '../utils/roles';
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 
 export const ListaPlanejamentos = () => {
   const { user } = useAuth();
+  const { vinculosEscolares } = useData();
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const accessibleSchoolIds = isGestor(user) ? getUserEscolaIds(user, vinculosEscolares) : [];
+
+  if (!isProfessor(user) && !isGestor(user)) return <Navigate to="/dashboard" replace />;
 
   // Filtrar planejamentos baseado no tipo de usuário
   let planejamentosFiltrados = planejamentos;
   
-  if (user?.tipo === 'professor') {
+  if (isProfessor(user)) {
     planejamentosFiltrados = planejamentos.filter(p => p.professorId === user?.id);
+  } else {
+    planejamentosFiltrados = planejamentos.filter(p => accessibleSchoolIds.includes(turmas.find(turma => turma.id === p.turmaId)?.escolaId));
   }
 
   // Aplicar filtro de status
@@ -30,10 +40,10 @@ export const ListaPlanejamentos = () => {
           <div>
             <h1 className="text-3xl font-bold text-slate-700">Planejamentos</h1>
             <p className="text-gray-600 mt-2">
-              {user?.tipo === 'professor' ? 'Seus planejamentos pedagógicos' : 'Planejamentos da escola'}
+              {isProfessor(user) ? 'Seus planejamentos pedagógicos' : 'Planejamentos da escola'}
             </p>
           </div>
-          {user?.tipo === 'professor' && (
+          {isProfessor(user) && (
             <Link to="/novo-planejamento">
               <Button variant="primary">Novo Planejamento</Button>
             </Link>
@@ -105,18 +115,18 @@ export const ListaPlanejamentos = () => {
               return (
                 <Link key={planejamento.id} to={`/planejamento/${planejamento.id}`}>
                   <Card className="hover:shadow-md transition cursor-pointer">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-slate-700">{planejamento.titulo}</h3>
                           <Badge variant={statusCores[planejamento.status]}>
-                              {planejamento.status === 'pendente' ? 'Pendente' : 
-                               planejamento.status === 'em_andamento' ? 'Em Andamento' : 
+                              {planejamento.status === 'pendente' ? 'Pendente' :
+                               planejamento.status === 'em_andamento' ? 'Em Andamento' :
                                'Concluído'}
                           </Badge>
                         </div>
                         <p className="text-gray-600 mb-3">{planejamento.descricao}</p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div>
                             <p className="text-gray-500">Professor</p>
                             <ProfessorName professor={professor} />
@@ -137,7 +147,7 @@ export const ListaPlanejamentos = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="text-4xl ml-4 text-gray-300">□</div>
+                      <div className="shrink-0 text-4xl text-gray-300">□</div>
                     </div>
                   </Card>
                 </Link>

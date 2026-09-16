@@ -1,14 +1,24 @@
 import { Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { Card, Badge } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
+import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { planejamentos, professores, turmas, disciplinas } from '../data/mockData';
+import { getUserEscolaIds } from '../utils/escolas';
+import { isGestor } from '../utils/roles';
 import { useState } from 'react';
 
 export const ListaPlanejamentosGestor = () => {
+  const { user } = useAuth();
+  const { vinculosEscolares } = useData();
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const accessibleSchoolIds = isGestor(user) ? getUserEscolaIds(user, vinculosEscolares) : [];
 
-  let planejamentosFiltrados = planejamentos;
+  if (!isGestor(user)) return <Navigate to="/dashboard" replace />;
+
+  let planejamentosFiltrados = planejamentos.filter(planejamento => accessibleSchoolIds.includes(turmas.find(turma => turma.id === planejamento.turmaId)?.escolaId));
 
   if (filtroStatus !== 'todos') {
     planejamentosFiltrados = planejamentosFiltrados.filter(p => p.status === filtroStatus);
@@ -88,17 +98,17 @@ export const ListaPlanejamentosGestor = () => {
             return (
               <Link key={planejamento.id} to={`/planejamento/${planejamento.id}`}>
                 <Card className="hover:shadow-md transition cursor-pointer">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-slate-700">{planejamento.titulo}</h3>
                         <Badge variant={statusCores[planejamento.status]}>
-                          {planejamento.status === 'pendente' ? 'Pendente' : 
-                           planejamento.status === 'em_andamento' ? 'Em Andamento' : 
+                          {planejamento.status === 'pendente' ? 'Pendente' :
+                           planejamento.status === 'em_andamento' ? 'Em Andamento' :
                            'Concluído'}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500">Professor</p>
                           <ProfessorName professor={professor} />
@@ -121,7 +131,7 @@ export const ListaPlanejamentosGestor = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-3xl ml-4 text-gray-300">□</div>
+                    <div className="shrink-0 text-3xl text-gray-300">□</div>
                   </div>
                 </Card>
               </Link>

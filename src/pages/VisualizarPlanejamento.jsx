@@ -1,13 +1,23 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { Card, Badge, Button } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
+import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { planejamentos, professores, turmas, disciplinas } from '../data/mockData';
+import { getUserEscolaIds } from '../utils/escolas';
+import { isGestor, isProfessor } from '../utils/roles';
 
 export const VisualizarPlanejamento = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { vinculosEscolares } = useData();
   const planejamento = planejamentos.find(p => p.id === parseInt(id));
+  const accessibleSchoolIds = isGestor(user) ? getUserEscolaIds(user, vinculosEscolares) : [];
+
+  if (!isProfessor(user) && !isGestor(user)) return <Navigate to="/dashboard" replace />;
 
   if (!planejamento) {
     return (
@@ -21,6 +31,13 @@ export const VisualizarPlanejamento = () => {
       </MainLayout>
     );
   }
+
+  const planejamentoEscolaId = turmas.find(turma => turma.id === planejamento.turmaId)?.escolaId;
+  const canView = isProfessor(user)
+    ? planejamento.professorId === user.id
+    : accessibleSchoolIds.includes(planejamentoEscolaId);
+
+  if (!canView) return <Navigate to="/planejamentos" replace />;
 
   const professor = professores.find(p => p.id === planejamento.professorId);
   const turma = turmas.find(t => t.id === planejamento.turmaId);
@@ -36,19 +53,19 @@ export const VisualizarPlanejamento = () => {
     <MainLayout>
       <div className="space-y-6">
         {/* Cabeçalho */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-slate-700">{planejamento.titulo}</h1>
               <Badge variant={statusCores[planejamento.status]}>
-                {planejamento.status === 'pendente' ? 'Pendente' : 
-                 planejamento.status === 'em_andamento' ? 'Em Andamento' : 
+                {planejamento.status === 'pendente' ? 'Pendente' :
+                 planejamento.status === 'em_andamento' ? 'Em Andamento' :
                  'Concluído'}
               </Badge>
             </div>
             <p className="text-gray-600">{planejamento.descricao}</p>
           </div>
-          <Button onClick={() => navigate(-1)} variant="ghost">
+          <Button onClick={() => navigate(-1)} variant="ghost" className="shrink-0">
             ← Voltar
           </Button>
         </div>

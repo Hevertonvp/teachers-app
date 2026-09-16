@@ -4,7 +4,10 @@ import { Badge, Button, Card, FormField } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { inputClass, turmaName } from '../utils/display';
+import { canAccessEscola, turmasDoProfessor } from '../utils/escolas';
 import { formatFullDate, getFormStatus } from '../utils/formAvailability';
+import { isProfessor } from '../utils/roles';
+import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 import { MainLayout } from '../layouts/Layouts';
 
 const trimestreAtual = '3º trimestre';
@@ -13,18 +16,18 @@ export const FormularioPdiProfessor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { pdiAlunos, pdiPerguntas, pdiRespostas, turmas, formPeriods, createPdiResposta, updatePdiResposta } = useData();
+  const { pdiAlunos, pdiPerguntas, pdiRespostas, turmas, turmaProfessores, escolas, vinculosEscolares, formPeriods, createPdiResposta, updatePdiResposta } = useData();
   const [message, setMessage] = useState('');
   const aluno = pdiAlunos.find(item => item.id === Number(id));
-  const availableTurmas = turmas.filter(turma => turma.professores.includes(user?.id));
-  const isAllowed = aluno && availableTurmas.some(turma => turma.id === aluno.turmaId);
-  const period = formPeriods.find(item => item.id === 'pdi');
+  const availableTurmas = turmasDoProfessor(turmas, turmaProfessores, user?.id);
+  const isAllowed = aluno && isEscolaAplicavel(RECURSOS.PDI, aluno.escolaId) && availableTurmas.some(turma => turma.id === aluno.turmaId) && canAccessEscola(user, aluno.escolaId, { escolas, vinculosEscolares });
+  const period = formPeriods.find(item => item.id === 'pdi' && item.escolaId === aluno?.escolaId);
   const isActive = period && getFormStatus(period.startDate, period.endDate) === 'active';
   const questions = [...pdiPerguntas].filter(question => question.status === 'ativa' && question.tipoResposta === 'texto').sort((left, right) => left.ordem - right.ordem);
   const ownAnswers = pdiRespostas.filter(answer => answer.alunoId === Number(id) && answer.professorId === user?.id && answer.trimestre === trimestreAtual);
   const [answers, setAnswers] = useState(() => Object.fromEntries(ownAnswers.map(answer => [answer.perguntaId, { texto: answer.resposta || '', habilidadeBncc: answer.habilidadeBncc || '' }])));
 
-  if (user?.tipo !== 'professor' || !isAllowed) {
+  if (!isProfessor(user) || !isAllowed) {
     return <MainLayout><Card className="py-12 text-center"><p className="font-semibold text-slate-800">Aluno não encontrado</p><Button className="mt-4" onClick={() => navigate('/pdi/alunos')}>Voltar para alunos</Button></Card></MainLayout>;
   }
 

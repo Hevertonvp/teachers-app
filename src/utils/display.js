@@ -6,6 +6,8 @@ export const turmaName = (turmas, id) => findById(turmas, id)?.nome || 'Não inf
 
 export const disciplinaName = (disciplinas, id) => findById(disciplinas, id)?.nome || 'Não informada';
 
+export const escolaName = (escolas, id) => findById(escolas, id)?.nome || 'Não informada';
+
 export const statusOptions = [
   { value: 'pendente', label: 'Pendente' },
   { value: 'em_andamento', label: 'Em andamento' },

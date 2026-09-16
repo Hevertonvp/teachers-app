@@ -1,26 +1,37 @@
 import { useMemo, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { Button, Card, DataTable, Modal, StatusBadge } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
+import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { disciplinaName, filterByText, inputClass, professorName, turmaName } from '../utils/display';
+import { getUserEscolaIds } from '../utils/escolas';
+import { isGestor, isProfessor } from '../utils/roles';
 
 export const Pendencias = () => {
-  const { pendencias, professores, turmas, disciplinas } = useData();
+  const { user } = useAuth();
+  const { pendencias, professores, turmas, disciplinas, vinculosEscolares } = useData();
   const [search, setSearch] = useState('');
   const [tipo, setTipo] = useState('todos');
   const [turma, setTurma] = useState('todos');
   const [periodo, setPeriodo] = useState('todos');
   const [selected, setSelected] = useState(null);
+  const accessibleSchoolIds = isGestor(user) ? getUserEscolaIds(user, vinculosEscolares) : [];
+  const scopedPendencias = isProfessor(user)
+    ? pendencias.filter(item => item.professorId === user.id)
+    : pendencias.filter(item => accessibleSchoolIds.includes(turmas.find(turma => turma.id === item.turmaId)?.escolaId));
 
   const filtered = useMemo(() => {
-    let result = filterByText(pendencias, search, [row => professorName(professores, row.professorId), row => row.atividade, row => row.descricao, row => disciplinaName(disciplinas, row.disciplinaId)]);
+    let result = filterByText(scopedPendencias, search, [row => professorName(professores, row.professorId), row => row.atividade, row => row.descricao, row => disciplinaName(disciplinas, row.disciplinaId)]);
     if (tipo !== 'todos') result = result.filter(row => row.atividade === tipo);
     if (turma !== 'todos') result = result.filter(row => String(row.turmaId) === turma);
     if (periodo === 'ate3') result = result.filter(row => row.diasAtraso <= 3);
     if (periodo === 'mais3') result = result.filter(row => row.diasAtraso > 3);
     return result;
-  }, [pendencias, professores, disciplinas, search, tipo, turma, periodo]);
+  }, [scopedPendencias, professores, disciplinas, search, tipo, turma, periodo]);
+
+  if (!isProfessor(user) && !isGestor(user)) return <Navigate to="/dashboard" replace />;
 
   const columns = [
     { key: 'professor', header: 'Professor', render: row => <ProfessorName professorId={row.professorId} /> },
