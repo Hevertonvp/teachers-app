@@ -31,6 +31,7 @@ import { Pendencias } from './pages/Pendencias';
 import { PerfilPage } from './pages/PerfilPage';
 import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
 import { EventosPage } from './pages/EventosPage';
+import { NoticiasPage } from './pages/NoticiasPage';
 import { MensagensPage } from './pages/MensagensPage';
 
 const DashboardRouter = () => {
@@ -55,6 +56,7 @@ const AppRoutes = () => <Routes>
   <Route path="/correcoes-simulados" element={<ProtectedRoute><FormAvailabilityGate formId="correcoes_simulados"><CorrecoesSimulados /></FormAvailabilityGate></ProtectedRoute>} />
   <Route path="/pendencias" element={<ProtectedRoute><Pendencias /></ProtectedRoute>} />
   <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
+  <Route path="/noticias" element={<ProtectedRoute><NoticiasPage /></ProtectedRoute>} />
   <Route path="/mensagens" element={<ProtectedRoute><MensagensPage /></ProtectedRoute>} />
   <Route path="/planejamentos" element={<ProtectedRoute><ListaPlanejamentos /></ProtectedRoute>} />
   <Route path="/planejamentos-gestor" element={<ProtectedRoute><ListaPlanejamentosGestor /></ProtectedRoute>} />

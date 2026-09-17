@@ -4,7 +4,7 @@ import { Badge } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
-import { canManagePedagogico } from '../utils/roles';
+import { isSecretaria } from '../utils/roles';
 
 const tipoOptions = [
   { value: 'Reunião', label: 'Reunião' },
@@ -23,7 +23,7 @@ export const EventosPage = () => {
   const { user } = useAuth();
   const { eventos, createEvento, updateEvento, deleteEvento } = useData();
   const { userEscolas } = useEscola();
-  const podeGerenciar = canManagePedagogico(user);
+  const podeGerenciar = isSecretaria(user);
 
   const escolaOptions = [
     { value: '', label: 'Rede inteira (todas as escolas)' },

@@ -31,11 +31,17 @@ export const pdiAlunos = alunosBase.map(([nome, dataNascimento, escolaId, turmaI
   status,
 }));
 
+// As perguntas do PDI são únicas e compartilhadas entre todas as escolas selecionadas pela
+// Secretaria (ver src/context/DataContext.jsx) — não existem cópias por escola.
+// tipoResposta: 'texto' (resposta aberta) | 'selecao' (select com opções) | 'marcacao' (marcado/desmarcado).
+// complementar: quando presente, exibe um campo de texto extra ao professor apenas quando a
+// resposta dada for igual a `gatilho` (uma das opções, para 'selecao'; `true`, para 'marcacao').
 export const pdiPerguntasFormulario = [
-  { id: 1, pergunta: 'QUE AVANÇOS E POTENCIALIDADES PUDERAM SER IDENTIFICADOS NO DESEMPENHO DO(A) ALUNO(A)?', area: 'Aprendizagem', indicador: 'Avanços e potencialidades', tipoResposta: 'texto', ordem: 1, status: 'ativa' },
-  { id: 2, pergunta: 'QUAIS ASPECTOS APRESENTAM DIFICULDADES QUE AINDA NECESSITAM DE SUPERAÇÃO? QUAIS FRAGILIDADES PERSISTEM NO DESEMPENHO DO(A) ESTUDANTE?', area: 'Aprendizagem', indicador: 'Dificuldades e fragilidades', tipoResposta: 'texto', ordem: 2, status: 'ativa' },
-  { id: 3, pergunta: 'DESCREVER AS METODOLOGIAS E AÇÕES ADOTADAS PARA FAVORECER O AVANÇO DO(A) ALUNO(A), BEM COMO INDICAR QUAIS ADEQUAÇÕES EM SEU PLANEJAMENTO PEDAGÓGICO NECESSITAM SER REFORMULADAS.', area: 'Aprendizagem', indicador: 'Metodologias e ações', tipoResposta: 'texto', ordem: 3, status: 'ativa' },
-  { id: 4, pergunta: 'REDIJA UM PARECER PEDAGÓGICO CONCLUSIVO REFERENTE AO TRIMESTRE, DESCREVENDO AS APRENDIZAGENS CONSOLIDADAS, AS HABILIDADES DESENVOLVIDAS E AS DIFICULDADES APRESENTADAS PELO(A) ESTUDANTE.', area: 'Aprendizagem', indicador: 'Parecer pedagógico conclusivo', tipoResposta: 'texto', ordem: 4, status: 'ativa' },
+  { id: 1, pergunta: 'QUE AVANÇOS E POTENCIALIDADES PUDERAM SER IDENTIFICADOS NO DESEMPENHO DO(A) ALUNO(A)?', area: 'Aprendizagem', indicador: 'Avanços e potencialidades', tipoResposta: 'texto', opcoes: [], complementar: null, ordem: 1, status: 'ativa' },
+  { id: 2, pergunta: 'QUAIS ASPECTOS APRESENTAM DIFICULDADES QUE AINDA NECESSITAM DE SUPERAÇÃO? QUAIS FRAGILIDADES PERSISTEM NO DESEMPENHO DO(A) ESTUDANTE?', area: 'Aprendizagem', indicador: 'Dificuldades e fragilidades', tipoResposta: 'texto', opcoes: [], complementar: null, ordem: 2, status: 'ativa' },
+  { id: 3, pergunta: 'O ALUNO APRESENTA NECESSIDADE DE ALTERAÇÃO NA METODOLOGIA UTILIZADA EM SALA DE AULA?', area: 'Aprendizagem', indicador: 'Metodologias e ações', tipoResposta: 'selecao', opcoes: ['SIM', 'NÃO'], complementar: { gatilho: 'SIM', label: 'Como?' }, ordem: 3, status: 'ativa' },
+  { id: 4, pergunta: 'O ALUNO PARTICIPA DO ATENDIMENTO EDUCACIONAL ESPECIALIZADO (AEE)?', area: 'Autonomia', indicador: 'Participação no AEE', tipoResposta: 'marcacao', opcoes: [], complementar: null, ordem: 4, status: 'ativa' },
+  { id: 5, pergunta: 'REDIJA UM PARECER PEDAGÓGICO CONCLUSIVO REFERENTE AO TRIMESTRE, DESCREVENDO AS APRENDIZAGENS CONSOLIDADAS, AS HABILIDADES DESENVOLVIDAS E AS DIFICULDADES APRESENTADAS PELO(A) ESTUDANTE.', area: 'Aprendizagem', indicador: 'Parecer pedagógico conclusivo', tipoResposta: 'texto', opcoes: [], complementar: null, ordem: 5, status: 'ativa' },
 ];
 
 const indicadores = [
@@ -102,7 +108,7 @@ export const pdiAcompanhamentosHistoricos = pdiAlunos.flatMap((aluno, alunoIndex
 });
 
 export const pdiRespostasAcompanhamento = pdiAlunos.flatMap((aluno, alunoIndex) => {
-  const perguntas = [1, 2, 4];
+  const perguntas = [1, 2, 5];
   return perguntas.flatMap((perguntaId, perguntaIndex) => trendSeries[(alunoIndex + perguntaIndex) % trendSeries.length].map((resposta, mesIndex) => ({
     id: alunoIndex * 1000 + perguntaIndex * 100 + mesIndex + 1,
     alunoId: aluno.id,

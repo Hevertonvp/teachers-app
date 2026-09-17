@@ -42,15 +42,18 @@ export const alunoStatusOptions = [
 ];
 
 export const perguntaTipoOptions = [
-  { value: 'escala', label: 'Escala' },
-  { value: 'sim_nao', label: 'Sim / Não' },
   { value: 'texto', label: 'Texto' },
+  { value: 'selecao', label: 'Seleção' },
+  { value: 'marcacao', label: 'Marcação' },
 ];
 
 export const perguntaStatusOptions = [
   { value: 'ativa', label: 'Ativa' },
   { value: 'inativa', label: 'Inativa' },
 ];
+
+// Trimestres do formulário PDI. A mesma pergunta pode ter uma resposta por trimestre.
+export const pdiTrimestres = ['1º trimestre', '2º trimestre', '3º trimestre'];
 
 export const formatDate = (date) => {
   if (!date) return 'Sem registro';

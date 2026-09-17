@@ -9,6 +9,7 @@ import {
   formulariosUmTerco as formulariosIniciais,
   gestores as gestoresIniciais,
   mensagensIniciais,
+  noticiasRede as noticiasIniciais,
   pdis as pdisIniciais,
   professores as professoresIniciais,
   secretarias as secretariasIniciais,
@@ -52,6 +53,7 @@ export const DataProvider = ({ children }) => {
   const [pdis, setPdis] = useState(pdisIniciais);
   const [correcoes, setCorrecoes] = useState(correcoesIniciais);
   const [eventos, setEventos] = useState(eventosIniciais);
+  const [noticias, setNoticias] = useState(noticiasIniciais);
   const [pdiAlunos, setPdiAlunos] = useState(pdiAlunosIniciais);
   const [pdiAvaliacoes, setPdiAvaliacoes] = useState(pdiAvaliacoesIniciais);
   const [pdiMetas, setPdiMetas] = useState(pdiMetasDesenvolvimento);
@@ -216,6 +218,24 @@ export const DataProvider = ({ children }) => {
     )));
   };
 
+  // Escolas que atualmente têm o PDI habilitado: existência de um formPeriod 'pdi' para a
+  // escola (mesma fonte usada para a vigência). Ajustar a seleção adiciona/remove esse
+  // registro, sem duplicar as perguntas — que permanecem únicas e compartilhadas.
+  const setPdiEscolas = (escolaIds) => {
+    const selectedIds = new Set(escolaIds.map(Number));
+    setFormPeriods(prev => {
+      const outrosFormularios = prev.filter(period => period.id !== 'pdi');
+      const pdiAtual = prev.filter(period => period.id === 'pdi');
+      const mantidos = pdiAtual.filter(period => selectedIds.has(Number(period.escolaId)));
+      const existentes = new Set(mantidos.map(period => Number(period.escolaId)));
+      const referencia = pdiAtual[0] || { startDate: CURRENT_DATE, endDate: CURRENT_DATE };
+      const novos = [...selectedIds]
+        .filter(escolaId => !existentes.has(escolaId))
+        .map(escolaId => ({ id: 'pdi', escolaId, startDate: referencia.startDate, endDate: referencia.endDate }));
+      return [...outrosFormularios, ...mantidos, ...novos];
+    });
+  };
+
   const criarMensagem = (payload, remetente) => {
     const messageData = { gestores, diretores, professores, secretarias: secretariasIniciais, vinculosEscolares };
     if (!canSendMessage(remetente, payload, messageData)) {
@@ -258,6 +278,7 @@ export const DataProvider = ({ children }) => {
     pdis,
     correcoes,
     eventos,
+    noticias,
     formPeriods,
     pdiAlunos,
     pdiAvaliacoes,
@@ -283,6 +304,9 @@ export const DataProvider = ({ children }) => {
     createEvento: createItem(setEventos),
     updateEvento: updateItem(setEventos),
     deleteEvento: deleteItem(setEventos),
+    createNoticia: createItem(setNoticias),
+    updateNoticia: updateItem(setNoticias),
+    deleteNoticia: deleteItem(setNoticias),
     createPdiAluno: createItem(setPdiAlunos),
     updatePdiAluno: updateItem(setPdiAlunos),
     archivePdiAluno,
@@ -304,6 +328,7 @@ export const DataProvider = ({ children }) => {
     updateFormPeriod,
     updateFormPeriodForEscola,
     updateFormPeriodsForEscolas,
+    setPdiEscolas,
     createEscola: createItem(setEscolas),
     updateEscola: updateItem(setEscolas),
     createVinculoEscolar: createItem(setVinculosEscolares),

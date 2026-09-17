@@ -26,27 +26,11 @@ const notificationMeta = (item) => {
   return { label: `vence em ${days} dias`, tone: 'amber', status: item.status };
 };
 
-const noticiasProfessor = [
-  {
-    id: 1,
-    titulo: 'Rede inicia ciclo de acompanhamento pedagógico individual',
-    resumo: 'Gestores e professores terão novos indicadores para acompanhar avanços dos estudantes ao longo do ano letivo.',
-    rota: '/pdi',
-    editoria: 'PDI',
-  },
-  {
-    id: 2,
-    titulo: 'Formulário 1/3 entra em período de preenchimento',
-    resumo: 'O registro de conteúdos já está disponível para professores com prazo definido pela gestão pedagógica.',
-    rota: '/formulario-um-terco',
-    editoria: 'Planejamento',
-  },
-];
-
 export const DashboardProfessor = () => {
   const { user } = useAuth();
-  const { formularios, pdis, correcoes, turmas, turmaProfessores, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, formPeriods } = useData();
+  const { formularios, pdis, correcoes, turmas, turmaProfessores, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, formPeriods, noticias } = useData();
   const { activeEscolaId, userEscolas } = useEscola();
+  const ultimaNoticia = [...noticias].sort((a, b) => new Date(b.data) - new Date(a.data))[0];
 
   if (userEscolas.length === 0) {
     return (
@@ -122,15 +106,15 @@ export const DashboardProfessor = () => {
             </div>
           </Link>
 
-          <Link to={noticiasProfessor[0].rota} className="block bg-cyan-50 p-3 text-slate-950 transition hover:bg-cyan-100/70">
+          <Link to="/noticias" className="block bg-cyan-50 p-3 text-slate-950 transition hover:bg-cyan-100/70">
             <div className="flex min-h-24 flex-col justify-between gap-2">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-serif text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-800">Notícias</p>
-                <span className="text-[11px] font-bold uppercase tracking-wide text-cyan-800">{noticiasProfessor[0].editoria}</span>
+                {ultimaNoticia && <span className="text-[11px] font-bold uppercase tracking-wide text-cyan-800">{ultimaNoticia.categoria}</span>}
               </div>
               <div>
-                <h2 className="font-serif text-base font-bold leading-tight">{noticiasProfessor[0].titulo}</h2>
-                <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-700">{noticiasProfessor[0].resumo}</p>
+                <h2 className="font-serif text-base font-bold leading-tight">{ultimaNoticia?.titulo || 'Nenhuma notícia publicada'}</h2>
+                <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-700">{ultimaNoticia?.resumo || 'Acompanhe aqui as novidades da rede municipal de ensino.'}</p>
               </div>
             </div>
           </Link>

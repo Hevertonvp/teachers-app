@@ -365,6 +365,23 @@ export const eventosPedagogicos = [
   },
 ];
 
+export const noticiasRede = [
+  {
+    id: 1,
+    titulo: 'Rede inicia ciclo de acompanhamento pedagógico individual',
+    resumo: 'Gestores e professores terão novos indicadores para acompanhar avanços dos estudantes ao longo do ano letivo.',
+    categoria: 'PDI',
+    data: '2026-08-28',
+  },
+  {
+    id: 2,
+    titulo: 'Formulário 1/3 entra em período de preenchimento',
+    resumo: 'O registro de conteúdos já está disponível para professores com prazo definido pela gestão pedagógica.',
+    categoria: 'Planejamento',
+    data: '2026-09-01',
+  },
+];
+
 // Vigência agora é escopada por (id, escolaId): um registro por tipo de formulário
 // para cada escola, em vez de um único registro global por tipo.
 // Nesta fase os valores são replicados iguais para todas as escolas (nenhuma tela ainda

@@ -16,6 +16,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'PDI', path: '/pdi', icon: 'P' },
     { name: 'Correções', path: '/correcoes-simulados', icon: 'C' },
     { name: 'Eventos', path: '/eventos', icon: 'E' },
+    { name: 'Notícias', path: '/noticias', icon: 'N' },
     { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
@@ -26,6 +27,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Correções', path: '/correcoes-simulados', icon: 'C' },
     { name: 'Gestão de Professores', path: '/gestao-professores', icon: 'G' },
     { name: 'Eventos', path: '/eventos', icon: 'E' },
+    { name: 'Notícias', path: '/noticias', icon: 'N' },
     { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
@@ -38,11 +40,13 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'PDI', path: '/pdi', icon: 'P' },
     { name: 'Correções', path: '/correcoes-simulados', icon: 'C' },
     { name: 'Eventos', path: '/eventos', icon: 'E' },
+    { name: 'Notícias', path: '/noticias', icon: 'N' },
     { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
   const menuDiretora = [
     { name: 'Dashboard', path: '/dashboard', icon: 'D' },
+    { name: 'Notícias', path: '/noticias', icon: 'N' },
     { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
