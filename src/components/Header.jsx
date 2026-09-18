@@ -30,8 +30,8 @@ export const Header = ({ onMenuClick }) => {
           >
             ☰
           </button>
-          <div className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white sm:grid">GP</div>
-          <div className="min-w-0 flex-1">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">GP</div>
+          <div className="hidden min-w-0 flex-1 sm:block">
             <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
             <p className="truncate text-xs text-slate-500">Rede Municipal de Ensino</p>
           </div>

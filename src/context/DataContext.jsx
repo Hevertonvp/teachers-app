@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import {
+  auxiliares as auxiliaresIniciais,
   correcoesSimulados as correcoesIniciais,
   disciplinas,
   escolas as escolasIniciais,
@@ -13,6 +14,7 @@ import {
   pdis as pdisIniciais,
   professores as professoresIniciais,
   secretarias as secretariasIniciais,
+  trimestrePeriodsIniciais,
   turmas,
   turmaProfessores,
   vinculosEscolares as vinculosEscolaresIniciais,
@@ -20,7 +22,9 @@ import {
 import {
   pdiAcompanhamentosHistoricos as pdiAcompanhamentosIniciais,
   pdiAlunos as pdiAlunosIniciais,
+  pdiAuxiliaresVinculos as pdiAuxiliaresVinculosIniciais,
   pdiAvaliacoesIniciais,
+  pdiHistoricoPreenchimento as pdiHistoricoPreenchimentoIniciais,
   pdiMetasDesenvolvimento,
   pdiPerguntasFormulario,
   pdiRespostasAcompanhamento,
@@ -60,12 +64,18 @@ export const DataProvider = ({ children }) => {
   const [pdiAcompanhamentos, setPdiAcompanhamentos] = useState(pdiAcompanhamentosIniciais);
   const [pdiPerguntas, setPdiPerguntas] = useState(pdiPerguntasFormulario);
   const [pdiRespostas, setPdiRespostas] = useState(pdiRespostasAcompanhamento);
+  const [pdiAnamneses, setPdiAnamneses] = useState([]);
+  const [pdiAuxiliaresVinculos, setPdiAuxiliaresVinculos] = useState(pdiAuxiliaresVinculosIniciais);
+  const [pdiHistoricoPreenchimento, setPdiHistoricoPreenchimento] = useState(pdiHistoricoPreenchimentoIniciais);
+  const [trimestrePeriods, setTrimestrePeriods] = useState(trimestrePeriodsIniciais);
   const [formPeriods, setFormPeriods] = useState(formulariosPrazos);
   const [escolas, setEscolas] = useState(escolasIniciais);
   const [vinculosEscolares, setVinculosEscolares] = useState(vinculosEscolaresIniciais);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
   const [diretores, setDiretores] = useState(diretoresIniciais);
+  // Sem CRUD de Auxiliares nesta etapa (só o vínculo com aluno é gerenciável) — lista fixa.
+  const [auxiliares] = useState(auxiliaresIniciais);
   const [mensagens, setMensagens] = useState(mensagensIniciais);
 
   const createItem = (setter) => (payload) => {
@@ -193,6 +203,94 @@ export const DataProvider = ({ children }) => {
     setPdiAlunos(prev => prev.map(aluno => aluno.id === Number(id) ? { ...aluno, status: 'arquivado' } : aluno));
   };
 
+  // Toda pergunta criada pela tela da Secretaria é sempre 'personalizada' — perguntas padrão
+  // vêm só do seed (ver src/utils/pdiIndicadores.js), nunca são criadas pela interface.
+  const createPdiPergunta = (payload) => createItem(setPdiPerguntas)({ ...payload, origem: 'personalizada', indicador: null });
+
+  // Em perguntas padrão, só redação (`pergunta`) e `status` podem ser alterados — indicador,
+  // tipoResposta, opções e complementar ficam protegidos para não quebrar a identidade
+  // analítica que sustenta a série histórica (ver seção 24 do pedido). Personalizadas seguem
+  // totalmente editáveis.
+  const updatePdiPergunta = (id, payload) => {
+    setPdiPerguntas(prev => prev.map(item => {
+      if (item.id !== Number(id)) return item;
+      if (item.origem === 'personalizada') return { ...item, ...payload, atualizadoEm: 'agora' };
+      const { pergunta, status, ordem } = payload;
+      return {
+        ...item,
+        ...(pergunta !== undefined ? { pergunta } : {}),
+        ...(status !== undefined ? { status } : {}),
+        ...(ordem !== undefined ? { ordem } : {}),
+        atualizadoEm: 'agora',
+      };
+    }));
+  };
+
+  // Perguntas padrão (origem 'estruturada'/'qualitativa'/'habilidade') sustentam a série
+  // histórica e a Análise de Desenvolvimento — nunca são excluídas, só desativadas via
+  // updatePdiPergunta({status:'inativa'}). Só perguntas 'personalizada' podem ser excluídas.
+  const deletePdiPergunta = (id) => {
+    setPdiPerguntas(prev => {
+      const pergunta = prev.find(item => item.id === Number(id));
+      if (pergunta && pergunta.origem !== 'personalizada') return prev;
+      return prev.filter(item => item.id !== Number(id));
+    });
+  };
+
+  // Uma anamnese por aluno (1:1). Cria na primeira vez que é salva; nas seguintes, atualiza
+  // o registro existente. Não gera nenhum valor automaticamente — só grava o que foi preenchido.
+  const savePdiAnamnese = (alunoId, payload) => {
+    setPdiAnamneses(prev => {
+      const existente = prev.find(item => item.alunoId === Number(alunoId));
+      if (existente) return prev.map(item => item.alunoId === Number(alunoId) ? { ...item, ...payload } : item);
+      return [...prev, { id: nextId(prev), ...payload, alunoId: Number(alunoId) }];
+    });
+  };
+
+  // Um evento por ENVIO do Formulário PDI (não por pergunta) — quem preencheu/editou e quando.
+  // professorId é sempre o professor responsável do aluno (aluno.professorId), mesmo quando
+  // quem preencheu foi a Supervisora: garante que ela edita o MESMO registro do professor,
+  // nunca um paralelo (ver src/utils/pdiHistorico.js).
+  const registrarPreenchimentoPdi = (alunoId, professorId, trimestre, autor, acao) => {
+    setPdiHistoricoPreenchimento(prev => [...prev, {
+      id: nextId(prev),
+      alunoId: Number(alunoId),
+      professorId: Number(professorId),
+      trimestre,
+      usuarioTipo: autor.tipo,
+      usuarioId: autor.id,
+      dataHora: new Date().toISOString(),
+      acao,
+    }]);
+  };
+
+  // Vincula um Auxiliar de Aprendizagem a um aluno. Se já existir um vínculo ativo para esse
+  // aluno, encerra-o (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrever —
+  // histórico nunca é apagado. Nunca cria vínculo Auxiliar->turma/escola.
+  const vincularAuxiliar = (alunoId, auxiliarId, dataInicio) => {
+    setPdiAuxiliaresVinculos(prev => {
+      const encerrados = prev.map(item => (
+        item.alunoId === Number(alunoId) && item.status === 'ativo'
+          ? { ...item, dataFim: dataInicio, status: 'encerrado' }
+          : item
+      ));
+      return [...encerrados, { id: nextId(encerrados), alunoId: Number(alunoId), auxiliarId: Number(auxiliarId), dataInicio, dataFim: null, status: 'ativo' }];
+    });
+  };
+
+  // Encerra o vínculo ativo sem criar substituto — aluno fica temporariamente sem Auxiliar.
+  const encerrarAuxiliar = (alunoId, dataFim) => {
+    setPdiAuxiliaresVinculos(prev => prev.map(item => (
+      item.alunoId === Number(alunoId) && item.status === 'ativo'
+        ? { ...item, dataFim, status: 'encerrado' }
+        : item
+    )));
+  };
+
+  const updateTrimestrePeriod = (trimestre, payload) => {
+    setTrimestrePeriods(prev => prev.map(item => item.trimestre === trimestre ? { ...item, ...payload } : item));
+  };
+
   const updateFormPeriod = (id, payload) => {
     setFormPeriods(prev => prev.map(period => period.id === id ? { ...period, ...payload } : period));
   };
@@ -269,6 +367,7 @@ export const DataProvider = ({ children }) => {
     gestores,
     diretores,
     secretarias: secretariasIniciais,
+    auxiliares,
     turmas,
     turmaProfessores,
     disciplinas,
@@ -286,6 +385,15 @@ export const DataProvider = ({ children }) => {
     pdiAcompanhamentos,
     pdiPerguntas,
     pdiRespostas,
+    pdiAnamneses,
+    savePdiAnamnese,
+    pdiAuxiliaresVinculos,
+    vincularAuxiliar,
+    encerrarAuxiliar,
+    pdiHistoricoPreenchimento,
+    registrarPreenchimentoPdi,
+    trimestrePeriods,
+    updateTrimestrePeriod,
     pendencias,
     indicadores,
     atividadesRecentes,
@@ -319,9 +427,9 @@ export const DataProvider = ({ children }) => {
     createPdiAcompanhamento: createItem(setPdiAcompanhamentos),
     updatePdiAcompanhamento: updateItem(setPdiAcompanhamentos),
     deletePdiAcompanhamento: deleteItem(setPdiAcompanhamentos),
-    createPdiPergunta: createItem(setPdiPerguntas),
-    updatePdiPergunta: updateItem(setPdiPerguntas),
-    deletePdiPergunta: deleteItem(setPdiPerguntas),
+    createPdiPergunta,
+    updatePdiPergunta,
+    deletePdiPergunta,
     createPdiResposta: createItem(setPdiRespostas),
     updatePdiResposta: updateItem(setPdiRespostas),
     deletePdiResposta: deleteItem(setPdiRespostas),

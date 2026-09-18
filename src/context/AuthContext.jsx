@@ -1,5 +1,5 @@
 import { createContext, useState, useContext } from 'react';
-import { usuarios, professores, gestores, diretores, secretarias } from '../data/mockData';
+import { usuarios, professores, gestores, diretores, secretarias, auxiliares } from '../data/mockData';
 
 const AuthContext = createContext();
 
@@ -41,6 +41,9 @@ export const AuthProvider = ({ children }) => {
       } else if (usuario.tipo === 'secretaria') {
         const secretaria = secretarias.find(s => s.id === usuario.secretariaId);
         userData = { ...userData, ...secretaria };
+      } else if (usuario.tipo === 'auxiliar') {
+        const auxiliar = auxiliares.find(a => a.id === usuario.auxiliarId);
+        userData = { ...userData, ...auxiliar };
       }
 
       // `id` acima é sobrescrito pelo id do perfil (professorId/gestorId/...) nos spreads

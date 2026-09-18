@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { isDiretora, isProfessor, isSecretaria } from '../utils/roles';
+import { isAuxiliar, isDiretora, isProfessor, isSecretaria } from '../utils/roles';
 import { identityKey } from '../utils/mensagens';
 
 export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
@@ -50,7 +50,17 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Mensagens', path: '/mensagens', icon: 'M' },
   ];
 
-  const menu = isProfessor(user) ? menuProfessor : isSecretaria(user) ? menuSecretaria : isDiretora(user) ? menuDiretora : menuGestor;
+  // Etapa inicial do perfil Auxiliar: só a lista dos alunos que acompanha — sem módulos
+  // administrativos de outros perfis.
+  const menuAuxiliar = [
+    { name: 'Meus alunos', path: '/meus-alunos', icon: 'M' },
+  ];
+
+  const menu = isProfessor(user) ? menuProfessor
+    : isSecretaria(user) ? menuSecretaria
+    : isDiretora(user) ? menuDiretora
+    : isAuxiliar(user) ? menuAuxiliar
+    : menuGestor;
   const menuWithUnread = menu.map(item => item.path === '/mensagens' ? { ...item, badge: unreadCount } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'U' }, { name: 'Configurações', path: '/configuracoes', icon: 'S' }];
 
@@ -97,10 +107,10 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
             </button>
           </div>
 
-          <div className="space-y-1">
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
             {menuWithUnread.map(renderLink)}
           </div>
-          <div className="mt-auto space-y-1 border-t border-slate-800 pt-4">
+          <div className="shrink-0 space-y-1 border-t border-slate-800 pt-4">
             {bottomMenu.map(renderLink)}
           </div>
         </nav>

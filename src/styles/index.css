@@ -151,6 +151,14 @@ textarea {
 	background-color: rgba(20, 83, 68, 0.24) !important;
 }
 
+.theme-dark .bg-emerald-100 {
+	background-color: rgba(20, 83, 68, 0.32) !important;
+}
+
+.theme-dark .border-emerald-200 {
+	border-color: rgba(52, 138, 111, 0.45) !important;
+}
+
 .theme-dark .bg-red-50,
 .theme-dark .bg-red-50\/70 {
 	background-color: rgba(127, 29, 29, 0.35) !important;

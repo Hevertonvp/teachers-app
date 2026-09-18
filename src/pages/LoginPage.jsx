@@ -42,6 +42,9 @@ export const LoginPage = () => {
     } else if (tipo === 'diretora') {
       setEmail('diretora@escola.gov.br');
       setSenha('123456');
+    } else if (tipo === 'auxiliar') {
+      setEmail('auxiliar@escola.gov.br');
+      setSenha('123456');
     }
   };
 
@@ -127,6 +130,12 @@ export const LoginPage = () => {
               className="w-full px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium"
             >
               Diretora
+            </button>
+            <button
+              onClick={() => preencherDados('auxiliar')}
+              className="w-full px-4 py-2 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition text-sm font-medium"
+            >
+              Auxiliar de Aprendizagem
             </button>
           </div>
         </div>

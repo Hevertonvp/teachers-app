@@ -1,6 +1,16 @@
 // Dados mockados centralizados para o protótipo frontend.
 import { getEscolaIdsAplicaveis, RECURSOS } from '../utils/aplicabilidade';
+import { trimestres } from '../utils/trimestres';
 import { pdiAlunos } from './pdiData';
+
+// Datas de início/fim de cada trimestre do ano letivo, configuráveis pela Secretaria em
+// Configurações. Não é específico de um módulo — hoje o PDI usa esses períodos para
+// determinar automaticamente qual trimestre a Professora está preenchendo.
+export const trimestrePeriodsIniciais = [
+  { trimestre: trimestres[0], startDate: '2026-02-02', endDate: '2026-04-30' },
+  { trimestre: trimestres[1], startDate: '2026-05-01', endDate: '2026-08-15' },
+  { trimestre: trimestres[2], startDate: '2026-08-16', endDate: '2026-12-18' },
+];
 
 export const professores = [
   { id: 1, nome: 'Cláudia Santos', email: 'claudia.santos@escola.gov.br', disciplinas: [1, 2], avatar: 'CS', status: 'ativo' },
@@ -34,6 +44,15 @@ export const diretores = [
   { id: 4, nome: 'Vanessa Souza Lima', email: 'vanessa.lima@escola.gov.br', cargo: 'Diretora Escolar', avatar: 'VL', status: 'ativo' },
   { id: 5, nome: 'André Luiz Freitas', email: 'andre.freitas@escola.gov.br', cargo: 'Diretor Escolar', avatar: 'AF', status: 'ativo' },
   { id: 6, nome: 'Patrícia Gomes Duarte', email: 'patricia.duarte@escola.gov.br', cargo: 'Diretora Escolar', avatar: 'PD', status: 'ativo' },
+];
+
+// Auxiliar de Aprendizagem: perfil próprio, distinto de professor (não leciona disciplina,
+// não tem vínculo com turma/escola — acompanha alunos específicos, ver pdiAuxiliaresVinculos
+// em pdiData.js). Cadastro administrativo por ora, gerenciado pela Secretaria.
+export const auxiliares = [
+  { id: 1, nome: 'Débora Nascimento', email: 'auxiliar@escola.gov.br', avatar: 'DN', status: 'ativo' },
+  { id: 2, nome: 'Ricardo Tavares', email: 'ricardo.tavares@escola.gov.br', avatar: 'RT', status: 'ativo' },
+  { id: 3, nome: 'Simone Cardoso', email: 'simone.cardoso@escola.gov.br', avatar: 'SC', status: 'ativo' },
 ];
 
 export const secretarias = [
@@ -418,6 +437,12 @@ export const usuarios = [
   { id: 2, email: 'gestor@escola.gov.br', senha: '123456', tipo: 'gestor', gestorId: 1 },
   { id: 3, email: 'secretaria@escola.gov.br', senha: '123456', tipo: 'secretaria', secretariaId: 1 },
   { id: 4, email: 'diretora@escola.gov.br', senha: '123456', tipo: 'diretora', diretoraId: 1 },
+  { id: 5, email: 'auxiliar@escola.gov.br', senha: '123456', tipo: 'auxiliar', auxiliarId: 1 },
+  { id: 6, email: 'ricardo.tavares@escola.gov.br', senha: '123456', tipo: 'auxiliar', auxiliarId: 2 },
+  { id: 7, email: 'simone.cardoso@escola.gov.br', senha: '123456', tipo: 'auxiliar', auxiliarId: 3 },
+  // Sérgio Batista (gestorId 2) gerencia as escolas 4, 5 e 6 — a escola 6 é inativa, útil para
+  // testar a regra de consulta histórica somente leitura do módulo PDI.
+  { id: 8, email: 'sergio.batista@escola.gov.br', senha: '123456', tipo: 'gestor', gestorId: 2 },
 ];
 
 export const notificacoesAtraso = [

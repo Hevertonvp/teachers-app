@@ -27,7 +27,7 @@ export const PdiHomePage = () => {
           <p className="mt-2 max-w-3xl text-slate-600">O módulo separa a gestão das perguntas do formulário e o acompanhamento individual dos alunos.</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <div className="flex h-full flex-col justify-between gap-6">
               <div>
@@ -49,6 +49,17 @@ export const PdiHomePage = () => {
               <Link to="/pdi/alunos"><Button variant="outline">Ver alunos</Button></Link>
             </div>
           </Card>
+
+          {isGestor && <Card>
+            <div className="flex h-full flex-col justify-between gap-6">
+              <div>
+                <p className="text-sm font-semibold text-teal-700">Evolução do aluno</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-950">Acompanhamento do PDI</h2>
+                <p className="mt-2 text-sm text-slate-600">Selecione uma escola e um aluno para consultar o histórico de desenvolvimento, gráficos de evolução e tendência ao longo dos trimestres.</p>
+              </div>
+              <Link to="/pdi/acompanhamento"><Button variant="outline">Ver acompanhamento</Button></Link>
+            </div>
+          </Card>}
         </div>
 
         {isGestor && pdiVigente && <Card>

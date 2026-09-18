@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { EscolaProvider } from './context/EscolaContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { isDiretora, isGestor, isProfessor, isSecretaria } from './utils/roles';
+import { isAuxiliar, isDiretora, isGestor, isProfessor, isSecretaria } from './utils/roles';
 import { FormAvailabilityGate } from './components/FormAvailabilityGate';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
@@ -26,6 +26,10 @@ import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
 import { PdiPage } from './pages/PdiPage';
 import { PdiAlunoPerfil } from './pages/PdiAlunoPerfil';
+import { AcompanhamentoPdiPage } from './pages/AcompanhamentoPdiPage';
+import { AnamnesePage } from './pages/AnamnesePage';
+import { MeusAlunosAuxiliarPage } from './pages/MeusAlunosAuxiliarPage';
+import { AuxiliarAlunoPerfilPage } from './pages/AuxiliarAlunoPerfilPage';
 import { CorrecoesSimulados } from './pages/CorrecoesSimulados';
 import { Pendencias } from './pages/Pendencias';
 import { PerfilPage } from './pages/PerfilPage';
@@ -40,6 +44,8 @@ const DashboardRouter = () => {
   if (isDiretora(user)) return <DashboardDiretora />;
   if (isGestor(user)) return <DashboardGestor />;
   if (isSecretaria(user)) return <DashboardSecretaria />;
+  // Auxiliar ainda não tem um Dashboard próprio nesta etapa — "Meus alunos" é a tela inicial.
+  if (isAuxiliar(user)) return <Navigate to="/meus-alunos" replace />;
   return <Navigate to="/login" />;
 };
 
@@ -51,8 +57,12 @@ const AppRoutes = () => <Routes>
   <Route path="/pdi" element={<ProtectedRoute><PdiHomePage /></ProtectedRoute>} />
   <Route path="/pdi/formulario" element={<ProtectedRoute><FormularioPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos" element={<ProtectedRoute><PdiPage /></ProtectedRoute>} />
+  <Route path="/pdi/acompanhamento" element={<ProtectedRoute><AcompanhamentoPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id" element={<ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id/formulario" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
+  <Route path="/pdi/alunos/:id/anamnese" element={<ProtectedRoute><AnamnesePage /></ProtectedRoute>} />
+  <Route path="/meus-alunos" element={<ProtectedRoute><MeusAlunosAuxiliarPage /></ProtectedRoute>} />
+  <Route path="/meus-alunos/:id" element={<ProtectedRoute><AuxiliarAlunoPerfilPage /></ProtectedRoute>} />
   <Route path="/correcoes-simulados" element={<ProtectedRoute><FormAvailabilityGate formId="correcoes_simulados"><CorrecoesSimulados /></FormAvailabilityGate></ProtectedRoute>} />
   <Route path="/pendencias" element={<ProtectedRoute><Pendencias /></ProtectedRoute>} />
   <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />

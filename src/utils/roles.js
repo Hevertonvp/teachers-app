@@ -6,12 +6,17 @@ export const ROLES = {
   GESTOR: 'gestor',
   DIRETORA: 'diretora',
   SECRETARIA: 'secretaria',
+  AUXILIAR: 'auxiliar',
 };
 
 export const isProfessor = (user) => user?.tipo === ROLES.PROFESSOR;
 export const isGestor = (user) => user?.tipo === ROLES.GESTOR;
 export const isDiretora = (user) => user?.tipo === ROLES.DIRETORA;
 export const isSecretaria = (user) => user?.tipo === ROLES.SECRETARIA;
+// Auxiliar de Aprendizagem: perfil próprio, sem as capacidades de professor/gestor/diretora/
+// secretaria abaixo — acompanha alunos específicos (ver utils/auxiliares.js), sem gerenciar
+// nada. Não herda nenhuma das capacidades listadas a seguir.
+export const isAuxiliar = (user) => user?.tipo === ROLES.AUXILIAR;
 
 // --- Capacidades específicas ---
 // Cada capacidade lista explicitamente quem a possui. Nenhuma é herdada por pertencer

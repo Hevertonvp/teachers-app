@@ -41,6 +41,26 @@ export const alunoStatusOptions = [
   { value: 'arquivado', label: 'Arquivado' },
 ];
 
+export const parentescoOptions = [
+  { value: 'mae', label: 'Mãe' },
+  { value: 'pai', label: 'Pai' },
+  { value: 'avo_f', label: 'Avó' },
+  { value: 'avo_m', label: 'Avô' },
+  { value: 'tutor', label: 'Tutor(a)' },
+  { value: 'outro', label: 'Outro' },
+];
+
+// Cadastro mínimo do aluno (não confundir com o preenchimento opcional da Anamnese, que é
+// medido separadamente por `calcularProgressoAnamnese`).
+export const isCadastroBasicoCompleto = (aluno) => !!(
+  aluno?.nome?.trim()
+  && aluno?.escolaId
+  && aluno?.turmaId
+  && aluno?.responsavelNome?.trim()
+  && aluno?.responsavelParentesco
+  && aluno?.responsavelTelefone1?.trim()
+);
+
 export const perguntaTipoOptions = [
   { value: 'texto', label: 'Texto' },
   { value: 'selecao', label: 'Seleção' },
@@ -51,9 +71,6 @@ export const perguntaStatusOptions = [
   { value: 'ativa', label: 'Ativa' },
   { value: 'inativa', label: 'Inativa' },
 ];
-
-// Trimestres do formulário PDI. A mesma pergunta pode ter uma resposta por trimestre.
-export const pdiTrimestres = ['1º trimestre', '2º trimestre', '3º trimestre'];
 
 export const formatDate = (date) => {
   if (!date) return 'Sem registro';

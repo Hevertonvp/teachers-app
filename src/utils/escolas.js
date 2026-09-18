@@ -1,4 +1,4 @@
-import { isDiretora, isProfessor, isSecretaria } from './roles';
+import { isDiretora, isGestor, isProfessor, isSecretaria } from './roles';
 
 // Escolas que o usuário pode acessar. Secretaria retorna null (sentinela = todas as escolas,
 // inclusive inativas, para consulta histórica). Professor/Supervisor: só vínculos com status 'ativo'.
@@ -22,6 +22,17 @@ export const canAccessEscola = (user, escolaId, { escolas, vinculosEscolares }) 
 
   const userEscolaIds = getUserEscolaIds(user, vinculosEscolares);
   return userEscolaIds.includes(Number(escolaId));
+};
+
+// Vínculo do Gestor/Supervisor(a) com a escola, SEM considerar o status da escola — diferente
+// de canAccessEscola, que bloqueia integralmente escolas inativas. Usado no módulo PDI para
+// permitir consulta histórica de escolas inativas vinculadas (a edição continua sendo
+// bloqueada separadamente, checando `escola.status === 'ativa'` onde a ação é executada).
+export const gestorVinculadoEscola = (user, escolaId, { vinculosEscolares }) => {
+  if (!isGestor(user)) return false;
+  return vinculosEscolares.some(vinculo => (
+    vinculo.usuarioTipo === 'gestor' && vinculo.usuarioId === user.id && vinculo.escolaId === Number(escolaId) && vinculo.status === 'ativo'
+  ));
 };
 
 // Filtra uma lista de registros com `escolaId` pela escola ativa.
@@ -51,6 +62,18 @@ export const turmasDoProfessor = (turmas, turmaProfessores, professorId) => {
   const turmaIds = new Set(turmaProfessores.filter(vinculo => vinculo.professorId === professorId).map(vinculo => vinculo.turmaId));
   return turmas.filter(turma => turmaIds.has(turma.id));
 };
+
+// Professores (+ disciplina) vinculados a uma turma, direto de `turmaProfessores` — mesma
+// fonte única usada por `turmasDoProfessor`, sem cadastro manual paralelo. Usado para derivar
+// automaticamente "professores do aluno" a partir da turma (cadastro de aluno e Anamnese).
+export const professoresDaTurma = (turmaProfessores, professores, disciplinas, turmaId) => turmaProfessores
+  .filter(vinculo => vinculo.turmaId === turmaId)
+  .map(vinculo => ({
+    professorId: vinculo.professorId,
+    professor: professores.find(item => item.id === vinculo.professorId),
+    disciplinaId: vinculo.disciplinaId,
+    disciplina: disciplinas.find(item => item.id === vinculo.disciplinaId),
+  }));
 
 export const diretoresDaEscola = (diretores, vinculosEscolares, escolaId, user) => {
   if (escolaId === null) return isSecretaria(user) ? diretores : [];
