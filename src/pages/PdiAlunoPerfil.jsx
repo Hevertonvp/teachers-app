@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { escolaName, inputClass, professorName, turmaName } from '../utils/display';
-import { canAccessEscola, filterByEscola, gestorVinculadoEscola, professoresDaEscola, professoresDaTurma, turmasDoProfessor } from '../utils/escolas';
+import { canAccessEscola, gestorVinculadoEscola, professoresDaEscola, professoresDaTurma } from '../utils/escolas';
 import { formatDate, metaStatusOptions, parentescoOptions, pdiAreas, pdiNivelOptions, pdiTrend } from '../utils/pdi';
 import { historicoAuxiliaresDoAluno, vinculoAtivoDoAluno } from '../utils/auxiliares';
 import { CURRENT_DATE } from '../utils/formAvailability';
@@ -70,8 +70,6 @@ export const PdiAlunoPerfil = () => {
   const isProfessor = isProfessorRole(user);
   const canManagePdi = canManagePedagogico(user);
   const { activeEscolaId } = useEscola();
-  const turmasDaEscola = filterByEscola(turmas, activeEscolaId, user);
-  const availableTurmas = isProfessor ? turmasDoProfessor(turmasDaEscola, turmaProfessores, user.id) : turmasDaEscola;
   const professoresOptions = professoresDaEscola(professores, vinculosEscolares, activeEscolaId, user);
   // Supervisora: consulta permitida mesmo com a escola inativa (histórico), desde que
   // vinculada a ela — diferente de canAccessEscola, que bloqueia integralmente escola inativa.
@@ -146,7 +144,9 @@ export const PdiAlunoPerfil = () => {
     totalAcompanhamentos: acompanhamentos.length,
   };
 
-  if (!aluno || !hasEscolaAccess || (isProfessor && !availableTurmas.some(turma => turma.id === aluno.turmaId))) {
+  // Professor só acessa o perfil de alunos dos quais é o professor responsável — não de
+  // qualquer aluno das turmas em que leciona (ver mesma regra em PdiPage.jsx).
+  if (!aluno || !hasEscolaAccess || (isProfessor && aluno.professorId !== user.id)) {
     return (
       <MainLayout>
         <Card className="py-12 text-center">

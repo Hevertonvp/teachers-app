@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { inputClass, turmaName } from '../utils/display';
-import { canAccessEscola, gestorVinculadoEscola, turmasDoProfessor } from '../utils/escolas';
+import { canAccessEscola, gestorVinculadoEscola } from '../utils/escolas';
 import { CURRENT_DATE, formatFullDate, getFormStatus } from '../utils/formAvailability';
 import { getTrimestreAtual } from '../utils/trimestres';
 import { ACAO_PDI_LABEL, autoriaPdi, autorLabel } from '../utils/pdiHistorico';
@@ -33,7 +33,7 @@ export const FormularioPdiProfessor = () => {
   const { activeEscolaId } = useEscola();
   const {
     pdiAlunos, pdiPerguntas, pdiRespostas, pdiHistoricoPreenchimento, trimestrePeriods, turmas,
-    turmaProfessores, escolas, vinculosEscolares, professores, gestores, formPeriods,
+    escolas, vinculosEscolares, professores, gestores, formPeriods,
     createPdiResposta, updatePdiResposta, registrarPreenchimentoPdi,
   } = useData();
   const [message, setMessage] = useState('');
@@ -43,9 +43,10 @@ export const FormularioPdiProfessor = () => {
   const isProfessorUser = isProfessor(user);
   const isGestorUser = isGestor(user);
 
-  const availableTurmas = isProfessorUser ? turmasDoProfessor(turmas, turmaProfessores, user?.id) : [];
+  // Professor só acessa o Formulário PDI de alunos dos quais é o professor responsável — não
+  // de qualquer aluno das turmas em que leciona (mesma regra em PdiPage.jsx/PdiAlunoPerfil.jsx).
   const professorPodeAcessar = isProfessorUser && !!aluno && isEscolaAplicavel(RECURSOS.PDI, aluno.escolaId)
-    && availableTurmas.some(turma => turma.id === aluno.turmaId)
+    && aluno.professorId === user.id
     && canAccessEscola(user, aluno.escolaId, { escolas, vinculosEscolares });
 
   // Escopo da Supervisora: só a escola ATUALMENTE selecionada (activeEscolaId) e só se

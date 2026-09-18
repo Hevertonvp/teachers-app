@@ -87,7 +87,10 @@ export const PdiPage = () => {
   const [message, setMessage] = useState('');
 
   const alunosDaEscola = filterByEscola(pdiAlunos, activeEscolaId, user);
-  const scopedAlunos = isProfessor ? alunosDaEscola.filter(aluno => availableTurmas.some(turma => turma.id === aluno.turmaId)) : alunosDaEscola;
+  // Professor só vê os alunos PDI dos quais é o professor responsável (aluno.professorId) —
+  // não todos os alunos das turmas em que leciona (uma turma pode ter mais de um professor,
+  // cada um responsável pelos seus próprios alunos PDI).
+  const scopedAlunos = isProfessor ? alunosDaEscola.filter(aluno => aluno.professorId === user.id) : alunosDaEscola;
 
   const alunos = useMemo(() => scopedAlunos.filter(aluno => {
     const alunoTrend = pdiTrend(pdiAcompanhamentos.filter(item => item.alunoId === aluno.id)).key;
