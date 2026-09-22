@@ -1,0 +1,275 @@
+// Schema inicial — núcleo do domínio (Escola, Turma, Disciplina, Pessoa e vínculos), sem PDI
+// completo ainda (Modelo/Aplicação/Ficha/Resposta ficam para uma etapa futura, quando as
+// decisões de negócio pendentes — Gestor em PDI, múltiplos modelos por disciplina, etc. —
+// estiverem fechadas). Ver README.md do backend para o raciocínio de cada decisão de modelagem.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- Enums ------------------------------------------------------------------------------
+
+enum StatusRegistro {
+  ATIVA
+  INATIVA
+}
+
+enum StatusVinculo {
+  ATIVO
+  ENCERRADO
+}
+
+enum StatusPessoa {
+  ATIVO
+  INATIVO
+}
+
+enum StatusAluno {
+  ATIVO
+  ARQUIVADO
+}
+
+enum EtapaEnsino {
+  FUNDAMENTAL
+  EDUCACAO_INFANTIL
+}
+
+enum Turno {
+  MANHA
+  TARDE
+}
+
+enum SegmentoInfantil {
+  CRECHE
+  PRE_ESCOLA
+}
+
+// BercarioI/II e MaternalI/II pertencem ao segmento Creche; PreI/PreII a PreEscola — a
+// coerência é validada na camada de serviço (ver src/domain/turma.ts), não no schema.
+enum NivelInfantil {
+  BERCARIO_I
+  BERCARIO_II
+  MATERNAL_I
+  MATERNAL_II
+  PRE_I
+  PRE_II
+}
+
+// Perfis conhecidos hoje no frontend. Autenticação real (JWT) fica para uma etapa futura —
+// este enum só identifica o papel da Pessoa no domínio.
+enum PerfilPessoa {
+  SECRETARIA
+  GESTOR
+  DIRETORA
+  PROFESSOR
+  AUXILIAR
+}
+
+// Um módulo novo no futuro é só um valor novo aqui — nunca um range de IDs de escola.
+enum ModuloSistema {
+  PDI
+  MENSAGENS
+  FORMULARIO_UM_TERCO
+  CORRECOES
+}
+
+// --- Entidades ----------------------------------------------------------------------------
+
+model Escola {
+  id        Int            @id @default(autoincrement())
+  nome      String         @db.VarChar(200)
+  status    StatusRegistro @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1) // preparado para concorrência otimista (ver README)
+
+  modulos          EscolaModulo[]
+  turmas           Turma[]
+  vinculosEscolares VinculoEscolar[]
+
+  @@map("escolas")
+}
+
+// Relação genérica Escola↔Módulo — nunca uma coluna fixa por módulo (usaPdi/usaMensagens/...).
+model EscolaModulo {
+  id       Int           @id @default(autoincrement())
+  escolaId Int
+  escola   Escola        @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  modulo   ModuloSistema
+  ativo    Boolean       @default(true)
+
+  @@unique([escolaId, modulo])
+  @@map("escola_modulos")
+}
+
+// Lista fechada de disciplinas do PDI. Nenhuma regra de runtime pode assumir um ID fixo
+// (ex.: "Inglês = 6") — só o nome importa para lógica de negócio.
+model Disciplina {
+  id   Int    @id @default(autoincrement())
+  nome String @unique @db.VarChar(100)
+
+  vinculosProfessor ProfessorTurmaDisciplina[]
+
+  @@map("disciplinas")
+}
+
+// Turma nunca é excluída fisicamente — só inativada. A identidade lógica (escola+ano
+// letivo+série/segmento+turno+identificador) precisa ser única mesmo entre turmas inativas —
+// ver identidadeChave abaixo e o comentário completo em src/domain/turma.ts.
+model Turma {
+  id       Int         @id @default(autoincrement())
+  escolaId Int
+  escola   Escola      @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+
+  anoLetivo Int
+  etapa     EtapaEnsino
+
+  // Fundamental
+  anoSerie Int?
+
+  // Educação Infantil
+  segmento SegmentoInfantil?
+  nivel    NivelInfantil?
+
+  turno         Turno
+  identificador Int
+
+  nome   String         @db.VarChar(60)
+  status StatusRegistro @default(ATIVA)
+
+  // Chave técnica de unicidade (string não-nula, calculada em src/domain/turma.ts) — evita o
+  // problema de NULL nunca ser igual a NULL num índice único direto sobre colunas que variam
+  // por etapa (anoSerie só existe no Fundamental; segmento/nivel só na Educação Infantil).
+  identidadeChave String @unique @db.VarChar(100)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  alunos             AlunoPdi[]
+  vinculosProfessor  ProfessorTurmaDisciplina[]
+  vinculosAuxiliar   AuxiliarTurma[]
+
+  @@map("turmas")
+}
+
+// Entidade única para qualquer pessoa/profissional (Secretaria, Gestor/Supervisor, Diretora,
+// Professor, Auxiliar), diferenciada por `perfil` — TPH em vez de 5 tabelas, ver README.md
+// para o raciocínio completo (mesmo usado na tentativa anterior em C#/EF Core).
+model Pessoa {
+  id     Int          @id @default(autoincrement())
+  nome   String       @db.VarChar(200)
+  email  String       @unique @db.VarChar(200)
+  cargo  String?      @db.VarChar(100)
+  perfil PerfilPessoa
+  status StatusPessoa @default(ATIVO)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  vinculosEscolares      VinculoEscolar[]
+  vinculosComoProfessor  ProfessorTurmaDisciplina[] @relation("ProfessorVinculo")
+  vinculosComoAuxiliar   AuxiliarTurma[]            @relation("AuxiliarVinculo")
+
+  @@map("pessoas")
+}
+
+// Vínculo genérico Pessoa↔Escola (qualquer perfil). Nunca apagado fisicamente.
+model VinculoEscolar {
+  id        Int           @id @default(autoincrement())
+  escolaId  Int
+  escola    Escola        @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  pessoaId  Int
+  pessoa    Pessoa        @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  status    StatusVinculo @default(ATIVO)
+  dataInicio DateTime     @db.Date
+  dataFim    DateTime?    @db.Date
+
+  createdAt DateTime @default(now())
+  createdBy String?  @db.VarChar(200)
+
+  @@index([escolaId, pessoaId, status])
+  @@map("vinculos_escolares")
+}
+
+// Vínculo Professor↔Turma↔Disciplina. No máximo um vínculo ATIVO por (turmaId, disciplinaId) —
+// GARANTIDO POR ÍNDICE ÚNICO PARCIAL no Postgres (WHERE status = 'ATIVO'), adicionado à mão na
+// migration porque o Prisma ainda não tem sintaxe declarativa para índice parcial — ver
+// prisma/migrations/.../migration.sql e README.md. O índice abaixo no schema é só o "normal"
+// (não único) para consultas; a garantia de unicidade mora na migration SQL.
+model ProfessorTurmaDisciplina {
+  id           Int    @id @default(autoincrement())
+  turmaId      Int
+  turma        Turma  @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  professorId  Int
+  professor    Pessoa @relation("ProfessorVinculo", fields: [professorId], references: [id], onDelete: Restrict)
+  disciplinaId Int
+  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+
+  status     StatusVinculo @default(ATIVO)
+  dataInicio DateTime      @db.Date
+  dataFim    DateTime?     @db.Date
+
+  @@index([turmaId, disciplinaId])
+  @@index([professorId])
+  @@map("professor_turma_disciplinas")
+}
+
+// Vínculo Auxiliar↔Turma (nunca Auxiliar↔Aluno). No máximo um vínculo ATIVO por turma —
+// mesma estratégia de índice único parcial da ProfessorTurmaDisciplina (ver migration.sql).
+// Um mesmo Auxiliar em várias turmas ativas simultaneamente NÃO é restringido — decisão de
+// negócio ainda pendente (ver README.md).
+model AuxiliarTurma {
+  id         Int    @id @default(autoincrement())
+  turmaId    Int
+  turma      Turma  @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  auxiliarId Int
+  auxiliar   Pessoa @relation("AuxiliarVinculo", fields: [auxiliarId], references: [id], onDelete: Restrict)
+
+  status     StatusVinculo @default(ATIVO)
+  dataInicio DateTime      @db.Date
+  dataFim    DateTime?     @db.Date
+
+  @@index([turmaId])
+  @@index([auxiliarId])
+  @@map("auxiliar_turmas")
+}
+
+// Aluno PDI possui uma única turma regular atual. De propósito NÃO existe escolaId aqui — a
+// escola atual é sempre derivada de turma.escolaId (ver README.md sobre a inconsistência
+// equivalente já existente no mock do frontend, que aqui não pode acontecer).
+model AlunoPdi {
+  id      Int    @id @default(autoincrement())
+  nome    String @db.VarChar(200)
+  turmaId Int
+  turma   Turma  @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+
+  responsavelNome        String @db.VarChar(200)
+  responsavelParentesco  String @db.VarChar(50)
+  responsavelTelefone    String @db.VarChar(30)
+
+  status StatusAluno @default(ATIVO)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  @@index([turmaId])
+  @@map("alunos_pdi")
+}
