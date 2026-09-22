@@ -15,7 +15,7 @@ import {
   professores as professoresIniciais,
   secretarias as secretariasIniciais,
   trimestrePeriodsIniciais,
-  turmas,
+  turmas as turmasIniciais,
   turmaProfessores as turmaProfessoresIniciais,
   vinculosEscolares as vinculosEscolaresIniciais,
 } from '../data/mockData';
@@ -34,6 +34,7 @@ import { existeSobreposicaoNaEscola, MENSAGEM_SOBREPOSICAO_APLICACAO } from '../
 import { pdiSummary } from '../utils/pdi';
 import { canSendMessage } from '../utils/mensagens';
 import { CURRENT_DATE } from '../utils/formAvailability';
+import { nomeTurma, turmaConflitante } from '../utils/turmas';
 
 const DataContext = createContext();
 
@@ -120,6 +121,7 @@ export const DataProvider = ({ children }) => {
   const [formPeriods, setFormPeriods] = useState(formulariosPrazos);
   const [escolas, setEscolas] = useState(escolasIniciais);
   const [vinculosEscolares, setVinculosEscolares] = useState(vinculosEscolaresIniciais);
+  const [turmas, setTurmas] = useState(turmasIniciais);
   const [turmaProfessores, setTurmaProfessores] = useState(turmaProfessoresIniciais);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
@@ -507,6 +509,55 @@ export const DataProvider = ({ children }) => {
     )));
   };
 
+  // --- Gestão de Turmas (Secretaria) ------------------------------------------------------
+  // Turma nunca é excluída fisicamente: tem `status` ('ativa'/'inativa'), preservando o registro
+  // e todos os relacionamentos que apontam para o mesmo `id` (turmaProfessores.turmaId,
+  // pdiAlunos.turmaId, pdiAuxiliaresVinculos.turmaId — ver utils/turmas.js). O nome de exibição
+  // é sempre gerado por nomeTurma(), nunca digitado pela Secretaria.
+  // Mensagem de conflito de identidade — distingue duplicar uma turma ATIVA de tentar recriar
+  // uma que já existe INATIVA (nesse caso a ação correta é reativar, não cadastrar de novo; ver
+  // seção 1/3 do pedido de correção: turma inativa continua ocupando sua identidade histórica).
+  const mensagemConflitoTurma = (conflito) => (conflito.status === 'inativa'
+    ? `Já existe uma turma com essa configuração neste ano letivo (${conflito.nome}, inativa). Reative a turma existente em vez de criar uma nova.`
+    : `Já existe uma turma ativa com essa combinação de escola, ano letivo, série/segmento, turno e identificador (${conflito.nome}).`);
+
+  const createTurma = (payload) => {
+    const conflito = turmaConflitante(turmas, payload);
+    if (conflito) return { ok: false, error: mensagemConflitoTurma(conflito) };
+    const turma = { id: nextId(turmas), ...payload, nome: nomeTurma(payload), status: 'ativa' };
+    setTurmas(prev => [...prev, turma]);
+    return { ok: true, turma };
+  };
+
+  // Reaproveita o `id` e recalcula o nome de exibição a partir dos campos enviados — nunca troca
+  // o id nem remove o registro, então turmaProfessores/pdiAlunos/pdiAuxiliaresVinculos que já
+  // apontam para ele continuam funcionando sem nenhuma alteração.
+  const updateTurma = (id, payload) => {
+    const atual = turmas.find(turma => turma.id === Number(id));
+    if (!atual) return { ok: false, error: 'Turma não encontrada.' };
+    const mesclada = { ...atual, ...payload };
+    const conflito = turmaConflitante(turmas, mesclada, atual.id);
+    if (conflito) return { ok: false, error: mensagemConflitoTurma(conflito) };
+    const turmaAtualizada = { ...mesclada, nome: nomeTurma(mesclada) };
+    setTurmas(prev => prev.map(turma => (turma.id === Number(id) ? turmaAtualizada : turma)));
+    return { ok: true, turma: turmaAtualizada };
+  };
+
+  // Inativar/reativar só muda `status` — nunca apaga a turma nem cascateia para nenhum vínculo
+  // (professor, aluno PDI ou Auxiliar continuam exatamente como estavam).
+  const inativarTurma = (id) => {
+    setTurmas(prev => prev.map(turma => (turma.id === Number(id) ? { ...turma, status: 'inativa' } : turma)));
+  };
+
+  const reativarTurma = (id) => {
+    const atual = turmas.find(turma => turma.id === Number(id));
+    if (!atual) return { ok: false, error: 'Turma não encontrada.' };
+    const conflito = turmaConflitante(turmas, atual, atual.id);
+    if (conflito) return { ok: false, error: `Já existe outra turma (${conflito.nome}, ${conflito.status === 'ativa' ? 'ativa' : 'inativa'}) com essa mesma combinação — ajuste-a antes de reativar esta.` };
+    setTurmas(prev => prev.map(turma => (turma.id === Number(id) ? { ...turma, status: 'ativa' } : turma)));
+    return { ok: true };
+  };
+
   // Vincula um professor a uma disciplina numa turma. No máximo um vínculo ATIVO por
   // (turmaId, disciplinaId) — se já existir outro professor ativo ali, ele é encerrado
   // (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrito, preservando o
@@ -617,6 +668,10 @@ export const DataProvider = ({ children }) => {
     secretarias: secretariasIniciais,
     auxiliares,
     turmas,
+    createTurma,
+    updateTurma,
+    inativarTurma,
+    reativarTurma,
     turmaProfessores,
     disciplinas,
     escolas,

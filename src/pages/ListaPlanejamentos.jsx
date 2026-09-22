@@ -129,7 +129,7 @@ export const ListaPlanejamentos = () => {
                         <p className="text-gray-600 mb-3">{planejamento.descricao}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div>
-                            <p className="text-gray-500">Professor</p>
+                            <p className="text-gray-500">Professor(a)</p>
                             <ProfessorName professor={professor} />
                           </div>
                           <div>

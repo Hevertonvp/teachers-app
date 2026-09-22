@@ -50,7 +50,7 @@ export const Pendencias = () => {
           <div>
             <BackButton />
             <h1 className="mt-3 text-3xl font-bold text-slate-950">Pendências</h1>
-            <p className="mt-2 text-slate-600">Professores com atividades atrasadas nos instrumentos pedagógicos do MVP.</p>
+            <p className="mt-2 text-slate-600">Professores(as) com atividades atrasadas nos instrumentos pedagógicos do MVP.</p>
           </div>
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{filtered.length} registros em atraso</div>
         </div>
@@ -82,7 +82,7 @@ export const Pendencias = () => {
           <Modal title="Detalhes da pendência" onClose={() => setSelected(null)}>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <Card><p className="text-sm text-slate-500">Professor</p><ProfessorName professorId={selected.professorId} /></Card>
+                <Card><p className="text-sm text-slate-500">Professor(a)</p><ProfessorName professorId={selected.professorId} /></Card>
                 <Card><p className="text-sm text-slate-500">Turma</p><p className="font-semibold text-slate-900">{turmaName(turmas, selected.turmaId)}</p></Card>
                 <Card><p className="text-sm text-slate-500">Matéria</p><p className="font-semibold text-slate-900">{disciplinaName(disciplinas, selected.disciplinaId)}</p></Card>
                 <Card><p className="text-sm text-slate-500">Atividade</p><p className="font-semibold text-slate-900">{selected.atividade}</p></Card>

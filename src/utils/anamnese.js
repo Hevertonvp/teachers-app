@@ -35,30 +35,30 @@ export const ESCALA_ASPECTO = [
 // Cargos padrão que aparecem no formulário real para "Responsáveis pela elaboração/
 // atualização do PDI" — cargo e nome são editáveis, e a lista pode ser ampliada.
 export const RESPONSAVEIS_PDI_PADRAO = [
-  'Supervisora Pedagógica',
-  'Professor de Língua Portuguesa',
-  'Professor de Matemática',
-  'Professor de Geografia',
-  'Professor de Educação Física',
-  'Professor de Ciências',
-  'Professor de Ensino Religioso',
-  'Professor de Inglês',
-  'Professor de História',
+  'Supervisor(a) Pedagógico(a)',
+  'Professor(a) de Língua Portuguesa',
+  'Professor(a) de Matemática',
+  'Professor(a) de Geografia',
+  'Professor(a) de Educação Física',
+  'Professor(a) de Ciências',
+  'Professor(a) de Ensino Religioso',
+  'Professor(a) de Inglês',
+  'Professor(a) de História',
   'Auxiliar de Aprendizagem',
 ];
 
 // Cargos que já têm disciplina real no mock (ver src/data/mockData.js) — para estes, o nome é
 // derivado automaticamente de turmaProfessores/professores (turma do aluno), sem digitação
-// manual. Os cargos fora deste mapa (Supervisora Pedagógica, Educação Física, Ensino
+// manual. Os cargos fora deste mapa (Supervisor(a) Pedagógico(a), Educação Física, Ensino
 // Religioso, Inglês, Auxiliar de Aprendizagem) não têm disciplina/entidade correspondente
 // hoje — continuam com nome digitado manualmente até essa lacuna ser resolvida (não decidir
 // isso automaticamente: ver relatório).
 export const CARGO_DISCIPLINA_MAP = {
-  'Professor de Língua Portuguesa': 1,
-  'Professor de Matemática': 2,
-  'Professor de Ciências': 3,
-  'Professor de História': 4,
-  'Professor de Geografia': 5,
+  'Professor(a) de Língua Portuguesa': 1,
+  'Professor(a) de Matemática': 2,
+  'Professor(a) de Ciências': 3,
+  'Professor(a) de História': 4,
+  'Professor(a) de Geografia': 5,
 };
 
 export const ESPECIALIDADES_ACOMPANHAMENTO = [

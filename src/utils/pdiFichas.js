@@ -38,6 +38,18 @@ export const existeSobreposicaoNaEscola = (aplicacoesExistentes, { escolaId, dat
 
 export const MENSAGEM_SOBREPOSICAO_APLICACAO = 'Já existe uma aplicação PDI para esta escola dentro desse período. Escolha uma vigência que não sobreponha a aplicação existente.';
 
+// Mesmo critério de sobreposição de existeSobreposicaoNaEscola, mas devolve a própria aplicação
+// conflitante (não só um booleano) — usado apenas para informar, na mensagem de erro da tela da
+// Secretaria, qual vigência já ocupa o período (ver FormularioPdiPage.jsx). Não é uma nova regra
+// de negócio: é a mesma comparação, só que devolvendo o registro em vez de true/false.
+export const aplicacaoConflitanteNaEscola = (aplicacoesExistentes, { escolaId, dataInicio, dataFim, ignorarId = null }) => (
+  aplicacoesExistentes.find(existente => (
+    existente.escolaId === Number(escolaId)
+    && existente.id !== ignorarId
+    && vigenciasSobrepoem({ dataInicio, dataFim }, existente)
+  )) || null
+);
+
 // Fichas às quais um PROFESSOR tem direito: derivadas só de turmaProfessores (nunca de
 // aluno.professorId) + aplicações da escola da turma + modelo existente para a disciplina do
 // vínculo. Um professor com vínculo em duas disciplinas na mesma turma recebe uma ficha por

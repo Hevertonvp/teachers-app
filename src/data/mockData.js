@@ -111,27 +111,37 @@ export const escolas = [
 // o modelo já está pronto para receber futuramente uma coleção `alunos` real (turmaId, nome,
 // ...) sem precisar mudar a forma de `turmas` — é só passar a somar a partir dela em vez de
 // usar este campo.
+// Enriquecidas in-place com a estrutura nova de Gestão de Turmas (etapa/anoSerie/turno/
+// identificador/anoLetivo/status) — id, nome, ciclo, escolaId e quantidadeAlunos são os mesmos
+// de sempre, nunca recriados, porque turmaProfessores/pdiAlunos/pdiAuxiliaresVinculos já
+// referenciam esses ids (ver GestaoTurmas.jsx e utils/turmas.js).
+//
+// Turmas 1-10 ("4º Ano A", "5º Ano B"...) não têm turno nem identificador numérico codificados
+// no nome original — só "Nº Ano" + uma letra solta, sem informação confiável de manhã/tarde.
+// Por decisão explícita (não inventar), elas ficam com turno/identificador em branco até a
+// Secretaria completar manualmente pela tela de Turmas; o nome atual é preservado como está.
 export const turmas = [
-  { id: 1, nome: '4º Ano A', ciclo: 'Ensino Fundamental', escolaId: 2, quantidadeAlunos: 29 },
-  { id: 2, nome: '4º Ano B', ciclo: 'Ensino Fundamental', escolaId: 3, quantidadeAlunos: 31 },
-  { id: 3, nome: '5º Ano A', ciclo: 'Ensino Fundamental', escolaId: 5, quantidadeAlunos: 30 },
-  { id: 4, nome: '5º Ano B', ciclo: 'Ensino Fundamental', escolaId: 3, quantidadeAlunos: 28 },
-  { id: 5, nome: '6º Ano A', ciclo: 'Ensino Fundamental', escolaId: 6, quantidadeAlunos: 32 },
-  { id: 6, nome: '6º Ano B', ciclo: 'Ensino Fundamental', escolaId: 6, quantidadeAlunos: 27 },
-  { id: 7, nome: '7º Ano A', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 33 },
-  { id: 8, nome: '7º Ano B', ciclo: 'Ensino Fundamental', escolaId: 5, quantidadeAlunos: 26 },
-  { id: 9, nome: '8º Ano A', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 35 },
-  { id: 10, nome: '9º Ano A', ciclo: 'Ensino Fundamental', escolaId: 4, quantidadeAlunos: 25 },
+  { id: 1, nome: '4º Ano A', ciclo: 'Ensino Fundamental', escolaId: 2, quantidadeAlunos: 29, etapa: 'fundamental', anoSerie: 4, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 2, nome: '4º Ano B', ciclo: 'Ensino Fundamental', escolaId: 3, quantidadeAlunos: 31, etapa: 'fundamental', anoSerie: 4, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 3, nome: '5º Ano A', ciclo: 'Ensino Fundamental', escolaId: 5, quantidadeAlunos: 30, etapa: 'fundamental', anoSerie: 5, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 4, nome: '5º Ano B', ciclo: 'Ensino Fundamental', escolaId: 3, quantidadeAlunos: 28, etapa: 'fundamental', anoSerie: 5, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 5, nome: '6º Ano A', ciclo: 'Ensino Fundamental', escolaId: 6, quantidadeAlunos: 32, etapa: 'fundamental', anoSerie: 6, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 6, nome: '6º Ano B', ciclo: 'Ensino Fundamental', escolaId: 6, quantidadeAlunos: 27, etapa: 'fundamental', anoSerie: 6, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 7, nome: '7º Ano A', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 33, etapa: 'fundamental', anoSerie: 7, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 8, nome: '7º Ano B', ciclo: 'Ensino Fundamental', escolaId: 5, quantidadeAlunos: 26, etapa: 'fundamental', anoSerie: 7, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 9, nome: '8º Ano A', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 35, etapa: 'fundamental', anoSerie: 8, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
+  { id: 10, nome: '9º Ano A', ciclo: 'Ensino Fundamental', escolaId: 4, quantidadeAlunos: 25, etapa: 'fundamental', anoSerie: 9, turno: null, identificador: null, anoLetivo: 2026, status: 'ativa' },
   // Turmas de teste do PDI por disciplina (Inglês) — ver turmaProfessores e pdiData.js. Nomes
-  // seguem o padrão real (ex.: "6M1" = 6º ano, turma matutino 1) para facilitar teste manual.
-  { id: 11, nome: '6M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 28 },
-  { id: 12, nome: '6M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 30 },
-  { id: 13, nome: '6T1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 26 },
-  { id: 14, nome: '6M1', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 29 },
-  { id: 15, nome: '8M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 27 },
-  { id: 16, nome: '7M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 31 },
-  { id: 17, nome: '9M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 25 },
-  { id: 18, nome: '9M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 33 },
+  // seguem o padrão real (ex.: "6M1" = 6º ano, turma matutino 1) para facilitar teste manual —
+  // por isso migram com segurança total (série, turno e identificador extraídos do próprio nome).
+  { id: 11, nome: '6M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 28, etapa: 'fundamental', anoSerie: 6, turno: 'manha', identificador: 1, anoLetivo: 2026, status: 'ativa' },
+  { id: 12, nome: '6M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 30, etapa: 'fundamental', anoSerie: 6, turno: 'manha', identificador: 2, anoLetivo: 2026, status: 'ativa' },
+  { id: 13, nome: '6T1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 26, etapa: 'fundamental', anoSerie: 6, turno: 'tarde', identificador: 1, anoLetivo: 2026, status: 'ativa' },
+  { id: 14, nome: '6M1', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 29, etapa: 'fundamental', anoSerie: 6, turno: 'manha', identificador: 1, anoLetivo: 2026, status: 'ativa' },
+  { id: 15, nome: '8M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 27, etapa: 'fundamental', anoSerie: 8, turno: 'manha', identificador: 1, anoLetivo: 2026, status: 'ativa' },
+  { id: 16, nome: '7M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 31, etapa: 'fundamental', anoSerie: 7, turno: 'manha', identificador: 2, anoLetivo: 2026, status: 'ativa' },
+  { id: 17, nome: '9M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 25, etapa: 'fundamental', anoSerie: 9, turno: 'manha', identificador: 1, anoLetivo: 2026, status: 'ativa' },
+  { id: 18, nome: '9M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 33, etapa: 'fundamental', anoSerie: 9, turno: 'manha', identificador: 2, anoLetivo: 2026, status: 'ativa' },
 ];
 
 // Vínculo N:N turma <-> professor, como coleção normalizada (não array embutido nos dois

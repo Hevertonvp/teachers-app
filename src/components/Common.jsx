@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessorName } from './ProfessorName';
 
@@ -140,11 +141,80 @@ export const FormField = ({ label, children }) => (
   </label>
 );
 
-export const EmptyState = ({ title, description }) => (
+export const EmptyState = ({ title, description, children }) => (
   <Card className="py-12 text-center">
     <p className="font-semibold text-slate-800">{title}</p>
     <p className="mt-1 text-sm text-slate-500">{description}</p>
+    {children && <div className="mt-4 flex justify-center">{children}</div>}
   </Card>
+);
+
+// Menu "..." de ações secundárias (editar/excluir/etc.) — mesmo padrão de dropdown já usado no
+// EscolaSelector (fecha ao clicar fora). Usado para tirar ações pouco frequentes da competição
+// visual direta com a ação principal de cada tela/cartão.
+export const ActionMenu = ({ items, label = 'Mais ações' }) => {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen(prev => !prev)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={label}
+        className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+          <circle cx="10" cy="4" r="1.6" />
+          <circle cx="10" cy="10" r="1.6" />
+          <circle cx="10" cy="16" r="1.6" />
+        </svg>
+      </button>
+      <div
+        role="menu"
+        className={`absolute right-0 z-40 mt-1 w-52 origin-top-right rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg transition duration-150 ease-out ${
+          open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
+        }`}
+      >
+        {items.map(item => (
+          <button
+            key={item.label}
+            type="button"
+            role="menuitem"
+            disabled={item.disabled}
+            onClick={() => { setOpen(false); item.onClick(); }}
+            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              item.variant === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Botões pequenos e discretos de "mover" (reordenar), sem peso visual de ação primária.
+export const OrderButtons = ({ onUp, onDown, upDisabled, downDisabled }) => (
+  <div className="flex shrink-0 flex-col overflow-hidden rounded-lg border border-slate-200">
+    <button type="button" onClick={onUp} disabled={upDisabled} aria-label="Mover para cima" className="grid h-6 w-8 place-items-center text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30">
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true"><path fillRule="evenodd" d="M10 6.5a.75.75 0 01.53.22l4.25 4.25a.75.75 0 11-1.06 1.06L10 8.31l-3.72 3.72a.75.75 0 11-1.06-1.06l4.25-4.25A.75.75 0 0110 6.5z" clipRule="evenodd" /></svg>
+    </button>
+    <button type="button" onClick={onDown} disabled={downDisabled} aria-label="Mover para baixo" className="grid h-6 w-8 place-items-center border-t border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30">
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true"><path fillRule="evenodd" d="M10 13.5a.75.75 0 01-.53-.22l-4.25-4.25a.75.75 0 111.06-1.06L10 11.69l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-.53.22z" clipRule="evenodd" /></svg>
+    </button>
+  </div>
 );
 
 export const ConfirmDialog = ({ title, message, onCancel, onConfirm, confirmLabel = 'Excluir' }) => (

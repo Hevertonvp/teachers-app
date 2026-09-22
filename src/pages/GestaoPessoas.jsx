@@ -297,9 +297,9 @@ export const GestaoPessoas = () => {
   ];
 
   const tabs = [
-    { key: 'professores', label: 'Professores' },
-    { key: 'supervisores', label: 'Supervisores' },
-    { key: 'diretores', label: 'Diretores' },
+    { key: 'professores', label: 'Professores(as)' },
+    { key: 'supervisores', label: 'Supervisores(as)' },
+    { key: 'diretores', label: 'Diretores(as)' },
   ];
 
   return (
@@ -307,7 +307,7 @@ export const GestaoPessoas = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Gestão de Pessoas</h1>
-          <p className="mt-2 max-w-3xl text-slate-600">Cadastre, edite e gerencie os vínculos de professores, supervisores e diretores com as escolas da rede.</p>
+          <p className="mt-2 max-w-3xl text-slate-600">Cadastre, edite e gerencie os vínculos de professores(as), supervisores(as) e diretores(as) com as escolas da rede.</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -324,8 +324,8 @@ export const GestaoPessoas = () => {
 
         {tab === 'professores' && (
           <PessoasManager
-            title="Professores"
-            description="Cadastro dos professores da rede."
+            title="Professores(as)"
+            description="Cadastro dos professores(as) da rede."
             usuarioTipo="professor"
             records={professoresComEscolas}
             fields={professorFields}
@@ -336,14 +336,14 @@ export const GestaoPessoas = () => {
             vinculosEscolares={vinculosEscolares}
             createVinculoEscolar={createVinculoEscolar}
             desvincularEscola={desvincularEscola}
-            emptyDescription="Cadastre o primeiro professor da rede."
+            emptyDescription="Cadastre o(a) primeiro(a) professor(a) da rede."
           />
         )}
 
         {tab === 'supervisores' && (
           <PessoasManager
-            title="Supervisores"
-            description="Cadastro dos supervisores responsáveis pela gestão operacional das escolas vinculadas."
+            title="Supervisores(as)"
+            description="Cadastro dos supervisores(as) responsáveis pela gestão operacional das escolas vinculadas."
             usuarioTipo="gestor"
             records={gestores}
             fields={cargoFields}
@@ -354,14 +354,14 @@ export const GestaoPessoas = () => {
             vinculosEscolares={vinculosEscolares}
             createVinculoEscolar={createVinculoEscolar}
             desvincularEscola={desvincularEscola}
-            emptyDescription="Cadastre o primeiro supervisor da rede."
+            emptyDescription="Cadastre o(a) primeiro(a) supervisor(a) da rede."
           />
         )}
 
         {tab === 'diretores' && (
           <PessoasManager
-            title="Diretores"
-            description="Cadastro dos diretores responsáveis por cada escola."
+            title="Diretores(as)"
+            description="Cadastro dos diretores(as) responsáveis por cada escola."
             usuarioTipo="diretora"
             records={diretores}
             fields={cargoFields}
@@ -372,7 +372,7 @@ export const GestaoPessoas = () => {
             vinculosEscolares={vinculosEscolares}
             createVinculoEscolar={createVinculoEscolar}
             desvincularEscola={desvincularEscola}
-            emptyDescription="Cadastre o primeiro diretor da rede."
+            emptyDescription="Cadastre o(a) primeiro(a) diretor(a) da rede."
           />
         )}
       </div>

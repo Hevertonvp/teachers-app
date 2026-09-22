@@ -111,13 +111,13 @@ export const LoginPage = () => {
               onClick={() => preencherDados('professor')}
               className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
             >
-              Professor
+              Professor(a)
             </button>
             <button
               onClick={() => preencherDados('gestor')}
               className="w-full px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
             >
-              Gestor/Supervisor
+              Gestor(a)/Supervisor(a)
             </button>
             <button
               onClick={() => preencherDados('secretaria')}
@@ -129,7 +129,7 @@ export const LoginPage = () => {
               onClick={() => preencherDados('diretora')}
               className="w-full px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium"
             >
-              Diretora
+              Diretor(a)
             </button>
             <button
               onClick={() => preencherDados('auxiliar')}

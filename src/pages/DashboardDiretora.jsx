@@ -43,7 +43,7 @@ export const DashboardDiretora = () => {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Visão das escolas vinculadas</p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-950">Dashboard da Diretora</h1>
+              <h1 className="mt-2 text-3xl font-bold text-slate-950">Dashboard do(a) Diretor(a)</h1>
               <p className="mt-2 max-w-2xl text-slate-600">{activeEscolaId === null ? 'Indicadores agregados das escolas sob sua responsabilidade.' : 'Indicadores agregados da escola selecionada.'}</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -88,7 +88,7 @@ export const DashboardDiretora = () => {
           </Card>
 
           <Card>
-            <h2 className="text-xl font-bold text-slate-950">Supervisoras</h2>
+            <h2 className="text-xl font-bold text-slate-950">Supervisores(as)</h2>
             <p className="mt-1 text-sm text-slate-600">Profissionais responsáveis pelas escolas vinculadas.</p>
             <div className="mt-5 space-y-3">
               {supervisores.length ? supervisores.map(supervisor => (

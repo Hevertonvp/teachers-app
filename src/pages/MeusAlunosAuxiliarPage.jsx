@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { escolaName, turmaName } from '../utils/display';
 import { formatDate } from '../utils/pdi';
-import { alunosDoAuxiliar, vinculoAtivoDaTurma } from '../utils/auxiliares';
+import { acessoAtivoDaTurma, alunosDoAuxiliar } from '../utils/auxiliares';
 import { isAuxiliar } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 
@@ -16,8 +16,8 @@ export const MeusAlunosAuxiliarPage = () => {
 
   if (!isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
 
-  const meusAlunos = alunosDoAuxiliar(pdiAuxiliaresVinculos, user.id, pdiAlunos)
-    .map(aluno => ({ aluno, vinculo: vinculoAtivoDaTurma(pdiAuxiliaresVinculos, aluno.turmaId) }));
+  const meusAlunos = alunosDoAuxiliar(pdiAuxiliaresVinculos, user.id, pdiAlunos, turmas)
+    .map(aluno => ({ aluno, vinculo: acessoAtivoDaTurma(pdiAuxiliaresVinculos, turmas, aluno.turmaId) }));
 
   return (
     <MainLayout>

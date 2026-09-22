@@ -19,6 +19,7 @@ import { CalendarioPedagogico } from './pages/CalendarioPedagogico';
 import { ListaProfessores } from './pages/ListaProfessores';
 import { GestaoEscolas } from './pages/GestaoEscolas';
 import { GestaoPessoas } from './pages/GestaoPessoas';
+import { GestaoTurmas } from './pages/GestaoTurmas';
 import { AcompanhamentoEscolar } from './pages/AcompanhamentoEscolar';
 import { CriarFormularioUmTerco, FormularioUmTerco } from './pages/FormularioUmTerco';
 import { PdiHomePage } from './pages/PdiHomePage';
@@ -77,6 +78,7 @@ const AppRoutes = () => <Routes>
   <Route path="/calendario" element={<ProtectedRoute><CalendarioPedagogico /></ProtectedRoute>} />
   <Route path="/gestao-professores" element={<ProtectedRoute><ListaProfessores /></ProtectedRoute>} />
   <Route path="/escolas" element={<ProtectedRoute><GestaoEscolas /></ProtectedRoute>} />
+  <Route path="/turmas" element={<ProtectedRoute><GestaoTurmas /></ProtectedRoute>} />
   <Route path="/pessoas" element={<ProtectedRoute><GestaoPessoas /></ProtectedRoute>} />
   <Route path="/acompanhamento-escolar" element={<ProtectedRoute><AcompanhamentoEscolar /></ProtectedRoute>} />
   <Route path="/notificacoes-atraso" element={<ProtectedRoute><Pendencias /></ProtectedRoute>} />

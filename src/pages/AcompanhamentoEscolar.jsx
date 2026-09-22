@@ -80,7 +80,7 @@ export const AcompanhamentoEscolar = () => {
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard label="Alunos" value={resumo.totalAlunos} description="matriculados" />
-            <StatCard label="Professores" value={totalProfessoresEscola} description="vinculados" />
+            <StatCard label="Professores(as)" value={totalProfessoresEscola} description="vinculados" />
             <InfoCard label="Diretor(a)" description="responsável pela escola">
               {diretoresEscola.length
                 ? diretoresEscola.map(diretor => <PersonName key={diretor.id} nome={diretor.nome} cargo={diretor.cargo} />)

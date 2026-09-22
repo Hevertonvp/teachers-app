@@ -3,7 +3,7 @@ import { Button, Card } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { escolaName, turmaName } from '../utils/display';
-import { vinculoAtivoDaTurma } from '../utils/auxiliares';
+import { acessoAtivoDaTurma } from '../utils/auxiliares';
 import { formatDate, parentescoOptions } from '../utils/pdi';
 import { isAuxiliar } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
@@ -19,8 +19,9 @@ export const AuxiliarAlunoPerfilPage = () => {
 
   const aluno = pdiAlunos.find(item => item.id === Number(id));
   // Acesso derivado da turma atual do aluno — nunca de um vínculo individual histórico com o
-  // aluno (ver utils/auxiliares.js). Se o aluno mudar de turma, o acesso muda junto.
-  const vinculoAtivo = aluno ? vinculoAtivoDaTurma(pdiAuxiliaresVinculos, aluno.turmaId) : null;
+  // aluno (ver utils/auxiliares.js). Se o aluno mudar de turma, o acesso muda junto. Exige
+  // também que a turma esteja ativa: histórico de vínculo preservado não é acesso preservado.
+  const vinculoAtivo = aluno ? acessoAtivoDaTurma(pdiAuxiliaresVinculos, turmas, aluno.turmaId) : null;
   const podeAcessar = isAuxiliar(user) && !!vinculoAtivo && vinculoAtivo.auxiliarId === user.id;
 
   if (!podeAcessar) {

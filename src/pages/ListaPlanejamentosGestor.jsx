@@ -31,7 +31,7 @@ export const ListaPlanejamentosGestor = () => {
         <div>
           <BackButton />
           <h1 className="mt-3 text-3xl font-bold text-slate-700">Planejamentos da Escola</h1>
-          <p className="text-gray-600 mt-2">Acompanhe os planejamentos pedagógicos de todos os professores</p>
+          <p className="text-gray-600 mt-2">Acompanhe os planejamentos pedagógicos de todos(as) os(as) professores(as)</p>
         </div>
 
         {/* Estatísticas */}
@@ -111,7 +111,7 @@ export const ListaPlanejamentosGestor = () => {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                         <div>
-                          <p className="text-gray-500">Professor</p>
+                          <p className="text-gray-500">Professor(a)</p>
                           <ProfessorName professor={professor} />
                         </div>
                         <div>

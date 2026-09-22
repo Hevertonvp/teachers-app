@@ -85,7 +85,7 @@ export const DashboardGestor = () => {
               <p className="mt-2 max-w-2xl text-slate-600">Acompanhamento dos instrumentos pedagógicos prioritários, pendências e movimentações recentes da rede.</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <StatCard label="Professores" value={indicadores.totalProfessores} description="corpo docente ativo" />
+              <StatCard label="Professores(as)" value={indicadores.totalProfessores} description="corpo docente ativo" />
               <StatCard label="Com pendências" value={indicadores.professoresComPendencias} description="professores em atraso" />
               <StatCard label="Registros" value={formulariosDaEscola.length + pdisDaEscola.length + correcoesDaEscola.length} description="instrumentos monitorados" />
             </div>

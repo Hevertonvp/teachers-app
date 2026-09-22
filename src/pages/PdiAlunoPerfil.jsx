@@ -297,17 +297,17 @@ export const PdiAlunoPerfil = () => {
               <span className="text-sm text-slate-500">Início: {formatDate(aluno.dataInicio)}</span>
             </div>
             <div className="mt-4 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-              <div><strong>Professor responsável:</strong> <ProfessorName professorId={aluno.professorId} className="mt-1" /></div>
+              <div><strong>Professor(a) responsável:</strong> <ProfessorName professorId={aluno.professorId} className="mt-1" /></div>
               <p><strong>Entrada na rede:</strong> {formatDate(aluno.dataEntradaRede)}</p>
               <p><strong>Condição informada:</strong> {aluno.condicaoInformada || 'Não informada'}</p>
               <p><strong>CID:</strong> {aluno.cid || 'Não informado'}</p>
               <p><strong>Responsável legal:</strong> {aluno.responsavelNome || 'Não informado'}{aluno.responsavelParentesco ? ` (${parentescoOptions.find(item => item.value === aluno.responsavelParentesco)?.label || aluno.responsavelParentesco})` : ''}</p>
               <p><strong>Telefone do responsável:</strong> {aluno.responsavelTelefone1 || 'Não informado'}{aluno.responsavelTelefone2 ? ` / ${aluno.responsavelTelefone2}` : ''}</p>
               <div className="md:col-span-2">
-                <strong>Professores da turma:</strong>
+                <strong>Professores(as) da turma:</strong>
                 <ul className="mt-1 space-y-0.5">
                   {professoresDaTurma(turmaProfessores, professores, disciplinas, aluno.turmaId).map(vinculo => (
-                    <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor não encontrado'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>
+                    <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor(a) não encontrado(a)'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>
                   ))}
                 </ul>
               </div>
@@ -550,14 +550,14 @@ export const PdiAlunoPerfil = () => {
                   <option value="" disabled>{alunoForm.escolaId ? 'Selecione a turma' : 'Selecione a escola primeiro'}</option>
                   {turmas.filter(item => item.escolaId === Number(alunoForm.escolaId)).map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
                 </select></FormField>
-                {!isProfessor && <FormField label="Professor responsável"><select className={inputClass} value={alunoForm.professorId} onChange={event => setAlunoForm(prev => ({ ...prev, professorId: Number(event.target.value) }))}>{professoresOptions.map(professor => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></FormField>}
+                {!isProfessor && <FormField label="Professor(a) responsável"><select className={inputClass} value={alunoForm.professorId} onChange={event => setAlunoForm(prev => ({ ...prev, professorId: Number(event.target.value) }))}>{professoresOptions.map(professor => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></FormField>}
                 <div className="md:col-span-2">
-                  <p className="mb-1.5 text-sm font-semibold text-slate-700">Professores da turma</p>
+                  <p className="mb-1.5 text-sm font-semibold text-slate-700">Professores(as) da turma</p>
                   {(() => {
                     const vinculos = alunoForm.turmaId ? professoresDaTurma(turmaProfessores, professores, disciplinas, Number(alunoForm.turmaId)) : [];
                     return vinculos.length === 0
-                      ? <p className="text-sm text-slate-500">Selecione uma turma para ver os professores vinculados.</p>
-                      : <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">{vinculos.map(vinculo => <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor não encontrado'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>)}</ul>;
+                      ? <p className="text-sm text-slate-500">Selecione uma turma para ver os professores(as) vinculados(as).</p>
+                      : <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">{vinculos.map(vinculo => <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor(a) não encontrado(a)'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>)}</ul>;
                   })()}
                 </div>
                 <div className="md:col-span-2 grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-2">

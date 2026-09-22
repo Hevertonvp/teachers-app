@@ -73,7 +73,7 @@ export const VisualizarPlanejamento = () => {
         {/* Informações Principais */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
-            <p className="text-gray-600 text-sm mb-1">Professor</p>
+            <p className="text-gray-600 text-sm mb-1">Professor(a)</p>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center font-semibold text-primary-700 text-xs">{professor?.avatar}</div>
               <ProfessorName professor={professor} />

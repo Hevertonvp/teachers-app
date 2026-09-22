@@ -46,3 +46,7 @@ export const canViewSupervisoras = (user) => isDiretora(user);
 // ativar/inativar. Distinta de canAcompanharProfessores (que é acompanhamento/monitoramento,
 // compartilhado com Supervisor) — Secretaria não vira "supervisor com mais permissão".
 export const canManagePessoas = (user) => isSecretaria(user);
+
+// Gestão de Turmas (criar/editar/inativar) — exclusiva da Secretaria, não herdada por
+// canManagePedagogico (Gestor não cria/edita turma, só usa as que a Secretaria cadastrou).
+export const canManageTurmas = (user) => isSecretaria(user);

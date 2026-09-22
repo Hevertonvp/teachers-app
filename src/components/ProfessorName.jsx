@@ -14,7 +14,7 @@ export const ProfessorName = ({ professor, professorId, className = '', nameClas
   }
 
   const professorDisciplinas = resolvedProfessor.disciplinas?.length
-    ? `Prof. ${resolvedProfessor.disciplinas.map(id => disciplinaName(disciplinas, id)).join(' · ')}`
+    ? `Prof(a). ${resolvedProfessor.disciplinas.map(id => disciplinaName(disciplinas, id)).join(' · ')}`
     : 'Disciplina não informada';
 
   return (

@@ -191,7 +191,7 @@ export const AnamnesePage = () => {
                   return (
                     <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr] sm:items-end">
                       <FormField label="Cargo"><input className={inputClass} value={item.cargo} disabled /></FormField>
-                      <FormField label="Nome"><input className={inputClass} value={professor?.nome || 'Nenhum professor vinculado a esta disciplina na turma'} disabled /></FormField>
+                      <FormField label="Nome"><input className={inputClass} value={professor?.nome || 'Nenhum(a) professor(a) vinculado(a) a esta disciplina na turma'} disabled /></FormField>
                     </div>
                   );
                 }
@@ -213,7 +213,7 @@ export const AnamnesePage = () => {
                 );
               })}
               <Button type="button" variant="outline" size="sm" onClick={addResponsavel}>+ Adicionar responsável</Button>
-              <p className="text-xs text-slate-500">Supervisora Pedagógica, Educação Física, Ensino Religioso e Inglês ainda não têm disciplina/entidade correspondente no sistema — continuam com nome digitado manualmente até essa definição.</p>
+              <p className="text-xs text-slate-500">Supervisor(a) Pedagógico(a), Educação Física, Ensino Religioso e Inglês ainda não têm disciplina/entidade correspondente no sistema — continuam com nome digitado manualmente até essa definição.</p>
             </div>
           </AccordionSection>
 

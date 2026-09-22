@@ -35,13 +35,13 @@ const ProfessoresDaTurmaPreview = ({ turmaProfessores, professores, disciplinas,
   const vinculos = turmaId ? professoresDaTurma(turmaProfessores, professores, disciplinas, Number(turmaId)) : [];
   return (
     <div className="md:col-span-2">
-      <p className="mb-1.5 text-sm font-semibold text-slate-700">Professores da turma</p>
+      <p className="mb-1.5 text-sm font-semibold text-slate-700">Professores(as) da turma</p>
       {vinculos.length === 0
         ? <p className="text-sm text-slate-500">Selecione uma turma para ver os professores vinculados.</p>
         : (
           <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
             {vinculos.map(vinculo => (
-              <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor não encontrado'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>
+              <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor(a) não encontrado(a)'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>
             ))}
           </ul>
         )}

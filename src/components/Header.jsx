@@ -5,6 +5,15 @@ import { EscolaSelector } from './EscolaSelector';
 import { ProfessorName } from './ProfessorName';
 import { useNavigate } from 'react-router-dom';
 
+// Rótulo exibido do tipo de conta logada — nomes de cargo valem para os dois gêneros.
+const TIPO_LABEL = {
+  professor: 'Professor(a)',
+  gestor: 'Gestor(a)/Supervisor(a)',
+  diretora: 'Diretor(a)',
+  secretaria: 'Secretaria',
+  auxiliar: 'Auxiliar',
+};
+
 export const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -56,7 +65,7 @@ export const Header = ({ onMenuClick }) => {
             ) : (
               <p className="text-sm font-semibold text-slate-800">{user?.nome}</p>
             )}
-            <p className="text-xs text-slate-500 capitalize">{user?.tipo}</p>
+            <p className="text-xs text-slate-500">{TIPO_LABEL[user?.tipo] || user?.tipo}</p>
           </div>
           <div className="hidden h-10 w-10 place-items-center rounded-full bg-teal-100 font-semibold text-teal-800 sm:grid">
             {(user?.avatar || user?.initials)}

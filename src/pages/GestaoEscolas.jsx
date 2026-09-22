@@ -25,7 +25,7 @@ const VinculosModal = ({ escola, professores, gestores, vinculosEscolares, creat
     <Modal title={`Vínculos - ${escola.nome}`} onClose={onClose}>
       <div className="space-y-6">
         <div>
-          <p className="mb-2 text-sm font-semibold text-slate-700">Supervisores</p>
+          <p className="mb-2 text-sm font-semibold text-slate-700">Supervisores(as)</p>
           <div className="space-y-2">
             {gestores.map(gestor => (
               <label key={gestor.id} className="flex items-center gap-2 text-sm text-slate-700">
@@ -36,7 +36,7 @@ const VinculosModal = ({ escola, professores, gestores, vinculosEscolares, creat
           </div>
         </div>
         <div>
-          <p className="mb-2 text-sm font-semibold text-slate-700">Professores</p>
+          <p className="mb-2 text-sm font-semibold text-slate-700">Professores(as)</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {professores.map(professor => (
               <label key={professor.id} className="flex items-center gap-2 text-sm text-slate-700">
