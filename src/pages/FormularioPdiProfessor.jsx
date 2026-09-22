@@ -1,17 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, FormField, Modal } from '../components/Common';
 import { SegmentedToggle } from '../components/AnamneseFields';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { useEscola } from '../context/EscolaContext';
 import { inputClass, turmaName } from '../utils/display';
 import { canAccessEscola, gestorVinculadoEscola } from '../utils/escolas';
-import { CURRENT_DATE, formatFullDate, getFormStatus } from '../utils/formAvailability';
-import { getTrimestreAtual } from '../utils/trimestres';
-import { ACAO_PDI_LABEL, autoriaPdi, autorLabel } from '../utils/pdiHistorico';
+import { formatFullDate, getFormStatus } from '../utils/formAvailability';
+import { snapshotDaDisciplina } from '../utils/pdiFichas';
+import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
+import { ACAO_PDI_LABEL, autoriaFicha, autorLabel } from '../utils/pdiHistorico';
 import { isGestor, isProfessor } from '../utils/roles';
-import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 import { MainLayout } from '../layouts/Layouts';
 
 const answerFromResposta = (question, resposta) => {
@@ -26,188 +25,190 @@ const answerFromResposta = (question, resposta) => {
 
 const formatDateTime = (iso) => new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
+// Agrupa as perguntas por seção/subseção preservando a ordem em que aparecem no modelo —
+// genérico para qualquer disciplina, não assume nenhuma seção específica.
+const agruparPorSecao = (questions) => {
+  const secoes = [];
+  questions.forEach(question => {
+    const secaoNome = question.secao || 'Perguntas';
+    let secao = secoes.find(item => item.nome === secaoNome);
+    if (!secao) { secao = { nome: secaoNome, subsecoes: [] }; secoes.push(secao); }
+    const subsecaoNome = question.subsecao || null;
+    let subsecao = secao.subsecoes.find(item => item.nome === subsecaoNome);
+    if (!subsecao) { subsecao = { nome: subsecaoNome, questions: [] }; secao.subsecoes.push(subsecao); }
+    subsecao.questions.push(question);
+  });
+  return secoes;
+};
+
 export const FormularioPdiProfessor = () => {
-  const { id } = useParams();
+  const { aplicacaoId, disciplinaId, alunoId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeEscolaId } = useEscola();
   const {
-    pdiAlunos, pdiPerguntas, pdiRespostas, pdiHistoricoPreenchimento, trimestrePeriods, turmas,
-    escolas, vinculosEscolares, professores, gestores, formPeriods,
-    createPdiResposta, updatePdiResposta, registrarPreenchimentoPdi,
+    pdiAlunos, pdiAplicacoes, pdiFichaRespostas, pdiFichaHistorico, turmas, turmaProfessores,
+    disciplinas, escolas, vinculosEscolares, professores, gestores,
+    salvarRespostaFicha, registrarPreenchimentoFicha,
   } = useData();
-  const [message, setMessage] = useState('');
   const [showHistorico, setShowHistorico] = useState(false);
 
-  const aluno = pdiAlunos.find(item => item.id === Number(id));
+  const aplicacao = pdiAplicacoes.find(item => item.id === Number(aplicacaoId));
+  const snapshot = aplicacao ? snapshotDaDisciplina(aplicacao, disciplinaId) : null;
+  const aluno = pdiAlunos.find(item => item.id === Number(alunoId));
+  const turma = aluno ? turmas.find(item => item.id === aluno.turmaId) : null;
+  const disciplina = disciplinas.find(item => item.id === Number(disciplinaId));
+
   const isProfessorUser = isProfessor(user);
   const isGestorUser = isGestor(user);
 
-  // Professor só acessa o Formulário PDI de alunos dos quais é o professor responsável — não
-  // de qualquer aluno das turmas em que leciona (mesma regra em PdiPage.jsx/PdiAlunoPerfil.jsx).
-  const professorPodeAcessar = isProfessorUser && !!aluno && isEscolaAplicavel(RECURSOS.PDI, aluno.escolaId)
-    && aluno.professorId === user.id
-    && canAccessEscola(user, aluno.escolaId, { escolas, vinculosEscolares });
+  // Professor: só acessa quando existe vínculo turma+professor+disciplina em turmaProfessores —
+  // nunca mais via aluno.professorId (ver seção 9/10 do pedido).
+  const professorPodeAcessar = isProfessorUser && !!aluno && !!turma && !!aplicacao && turma.escolaId === aplicacao.escolaId
+    && turmaProfessores.some(vinculo => vinculo.turmaId === turma.id && vinculo.professorId === user.id && vinculo.disciplinaId === Number(disciplinaId) && vinculo.status === 'ativo')
+    && canAccessEscola(user, turma.escolaId, { escolas, vinculosEscolares });
 
-  // Escopo da Supervisora: só a escola ATUALMENTE selecionada (activeEscolaId) e só se
-  // vinculada a ela — nunca "todas as minhas escolas". Diferente do Professor, a consulta
-  // funciona mesmo com a escola inativa; a edição é bloqueada separadamente (`escolaAtiva`).
-  const gestorPodeVisualizar = isGestorUser && !!aluno && isEscolaAplicavel(RECURSOS.PDI, aluno.escolaId)
-    && aluno.escolaId === activeEscolaId
-    && gestorVinculadoEscola(user, aluno.escolaId, { vinculosEscolares });
+  // Gestor/Supervisor: escopo é a escola da aplicação, sem exigir vínculo de "leciona" — ele
+  // supervisiona, podendo preencher em nome de qualquer disciplina com modelo configurado.
+  const gestorPodeVisualizar = isGestorUser && !!aluno && !!turma && !!aplicacao && turma.escolaId === aplicacao.escolaId
+    && gestorVinculadoEscola(user, aplicacao.escolaId, { vinculosEscolares });
 
   const isAllowed = professorPodeAcessar || gestorPodeVisualizar;
-  // Vigência do PDI: prazo PADRÃO, o mesmo para todas as escolas selecionadas em "Gerenciar
-  // formulário" (Secretaria) — não é mais individual por aluno. Uma linha por escola em
-  // formPeriods, mas todas atualizadas juntas (ver FormularioPdiPage.jsx, updateFormPeriodsForEscolas).
-  const period = formPeriods.find(item => item.id === 'pdi' && item.escolaId === aluno?.escolaId);
-  const isActive = period && getFormStatus(period.startDate, period.endDate) === 'active';
-  const escolaAtiva = aluno ? escolas.find(item => item.id === aluno.escolaId)?.status === 'ativa' : false;
-  const questions = [...pdiPerguntas].filter(question => question.status === 'ativa').sort((left, right) => Number(left.ordem) - Number(right.ordem));
-  // O trimestre não é escolhido pela Professora: é sempre o período vigente na data atual,
-  // configurado pela Secretaria em Configurações (ver utils/trimestres.js getTrimestreAtual).
-  const trimestre = getTrimestreAtual(trimestrePeriods, CURRENT_DATE);
-  // O registro é sempre do professor responsável do aluno (aluno.professorId) — quando a
-  // Supervisora preenche/corrige, ela edita o MESMO preenchimento, nunca cria um paralelo.
-  const professorIdAlvo = aluno?.professorId;
+  // `questions` precisa existir mesmo quando a ficha não é válida, porque o useState abaixo tem
+  // que ser chamado sempre, na mesma ordem (regras de hooks) — o "return" de "não encontrada"
+  // só pode acontecer DEPOIS de todos os hooks já terem sido chamados.
+  const questions = snapshot ? [...snapshot.perguntas].filter(question => question.status === 'ativa').sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
 
   const [answers, setAnswers] = useState(() => Object.fromEntries(questions.map(question => {
-    const resposta = trimestre && professorIdAlvo
-      ? pdiRespostas.find(item => item.alunoId === Number(id) && item.professorId === professorIdAlvo && item.perguntaId === question.id && item.trimestre === trimestre)
-      : null;
+    const resposta = pdiFichaRespostas.find(item => (
+      item.aplicacaoId === Number(aplicacaoId) && item.disciplinaId === Number(disciplinaId) && item.alunoId === Number(alunoId) && item.perguntaId === question.id
+    ));
     return [question.id, answerFromResposta(question, resposta)];
   })));
 
-  if (!isAllowed || !period) {
-    return <MainLayout><Card className="py-12 text-center"><p className="font-semibold text-slate-800">Aluno não encontrado</p><Button className="mt-4" onClick={() => navigate('/pdi/alunos')}>Voltar para alunos</Button></Card></MainLayout>;
+  if (!aluno || !aplicacao || !snapshot || !isAllowed) {
+    return <MainLayout><Card className="py-12 text-center"><p className="font-semibold text-slate-800">Ficha não encontrada</p><Button className="mt-4" onClick={() => navigate(-1)}>Voltar</Button></Card></MainLayout>;
   }
 
-  // Escola inativa vinculada à Supervisora: consulta sempre permitida, edição nunca.
+  const escolaAtiva = escolas.find(item => item.id === aplicacao.escolaId)?.status === 'ativa';
+  const vigencia = getFormStatus(aplicacao.dataInicio, aplicacao.dataFim);
   const podeEditar = escolaAtiva;
-  const podePreencher = podeEditar && isActive && !!trimestre;
-  const autoria = trimestre && professorIdAlvo ? autoriaPdi(pdiHistoricoPreenchimento, aluno.id, professorIdAlvo, trimestre) : null;
+  const podePreencher = podeEditar && vigencia === 'active';
+  const autoria = autoriaFicha(pdiFichaHistorico, aplicacaoId, disciplinaId, alunoId);
 
   const updateAnswer = (question, value) => setAnswers(prev => ({ ...prev, [question.id]: value }));
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (!trimestre || !podePreencher) return;
-    const existingAnswers = pdiRespostas.filter(answer => answer.alunoId === Number(id) && answer.professorId === professorIdAlvo && answer.trimestre === trimestre);
-    questions.forEach(question => {
-      const current = answers[question.id];
-      const existing = existingAnswers.find(answer => answer.perguntaId === question.id);
-      const resposta = question.tipoResposta === 'numero' ? (current.valor === '' ? '' : Number(current.valor))
-        : question.tipoResposta === 'selecao' ? current.opcao
-        : question.tipoResposta === 'marcacao' ? current.marcado
-        : current.texto;
-      const complementarAtivo = question.complementar && (question.tipoResposta === 'marcacao' ? current.marcado === true : current.opcao === question.complementar.gatilho);
-      const payload = { alunoId: aluno.id, professorId: professorIdAlvo, perguntaId: question.id, trimestre, data: period.endDate, resposta, complementarTexto: complementarAtivo ? current.complementar : '' };
-      if (existing) updatePdiResposta(existing.id, payload);
-      else createPdiResposta(payload);
+  // Salva a resposta de UMA pergunta imediatamente (não só no envio final) — assim, um
+  // formulário preenchido pela metade não se perde: cada resposta já fica gravada como
+  // rascunho assim que o professor sai do campo/marca a opção, e o status da ficha em "Meus
+  // PDIs" passa a refletir isso ("Em preenchimento") mesmo antes de clicar em "Enviar formulário".
+  const persistAnswer = (question, current) => {
+    if (!podePreencher) return;
+    const resposta = question.tipoResposta === 'numero' ? (current.valor === '' ? '' : Number(current.valor))
+      : question.tipoResposta === 'selecao' ? current.opcao
+      : question.tipoResposta === 'marcacao' ? current.marcado
+      : current.texto;
+    const complementarAtivo = question.complementar && (question.tipoResposta === 'marcacao' ? current.marcado === true : current.opcao === question.complementar.gatilho);
+    salvarRespostaFicha({
+      aplicacaoId: Number(aplicacaoId),
+      disciplinaId: Number(disciplinaId),
+      alunoId: Number(alunoId),
+      perguntaId: question.id,
+      professorId: isProfessorUser ? user.id : null,
+      autorTipo: user.tipo,
+      autorId: user.id,
+      data: aplicacao.dataFim,
+      resposta,
+      complementarTexto: complementarAtivo ? current.complementar : '',
     });
-    registrarPreenchimentoPdi(aluno.id, professorIdAlvo, trimestre, { tipo: user.tipo, id: user.id }, autoria ? 'edicao' : 'preenchimento_inicial');
-    setMessage('Formulário PDI enviado com sucesso.');
   };
 
-  // Perguntas padrão "estruturadas" e "habilidade" usam um clique (SegmentedToggle) — são a
-  // fonte da Análise de Desenvolvimento e têm poucas opções fixas. "Qualitativa" é texto livre.
-  // "Personalizada" preserva o renderizador antigo (dropdown/checkbox), pois pode ter qualquer
-  // número de opções definidas livremente pela Secretaria.
-  const renderEstruturadaOuHabilidade = (question) => {
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!podePreencher) return;
+    // Garante que a última alteração de cada campo esteja salva (na prática, já está — cada
+    // resposta é persistida assim que muda — isto é só a rede de segurança final).
+    questions.filter(question => question.tipoResposta !== 'orientacao').forEach(question => {
+      persistAnswer(question, answers[question.id]);
+    });
+    registrarPreenchimentoFicha(aplicacaoId, disciplinaId, alunoId, { tipo: user.tipo, id: user.id }, autoria ? 'edicao' : 'preenchimento_inicial');
+    // Mostra a confirmação já na tela de destino (Meus PDIs para o professor; perfil do aluno
+    // para o Gestor/Supervisor, de onde ele normalmente abriu a ficha) — a página não fica mais
+    // "parada" depois de enviar.
+    const destino = isProfessorUser ? '/pdi/meus-pdis' : `/pdi/alunos/${alunoId}`;
+    navigate(destino, { state: { pdiMensagemSucesso: 'Formulário PDI enviado com sucesso.' } });
+  };
+
+  const renderOrientacao = (question) => (
+    <div key={question.id} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{question.pergunta}</div>
+  );
+
+  const renderSelecaoOuMarcacao = (question) => {
     const current = answers[question.id] || answerFromResposta(question, null);
-    const complementarVisivel = question.complementar && current.opcao === question.complementar.gatilho;
+    const complementarVisivel = question.complementar && (question.tipoResposta === 'marcacao' ? current.marcado : current.opcao === question.complementar.gatilho);
     return (
       <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
         <p className="text-sm font-semibold text-slate-800">{question.codigo && <span className="mr-1.5 text-xs font-bold text-teal-700">{question.codigo}</span>}{question.pergunta}</p>
         <div className="mt-2">
           {question.tipoResposta === 'numero' ? (
-            <input type="number" className={`${inputClass} max-w-40`} value={current.valor} onChange={event => updateAnswer(question, { valor: event.target.value })} readOnly={!podePreencher} required={podePreencher} />
+            <input type="number" className={`${inputClass} max-w-40`} value={current.valor} onChange={event => updateAnswer(question, { valor: event.target.value })} onBlur={() => persistAnswer(question, current)} readOnly={!podePreencher} required={podePreencher} />
+          ) : question.tipoResposta === 'marcacao' ? (
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <input type="checkbox" checked={current.marcado} onChange={event => { const proximo = { ...current, marcado: event.target.checked }; updateAnswer(question, proximo); persistAnswer(question, proximo); }} disabled={!podePreencher} />
+              Marcar
+            </label>
           ) : (
             <SegmentedToggle
               value={current.opcao}
-              onChange={value => updateAnswer(question, { ...current, opcao: value })}
+              onChange={value => { const proximo = { ...current, opcao: value }; updateAnswer(question, proximo); persistAnswer(question, proximo); }}
               options={question.opcoes.map(opcao => ({ value: opcao, label: opcao }))}
               disabled={!podePreencher}
             />
           )}
         </div>
         {complementarVisivel && (
-          <div className="mt-2"><FormField label={question.complementar.label}><input className={inputClass} value={current.complementar} onChange={event => updateAnswer(question, { ...current, complementar: event.target.value })} readOnly={!podePreencher} required={podePreencher} /></FormField></div>
+          <div className="mt-2"><FormField label={question.complementar.label}><input className={inputClass} spellCheck lang="pt-BR" value={current.complementar} onChange={event => updateAnswer(question, { ...current, complementar: event.target.value })} onBlur={() => { const corrigido = { ...current, complementar: aplicarAutoCorrecao(current.complementar) }; updateAnswer(question, corrigido); persistAnswer(question, corrigido); }} readOnly={!podePreencher} required={podePreencher} /></FormField></div>
         )}
       </div>
     );
   };
 
-  const renderQualitativa = (question) => {
+  const renderTexto = (question) => {
     const current = answers[question.id] || answerFromResposta(question, null);
     return (
       <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
         <FormField label={question.pergunta}>
-          <textarea className={inputClass} rows="4" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} readOnly={!podePreencher} required={podePreencher} />
+          <textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} onBlur={() => { const corrigido = { ...current, texto: aplicarAutoCorrecao(current.texto) }; updateAnswer(question, corrigido); persistAnswer(question, corrigido); }} readOnly={!podePreencher} required={podePreencher} />
         </FormField>
       </div>
     );
   };
 
-  const renderPersonalizada = (question, index) => {
-    const current = answers[question.id] || answerFromResposta(question, null);
-    const complementarVisivel = question.complementar && (question.tipoResposta === 'marcacao' ? current.marcado : current.opcao === question.complementar.gatilho);
-    return (
-      <Card key={question.id}>
-        <p className="text-sm font-bold text-slate-900">{index + 1}. {question.pergunta}</p>
-        <div className="mt-4 space-y-4">
-          {question.tipoResposta === 'texto' && (
-            <FormField label="Resposta">
-              <textarea className={inputClass} rows="5" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} readOnly={!podePreencher} required={podePreencher} />
-            </FormField>
-          )}
-          {question.tipoResposta === 'selecao' && (
-            <FormField label="Resposta">
-              <select className={inputClass} value={current.opcao} onChange={event => updateAnswer(question, { ...current, opcao: event.target.value })} disabled={!podePreencher} required={podePreencher}>
-                <option value="">Selecione</option>
-                {question.opcoes.map(opcao => <option key={opcao} value={opcao}>{opcao}</option>)}
-              </select>
-            </FormField>
-          )}
-          {question.tipoResposta === 'marcacao' && (
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <input type="checkbox" checked={current.marcado} onChange={event => updateAnswer(question, { ...current, marcado: event.target.checked })} disabled={!podePreencher} />
-              Marcar
-            </label>
-          )}
-          {complementarVisivel && (
-            <FormField label={question.complementar.label}>
-              <input className={inputClass} value={current.complementar} onChange={event => updateAnswer(question, { ...current, complementar: event.target.value })} readOnly={!podePreencher} required={podePreencher} />
-            </FormField>
-          )}
-        </div>
-      </Card>
-    );
+  const renderQuestion = (question) => {
+    if (question.tipoResposta === 'orientacao') return renderOrientacao(question);
+    if (question.tipoResposta === 'texto') return renderTexto(question);
+    return renderSelecaoOuMarcacao(question);
   };
 
-  const estruturadas = questions.filter(question => question.origem === 'estruturada');
-  const habilidades = questions.filter(question => question.origem === 'habilidade');
-  const qualitativas = questions.filter(question => question.origem === 'qualitativa');
-  const personalizadas = questions.filter(question => question.origem === 'personalizada');
+  const secoes = agruparPorSecao(questions);
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <Link to={`/pdi/alunos/${aluno.id}`} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar para aluno</Link>
-          <h1 className="mt-3 text-3xl font-bold text-slate-950">Formulário PDI</h1>
-          <p className="mt-2 text-slate-600">{aluno.nome} · {turmaName(turmas, aluno.turmaId)}{trimestre ? ` · ${trimestre}` : ''}</p>
+          <button type="button" onClick={() => navigate(-1)} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar</button>
+          <h1 className="mt-3 text-3xl font-bold text-slate-950">{snapshot.nome}</h1>
+          <p className="mt-2 text-slate-600">{aluno.nome} · {turmaName(turmas, aluno.turmaId)} · {disciplina?.nome}</p>
         </div>
 
         {!escolaAtiva && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-            Escola inativa — consulta histórica. Os registros estão disponíveis apenas para consulta; preenchimento, edição e correção estão desabilitados.
+            Escola inativa — consulta histórica. Os registros estão disponíveis apenas para consulta; preenchimento e edição estão desabilitados.
           </div>
         )}
 
         <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-sm font-semibold text-slate-700">Vigência definida pela gestão</p><p className="mt-1 text-lg font-bold text-slate-900">{formatFullDate(period.startDate)} a {formatFullDate(period.endDate)}</p></div>
-          <Badge variant={isActive && escolaAtiva ? 'green' : 'gray'}>{isActive && escolaAtiva ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
+          <div><p className="text-sm font-semibold text-slate-700">Vigência da aplicação</p><p className="mt-1 text-lg font-bold text-slate-900">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p></div>
+          <Badge variant={podePreencher ? 'green' : 'gray'}>{podePreencher ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
         </Card>
 
         {autoria && (
@@ -220,46 +221,25 @@ export const FormularioPdiProfessor = () => {
           </Card>
         )}
 
-        {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
-
-        {!trimestre ? (
-          <EmptyState title="Nenhum trimestre do PDI em andamento" description="A Secretaria de Educação ainda não configurou um período de trimestre que inclua a data de hoje. Procure a Secretaria para ajustar o calendário em Configurações." />
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {estruturadas.length > 0 && (
-              <Card>
-                <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Acompanhamento estruturado</p>
-                <p className="mt-1 text-xs text-slate-500">Estas respostas alimentam a Análise de Desenvolvimento do aluno.</p>
-                <div className="mt-3">{estruturadas.map(renderEstruturadaOuHabilidade)}</div>
-              </Card>
-            )}
-
-            {habilidades.length > 0 && (
-              <Card>
-                <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Habilidades (BNCC)</p>
-                <p className="mt-1 text-xs text-slate-500">Procedimentos esperados observados nesta disciplina. Estruturado, mas ainda fora da Análise de Desenvolvimento.</p>
-                <div className="mt-3">{habilidades.map(renderEstruturadaOuHabilidade)}</div>
-              </Card>
-            )}
-
-            {qualitativas.length > 0 && (
-              <Card>
-                <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Registro pedagógico</p>
-                <p className="mt-1 text-xs text-slate-500">Texto livre para leitura humana — não alimenta gráfico nem indicador.</p>
-                <div className="mt-3">{qualitativas.map(renderQualitativa)}</div>
-              </Card>
-            )}
-
-            {personalizadas.length > 0 && (
-              <div className="space-y-4">
-                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Perguntas adicionais da Secretaria</p>
-                {personalizadas.map((question, index) => renderPersonalizada(question, index))}
-              </div>
-            )}
-
-            {podePreencher && <div className="flex justify-end"><Button type="submit">Enviar formulário</Button></div>}
-          </form>
+        {!vigencia && (
+          <EmptyState title="Aplicação sem vigência definida" description="Procure a Secretaria para ajustar as datas desta aplicação PDI." />
         )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {secoes.map(secao => (
+            <Card key={secao.nome}>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{secao.nome}</p>
+              {secao.subsecoes.map(subsecao => (
+                <div key={subsecao.nome || 'default'} className="mt-3">
+                  {subsecao.nome && <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">{subsecao.nome}</p>}
+                  <div>{subsecao.questions.map(renderQuestion)}</div>
+                </div>
+              ))}
+            </Card>
+          ))}
+
+          {podePreencher && <div className="flex justify-end"><Button type="submit">Enviar formulário</Button></div>}
+        </form>
 
         {showHistorico && autoria && (
           <Modal title="Histórico de preenchimento" onClose={() => setShowHistorico(false)}>

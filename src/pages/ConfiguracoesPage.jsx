@@ -9,7 +9,7 @@ import { isSecretaria } from '../utils/roles';
 
 export const ConfiguracoesPage = () => {
   const { user } = useAuth();
-  const { trimestrePeriods, updateTrimestrePeriod } = useData();
+  const { trimestrePeriods, updateTrimestrePeriod, pdiPreencherPerguntasPadrao, setPdiPreencherPerguntasPadrao } = useData();
   const [message, setMessage] = useState('');
   const podeConfigurar = isSecretaria(user);
 
@@ -72,6 +72,25 @@ export const ConfiguracoesPage = () => {
             ))}
           </div>
         </Card>
+
+        {podeConfigurar && (
+          <Card>
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">PDI</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">Modelos PDI</h2>
+            <label className="mt-4 flex items-start gap-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={pdiPreencherPerguntasPadrao}
+                onChange={event => setPdiPreencherPerguntasPadrao(event.target.checked)}
+              />
+              <span>
+                <span className="block font-semibold text-slate-900">Carregar perguntas padrão ao criar um novo modelo</span>
+                <span className="mt-1 block text-slate-600">Quando ativado, todo novo modelo PDI já nasce com o conjunto comum de perguntas (estruturadas, Computação/BNCC e qualitativas). Desativado, o modelo nasce vazio.</span>
+              </span>
+            </label>
+          </Card>
+        )}
       </div>
     </MainLayout>
   );

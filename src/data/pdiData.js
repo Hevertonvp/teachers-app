@@ -20,6 +20,28 @@ const alunosBase = [
   ['Tiago Moreira', '2013-02-18', 5, 8, 10, '2021-02-04', '2026-08-04', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Osvaldo Moreira', 'avo_m', '(32) 98800-1122', ''],
   ['Larissa Gomes', '2014-10-22', 6, 6, 15, '2022-02-01', '2026-08-10', 'Necessidade de apoio pedagógico individualizado', '', 'arquivado', 'Patrícia Gomes', 'mae', '(32) 98811-2244', ''],
   ['Rafael Cardoso', '2015-08-19', 6, 5, 14, '2023-02-02', '2026-08-12', 'TEA informado pela família', 'F84.0', 'ativo', 'Marcelo Cardoso', 'pai', '(32) 98822-3355', ''],
+  // Alunos de teste do PDI por disciplina (Inglês) — cenário Heverton x Renato (ver
+  // turmaProfessores em mockData.js e src/data/pdiModelos.js).
+  // Heverton (professorId 16): 2 alunos PDI em cada uma de suas 4 turmas de Inglês —
+  // 6M1 (turma 11) e 6M2 (turma 12) e 6T1 (turma 13), todas na Prudenciana (escolaId 10), e
+  // 6M1 do CAIC (turma 14, escolaId 1).
+  ['Beatriz Nunes', '2014-05-10', 10, 11, 16, '2022-02-04', '2026-08-13', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Simone Nunes', 'mae', '(32) 98899-1122', ''],
+  ['Caio Ferreira', '2014-09-02', 10, 11, 16, '2022-02-05', '2026-08-14', 'Necessidade de apoio pedagógico individualizado', '', 'ativo', 'Marcelo Ferreira', 'pai', '(32) 98899-2233', ''],
+  ['Diego Santos', '2012-11-19', 10, 13, 16, '2020-02-06', '2026-08-15', 'Dificuldade persistente de aprendizagem informada', '', 'ativo', 'Renata Santos', 'mae', '(32) 98899-3344', ''],
+  ['Elisa Martins', '2013-07-23', 10, 12, 16, '2021-02-07', '2026-08-16', 'Transtorno de linguagem informado', 'F80.9', 'ativo', 'Juliana Martins', 'mae', '(32) 98899-4455', ''],
+  ['Fernanda Lima', '2013-03-30', 10, 12, 16, '2021-02-08', '2026-08-17', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Patricia Lima', 'mae', '(32) 98899-5566', ''],
+  ['Gustavo Rocha', '2012-12-05', 10, 13, 16, '2020-02-09', '2026-08-18', 'Necessidade de apoio pedagógico individualizado', '', 'ativo', 'Roberto Rocha', 'pai', '(32) 98899-6677', ''],
+  ['Helena Souza', '2014-06-21', 1, 14, 16, '2022-02-10', '2026-08-19', 'TDAH informado no cadastro', 'F90.0', 'ativo', 'Camila Souza', 'mae', '(32) 98899-7788', ''],
+  ['Igor Santos', '2013-10-14', 1, 14, 16, '2021-02-11', '2026-08-20', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Fabio Santos', 'pai', '(32) 98899-8899', ''],
+  // Renato (professorId 17): 1 aluno PDI em 8M1 (turma 15), 7M2 (turma 16) e 9M1 (turma 17), e
+  // 3 alunos PDI em 9M2 (turma 18) — todas na Prudenciana, mesma escola e disciplina do
+  // Heverton, mas turmas totalmente diferentes.
+  ['Julia Mendes', '2011-09-08', 10, 15, 17, '2019-02-04', '2026-08-13', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Sandra Mendes', 'mae', '(32) 98900-1122', ''],
+  ['Kevin Alves', '2012-04-17', 10, 16, 17, '2020-02-05', '2026-08-14', 'Dificuldade persistente de aprendizagem informada', '', 'ativo', 'Andre Alves', 'pai', '(32) 98900-2233', ''],
+  ['Larissa Pinto', '2010-11-25', 10, 17, 17, '2018-02-06', '2026-08-15', 'Necessidade de apoio pedagógico individualizado', '', 'ativo', 'Monica Pinto', 'mae', '(32) 98900-3344', ''],
+  ['Marcelo Dias', '2010-07-02', 10, 18, 17, '2018-02-07', '2026-08-16', 'TEA informado pela família', 'F84.0', 'ativo', 'Cristina Dias', 'mae', '(32) 98900-4455', ''],
+  ['Natália Cruz', '2010-08-19', 10, 18, 17, '2018-02-08', '2026-08-17', 'Transtorno de linguagem informado', 'F80.9', 'ativo', 'Paulo Cruz', 'pai', '(32) 98900-5566', ''],
+  ['Otávio Reis', '2010-05-30', 10, 18, 17, '2018-02-09', '2026-08-18', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Beatriz Reis', 'mae', '(32) 98900-6677', ''],
 ];
 
 export const pdiAlunos = alunosBase.map(([
@@ -43,19 +65,23 @@ export const pdiAlunos = alunosBase.map(([
   responsavelTelefone2,
 }));
 
-// Histórico de vínculos Auxiliar de Aprendizagem <-> aluno. Regra: no máximo um vínculo com
-// status 'ativo' por aluno ao mesmo tempo; trocas/encerramentos preservam os registros
-// anteriores (dataFim preenchida, status 'encerrado'), nunca apagam ou sobrescrevem.
-// Auxiliar não tem vínculo direto com turma/escola — isso é sempre derivado via aluno.
-// auxiliarId 1=Débora (1 aluno ativo), 2=Ricardo (vários alunos, escolas diferentes: 5 e 2),
-// 3=Simone (nenhum vínculo). Aluno 2 (Ana Costa) fica sem Auxiliar (estado válido). Aluno 6
-// (Camila Ribeiro) tem histórico de troca (Débora -> Ricardo).
+// Histórico de vínculos Auxiliar de Aprendizagem <-> TURMA (não mais aluno). Regra: no máximo
+// um vínculo com status 'ativo' por turma ao mesmo tempo; trocas/encerramentos preservam os
+// registros anteriores (dataFim preenchida, status 'encerrado'), nunca apagam ou sobrescrevem.
+// Os alunos acompanhados por um Auxiliar são sempre derivados dos alunos PDI da(s) turma(s) em
+// que ele tem vínculo ativo agora (ver utils/auxiliares.js) — nunca um vínculo direto por aluno.
+// auxiliarId 1=Débora (turma 7, onde está João Silva), 2=Ricardo (turmas 3 e 1, onde estão
+// Isabela Rocha e Mariana Alves), 3=Simone (turma 11, onde estão Beatriz Nunes e Caio Ferreira —
+// exemplo de um Auxiliar acompanhando vários alunos automaticamente pela mesma turma). A turma 9
+// (Ana Costa) fica sem Auxiliar (estado válido). A turma 4 (Camila Ribeiro) tem histórico de
+// troca de Auxiliar (Débora -> Ricardo).
 export const pdiAuxiliaresVinculos = [
-  { id: 1, alunoId: 1, auxiliarId: 1, dataInicio: '2026-02-10', dataFim: null, status: 'ativo' },
-  { id: 2, alunoId: 9, auxiliarId: 2, dataInicio: '2026-02-15', dataFim: null, status: 'ativo' },
-  { id: 3, alunoId: 4, auxiliarId: 2, dataInicio: '2026-03-01', dataFim: null, status: 'ativo' },
-  { id: 4, alunoId: 6, auxiliarId: 1, dataInicio: '2026-02-01', dataFim: '2026-05-20', status: 'encerrado' },
-  { id: 5, alunoId: 6, auxiliarId: 2, dataInicio: '2026-05-21', dataFim: null, status: 'ativo' },
+  { id: 1, turmaId: 7, auxiliarId: 1, dataInicio: '2026-02-10', dataFim: null, status: 'ativo' },
+  { id: 2, turmaId: 3, auxiliarId: 2, dataInicio: '2026-02-15', dataFim: null, status: 'ativo' },
+  { id: 3, turmaId: 1, auxiliarId: 2, dataInicio: '2026-03-01', dataFim: null, status: 'ativo' },
+  { id: 4, turmaId: 4, auxiliarId: 1, dataInicio: '2026-02-01', dataFim: '2026-05-20', status: 'encerrado' },
+  { id: 5, turmaId: 4, auxiliarId: 2, dataInicio: '2026-05-21', dataFim: null, status: 'ativo' },
+  { id: 6, turmaId: 11, auxiliarId: 3, dataInicio: '2026-08-20', dataFim: null, status: 'ativo' },
 ];
 
 // Histórico de preenchimento/edição do Formulário PDI trimestral — quem preencheu, quando, e
@@ -161,7 +187,9 @@ const trendSeries = [
 
 export const pdiAcompanhamentosHistoricos = pdiAlunos.flatMap((aluno, alunoIndex) => {
   const [area, indicador] = indicadores[alunoIndex % indicadores.length];
-  return trendSeries[alunoIndex].map((nivelObservado, index) => ({
+  // Alunos de teste do PDI por disciplina (Inglês) foram adicionados depois desta série fixa de
+  // 12 tendências — módulo em vez de índice direto para não estourar o array com os novos ids.
+  return trendSeries[alunoIndex % trendSeries.length].map((nivelObservado, index) => ({
     id: alunoIndex * 12 + index + 1,
     alunoId: aluno.id,
     data: `2026-${String(index + 1).padStart(2, '0')}-${String(18 + alunoIndex % 8).padStart(2, '0')}`,

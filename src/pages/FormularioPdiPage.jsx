@@ -1,84 +1,100 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Badge, Button, Card, ConfirmDialog, FormField, Modal } from '../components/Common';
-import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { useEscola } from '../context/EscolaContext';
+import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
-import { formatFullDate } from '../utils/formAvailability';
-import { perguntaTipoOptions } from '../utils/pdi';
+import { CURRENT_DATE, formatFullDate, formStatusClasses, formStatusLabel, getFormStatus } from '../utils/formAvailability';
 import { canManagePedagogico } from '../utils/roles';
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
+import { existeSobreposicaoNaEscola } from '../utils/pdiFichas';
+import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
 
-const tipoLabel = (value) => perguntaTipoOptions.find(option => option.value === value)?.label || value;
+// Tipos de resposta disponíveis na edição de perguntas do modelo. Diferente do antigo
+// `perguntaTipoOptions` (utils/pdi.js), inclui 'numero' e 'orientacao' porque, aqui, TODA
+// pergunta do modelo é editável — não há mais um conjunto restrito só para personalizadas
+// (ver seção 6/33 do pedido: origem é só informação organizacional, nunca proteção).
+const TIPO_RESPOSTA_OPTIONS = [
+  { value: 'texto', label: 'Texto' },
+  { value: 'selecao', label: 'Seleção' },
+  { value: 'marcacao', label: 'Marcação' },
+  { value: 'numero', label: 'Número' },
+  { value: 'orientacao', label: 'Orientação (texto informativo, sem resposta)' },
+];
 
-const ORIGEM_LABEL = { estruturada: 'Acompanhamento estruturado', qualitativa: 'Registro pedagógico', habilidade: 'Habilidade (BNCC)' };
-
-const blankQuestion = (ordem) => ({ pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, ordem, status: 'ativa' });
-
-// Edição restrita das perguntas padrão: só redação e status (ver updatePdiPergunta em
-// DataContext.jsx — indicador/tipoResposta/opções ficam protegidos lá também, isto aqui é só
-// para nem oferecer os campos que não teriam efeito).
-const PadraoEditModal = ({ pergunta, onClose, onSave }) => {
-  const [texto, setTexto] = useState(pergunta.pergunta);
-  const [status, setStatus] = useState(pergunta.status);
-  return (
-    <Modal title="Editar redação da pergunta padrão" onClose={onClose}>
-      <form onSubmit={event => { event.preventDefault(); onSave({ pergunta: texto, status }); }} className="space-y-4">
-        <p className="text-xs text-slate-500">Esta é uma pergunta padrão do sistema. Só a redação exibida e o status (ativa/inativa) podem ser alterados — o tipo de resposta e as opções ficam fixos para não quebrar o histórico e a Análise de Desenvolvimento.</p>
-        <FormField label="Pergunta"><textarea className={inputClass} rows="3" value={texto} onChange={event => setTexto(event.target.value)} required /></FormField>
-        <FormField label="Status"><select className={inputClass} value={status} onChange={event => setStatus(event.target.value)}><option value="ativa">Ativa</option><option value="inativa">Inativa</option></select></FormField>
-        <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button><Button type="submit">Salvar</Button></div>
-      </form>
-    </Modal>
-  );
+const ORIGEM_LABEL = {
+  estruturada: 'Acompanhamento estruturado',
+  qualitativa: 'Registro pedagógico',
+  habilidade: 'Habilidade / procedimento esperado',
+  orientacao: 'Orientação',
+  personalizada: 'Personalizada',
 };
+
+const tipoLabel = (value) => TIPO_RESPOSTA_OPTIONS.find(option => option.value === value)?.label || value;
+
+const blankPergunta = (ordem) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, ordem, status: 'ativa' });
+// Criação: uma ou mais escolas de uma vez (`escolaIds` + `todasEscolas`) e um ou mais modelos
+// (`modeloIds`, pré-marcados com todos os ativos, mas ajustável). Edição continua sendo sempre
+// de uma aplicação já existente, então usa `escolaId` único (ver editar vigência abaixo).
+const blankAplicacao = (modeloIdsAtivos) => ({ escolaIds: [], todasEscolas: false, modeloIds: modeloIdsAtivos, dataInicio: CURRENT_DATE, dataFim: CURRENT_DATE });
 
 export const FormularioPdiPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { pdiPerguntas, formPeriods, escolas, createPdiPergunta, updatePdiPergunta, deletePdiPergunta, setPdiEscolas, updateFormPeriodsForEscolas } = useData();
-  const { userEscolas } = useEscola();
-  const [form, setForm] = useState(null);
-  const [editingPadrao, setEditingPadrao] = useState(null);
-  const [deleting, setDeleting] = useState(null);
-  const [message, setMessage] = useState('');
-  const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas).filter(escola => userEscolas.some(item => item.id === escola.id));
-  const pdiPeriodsAtuais = formPeriods.filter(period => period.id === 'pdi');
-  const pdiEscolaIds = new Set(pdiPeriodsAtuais.map(period => Number(period.escolaId)));
-  const [escolasSelecionadas, setEscolasSelecionadas] = useState(() => escolasAplicaveis.filter(escola => pdiEscolaIds.has(escola.id)).map(escola => escola.id));
-  // Prazo PADRÃO, o mesmo para todas as escolas com o PDI habilitado — não é mais por escola
-  // isoladamente. Usamos a primeira linha como referência porque updateFormPeriodsForEscolas
-  // sempre atualiza todas juntas (ver abaixo), então elas nunca ficam com datas diferentes.
-  const prazoPadrao = pdiPeriodsAtuais[0] || null;
+  const {
+    disciplinas, escolas, pdiModelos, pdiAplicacoes,
+    createPdiModelo, deletePdiModelo, createPdiModeloPergunta, updatePdiModeloPergunta, deletePdiModeloPergunta, reorderPdiModeloPergunta,
+    createPdiAplicacao, updatePdiAplicacao, deletePdiAplicacao, deleteAllPdiAplicacoes,
+  } = useData();
 
-  const perguntasPadrao = [...pdiPerguntas].filter(item => item.origem !== 'personalizada').sort((left, right) => Number(left.ordem) - Number(right.ordem));
-  const perguntasPersonalizadas = [...pdiPerguntas].filter(item => item.origem === 'personalizada').sort((left, right) => Number(left.ordem) - Number(right.ordem));
+  const [modeloSelecionadoId, setModeloSelecionadoId] = useState(pdiModelos[0]?.id ?? null);
+  const [novoModeloForm, setNovoModeloForm] = useState(null);
+  const [perguntaForm, setPerguntaForm] = useState(null);
+  const [deletingPergunta, setDeletingPergunta] = useState(null);
+  const [deletingModelo, setDeletingModelo] = useState(null);
+  const [aplicacaoForm, setAplicacaoForm] = useState(null);
+  const [editingAplicacao, setEditingAplicacao] = useState(null);
+  const [aplicacaoError, setAplicacaoError] = useState('');
+  const [deletingAplicacao, setDeletingAplicacao] = useState(null);
+  const [confirmandoExcluirTodasAplicacoes, setConfirmandoExcluirTodasAplicacoes] = useState(false);
+  const [message, setMessage] = useState('');
 
   if (!canManagePedagogico(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const reorderPersonalizada = (question, direction) => {
-    const index = perguntasPersonalizadas.findIndex(item => item.id === question.id);
-    const sibling = perguntasPersonalizadas[index + direction];
-    if (!sibling) return;
-    updatePdiPergunta(question.id, { ordem: sibling.ordem });
-    updatePdiPergunta(sibling.id, { ordem: question.ordem });
+  const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas);
+  const modelosAtivos = pdiModelos.filter(modelo => modelo.status === 'ativa');
+  const disciplinasComModelo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
+  const disciplinasDisponiveis = disciplinas.filter(disciplina => !disciplinasComModelo.has(disciplina.id));
+  const modeloSelecionado = pdiModelos.find(modelo => modelo.id === modeloSelecionadoId) || null;
+  const perguntasDoModelo = modeloSelecionado ? [...modeloSelecionado.perguntas].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
+
+  const criarModelo = (event) => {
+    event.preventDefault();
+    if (!novoModeloForm?.disciplinaId) {
+      setMessage('Escolha a disciplina do novo modelo.');
+      return;
+    }
+    const disciplina = disciplinas.find(item => item.id === Number(novoModeloForm.disciplinaId));
+    const modelo = createPdiModelo({ nome: novoModeloForm.nome?.trim() || `PDI - ${disciplina?.nome}`, disciplinaId: novoModeloForm.disciplinaId });
+    setModeloSelecionadoId(modelo.id);
+    setNovoModeloForm(null);
+    setMessage('Modelo PDI criado com sucesso.');
   };
 
   const changeTipoResposta = (tipoResposta) => {
-    setForm(prev => ({
+    setPerguntaForm(prev => ({
       ...prev,
       tipoResposta,
-      opcoes: tipoResposta === 'selecao' ? (prev.opcoes.length ? prev.opcoes : ['', '']) : [],
-      complementar: tipoResposta === 'texto' ? null : prev.complementar,
+      opcoes: tipoResposta === 'selecao' ? (prev.opcoes?.length ? prev.opcoes : ['', '']) : [],
+      complementar: (tipoResposta === 'texto' || tipoResposta === 'numero' || tipoResposta === 'orientacao') ? null : prev.complementar,
     }));
   };
 
   const toggleComplementar = (habilitado) => {
-    setForm(prev => ({
+    setPerguntaForm(prev => ({
       ...prev,
       complementar: habilitado
         ? { gatilho: prev.tipoResposta === 'marcacao' ? true : (prev.opcoes.find(opcao => opcao.trim()) || ''), label: prev.complementar?.label || '' }
@@ -86,38 +102,81 @@ export const FormularioPdiPage = () => {
     }));
   };
 
-  const saveQuestion = (event) => {
+  const salvarPergunta = (event) => {
     event.preventDefault();
-    const opcoes = form.tipoResposta === 'selecao' ? form.opcoes.map(opcao => opcao.trim()).filter(Boolean) : [];
-    if (form.tipoResposta === 'selecao' && opcoes.length < 2) {
+    if (!modeloSelecionado) return;
+    const opcoes = perguntaForm.tipoResposta === 'selecao' ? perguntaForm.opcoes.map(opcao => opcao.trim()).filter(Boolean) : [];
+    if (perguntaForm.tipoResposta === 'selecao' && opcoes.length < 2) {
       setMessage('Cadastre ao menos duas opções para uma pergunta de seleção.');
       return;
     }
-    if (form.complementar && form.tipoResposta === 'selecao' && !opcoes.includes(form.complementar.gatilho)) {
+    if (perguntaForm.complementar && perguntaForm.tipoResposta === 'selecao' && !opcoes.includes(perguntaForm.complementar.gatilho)) {
       setMessage('Escolha qual opção ativa o campo complementar.');
       return;
     }
-    if (form.complementar && !form.complementar.label.trim()) {
+    if (perguntaForm.complementar && !perguntaForm.complementar.label.trim()) {
       setMessage('Informe o texto exibido no campo complementar.');
       return;
     }
 
-    const payload = { ...form, opcoes, complementar: form.tipoResposta === 'texto' ? null : form.complementar };
-    if (form.id) {
-      updatePdiPergunta(form.id, payload);
+    const payload = { ...perguntaForm, opcoes };
+    if (perguntaForm.id) {
+      updatePdiModeloPergunta(modeloSelecionado.id, perguntaForm.id, payload);
       setMessage('Pergunta atualizada com sucesso.');
     } else {
-      // origem/indicador são sempre forçados para 'personalizada'/null em createPdiPergunta —
-      // perguntas personalizadas nunca alimentam a Análise de Desenvolvimento.
-      createPdiPergunta({ ...payload, ordem: perguntasPersonalizadas.length + 1 });
-      setMessage('Pergunta personalizada adicionada com sucesso.');
+      createPdiModeloPergunta(modeloSelecionado.id, payload);
+      setMessage('Pergunta adicionada ao modelo com sucesso.');
     }
-    setForm(null);
+    setPerguntaForm(null);
   };
 
-  const saveEscolas = () => {
-    setPdiEscolas(escolasSelecionadas);
-    setMessage('Escolas do PDI atualizadas com sucesso.');
+  const salvarAplicacao = (event) => {
+    event.preventDefault();
+    setAplicacaoError('');
+    if (aplicacaoForm.dataFim < aplicacaoForm.dataInicio) {
+      setAplicacaoError('A data de encerramento não pode ser anterior à data de início.');
+      return;
+    }
+
+    if (editingAplicacao) {
+      const resultado = updatePdiAplicacao(editingAplicacao.id, { dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim });
+      // Sobreposição de vigência na mesma escola: não salva, mantém o modal aberto com os dados
+      // preenchidos e mostra o erro ali mesmo (ver src/utils/pdiFichas.js).
+      if (!resultado.ok) {
+        setAplicacaoError(resultado.error);
+        return;
+      }
+      setMessage('Aplicação PDI atualizada com sucesso.');
+      setAplicacaoForm(null);
+      setEditingAplicacao(null);
+      return;
+    }
+
+    // Criação: uma ou mais escolas de uma vez, incluindo "todas as escolas", e um ou mais
+    // modelos (disciplinas) escolhidos entre os ativos — não é mais automático para todos.
+    const escolaIdsSelecionadas = aplicacaoForm.todasEscolas ? escolasAplicaveis.map(escola => escola.id) : aplicacaoForm.escolaIds;
+    if (escolaIdsSelecionadas.length === 0) {
+      setAplicacaoError('Escolha ao menos uma escola.');
+      return;
+    }
+    if (aplicacaoForm.modeloIds.length === 0) {
+      setAplicacaoError('Escolha ao menos um modelo PDI.');
+      return;
+    }
+    // Valida a sobreposição em TODAS as escolas selecionadas antes de criar qualquer uma —
+    // tudo ou nada, para nunca deixar a seleção pela metade.
+    const escolasComConflito = escolaIdsSelecionadas
+      .filter(escolaId => existeSobreposicaoNaEscola(pdiAplicacoes, { escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim }))
+      .map(escolaId => escolas.find(item => item.id === escolaId)?.nome || `Escola #${escolaId}`);
+    if (escolasComConflito.length > 0) {
+      setAplicacaoError(`Já existe uma aplicação PDI dentro desse período para: ${escolasComConflito.join(', ')}. Ajuste o período ou remova essas escolas da seleção.`);
+      return;
+    }
+
+    escolaIdsSelecionadas.forEach(escolaId => createPdiAplicacao({ escolaId, modeloIds: aplicacaoForm.modeloIds, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim }));
+    setMessage(`Aplicação PDI criada com sucesso para ${escolaIdsSelecionadas.length} ${escolaIdsSelecionadas.length === 1 ? 'escola' : 'escolas'}, com os modelos selecionados.`);
+    setAplicacaoForm(null);
+    setEditingAplicacao(null);
   };
 
   return (
@@ -126,191 +185,305 @@ export const FormularioPdiPage = () => {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Formulário PDI</h1>
-            <p className="mt-2 max-w-3xl text-slate-600">As perguntas padrão vêm prontas do sistema e alimentam a Análise de Desenvolvimento. Perguntas personalizadas são complemento livre e não entram nos gráficos.</p>
+            <p className="mt-2 max-w-3xl text-slate-600">Cada modelo PDI pertence a uma disciplina. Uma aplicação abre o preenchimento para uma escola inteira: as disciplinas com modelo configurado ficam disponíveis automaticamente aos professores que lecionam cada uma delas naquela escola.</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
-            <Button onClick={() => setForm({ ...blankQuestion(perguntasPersonalizadas.length + 1) })}>Adicionar pergunta personalizada</Button>
-          </div>
+          <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
         </div>
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
 
+        {/* --- Modelos PDI ------------------------------------------------------------------ */}
         <Card>
-          <p className="font-semibold text-slate-900">Escolas do PDI</p>
-          <p className="mt-1 text-sm text-slate-600">Selecione quais escolas terão este PDI. As perguntas e o prazo são os mesmos para todas elas.</p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {escolasAplicaveis.map(escola => (
-              <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={escolasSelecionadas.includes(escola.id)}
-                  onChange={() => setEscolasSelecionadas(prev => prev.includes(escola.id) ? prev.filter(id => id !== escola.id) : [...prev, escola.id])}
-                />
-                {escola.nome}
-              </label>
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Modelos PDI</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-950">Um modelo por disciplina</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '' })} disabled={disciplinasDisponiveis.length === 0}>Novo modelo</Button>
+              <Button size="sm" variant="danger" onClick={() => setDeletingModelo(modeloSelecionado)} disabled={!modeloSelecionado}>Excluir modelo</Button>
+            </div>
+          </div>
+          {disciplinasDisponiveis.length === 0 && <p className="mt-2 text-xs text-slate-500">Todas as disciplinas cadastradas já possuem um modelo PDI ativo.</p>}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {pdiModelos.map(modelo => (
+              <button
+                key={modelo.id}
+                onClick={() => setModeloSelecionadoId(modelo.id)}
+                className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${modeloSelecionadoId === modelo.id ? 'border-teal-600 bg-teal-50 text-teal-900' : 'border-slate-200 bg-white text-slate-600 hover:border-teal-200'}`}
+              >
+                {modelo.nome}
+                <span className="ml-2 text-xs font-normal text-slate-400">{disciplinas.find(item => item.id === modelo.disciplinaId)?.nome}</span>
+              </button>
             ))}
           </div>
-          <div className="mt-4"><Button size="sm" onClick={saveEscolas}>Salvar escolas do PDI</Button></div>
-        </Card>
 
-        {prazoPadrao ? (
-          <Card>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">Vigência do formulário</p>
-                <p className="mt-1 text-sm text-slate-600">Prazo padrão, válido para todas as {pdiPeriodsAtuais.length} escola(s) com o PDI habilitado. Período atual: {formatFullDate(prazoPadrao.startDate)} a {formatFullDate(prazoPadrao.endDate)}</p>
-              </div>
-              <FormField label="Início"><input className={inputClass} type="date" value={prazoPadrao.startDate} onChange={event => updateFormPeriodsForEscolas('pdi', [...pdiEscolaIds], { startDate: event.target.value })} required /></FormField>
-              <FormField label="Encerramento"><input className={inputClass} type="date" value={prazoPadrao.endDate} onChange={event => updateFormPeriodsForEscolas('pdi', [...pdiEscolaIds], { endDate: event.target.value })} required /></FormField>
-            </div>
-          </Card>
-        ) : (
-          <Card><p className="text-sm text-slate-600">Selecione e salve ao menos uma escola do PDI acima para definir o prazo de vigência.</p></Card>
-        )}
-
-        <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-teal-700">Perguntas padrão de acompanhamento</p>
-          <p className="mb-3 text-sm text-slate-600">Vêm prontas do sistema, equivalentes ao formulário PDI original. Só a redação e o status podem ser ajustados — protegidas contra exclusão e mudança de tipo/opções para não quebrar a Análise de Desenvolvimento.</p>
-          <Card className="p-0">
-            <div className="divide-y divide-slate-200">
-              {perguntasPadrao.map(question => (
-                <div key={question.id} className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">{question.ordem}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900">{question.codigo ? `${question.codigo} — ${question.pergunta}` : question.pergunta}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge variant="blue">{ORIGEM_LABEL[question.origem]}</Badge>
-                      {question.indicador && <Badge variant="gray">indicador: {question.indicador}</Badge>}
-                      <Badge variant="gray">{tipoLabel(question.tipoResposta === 'numero' ? 'texto' : question.tipoResposta)}{question.tipoResposta === 'numero' ? ' (número)' : ''}</Badge>
-                      {question.opcoes.length > 0 && question.opcoes.map(opcao => <Badge key={opcao} variant="gray">{opcao}</Badge>)}
-                      <Badge variant={question.status === 'ativa' ? 'green' : 'gray'}>{question.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setEditingPadrao(question)}>Editar redação/status</Button>
-                  </div>
+          {modeloSelecionado && (
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Disciplina: {disciplinas.find(item => item.id === modeloSelecionado.disciplinaId)?.nome || 'Não encontrada'}</p>
+                  <p className="text-xs text-slate-500">Todas as perguntas abaixo podem ser editadas, reordenadas ou excluídas — inclusive as que vieram prontas.</p>
                 </div>
-              ))}
-            </div>
-          </Card>
-        </div>
+                <Button size="sm" onClick={() => setPerguntaForm(blankPergunta(perguntasDoModelo.length + 1))}>Adicionar pergunta</Button>
+              </div>
 
-        <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-teal-700">Perguntas personalizadas</p>
-          <p className="mb-3 text-sm text-slate-600">Criadas pela Secretaria como complemento. Não entram na Análise de Desenvolvimento.</p>
-          <Card className="p-0">
-            {perguntasPersonalizadas.length === 0 ? (
-              <p className="p-5 text-sm text-slate-500">Nenhuma pergunta personalizada cadastrada ainda.</p>
-            ) : (
-              <div className="divide-y divide-slate-200">
-                {perguntasPersonalizadas.map((question, index) => (
-                  <div key={question.id} className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">{question.ordem}</span>
+              <div className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200">
+                {perguntasDoModelo.map((pergunta, index) => (
+                  <div key={pergunta.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">{index + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900">{question.pergunta}</p>
+                      <p className="font-semibold text-slate-900">{pergunta.codigo ? `${pergunta.codigo} — ${pergunta.pergunta}` : pergunta.pergunta}</p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge variant="yellow">Pergunta personalizada</Badge>
-                        <Badge variant="blue">{tipoLabel(question.tipoResposta)}</Badge>
-                        {question.tipoResposta === 'selecao' && question.opcoes.map(opcao => <Badge key={opcao} variant="gray">{opcao}</Badge>)}
-                        {question.complementar && <Badge variant="gray">Complementar: "{question.complementar.label}" quando {question.tipoResposta === 'marcacao' ? 'marcado' : `"${question.complementar.gatilho}"`}</Badge>}
-                        <Badge variant={question.status === 'ativa' ? 'green' : 'gray'}>{question.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge>
+                        {pergunta.secao && <Badge variant="blue">{pergunta.secao}{pergunta.subsecao ? ` · ${pergunta.subsecao}` : ''}</Badge>}
+                        <Badge variant="gray">{ORIGEM_LABEL[pergunta.origem] || pergunta.origem}</Badge>
+                        <Badge variant="gray">{tipoLabel(pergunta.tipoResposta)}</Badge>
+                        {pergunta.opcoes?.length > 0 && pergunta.opcoes.map(opcao => <Badge key={opcao} variant="gray">{opcao}</Badge>)}
+                        <Badge variant={pergunta.status === 'ativa' ? 'green' : 'gray'}>{pergunta.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" disabled={index === 0} onClick={() => reorderPersonalizada(question, -1)}>Subir</Button>
-                      <Button size="sm" variant="outline" disabled={index === perguntasPersonalizadas.length - 1} onClick={() => reorderPersonalizada(question, 1)}>Descer</Button>
-                      <Button size="sm" variant="outline" onClick={() => setForm({ ...question })}>Editar</Button>
-                      <Button size="sm" variant="danger" onClick={() => setDeleting(question)}>Excluir</Button>
+                      <Button size="sm" variant="outline" disabled={index === 0} onClick={() => reorderPdiModeloPergunta(modeloSelecionado.id, pergunta.id, -1)}>Subir</Button>
+                      <Button size="sm" variant="outline" disabled={index === perguntasDoModelo.length - 1} onClick={() => reorderPdiModeloPergunta(modeloSelecionado.id, pergunta.id, 1)}>Descer</Button>
+                      <Button size="sm" variant="outline" onClick={() => setPerguntaForm({ ...pergunta, opcoes: pergunta.opcoes || [] })}>Editar</Button>
+                      <Button size="sm" variant="danger" onClick={() => setDeletingPergunta(pergunta)}>Excluir</Button>
                     </div>
                   </div>
                 ))}
+                {perguntasDoModelo.length === 0 && <p className="p-4 text-sm text-slate-500">Nenhuma pergunta cadastrada neste modelo ainda.</p>}
               </div>
-            )}
-          </Card>
-        </div>
+            </div>
+          )}
+        </Card>
 
-        {editingPadrao && (
-          <PadraoEditModal
-            pergunta={editingPadrao}
-            onClose={() => setEditingPadrao(null)}
-            onSave={(payload) => { updatePdiPergunta(editingPadrao.id, payload); setEditingPadrao(null); setMessage('Pergunta padrão atualizada com sucesso.'); }}
-          />
+        {/* --- Aplicações PDI ---------------------------------------------------------------- */}
+        <Card>
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Aplicações PDI</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-950">Vigência por escola</h2>
+              <p className="mt-1 text-sm text-slate-600">Uma aplicação vale para a escola inteira. Pode haver mais de uma aplicação na mesma escola, desde que os períodos não se sobreponham.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao(modelosAtivos.map(modelo => modelo.id))); }} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>Nova aplicação</Button>
+              <Button size="sm" variant="danger" onClick={() => setConfirmandoExcluirTodasAplicacoes(true)} disabled={pdiAplicacoes.length === 0}>Excluir todas as aplicações</Button>
+            </div>
+          </div>
+          {modelosAtivos.length === 0 && <p className="mt-2 text-xs text-slate-500">Cadastre ao menos um modelo PDI ativo acima antes de criar uma aplicação.</p>}
+
+          <div className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200">
+            {pdiAplicacoes.map(aplicacao => {
+              const status = getFormStatus(aplicacao.dataInicio, aplicacao.dataFim);
+              return (
+                <div key={aplicacao.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">{escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
+                    <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
+                    {aplicacao.criadaEm && <p className="mt-0.5 text-xs text-slate-400">Criado em {formatFullDate(aplicacao.criadaEm.slice(0, 10))}</p>}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
+                      {aplicacao.modelos.length === 0
+                        ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
+                        : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{disciplinas.find(item => item.id === modelo.disciplinaId)?.nome || modelo.nome}</Badge>)}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ escolaId: aplicacao.escolaId, dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
+                    <Button size="sm" variant="danger" onClick={() => setDeletingAplicacao(aplicacao)}>Excluir</Button>
+                  </div>
+                </div>
+              );
+            })}
+            {pdiAplicacoes.length === 0 && <p className="p-4 text-sm text-slate-500">Nenhuma aplicação PDI criada ainda.</p>}
+          </div>
+        </Card>
+
+        {novoModeloForm && (
+          <Modal title="Novo modelo PDI" onClose={() => setNovoModeloForm(null)}>
+            <form onSubmit={criarModelo} className="space-y-4">
+              <FormField label="Disciplina">
+                <select className={inputClass} value={novoModeloForm.disciplinaId} onChange={event => setNovoModeloForm(prev => ({ ...prev, disciplinaId: event.target.value }))} required>
+                  <option value="" disabled>Selecione</option>
+                  {disciplinasDisponiveis.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Nome do modelo (opcional)"><input className={inputClass} value={novoModeloForm.nome} onChange={event => setNovoModeloForm(prev => ({ ...prev, nome: event.target.value }))} placeholder="Ex.: PDI - Matemática" /></FormField>
+              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)}>Cancelar</Button><Button type="submit">Criar modelo</Button></div>
+            </form>
+          </Modal>
         )}
 
-        {form && (
-          <Modal title={form.id ? 'Editar pergunta personalizada' : 'Adicionar pergunta personalizada'} onClose={() => setForm(null)}>
-            <form onSubmit={saveQuestion} className="space-y-4">
-              <FormField label="Pergunta"><textarea className={inputClass} rows="4" value={form.pergunta} onChange={event => setForm(prev => ({ ...prev, pergunta: event.target.value }))} required /></FormField>
+        {perguntaForm && (
+          <Modal title={perguntaForm.id ? 'Editar pergunta' : 'Adicionar pergunta'} onClose={() => setPerguntaForm(null)}>
+            <form onSubmit={salvarPergunta} className="space-y-4">
+              <FormField label="Seção (agrupamento no formulário)"><input className={inputClass} value={perguntaForm.secao || ''} onChange={event => setPerguntaForm(prev => ({ ...prev, secao: event.target.value }))} placeholder="Ex.: Registro pedagógico" /></FormField>
+              <FormField label="Pergunta / texto"><textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={perguntaForm.pergunta} onChange={event => setPerguntaForm(prev => ({ ...prev, pergunta: event.target.value }))} onBlur={() => setPerguntaForm(prev => ({ ...prev, pergunta: aplicarAutoCorrecao(prev.pergunta) }))} required /></FormField>
 
               <FormField label="Tipo de resposta">
-                <select className={inputClass} value={form.tipoResposta} onChange={event => changeTipoResposta(event.target.value)}>
-                  {perguntaTipoOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                <select className={inputClass} value={perguntaForm.tipoResposta} onChange={event => changeTipoResposta(event.target.value)}>
+                  {TIPO_RESPOSTA_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </FormField>
 
-              {form.tipoResposta === 'selecao' && (
-                <FormField label="Opções do select">
+              {perguntaForm.tipoResposta === 'selecao' && (
+                <FormField label="Opções">
                   <div className="space-y-2">
-                    {form.opcoes.map((opcao, index) => (
+                    {perguntaForm.opcoes.map((opcao, index) => (
                       <div key={index} className="flex gap-2">
                         <input
                           className={inputClass}
                           value={opcao}
-                          onChange={event => setForm(prev => ({ ...prev, opcoes: prev.opcoes.map((item, itemIndex) => itemIndex === index ? event.target.value : item) }))}
+                          onChange={event => setPerguntaForm(prev => ({ ...prev, opcoes: prev.opcoes.map((item, itemIndex) => (itemIndex === index ? event.target.value : item)) }))}
                           placeholder={`Opção ${index + 1}`}
                           required
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={form.opcoes.length <= 2}
-                          onClick={() => setForm(prev => ({
-                            ...prev,
-                            opcoes: prev.opcoes.filter((_, itemIndex) => itemIndex !== index),
-                            complementar: prev.complementar?.gatilho === opcao ? null : prev.complementar,
-                          }))}
-                        >
-                          Remover
-                        </Button>
+                        <Button type="button" variant="outline" size="sm" disabled={perguntaForm.opcoes.length <= 2} onClick={() => setPerguntaForm(prev => ({ ...prev, opcoes: prev.opcoes.filter((_, itemIndex) => itemIndex !== index) }))}>Remover</Button>
                       </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => setForm(prev => ({ ...prev, opcoes: [...prev.opcoes, ''] }))}>+ Adicionar opção</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setPerguntaForm(prev => ({ ...prev, opcoes: [...prev.opcoes, ''] }))}>+ Adicionar opção</Button>
                   </div>
                 </FormField>
               )}
 
-              {form.tipoResposta !== 'texto' && (
+              {(perguntaForm.tipoResposta === 'selecao' || perguntaForm.tipoResposta === 'marcacao') && (
                 <div className="rounded-lg border border-slate-200 p-4">
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    <input type="checkbox" checked={!!form.complementar} onChange={event => toggleComplementar(event.target.checked)} />
+                    <input type="checkbox" checked={!!perguntaForm.complementar} onChange={event => toggleComplementar(event.target.checked)} />
                     Habilitar campo complementar de texto
                   </label>
-                  {form.complementar && (
+                  {perguntaForm.complementar && (
                     <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      {form.tipoResposta === 'selecao' && (
+                      {perguntaForm.tipoResposta === 'selecao' && (
                         <FormField label="Quando a resposta for">
-                          <select className={inputClass} value={form.complementar.gatilho} onChange={event => setForm(prev => ({ ...prev, complementar: { ...prev.complementar, gatilho: event.target.value } }))}>
-                            {form.opcoes.filter(Boolean).map(opcao => <option key={opcao} value={opcao}>{opcao}</option>)}
+                          <select className={inputClass} value={perguntaForm.complementar.gatilho} onChange={event => setPerguntaForm(prev => ({ ...prev, complementar: { ...prev.complementar, gatilho: event.target.value } }))}>
+                            {perguntaForm.opcoes.filter(Boolean).map(opcao => <option key={opcao} value={opcao}>{opcao}</option>)}
                           </select>
                         </FormField>
                       )}
-                      {form.tipoResposta === 'marcacao' && <p className="text-sm text-slate-600 md:col-span-1">Exibido quando a marcação estiver marcada.</p>}
-                      <FormField label="Texto exibido (ex.: Como?)"><input className={inputClass} value={form.complementar.label} onChange={event => setForm(prev => ({ ...prev, complementar: { ...prev.complementar, label: event.target.value } }))} required /></FormField>
+                      {perguntaForm.tipoResposta === 'marcacao' && <p className="text-sm text-slate-600 md:col-span-1">Exibido quando a marcação estiver marcada.</p>}
+                      <FormField label="Texto exibido (ex.: Como?)"><input className={inputClass} value={perguntaForm.complementar.label} onChange={event => setPerguntaForm(prev => ({ ...prev, complementar: { ...prev.complementar, label: event.target.value } }))} required /></FormField>
                     </div>
                   )}
                 </div>
               )}
 
-              <FormField label="Status"><select className={inputClass} value={form.status} onChange={event => setForm(prev => ({ ...prev, status: event.target.value }))}><option value="ativa">Ativa</option><option value="inativa">Inativa</option></select></FormField>
+              <FormField label="Status"><select className={inputClass} value={perguntaForm.status} onChange={event => setPerguntaForm(prev => ({ ...prev, status: event.target.value }))}><option value="ativa">Ativa</option><option value="inativa">Inativa</option></select></FormField>
 
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setForm(null)}>Cancelar</Button><Button type="submit">Salvar pergunta</Button></div>
+              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setPerguntaForm(null)}>Cancelar</Button><Button type="submit">Salvar pergunta</Button></div>
             </form>
           </Modal>
         )}
 
-        {deleting && <ConfirmDialog title="Excluir pergunta" message="Deseja excluir esta pergunta personalizada do formulário PDI? Ela deixará de ser exibida para todas as escolas." onCancel={() => setDeleting(null)} onConfirm={() => { deletePdiPergunta(deleting.id); setDeleting(null); setMessage('Pergunta excluída com sucesso.'); }} />}
+        {aplicacaoForm && (
+          <Modal title={editingAplicacao ? 'Editar vigência da aplicação' : 'Nova aplicação PDI'} onClose={() => { setAplicacaoForm(null); setEditingAplicacao(null); setAplicacaoError(''); }}>
+            <form onSubmit={salvarAplicacao} className="space-y-4">
+              {aplicacaoError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{aplicacaoError}</div>}
+              {editingAplicacao ? (
+                <FormField label="Escola">
+                  <input className={inputClass} value={escolas.find(item => item.id === editingAplicacao.escolaId)?.nome || ''} disabled />
+                </FormField>
+              ) : (
+                <FormField label="Escolas">
+                  <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={aplicacaoForm.todasEscolas}
+                        onChange={event => setAplicacaoForm(prev => ({ ...prev, todasEscolas: event.target.checked, escolaIds: [] }))}
+                      />
+                      Todas as escolas ({escolasAplicaveis.length})
+                    </label>
+                    {!aplicacaoForm.todasEscolas && (
+                      <div className="grid max-h-48 gap-1.5 overflow-y-auto border-t border-slate-100 pt-2 sm:grid-cols-2">
+                        {escolasAplicaveis.map(escola => (
+                          <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={aplicacaoForm.escolaIds.includes(escola.id)}
+                              onChange={() => setAplicacaoForm(prev => ({
+                                ...prev,
+                                escolaIds: prev.escolaIds.includes(escola.id) ? prev.escolaIds.filter(id => id !== escola.id) : [...prev.escolaIds, escola.id],
+                              }))}
+                            />
+                            {escola.nome}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </FormField>
+              )}
+              {!editingAplicacao && (
+                <FormField label="Modelos (disciplinas)">
+                  <div className="space-y-1.5 rounded-lg border border-slate-200 p-3">
+                    {modelosAtivos.map(modelo => (
+                      <label key={modelo.id} className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={aplicacaoForm.modeloIds.includes(modelo.id)}
+                          onChange={() => setAplicacaoForm(prev => ({
+                            ...prev,
+                            modeloIds: prev.modeloIds.includes(modelo.id) ? prev.modeloIds.filter(id => id !== modelo.id) : [...prev.modeloIds, modelo.id],
+                          }))}
+                        />
+                        {modelo.nome} <span className="text-xs text-slate-400">({disciplinas.find(item => item.id === modelo.disciplinaId)?.nome})</span>
+                      </label>
+                    ))}
+                  </div>
+                </FormField>
+              )}
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField label="Início"><input className={inputClass} type="date" value={aplicacaoForm.dataInicio} onChange={event => setAplicacaoForm(prev => ({ ...prev, dataInicio: event.target.value }))} required /></FormField>
+                <FormField label="Encerramento"><input className={inputClass} type="date" value={aplicacaoForm.dataFim} onChange={event => setAplicacaoForm(prev => ({ ...prev, dataFim: event.target.value }))} required /></FormField>
+              </div>
+              {!editingAplicacao && <p className="text-xs text-slate-500">Só os modelos marcados acima entram em cada aplicação criada — uma aplicação separada por escola selecionada.</p>}
+              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => { setAplicacaoForm(null); setEditingAplicacao(null); setAplicacaoError(''); }}>Cancelar</Button><Button type="submit">Salvar</Button></div>
+            </form>
+          </Modal>
+        )}
+
+        {deletingPergunta && (
+          <ConfirmDialog
+            title="Excluir pergunta"
+            message="Deseja excluir esta pergunta do modelo? Aplicações já criadas continuam com a versão que tinham no momento em que foram abertas — só novas aplicações deixam de incluir esta pergunta."
+            onCancel={() => setDeletingPergunta(null)}
+            onConfirm={() => { deletePdiModeloPergunta(modeloSelecionado.id, deletingPergunta.id); setDeletingPergunta(null); setMessage('Pergunta excluída do modelo com sucesso.'); }}
+          />
+        )}
+
+        {deletingModelo && (
+          <ConfirmDialog
+            title="Excluir modelo PDI"
+            message={`Deseja excluir o modelo "${deletingModelo.nome}"? Todas as suas perguntas serão removidas. Aplicações já criadas não são afetadas — elas mantêm a cópia das perguntas de quando foram abertas. Novas aplicações deixam de incluir esta disciplina até um novo modelo ser cadastrado.`}
+            onCancel={() => setDeletingModelo(null)}
+            onConfirm={() => {
+              deletePdiModelo(deletingModelo.id);
+              if (modeloSelecionadoId === deletingModelo.id) setModeloSelecionadoId(null);
+              setDeletingModelo(null);
+              setMessage('Modelo PDI excluído com sucesso.');
+            }}
+          />
+        )}
+
+        {deletingAplicacao && (
+          <ConfirmDialog
+            title="Excluir aplicação"
+            message="Deseja excluir esta aplicação PDI? As fichas e respostas associadas a ela deixarão de aparecer para os professores."
+            onCancel={() => setDeletingAplicacao(null)}
+            onConfirm={() => { deletePdiAplicacao(deletingAplicacao.id); setDeletingAplicacao(null); setMessage('Aplicação excluída com sucesso.'); }}
+          />
+        )}
+
+        {confirmandoExcluirTodasAplicacoes && (
+          <ConfirmDialog
+            title="Excluir todas as aplicações"
+            message={`Deseja excluir TODAS as ${pdiAplicacoes.length} aplicações PDI, de todas as escolas? As fichas e respostas associadas a elas deixarão de aparecer para os professores. Esta ação não pode ser desfeita.`}
+            confirmLabel="Excluir todas"
+            onCancel={() => setConfirmandoExcluirTodasAplicacoes(false)}
+            onConfirm={() => { deleteAllPdiAplicacoes(); setConfirmandoExcluirTodasAplicacoes(false); setMessage('Todas as aplicações PDI foram excluídas com sucesso.'); }}
+          />
+        )}
       </div>
     </MainLayout>
   );

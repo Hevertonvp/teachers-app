@@ -1,4 +1,17 @@
+import { useNavigate } from 'react-router-dom';
 import { ProfessorName } from './ProfessorName';
+
+// Botão "voltar" padrão de qualquer página interna (telas de detalhe/criação, não as que já têm
+// entrada direta no menu lateral). Usa o histórico do navegador (`navigate(-1)`) em vez de uma
+// rota fixa, porque a mesma tela pode ser aberta a partir de mais de um lugar.
+export const BackButton = ({ label = '← Voltar', className = '' }) => {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => navigate(-1)} className={`text-sm font-semibold text-teal-700 hover:underline ${className}`}>
+      {label}
+    </button>
+  );
+};
 
 // Nome + cargo abaixo, em fonte pequena — mesmo padrão visual de ProfessorName,
 // mas genérico (recebe nome/cargo prontos, sem lookup por id) para supervisor/diretor.

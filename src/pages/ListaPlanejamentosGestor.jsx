@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
-import { Card, Badge } from '../components/Common';
+import { BackButton, Card, Badge } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -29,7 +29,8 @@ export const ListaPlanejamentosGestor = () => {
       <div className="space-y-6">
         {/* Cabeçalho */}
         <div>
-          <h1 className="text-3xl font-bold text-slate-700">Planejamentos da Escola</h1>
+          <BackButton />
+          <h1 className="mt-3 text-3xl font-bold text-slate-700">Planejamentos da Escola</h1>
           <p className="text-gray-600 mt-2">Acompanhe os planejamentos pedagógicos de todos os professores</p>
         </div>
 

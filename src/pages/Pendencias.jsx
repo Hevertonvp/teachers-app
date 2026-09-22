@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
-import { Button, Card, DataTable, Modal, StatusBadge } from '../components/Common';
+import { BackButton, Button, Card, DataTable, Modal, StatusBadge } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -48,7 +48,8 @@ export const Pendencias = () => {
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <h1 className="text-3xl font-bold text-slate-950">Pendências</h1>
+            <BackButton />
+            <h1 className="mt-3 text-3xl font-bold text-slate-950">Pendências</h1>
             <p className="mt-2 text-slate-600">Professores com atividades atrasadas nos instrumentos pedagógicos do MVP.</p>
           </div>
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{filtered.length} registros em atraso</div>

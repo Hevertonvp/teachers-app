@@ -1,5 +1,6 @@
 import { createContext, useState, useContext } from 'react';
-import { usuarios, professores, gestores, diretores, secretarias, auxiliares } from '../data/mockData';
+import { usuarios as usuariosIniciais } from '../data/mockData';
+import { useData } from './DataContext';
 
 const AuthContext = createContext();
 
@@ -18,10 +19,16 @@ const getStoredUser = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getStoredUser);
+  const [usuarios, setUsuarios] = useState(usuariosIniciais);
+  // Lê os perfis sempre atualizados do DataContext (não mais uma cópia estática do mockData) —
+  // assim, uma pessoa cadastrada ou editada em Gestão de Pessoas já entra corretamente aqui,
+  // sem depender de recarregar a página. Por isso o AuthProvider precisa estar DENTRO do
+  // DataProvider (ver App.jsx).
+  const { professores, gestores, diretores, secretarias, auxiliares } = useData();
 
   const login = (email, senha) => {
     const usuario = usuarios.find(u => u.email === email && u.senha === senha);
-    
+
     if (usuario) {
       let userData = {
         id: usuario.id,
@@ -65,8 +72,22 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = () => user !== null;
 
+  // Cria a credencial de login de uma pessoa recém-cadastrada (professor/gestor/diretora) —
+  // sem isso, cadastrar em Gestão de Pessoas criava o perfil mas nunca uma conta pra entrar
+  // (ver GestaoPessoas.jsx). `tipo` é sempre 'professor' | 'gestor' | 'diretora', e a chave do
+  // perfil na credencial segue o mesmo padrão já usado no mock (`${tipo}Id`).
+  const registrarUsuario = ({ email, senha = '123456', tipo, perfilId }) => {
+    setUsuarios(prev => [...prev, {
+      id: Math.max(0, ...prev.map(item => item.id)) + 1,
+      email,
+      senha,
+      tipo,
+      [`${tipo}Id`]: perfilId,
+    }]);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, registrarUsuario }}>
       {children}
     </AuthContext.Provider>
   );

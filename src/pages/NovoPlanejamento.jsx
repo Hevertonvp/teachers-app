@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
-import { Card, Button } from '../components/Common';
+import { BackButton, Card, Button } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { disciplinas, turmas, turmaProfessores } from '../data/mockData';
 import { turmasDoProfessor } from '../utils/escolas';
@@ -51,7 +51,8 @@ export const NovoPlanejamento = () => {
       <div className="space-y-6">
         {/* Cabeçalho */}
         <div>
-          <h1 className="text-3xl font-bold text-slate-700">Novo Planejamento</h1>
+          <BackButton />
+          <h1 className="mt-3 text-3xl font-bold text-slate-700">Novo Planejamento</h1>
           <p className="text-gray-600 mt-2">Preencha os campos para criar um novo planejamento pedagógico</p>
         </div>
 

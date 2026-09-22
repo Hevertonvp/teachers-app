@@ -5,7 +5,7 @@ import { AccordionSection, AspectoItem, CheckboxGroup, ObservacaoField, Segmente
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { inputClass, turmaName } from '../utils/display';
-import { vinculoAtivoDoAluno } from '../utils/auxiliares';
+import { vinculoAtivoDaTurma } from '../utils/auxiliares';
 import { professoresDaTurma } from '../utils/escolas';
 import { isCadastroBasicoCompleto, parentescoOptions } from '../utils/pdi';
 import { isSecretaria } from '../utils/roles';
@@ -81,7 +81,9 @@ export const AnamnesePage = () => {
   const cadastroCompleto = isCadastroBasicoCompleto(aluno);
   const professoresDaTurmaDoAluno = professoresDaTurma(turmaProfessores, professores, disciplinas, aluno.turmaId);
   const professorPorDisciplina = (disciplinaId) => professoresDaTurmaDoAluno.find(vinculo => vinculo.disciplinaId === disciplinaId)?.professor;
-  const vinculoAuxiliarAtivo = vinculoAtivoDoAluno(pdiAuxiliaresVinculos, aluno.id);
+  // Resolvido pela turma atual do aluno, nunca por um vínculo individual histórico (ver
+  // utils/auxiliares.js) — se o aluno mudar de turma, o Auxiliar exibido aqui muda junto.
+  const vinculoAuxiliarAtivo = vinculoAtivoDaTurma(pdiAuxiliaresVinculos, aluno.turmaId);
 
   const update = (payload) => setForm(prev => ({ ...prev, ...payload }));
   const updateAspecto = (grupo, chave, campo, valor) => setForm(prev => ({

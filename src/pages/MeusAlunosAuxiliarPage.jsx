@@ -4,21 +4,20 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { escolaName, turmaName } from '../utils/display';
 import { formatDate } from '../utils/pdi';
+import { alunosDoAuxiliar, vinculoAtivoDaTurma } from '../utils/auxiliares';
 import { isAuxiliar } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 
-// Alunos com vínculo ATIVO com o Auxiliar logado — nunca de outro Auxiliar, e nunca via
-// turma/escola (o vínculo é sempre aluno<->auxiliar, ver utils/auxiliares.js).
+// Alunos PDI das turmas em que o Auxiliar logado tem vínculo ATIVO agora — nunca um vínculo
+// individual por aluno (o vínculo é sempre Auxiliar<->turma, ver utils/auxiliares.js).
 export const MeusAlunosAuxiliarPage = () => {
   const { user } = useAuth();
   const { pdiAlunos, pdiAuxiliaresVinculos, escolas, turmas } = useData();
 
   if (!isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
 
-  const meusVinculos = pdiAuxiliaresVinculos.filter(item => item.auxiliarId === user.id && item.status === 'ativo');
-  const meusAlunos = meusVinculos
-    .map(vinculo => ({ aluno: pdiAlunos.find(item => item.id === vinculo.alunoId), vinculo }))
-    .filter(item => !!item.aluno);
+  const meusAlunos = alunosDoAuxiliar(pdiAuxiliaresVinculos, user.id, pdiAlunos)
+    .map(aluno => ({ aluno, vinculo: vinculoAtivoDaTurma(pdiAuxiliaresVinculos, aluno.turmaId) }));
 
   return (
     <MainLayout>

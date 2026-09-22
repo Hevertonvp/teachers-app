@@ -1,17 +1,19 @@
-// Vínculo Auxiliar <-> Aluno (histórico). Regra de domínio: Auxiliar -> Aluno -> Turma ->
-// Escola — nunca um vínculo direto Auxiliar->Turma ou Auxiliar->Escola. A turma/escola em que
-// um Auxiliar atua é sempre derivada dos alunos que ele acompanha no momento.
+// Vínculo Auxiliar <-> TURMA (histórico). Regra de domínio: Auxiliar -> Turma -> Alunos PDI
+// daquela turma — nunca um vínculo direto Auxiliar->Aluno. Os alunos acompanhados por um
+// Auxiliar são sempre derivados dos alunos PDI das turmas em que ele tem vínculo ativo no
+// momento; no máximo um vínculo ativo por turma.
 
-// Vínculo ativo (no máximo um por aluno) de um aluno específico.
-export const vinculoAtivoDoAluno = (vinculos, alunoId) => vinculos.find(item => item.alunoId === Number(alunoId) && item.status === 'ativo') || null;
+// Vínculo ativo (no máximo um) de uma turma específica.
+export const vinculoAtivoDaTurma = (vinculos, turmaId) => vinculos.find(item => item.turmaId === Number(turmaId) && item.status === 'ativo') || null;
 
-// Todo o histórico de um aluno (mais recente primeiro).
-export const historicoAuxiliaresDoAluno = (vinculos, alunoId) => vinculos
-  .filter(item => item.alunoId === Number(alunoId))
+// Todo o histórico de vínculos de uma turma (mais recente primeiro).
+export const historicoAuxiliaresDaTurma = (vinculos, turmaId) => vinculos
+  .filter(item => item.turmaId === Number(turmaId))
   .sort((left, right) => new Date(right.dataInicio) - new Date(left.dataInicio));
 
-// Alunos atualmente acompanhados por um Auxiliar (só vínculos ativos) — a escola/turma de cada
-// um vem do próprio registro do aluno (pdiAlunos), nunca de um vínculo paralelo.
-export const alunosAtivosDoAuxiliar = (vinculos, auxiliarId) => new Set(
-  vinculos.filter(item => item.auxiliarId === Number(auxiliarId) && item.status === 'ativo').map(item => item.alunoId),
-);
+// Alunos PDI atualmente acompanhados por um Auxiliar: todo aluno PDI cuja turma tem vínculo
+// ativo com esse Auxiliar agora — nunca um vínculo individual por aluno.
+export const alunosDoAuxiliar = (vinculos, auxiliarId, pdiAlunos) => {
+  const turmaIds = new Set(vinculos.filter(item => item.auxiliarId === Number(auxiliarId) && item.status === 'ativo').map(item => item.turmaId));
+  return pdiAlunos.filter(aluno => turmaIds.has(aluno.turmaId));
+};

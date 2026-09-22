@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Card, EmptyState, FormField } from '../components/Common';
+import { BackButton, Card, EmptyState, FormField } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
@@ -177,7 +177,8 @@ export const AcompanhamentoPdiPage = () => {
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Acompanhamento pedagógico</p>
+          <BackButton />
+          <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">Acompanhamento pedagógico</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">Análise de Desenvolvimento</h1>
           <p className="mt-2 max-w-3xl text-slate-600">Selecione uma escola no topo da página, depois um aluno, para ver como os indicadores observáveis do aluno mudaram ao longo dos trimestres, a partir das respostas reais registradas no Formulário PDI.</p>
         </div>

@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { disciplinaName, turmaName } from '../utils/display';
-import { filterByEscola, turmasDoProfessor } from '../utils/escolas';
+import { turmasDoProfessor } from '../utils/escolas';
 import { pdiSummary } from '../utils/pdi';
-import { deadlineText, formDefinitions, formStatusLabel, isFormAvailableForTeacher, teacherFillingStatus } from '../utils/formAvailability';
+import { CURRENT_DATE, deadlineText, formDefinitions, formStatusLabel, isFormAvailableForTeacher, teacherFillingStatus } from '../utils/formAvailability';
+import { fichasDoProfessor, statusFicha } from '../utils/pdiFichas';
 import { MainLayout } from '../layouts/Layouts';
 
 const today = new Date('2026-08-31T12:00:00');
@@ -28,8 +29,8 @@ const notificationMeta = (item) => {
 
 export const DashboardProfessor = () => {
   const { user } = useAuth();
-  const { formularios, pdis, correcoes, turmas, turmaProfessores, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, formPeriods, noticias } = useData();
-  const { activeEscolaId, userEscolas } = useEscola();
+  const { formularios, pdis, correcoes, turmas, turmaProfessores, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, pdiAplicacoes, pdiFichaHistorico, pdiFichaRespostas, formPeriods, noticias } = useData();
+  const { userEscolas } = useEscola();
   const ultimaNoticia = [...noticias].sort((a, b) => new Date(b.data) - new Date(a.data))[0];
 
   if (userEscolas.length === 0) {
@@ -40,37 +41,58 @@ export const DashboardProfessor = () => {
     );
   }
 
-  const meusFormularios = filterByEscola(formularios, activeEscolaId, user).filter(item => item.professorId === user?.id);
-  const meusPdis = filterByEscola(pdis, activeEscolaId, user).filter(item => item.professorId === user?.id);
-  const minhasCorrecoes = filterByEscola(correcoes, activeEscolaId, user).filter(item => item.professorId === user?.id);
-  const minhasTurmas = turmasDoProfessor(filterByEscola(turmas, activeEscolaId, user), turmaProfessores, user?.id);
-  const meusAlunosPdi = filterByEscola(pdiAlunos, activeEscolaId, user).filter(aluno => aluno.professorId === user?.id);
+  // Professor vê tudo que é seu em todas as suas escolas, sempre junto — nunca preso ao
+  // seletor de escola do topo (removido para este perfil; ver feedback salvo em memória).
+  const meusFormularios = formularios.filter(item => item.professorId === user?.id);
+  const meusPdis = pdis.filter(item => item.professorId === user?.id);
+  const minhasCorrecoes = correcoes.filter(item => item.professorId === user?.id);
+  const minhasTurmas = turmasDoProfessor(turmas, turmaProfessores, user?.id);
+  const meusAlunosPdi = pdiAlunos.filter(aluno => aluno.professorId === user?.id);
   const resumoPdiProfessor = pdiSummary(meusAlunosPdi, pdiMetas, pdiRespostas.filter(resposta => Number.isFinite(Number(resposta.resposta))));
+  // Resumo do PDI por disciplina (fichas), independente do acompanhamento pedagógico acima
+  // (pdis/pdiMetas/pdiAcompanhamentos — sistema à parte, não alterado). Ver "Meus PDIs".
+  const fichasPdiProfessor = fichasDoProfessor(user.id, { turmaProfessores, pdiAlunos, pdiAplicacoes, disciplinas, turmas })
+    .map(ficha => statusFicha({ aplicacao: ficha, historico: pdiFichaHistorico, respostas: pdiFichaRespostas, currentDate: CURRENT_DATE }));
+  const resumoFichasPdi = {
+    pendentes: fichasPdiProfessor.filter(status => status === 'pendente').length,
+    emAndamento: fichasPdiProfessor.filter(status => status === 'em_andamento').length,
+    concluidas: fichasPdiProfessor.filter(status => status === 'concluido').length,
+    naoPreenchidas: fichasPdiProfessor.filter(status => status === 'nao_preenchido').length,
+  };
   const recordsByForm = {
     formulario_um_terco: meusFormularios,
     pdi: meusPdis,
     correcoes_simulados: minhasCorrecoes,
   };
-  const formPeriodsDaEscola = filterByEscola(formPeriods, activeEscolaId, user);
-  const activeFormIds = new Set(formPeriodsDaEscola.filter(period => isFormAvailableForTeacher(period)).map(period => period.id));
+  // Vigências de TODAS as escolas do professor juntas — cada linha já é (formId, escolaId), por
+  // isso a checagem de "vigente" abaixo é por par, não por tipo de formulário sozinho (duas
+  // escolas podem ter vigências diferentes para o mesmo formulário).
+  const meusFormPeriods = formPeriods.filter(period => userEscolas.some(escola => escola.id === period.escolaId));
+  const periodosVigentes = meusFormPeriods.filter(period => isFormAvailableForTeacher(period));
+  const vigentePorEscola = new Set(periodosVigentes.map(period => `${period.id}-${period.escolaId}`));
 
   const notificacoes = [
-    ...(activeFormIds.has('formulario_um_terco') ? meusFormularios.map(item => ({ ...item, tipo: 'Formulário 1/3', titulo: item.conteudo, prazo: item.prazo, rota: '/formulario-um-terco' })) : []),
-    ...(activeFormIds.has('pdi') ? meusPdis.map(item => ({ ...item, tipo: 'PDI', titulo: `${pdiAlunos.find(aluno => aluno.id === item.alunoId)?.nome || 'Aluno'} - ${item.indicador}`, prazo: item.prazo, rota: '/pdi/alunos' })) : []),
-    ...(activeFormIds.has('correcoes_simulados') ? minhasCorrecoes.map(item => ({ ...item, tipo: 'Correção de simulado', titulo: item.simulado, prazo: item.prazoCorrecao, rota: '/correcoes-simulados' })) : []),
+    ...meusFormularios.filter(item => vigentePorEscola.has(`formulario_um_terco-${item.escolaId}`)).map(item => ({ ...item, tipo: 'Formulário 1/3', titulo: item.conteudo, prazo: item.prazo, rota: '/formulario-um-terco' })),
+    ...meusPdis.filter(item => vigentePorEscola.has(`pdi-${item.escolaId}`)).map(item => ({ ...item, tipo: 'PDI', titulo: `${pdiAlunos.find(aluno => aluno.id === item.alunoId)?.nome || 'Aluno'} - ${item.indicador}`, prazo: item.prazo, rota: '/pdi/alunos' })),
+    ...minhasCorrecoes.filter(item => vigentePorEscola.has(`correcoes_simulados-${item.escolaId}`)).map(item => ({ ...item, tipo: 'Correção de simulado', titulo: item.simulado, prazo: item.prazoCorrecao, rota: '/correcoes-simulados' })),
   ]
     .filter(item => item.status === 'em_atraso' || (item.status !== 'concluido' && daysUntil(item.prazo) <= 7))
     .sort((a, b) => daysUntil(a.prazo) - daysUntil(b.prazo));
 
   const eventosDashboard = proximosEventos.slice(0, 3);
-  const formulariosVigentes = formPeriodsDaEscola
-    .filter(period => isFormAvailableForTeacher(period))
-    .map(period => ({
+  // Um card por (escola, formulário) vigente — a escola de cada card fica explícita, já que o
+  // professor pode ter o mesmo formulário aberto em mais de uma escola ao mesmo tempo.
+  const formulariosVigentes = periodosVigentes.map(period => {
+    const registrosDaEscola = (recordsByForm[period.id] || []).filter(record => record.escolaId === period.escolaId);
+    return {
       ...period,
+      key: `${period.id}-${period.escolaId}`,
       form: formDefinitions[period.id],
-      fillingStatus: teacherFillingStatus(recordsByForm[period.id] || [], user?.id),
-      progress: percentageComplete(recordsByForm[period.id] || []),
-    }));
+      escola: userEscolas.find(escola => escola.id === period.escolaId),
+      fillingStatus: teacherFillingStatus(registrosDaEscola, user?.id),
+      progress: percentageComplete(registrosDaEscola),
+    };
+  });
   const prazoMaisProximo = [...formulariosVigentes].sort((a, b) => new Date(a.endDate) - new Date(b.endDate))[0];
 
   return (
@@ -146,9 +168,10 @@ export const DashboardProfessor = () => {
 
             <div className="grid gap-4 md:grid-cols-3">
               {formulariosVigentes.map(item => (
-                <Card key={item.id} className="border-emerald-200 bg-emerald-50/60">
+                <Card key={item.key} className="border-emerald-200 bg-emerald-50/60">
                   <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">{item.form.title}</p>
                   <h3 className="mt-1 text-lg font-bold text-slate-950">{item.form.subtitle}</h3>
+                  {item.escola && <p className="mt-0.5 text-xs font-semibold text-slate-500">{item.escola.nome}</p>}
                   <div className="mt-4 flex flex-wrap gap-2 text-sm">
                     <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800">{formStatusLabel('active')}</span>
                     <span className="rounded-full bg-white px-3 py-1 font-semibold text-slate-700">{item.fillingStatus}</span>
@@ -250,6 +273,20 @@ export const DashboardProfessor = () => {
                 <div className="rounded-lg bg-emerald-50 p-3"><p className="text-emerald-700">Evolução</p><p className="text-2xl font-bold text-emerald-800">{resumoPdiProfessor.alunosEvolucao}</p></div>
                 <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Estáveis</p><p className="text-2xl font-bold text-slate-900">{resumoPdiProfessor.alunosEstaveis}</p></div>
                 <div className="rounded-lg bg-red-50 p-3"><p className="text-red-700">Atenção</p><p className="text-2xl font-bold text-red-800">{resumoPdiProfessor.alunosAtencao}</p></div>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-slate-950">Formulário PDI</h2>
+                <Link to="/pdi/meus-pdis"><Button size="sm" variant="outline">Meus PDIs</Button></Link>
+              </div>
+              <p className="mb-3 text-xs text-slate-500">Fichas das disciplinas que você leciona, em todas as suas escolas e turmas.</p>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div className="rounded-lg bg-amber-50 p-3"><p className="text-amber-700">Pendentes</p><p className="text-2xl font-bold text-amber-800">{resumoFichasPdi.pendentes}</p></div>
+                <div className="rounded-lg bg-blue-50 p-3"><p className="text-blue-700">Em preenchimento</p><p className="text-2xl font-bold text-blue-800">{resumoFichasPdi.emAndamento}</p></div>
+                <div className="rounded-lg bg-emerald-50 p-3"><p className="text-emerald-700">Concluídos</p><p className="text-2xl font-bold text-emerald-800">{resumoFichasPdi.concluidas}</p></div>
+                <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Não preenchidos</p><p className="text-2xl font-bold text-slate-900">{resumoFichasPdi.naoPreenchidas}</p></div>
               </div>
             </Card>
 

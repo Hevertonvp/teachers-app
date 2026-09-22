@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
+import { BackButton, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { TrendBadge } from '../components/PdiControls';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -86,11 +86,11 @@ export const PdiPage = () => {
   const [archiving, setArchiving] = useState(null);
   const [message, setMessage] = useState('');
 
+  // Esta lista agora é exclusiva de Secretaria/Gestor — Professor é redirecionado para "Meus
+  // PDIs" antes de chegar aqui (ver guard mais abaixo), então não há mais escopo por
+  // aluno.professorId nesta tela.
   const alunosDaEscola = filterByEscola(pdiAlunos, activeEscolaId, user);
-  // Professor só vê os alunos PDI dos quais é o professor responsável (aluno.professorId) —
-  // não todos os alunos das turmas em que leciona (uma turma pode ter mais de um professor,
-  // cada um responsável pelos seus próprios alunos PDI).
-  const scopedAlunos = isProfessor ? alunosDaEscola.filter(aluno => aluno.professorId === user.id) : alunosDaEscola;
+  const scopedAlunos = alunosDaEscola;
 
   const alunos = useMemo(() => scopedAlunos.filter(aluno => {
     const alunoTrend = pdiTrend(pdiAcompanhamentos.filter(item => item.alunoId === aluno.id)).key;
@@ -168,6 +168,10 @@ export const PdiPage = () => {
   // consultar a lista de alunos — Diretora e Auxiliar ficam de fora deste módulo (Auxiliar tem
   // sua própria tela em /meus-alunos).
   if (isDiretora(user) || isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
+  // Professor não usa mais esta lista para o PDI por disciplina — o acesso não é mais baseado
+  // em aluno.professorId, e sim em turmaProfessores (ver src/utils/pdiFichas.js). A visão do
+  // professor passa a ser "Meus PDIs", que já mostra aluno/escola/turma/disciplina juntos.
+  if (isProfessor) return <Navigate to="/pdi/meus-pdis" replace />;
 
   const columns = [
     { key: 'nome', header: 'Aluno', render: row => <button className="font-semibold text-teal-700 hover:underline" onClick={event => { event.stopPropagation(); navigate(`/pdi/alunos/${row.id}`); }}>{row.nome}</button> },
@@ -191,7 +195,8 @@ export const PdiPage = () => {
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Alunos PDI</p>
+            <BackButton />
+            <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">Alunos PDI</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Alunos em acompanhamento</h1>
             <p className="mt-2 max-w-3xl text-slate-600">{isProfessor ? 'Consulte os alunos PDI das turmas em que você leciona.' : 'Acompanhe a jornada PDI por aluno: avaliação inicial, metas, acompanhamentos e evolução.'}</p>
           </div>

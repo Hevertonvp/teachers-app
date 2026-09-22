@@ -35,3 +35,17 @@ export const autorLabel = (evento, { professores, gestores }) => {
   const gestor = gestores.find(item => item.id === evento.usuarioId);
   return { nome: gestor?.nome || 'Gestor não encontrado', perfil: gestor?.cargo || 'Gestor' };
 };
+
+// Autoria/histórico da FICHA (aplicação + disciplina + aluno) do PDI por disciplina — mesmo
+// princípio de eventosPreenchimentoPdi/autoriaPdi acima, só que a identidade agora é a ficha
+// (nunca mais aluno+professor+trimestre, que não distingue aplicações diferentes nem
+// disciplinas diferentes do mesmo aluno). Ver src/utils/pdiFichas.js e FormularioPdiProfessor.jsx.
+export const eventosPreenchimentoFicha = (historico, aplicacaoId, disciplinaId, alunoId) => historico
+  .filter(item => item.aplicacaoId === Number(aplicacaoId) && item.disciplinaId === Number(disciplinaId) && item.alunoId === Number(alunoId))
+  .sort((left, right) => new Date(left.dataHora) - new Date(right.dataHora));
+
+export const autoriaFicha = (historico, aplicacaoId, disciplinaId, alunoId) => {
+  const eventos = eventosPreenchimentoFicha(historico, aplicacaoId, disciplinaId, alunoId);
+  if (!eventos.length) return null;
+  return { inicial: eventos[0], ultima: eventos[eventos.length - 1], eventos };
+};

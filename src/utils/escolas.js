@@ -57,17 +57,18 @@ export const gestoresDaEscola = (gestores, vinculosEscolares, escolaId, user) =>
 };
 
 // Turmas em que um professor leciona, a partir da relação normalizada `turmaProfessores`
-// (fonte única do vínculo turma<->professor, ver mockData.js).
+// (fonte única do vínculo turma<->professor, ver mockData.js). Só vínculos ATIVOS contam — um
+// vínculo encerrado (professor que saiu da turma) não deve mais aparecer aqui.
 export const turmasDoProfessor = (turmas, turmaProfessores, professorId) => {
-  const turmaIds = new Set(turmaProfessores.filter(vinculo => vinculo.professorId === professorId).map(vinculo => vinculo.turmaId));
+  const turmaIds = new Set(turmaProfessores.filter(vinculo => vinculo.professorId === professorId && vinculo.status === 'ativo').map(vinculo => vinculo.turmaId));
   return turmas.filter(turma => turmaIds.has(turma.id));
 };
 
-// Professores (+ disciplina) vinculados a uma turma, direto de `turmaProfessores` — mesma
-// fonte única usada por `turmasDoProfessor`, sem cadastro manual paralelo. Usado para derivar
-// automaticamente "professores do aluno" a partir da turma (cadastro de aluno e Anamnese).
+// Professores (+ disciplina) vinculados ATIVAMENTE a uma turma, direto de `turmaProfessores` —
+// mesma fonte única usada por `turmasDoProfessor`, sem cadastro manual paralelo. Usado para
+// derivar automaticamente "professores do aluno" a partir da turma (cadastro de aluno e Anamnese).
 export const professoresDaTurma = (turmaProfessores, professores, disciplinas, turmaId) => turmaProfessores
-  .filter(vinculo => vinculo.turmaId === turmaId)
+  .filter(vinculo => vinculo.turmaId === turmaId && vinculo.status === 'ativo')
   .map(vinculo => ({
     professorId: vinculo.professorId,
     professor: professores.find(item => item.id === vinculo.professorId),

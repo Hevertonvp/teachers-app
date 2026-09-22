@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
-import { Card, Badge, Button } from '../components/Common';
+import { BackButton, Card, Badge, Button } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -38,7 +38,8 @@ export const ListaPlanejamentos = () => {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-700">Planejamentos</h1>
+            <BackButton />
+            <h1 className="mt-3 text-3xl font-bold text-slate-700">Planejamentos</h1>
             <p className="text-gray-600 mt-2">
               {isProfessor(user) ? 'Seus planejamentos pedagógicos' : 'Planejamentos da escola'}
             </p>

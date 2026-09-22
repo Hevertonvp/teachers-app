@@ -28,6 +28,14 @@ export const professores = [
   { id: 13, nome: 'Luciana Barbosa', email: 'luciana.barbosa@escola.gov.br', disciplinas: [3], avatar: 'LB', status: 'ativo' },
   { id: 14, nome: 'Eduardo Martins', email: 'eduardo.martins@escola.gov.br', disciplinas: [4], avatar: 'EM', status: 'ativo' },
   { id: 15, nome: 'Renata Araújo', email: 'renata.araujo@escola.gov.br', disciplinas: [1, 2], avatar: 'RA', status: 'ativo' },
+  // Professor dedicado de Inglês, usado para validar o PDI por disciplina (ver turmaProfessores
+  // abaixo e src/data/pdiModelos.js) — criado à parte em vez de reaproveitar um professor
+  // existente, para não alterar os vínculos/gerador de dados dos professores já cadastrados.
+  { id: 16, nome: 'Heverton Prado', email: 'heverton.prado@escola.gov.br', disciplinas: [6], avatar: 'HP', status: 'ativo' },
+  // Segundo professor de Inglês, mesma escola (Prudenciana) e mesma disciplina do professor 16,
+  // mas em outra turma — usado só para confirmar ao vivo que professores da mesma disciplina em
+  // turmas diferentes da mesma escola nunca acessam os alunos um do outro.
+  { id: 17, nome: 'Renato Ferreira', email: 'renato.ferreira@escola.gov.br', disciplinas: [6], avatar: 'RF', status: 'ativo' },
 ];
 
 export const gestores = [
@@ -114,12 +122,27 @@ export const turmas = [
   { id: 8, nome: '7º Ano B', ciclo: 'Ensino Fundamental', escolaId: 5, quantidadeAlunos: 26 },
   { id: 9, nome: '8º Ano A', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 35 },
   { id: 10, nome: '9º Ano A', ciclo: 'Ensino Fundamental', escolaId: 4, quantidadeAlunos: 25 },
+  // Turmas de teste do PDI por disciplina (Inglês) — ver turmaProfessores e pdiData.js. Nomes
+  // seguem o padrão real (ex.: "6M1" = 6º ano, turma matutino 1) para facilitar teste manual.
+  { id: 11, nome: '6M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 28 },
+  { id: 12, nome: '6M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 30 },
+  { id: 13, nome: '6T1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 26 },
+  { id: 14, nome: '6M1', ciclo: 'Ensino Fundamental', escolaId: 1, quantidadeAlunos: 29 },
+  { id: 15, nome: '8M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 27 },
+  { id: 16, nome: '7M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 31 },
+  { id: 17, nome: '9M1', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 25 },
+  { id: 18, nome: '9M2', ciclo: 'Ensino Fundamental', escolaId: 10, quantidadeAlunos: 33 },
 ];
 
 // Vínculo N:N turma <-> professor, como coleção normalizada (não array embutido nos dois
 // sentidos) — fonte única da relação, substitui os antigos `turma.professores`/`professor.turmas`
 // que duplicavam a mesma informação sem nenhuma garantia de sincronia entre si.
-export const turmaProfessores = [
+// Tem histórico (dataInicio/dataFim/status), mesmo padrão do vínculo Auxiliar<->Turma: no máximo
+// um vínculo ATIVO por (turmaId, disciplinaId) — trocar o professor de uma disciplina numa turma
+// encerra o vínculo antigo (dataFim preenchida) em vez de apagar (ver vincularProfessorTurma em
+// DataContext.jsx). Um mesmo professor pode ter vários vínculos ativos (turmas/disciplinas
+// diferentes) ao mesmo tempo — isso nunca foi restringido.
+const turmaProfessoresBase = [
   { turmaId: 1, professorId: 1, disciplinaId: 1 },
   { turmaId: 2, professorId: 1, disciplinaId: 2 },
   { turmaId: 3, professorId: 2, disciplinaId: 3 },
@@ -147,12 +170,39 @@ export const turmaProfessores = [
   { turmaId: 7, professorId: 14, disciplinaId: 4 },
   { turmaId: 6, professorId: 15, disciplinaId: 1 },
   { turmaId: 8, professorId: 15, disciplinaId: 2 },
+  // Vínculos de teste do PDI por disciplina (Inglês, ver pdiModelos.js e pdiData.js).
+  // Heverton (professorId 16) dá Inglês em 6M1/6M2/6T1 da Prudenciana (turmas 11/12/13) e em
+  // 6M1 do CAIC (turma 14, escolaId 1) — mesma disciplina, escolas diferentes.
+  { turmaId: 11, professorId: 16, disciplinaId: 6 },
+  { turmaId: 12, professorId: 16, disciplinaId: 6 },
+  { turmaId: 13, professorId: 16, disciplinaId: 6 },
+  { turmaId: 14, professorId: 16, disciplinaId: 6 },
+  // Heverton também dá Matemática em 6T1 (mesma turma, outra disciplina) e Cláudia dá Matemática
+  // em 6M1 (outro professor, mesma turma) — mantidos só para continuar testando que disciplinas
+  // sem modelo PDI configurado não geram ficha nenhuma.
+  { turmaId: 13, professorId: 16, disciplinaId: 2 },
+  { turmaId: 11, professorId: 1, disciplinaId: 2 },
+  // Renato (professorId 17) dá Inglês em 8M1/7M2/9M1/9M2, todas da Prudenciana — mesma escola e
+  // disciplina do Heverton, turmas totalmente diferentes: usado para confirmar que um professor
+  // nunca vê os alunos PDI do outro.
+  { turmaId: 15, professorId: 17, disciplinaId: 6 },
+  { turmaId: 16, professorId: 17, disciplinaId: 6 },
+  { turmaId: 17, professorId: 17, disciplinaId: 6 },
+  { turmaId: 18, professorId: 17, disciplinaId: 6 },
 ];
+
+export const turmaProfessores = turmaProfessoresBase.map((vinculo, index) => ({
+  id: index + 1,
+  ...vinculo,
+  dataInicio: '2026-02-01',
+  dataFim: null,
+  status: 'ativo',
+}));
 
 // Turmas de um professor, na mesma ordem em que apareciam no antigo `professor.turmas`
 // (preservado para os geradores abaixo continuarem produzindo os mesmos registros).
 const turmaIdsPorProfessor = Object.fromEntries(
-  professores.map(professor => [professor.id, turmaProfessores.filter(tp => tp.professorId === professor.id).map(tp => tp.turmaId)])
+  professores.map(professor => [professor.id, turmaProfessores.filter(tp => tp.professorId === professor.id && tp.status === 'ativo').map(tp => tp.turmaId)])
 );
 
 // Vínculo N:N professor/supervisor <-> escola, como coleção normalizada (não array embutido),
@@ -168,7 +218,8 @@ export const vinculosEscolares = [
     status: 'ativo',
   }))),
   ...[
-    { gestorId: 1, escolaIds: [1, 2, 3] },
+    // Escola 10 (Prudenciana) incluída para o Gestor poder validar o PDI por disciplina.
+    { gestorId: 1, escolaIds: [1, 2, 3, 10] },
     { gestorId: 2, escolaIds: [4, 5, 6] },
   ].flatMap(({ gestorId, escolaIds }) => escolaIds.map(escolaId => ({
     escolaId,
@@ -197,6 +248,12 @@ export const disciplinas = [
   { id: 3, nome: 'Ciências', cor: 'bg-amber-100' },
   { id: 4, nome: 'História', cor: 'bg-indigo-100' },
   { id: 5, nome: 'Geografia', cor: 'bg-teal-100' },
+  { id: 6, nome: 'Inglês', cor: 'bg-rose-100' },
+  // Completando a lista oficial de disciplinas da rede (faltavam estas quatro).
+  { id: 7, nome: 'Redação', cor: 'bg-purple-100' },
+  { id: 8, nome: 'Arte', cor: 'bg-pink-100' },
+  { id: 9, nome: 'Educação Física', cor: 'bg-orange-100' },
+  { id: 10, nome: 'Ensino Religioso', cor: 'bg-cyan-100' },
 ];
 
 const conteudos = [
@@ -443,6 +500,8 @@ export const usuarios = [
   // Sérgio Batista (gestorId 2) gerencia as escolas 4, 5 e 6 — a escola 6 é inativa, útil para
   // testar a regra de consulta histórica somente leitura do módulo PDI.
   { id: 8, email: 'sergio.batista@escola.gov.br', senha: '123456', tipo: 'gestor', gestorId: 2 },
+  { id: 9, email: 'heverton.prado@escola.gov.br', senha: '123456', tipo: 'professor', professorId: 16 },
+  { id: 10, email: 'renato.ferreira@escola.gov.br', senha: '123456', tipo: 'professor', professorId: 17 },
 ];
 
 export const notificacoesAtraso = [

@@ -22,6 +22,7 @@ import { GestaoPessoas } from './pages/GestaoPessoas';
 import { AcompanhamentoEscolar } from './pages/AcompanhamentoEscolar';
 import { CriarFormularioUmTerco, FormularioUmTerco } from './pages/FormularioUmTerco';
 import { PdiHomePage } from './pages/PdiHomePage';
+import { MeusPdisPage } from './pages/MeusPdisPage';
 import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
 import { PdiPage } from './pages/PdiPage';
@@ -56,10 +57,11 @@ const AppRoutes = () => <Routes>
   <Route path="/formulario-um-terco/criar" element={<ProtectedRoute><CriarFormularioUmTerco /></ProtectedRoute>} />
   <Route path="/pdi" element={<ProtectedRoute><PdiHomePage /></ProtectedRoute>} />
   <Route path="/pdi/formulario" element={<ProtectedRoute><FormularioPdiPage /></ProtectedRoute>} />
+  <Route path="/pdi/meus-pdis" element={<ProtectedRoute><MeusPdisPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos" element={<ProtectedRoute><PdiPage /></ProtectedRoute>} />
   <Route path="/pdi/acompanhamento" element={<ProtectedRoute><AcompanhamentoPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id" element={<ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute>} />
-  <Route path="/pdi/alunos/:id/formulario" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
+  <Route path="/pdi/fichas/:aplicacaoId/:disciplinaId/:alunoId" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id/anamnese" element={<ProtectedRoute><AnamnesePage /></ProtectedRoute>} />
   <Route path="/meus-alunos" element={<ProtectedRoute><MeusAlunosAuxiliarPage /></ProtectedRoute>} />
   <Route path="/meus-alunos/:id" element={<ProtectedRoute><AuxiliarAlunoPerfilPage /></ProtectedRoute>} />
@@ -84,6 +86,9 @@ const AppRoutes = () => <Routes>
   <Route path="*" element={<Navigate to="/dashboard" replace />} />
 </Routes>;
 
-const App = () => <Router><ThemeProvider><AuthProvider><DataProvider><EscolaProvider><AppRoutes /></EscolaProvider></DataProvider></AuthProvider></ThemeProvider></Router>;
+// DataProvider precisa envolver o AuthProvider (não o contrário) — o login passou a ler os
+// perfis (professores/gestores/diretores) sempre atualizados do DataContext, em vez de uma
+// cópia estática do mockData (ver AuthContext.jsx).
+const App = () => <Router><ThemeProvider><DataProvider><AuthProvider><EscolaProvider><AppRoutes /></EscolaProvider></AuthProvider></DataProvider></ThemeProvider></Router>;
 
 export default App;

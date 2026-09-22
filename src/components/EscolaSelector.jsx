@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useEscola } from '../context/EscolaContext';
-import { isSecretaria } from '../utils/roles';
+import { isProfessor, isSecretaria } from '../utils/roles';
 
 export const EscolaSelector = () => {
   const { user } = useAuth();
@@ -19,8 +19,11 @@ export const EscolaSelector = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 1 escola -> sem seletor (auto-selecionada). Secretaria sempre vê o seletor
+  // Professor nunca vê o seletor — sempre enxerga tudo o que é seu em todas as suas escolas
+  // juntas (ver feedback salvo em memória), então escolher uma escola não faria sentido.
+  // Gestor/Diretora: 1 escola -> sem seletor (auto-selecionada). Secretaria sempre vê o seletor
   // (tem a opção agregada "Todas as escolas" além de cada escola individual).
+  if (isProfessor(user)) return null;
   if (!isSecretaria(user) && userEscolas.length <= 1) return null;
 
   const options = isSecretaria(user) ? [{ id: null, nome: 'Todas as escolas' }, ...userEscolas] : userEscolas;

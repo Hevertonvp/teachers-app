@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal, StatCard } from '../components/Common';
 import { ProfessorName } from '../components/ProfessorName';
 import { MetaStatusBadge, PdiLevelSelector, TrendBadge } from '../components/PdiControls';
@@ -9,8 +9,9 @@ import { useEscola } from '../context/EscolaContext';
 import { escolaName, inputClass, professorName, turmaName } from '../utils/display';
 import { canAccessEscola, gestorVinculadoEscola, professoresDaEscola, professoresDaTurma } from '../utils/escolas';
 import { formatDate, metaStatusOptions, parentescoOptions, pdiAreas, pdiNivelOptions, pdiTrend } from '../utils/pdi';
-import { historicoAuxiliaresDoAluno, vinculoAtivoDoAluno } from '../utils/auxiliares';
-import { CURRENT_DATE } from '../utils/formAvailability';
+import { historicoAuxiliaresDaTurma, vinculoAtivoDaTurma } from '../utils/auxiliares';
+import { CURRENT_DATE, formatFullDate } from '../utils/formAvailability';
+import { fichasDoAlunoParaGestor } from '../utils/pdiFichas';
 import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 
@@ -35,6 +36,7 @@ const SectionHeader = ({ title, description, action }) => (
 export const PdiAlunoPerfil = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const {
     pdiAlunos,
@@ -43,6 +45,7 @@ export const PdiAlunoPerfil = () => {
     pdiAcompanhamentos,
     pdiPerguntas,
     pdiRespostas,
+    pdiAplicacoes,
     professores,
     turmas,
     turmaProfessores,
@@ -87,7 +90,9 @@ export const PdiAlunoPerfil = () => {
   const [acompanhamentoForm, setAcompanhamentoForm] = useState(null);
   const [selectedPerguntaId, setSelectedPerguntaId] = useState('');
   const [deleting, setDeleting] = useState(null);
-  const [message, setMessage] = useState('');
+  // Mensagem de sucesso vinda do redirecionamento após enviar uma ficha PDI (Gestor/Supervisor
+  // volta pra cá em vez de ficar parado na tela do formulário — ver FormularioPdiProfessor.jsx).
+  const [message, setMessage] = useState(location.state?.pdiMensagemSucesso || '');
   const [auxiliarForm, setAuxiliarForm] = useState(null);
   const [encerrandoAuxiliar, setEncerrandoAuxiliar] = useState(false);
   const acompanhamentos = pdiAcompanhamentos.filter(item => item.alunoId === Number(id)).sort(byDateDesc);
@@ -106,6 +111,10 @@ export const PdiAlunoPerfil = () => {
   // consultar alunos e gráficos de evolução — Diretora e Auxiliar ficam de fora deste módulo
   // (Auxiliar tem sua própria tela de consulta em /meus-alunos/:id).
   if (isDiretora(user) || isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
+  // Professor não usa mais este perfil para o PDI por disciplina — vai direto de "Meus PDIs"
+  // para a ficha (aplicação + disciplina + aluno). O acesso não depende mais de
+  // aluno.professorId (ver src/utils/pdiFichas.js).
+  if (isProfessor) return <Navigate to="/pdi/meus-pdis" replace />;
 
   const avaliacoes = pdiAvaliacoes.filter(item => item.alunoId === Number(id));
   const metas = pdiMetas.filter(item => item.alunoId === Number(id));
@@ -126,7 +135,10 @@ export const PdiAlunoPerfil = () => {
     .filter(resposta => resposta.alunoId === Number(id))
     .sort((left, right) => new Date(right.data) - new Date(left.data));
   const trend = pdiTrend(respostasGrafico);
-  const vinculoAuxiliarAtivo = vinculoAtivoDoAluno(pdiAuxiliaresVinculos, Number(id));
+  // Derivado da turma atual do aluno — nunca de um vínculo individual histórico (ver
+  // utils/auxiliares.js). O aluno pode não existir ainda aqui (guard mais abaixo); `aluno` é
+  // usado com optional chaining por causa disso.
+  const vinculoAuxiliarAtivo = vinculoAtivoDaTurma(pdiAuxiliaresVinculos, aluno?.turmaId);
   const chartPoints = respostasGrafico.map((resposta, index) => {
     const x = respostasGrafico.length === 1 ? 400 : 64 + index * (672 / (respostasGrafico.length - 1));
     const y = 220 - ((Number(resposta.resposta) - 1) / 4) * 176;
@@ -144,9 +156,7 @@ export const PdiAlunoPerfil = () => {
     totalAcompanhamentos: acompanhamentos.length,
   };
 
-  // Professor só acessa o perfil de alunos dos quais é o professor responsável — não de
-  // qualquer aluno das turmas em que leciona (ver mesma regra em PdiPage.jsx).
-  if (!aluno || !hasEscolaAccess || (isProfessor && aluno.professorId !== user.id)) {
+  if (!aluno || !hasEscolaAccess) {
     return (
       <MainLayout>
         <Card className="py-12 text-center">
@@ -157,42 +167,10 @@ export const PdiAlunoPerfil = () => {
     );
   }
 
-  if (isProfessor) {
-    return (
-      <MainLayout>
-        <div className="space-y-6">
-          <div>
-            <Link to="/pdi/alunos" className="text-sm font-semibold text-teal-700 hover:underline">← Voltar para alunos</Link>
-            <h1 className="mt-3 text-3xl font-bold text-slate-950">{aluno.nome}</h1>
-            <p className="mt-2 text-slate-600">{turmaName(turmas, aluno.turmaId)} · {escolaName(escolas, aluno.escolaId)}</p>
-          </div>
-          <Card>
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Dados do aluno</p>
-            <div className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-              <p><strong>Data de nascimento:</strong> {formatDate(aluno.dataNascimento)}</p>
-              <p><strong>Entrada na rede:</strong> {formatDate(aluno.dataEntradaRede)}</p>
-              <p><strong>Início do acompanhamento:</strong> {formatDate(aluno.dataInicio)}</p>
-              <p><strong>Condição informada:</strong> {aluno.condicaoInformada || 'Não informada'}</p>
-              <p><strong>Responsável legal:</strong> {aluno.responsavelNome || 'Não informado'}{aluno.responsavelParentesco ? ` (${parentescoOptions.find(item => item.value === aluno.responsavelParentesco)?.label || aluno.responsavelParentesco})` : ''}</p>
-              <p><strong>Telefone do responsável:</strong> {aluno.responsavelTelefone1 || 'Não informado'}</p>
-            </div>
-          </Card>
-          <Card>
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Professores da turma</p>
-            <ul className="mt-3 space-y-1 text-sm text-slate-600">
-              {professoresDaTurma(turmaProfessores, professores, disciplinas, aluno.turmaId).map(vinculo => (
-                <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor não encontrado'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>
-              ))}
-            </ul>
-          </Card>
-          <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="font-semibold text-slate-900">Avaliação trimestral</p><p className="mt-1 text-sm text-slate-600">Preencha ou consulte o Formulário PDI deste aluno.</p></div>
-            <Link to={`/pdi/alunos/${aluno.id}/formulario`}><Button>Formulário PDI</Button></Link>
-          </Card>
-        </div>
-      </MainLayout>
-    );
-  }
+  // Fichas PDI por disciplina disponíveis para este aluno, do ponto de vista do Gestor/
+  // Supervisor: uma por (aplicação × disciplina com modelo) da escola da turma do aluno — sem
+  // exigir vínculo de "leciona" (ver seção 16 do pedido e src/utils/pdiFichas.js).
+  const fichasGestor = isGestor(user) ? fichasDoAlunoParaGestor(aluno, { pdiAplicacoes, disciplinas, turmas }) : [];
 
   const saveAluno = (event) => {
     event.preventDefault();
@@ -215,20 +193,21 @@ export const PdiAlunoPerfil = () => {
     setMessage('Dados do aluno atualizados com sucesso.');
   };
 
-  // Gestão do vínculo Auxiliar <-> aluno é exclusiva da Secretaria (ver guard nos botões).
+  // Gestão do vínculo Auxiliar <-> TURMA é exclusiva da Secretaria (ver guard nos botões). Vale
+  // para todos os alunos PDI da turma do aluno, não só para este aluno.
   const saveAuxiliar = (event) => {
     event.preventDefault();
     if (!auxiliarForm.auxiliarId || !auxiliarForm.dataInicio) {
       setMessage('Selecione o Auxiliar e a data de início.');
       return;
     }
-    vincularAuxiliar(aluno.id, auxiliarForm.auxiliarId, auxiliarForm.dataInicio);
+    vincularAuxiliar(aluno.turmaId, auxiliarForm.auxiliarId, auxiliarForm.dataInicio);
     setAuxiliarForm(null);
-    setMessage('Auxiliar de Aprendizagem vinculado com sucesso.');
+    setMessage('Auxiliar de Aprendizagem vinculado à turma com sucesso.');
   };
 
   const confirmEncerrarAuxiliar = (dataFim) => {
-    encerrarAuxiliar(aluno.id, dataFim);
+    encerrarAuxiliar(aluno.turmaId, dataFim);
     setEncerrandoAuxiliar(false);
     setMessage('Vínculo com o Auxiliar de Aprendizagem encerrado.');
   };
@@ -336,7 +315,11 @@ export const PdiAlunoPerfil = () => {
           </div>
           <div className="flex flex-wrap gap-2">
             {isSecretaria(user) && <Link to={`/pdi/alunos/${aluno.id}/anamnese`}><Button variant="outline">Anamnese</Button></Link>}
-            {isGestor(user) && <Link to={`/pdi/alunos/${aluno.id}/formulario`}><Button variant="outline">Formulário PDI</Button></Link>}
+            {isGestor(user) && fichasGestor.map(ficha => (
+              <Link key={`${ficha.aplicacaoId}-${ficha.disciplinaId}`} to={`/pdi/fichas/${ficha.aplicacaoId}/${ficha.disciplinaId}/${aluno.id}`}>
+                <Button variant="outline">Formulário PDI — {ficha.disciplinaNome} ({formatFullDate(ficha.dataInicio)}–{formatFullDate(ficha.dataFim)})</Button>
+              </Link>
+            ))}
             {canEditPdi && <Button variant="outline" onClick={() => setAlunoForm({ ...aluno })}>Editar aluno</Button>}
             {canEditPdi && <Button variant="outline" onClick={() => { setTab('acompanhamentos'); setAcompanhamentoForm(blankAcompanhamento(aluno.id)); }}>Novo acompanhamento</Button>}
             {canEditPdi && <Button onClick={() => { setTab('metas'); setMetaForm(blankMeta(aluno.id)); }}>Nova meta</Button>}
@@ -349,18 +332,25 @@ export const PdiAlunoPerfil = () => {
           </div>
         )}
 
+        {isGestor(user) && fichasGestor.length === 0 && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+            Nenhum formulário PDI configurado para esta escola/disciplina no momento — nenhuma aplicação PDI aberta, ou nenhuma disciplina com modelo PDI cadastrado, para a turma deste aluno.
+          </div>
+        )}
+
         <Card>
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Auxiliar de Aprendizagem</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Auxiliar de Aprendizagem da turma</p>
               {vinculoAuxiliarAtivo ? (
                 <>
                   <p className="mt-1 font-semibold text-slate-900">{auxiliares.find(item => item.id === vinculoAuxiliarAtivo.auxiliarId)?.nome || 'Auxiliar não encontrado'}</p>
                   <p className="text-sm text-slate-600">Desde: {formatDate(vinculoAuxiliarAtivo.dataInicio)}</p>
                 </>
               ) : (
-                <p className="mt-1 text-sm text-slate-600">Nenhum Auxiliar de Aprendizagem vinculado no momento.</p>
+                <p className="mt-1 text-sm text-slate-600">Nenhum Auxiliar de Aprendizagem vinculado a esta turma no momento.</p>
               )}
+              <p className="mt-1 text-xs text-slate-500">O vínculo é com a turma ({turmaName(turmas, aluno.turmaId)}) e vale para todos os alunos PDI dela, não só para este aluno.</p>
             </div>
             {isSecretaria(user) && (
               <div className="flex flex-wrap gap-2">
@@ -369,14 +359,14 @@ export const PdiAlunoPerfil = () => {
               </div>
             )}
           </div>
-          {isSecretaria(user) && historicoAuxiliaresDoAluno(pdiAuxiliaresVinculos, aluno.id).length > 0 && (
+          {isSecretaria(user) && historicoAuxiliaresDaTurma(pdiAuxiliaresVinculos, aluno.turmaId).length > 0 && (
             <div className="mt-4 border-t border-slate-100 pt-4">
-              <p className="mb-2 text-sm font-semibold text-slate-700">Histórico de Auxiliares</p>
+              <p className="mb-2 text-sm font-semibold text-slate-700">Histórico de Auxiliares da turma</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead><tr className="text-xs font-semibold uppercase tracking-wide text-slate-400"><th className="pb-2 pr-4">Auxiliar</th><th className="pb-2 pr-4">Início</th><th className="pb-2 pr-4">Fim</th><th className="pb-2">Status</th></tr></thead>
                   <tbody>
-                    {historicoAuxiliaresDoAluno(pdiAuxiliaresVinculos, aluno.id).map(item => (
+                    {historicoAuxiliaresDaTurma(pdiAuxiliaresVinculos, aluno.turmaId).map(item => (
                       <tr key={item.id} className="border-t border-slate-100">
                         <td className="py-2 pr-4">{auxiliares.find(a => a.id === item.auxiliarId)?.nome || 'Auxiliar não encontrado'}</td>
                         <td className="py-2 pr-4">{formatDate(item.dataInicio)}</td>
@@ -608,8 +598,9 @@ export const PdiAlunoPerfil = () => {
         {deleting && <ConfirmDialog title="Excluir registro" message="Deseja excluir este registro do PDI? A alteração será refletida imediatamente no perfil." onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />}
 
         {auxiliarForm && (
-          <Modal title={vinculoAuxiliarAtivo ? 'Alterar Auxiliar de Aprendizagem' : 'Vincular Auxiliar de Aprendizagem'} onClose={() => setAuxiliarForm(null)}>
+          <Modal title={vinculoAuxiliarAtivo ? 'Alterar Auxiliar de Aprendizagem da turma' : 'Vincular Auxiliar de Aprendizagem à turma'} onClose={() => setAuxiliarForm(null)}>
             <form onSubmit={saveAuxiliar} className="space-y-4">
+              <p className="text-sm text-slate-600">Turma: <strong>{turmaName(turmas, aluno.turmaId)}</strong> — o vínculo passa a valer para todos os alunos PDI dela.</p>
               {vinculoAuxiliarAtivo && (
                 <p className="text-sm text-slate-600">Auxiliar atual: <strong>{auxiliares.find(item => item.id === vinculoAuxiliarAtivo.auxiliarId)?.nome}</strong></p>
               )}
@@ -630,7 +621,7 @@ export const PdiAlunoPerfil = () => {
         {encerrandoAuxiliar && (
           <ConfirmDialog
             title="Encerrar vínculo"
-            message="O aluno ficará sem Auxiliar de Aprendizagem vinculado até que a Secretaria vincule um novo. O histórico deste vínculo é preservado."
+            message="Todos os alunos PDI desta turma ficarão sem Auxiliar de Aprendizagem vinculado até que a Secretaria vincule um novo. O histórico deste vínculo é preservado."
             confirmLabel="Encerrar vínculo"
             onCancel={() => setEncerrandoAuxiliar(false)}
             onConfirm={() => confirmEncerrarAuxiliar(CURRENT_DATE)}

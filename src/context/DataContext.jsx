@@ -16,7 +16,7 @@ import {
   secretarias as secretariasIniciais,
   trimestrePeriodsIniciais,
   turmas,
-  turmaProfessores,
+  turmaProfessores as turmaProfessoresIniciais,
   vinculosEscolares as vinculosEscolaresIniciais,
 } from '../data/mockData';
 import {
@@ -29,11 +29,49 @@ import {
   pdiPerguntasFormulario,
   pdiRespostasAcompanhamento,
 } from '../data/pdiData';
+import { buildPerguntasModelo, pdiModelosIniciais } from '../data/pdiModelos';
+import { existeSobreposicaoNaEscola, MENSAGEM_SOBREPOSICAO_APLICACAO } from '../utils/pdiFichas';
 import { pdiSummary } from '../utils/pdi';
 import { canSendMessage } from '../utils/mensagens';
 import { CURRENT_DATE } from '../utils/formAvailability';
 
 const DataContext = createContext();
+
+// Aplicação PDI de teste (escola 10 = Prudenciana, vigente na CURRENT_DATE) — permite validar o
+// PDI por disciplina (Inglês) de imediato, sem precisar criar uma aplicação pela tela da
+// Secretaria antes. Segue exatamente o mesmo formato produzido por createPdiAplicacao abaixo
+// (snapshot dos modelos ativos no momento da criação).
+const pdiAplicacoesIniciais = [
+  {
+    id: 1,
+    escolaId: 10,
+    dataInicio: '2026-09-01',
+    dataFim: '2026-09-30',
+    criadaEm: '2026-09-01T08:00:00.000Z',
+    modelos: pdiModelosIniciais.filter(modelo => modelo.status === 'ativa').map(modelo => ({
+      modeloId: modelo.id,
+      disciplinaId: modelo.disciplinaId,
+      nome: modelo.nome,
+      perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
+    })),
+  },
+  // Segunda escola (CAIC, escolaId 1) com aplicação própria — usada no cenário de teste
+  // Heverton x Renato (ver mockData.js/pdiData.js), para que a turma do Heverton no CAIC também
+  // gere fichas de verdade.
+  {
+    id: 2,
+    escolaId: 1,
+    dataInicio: '2026-09-01',
+    dataFim: '2026-09-30',
+    criadaEm: '2026-09-01T08:00:00.000Z',
+    modelos: pdiModelosIniciais.filter(modelo => modelo.status === 'ativa').map(modelo => ({
+      modeloId: modelo.id,
+      disciplinaId: modelo.disciplinaId,
+      nome: modelo.nome,
+      perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
+    })),
+  },
+];
 
 const completedStatuses = ['concluido', 'concluído'];
 const pendingStatuses = ['pendente', 'em_andamento', 'em_atraso'];
@@ -64,13 +102,25 @@ export const DataProvider = ({ children }) => {
   const [pdiAcompanhamentos, setPdiAcompanhamentos] = useState(pdiAcompanhamentosIniciais);
   const [pdiPerguntas, setPdiPerguntas] = useState(pdiPerguntasFormulario);
   const [pdiRespostas, setPdiRespostas] = useState(pdiRespostasAcompanhamento);
+  // PDI por disciplina (modelos/aplicações/fichas) — estrutura nova, paralela e independente da
+  // antiga (pdiPerguntas/pdiRespostas acima, que ficam congeladas alimentando só a Análise de
+  // Desenvolvimento e o gráfico legado em PdiAlunoPerfil.jsx). Ver src/data/pdiModelos.js e
+  // src/utils/pdiFichas.js para o desenho completo.
+  const [pdiModelos, setPdiModelos] = useState(pdiModelosIniciais);
+  const [pdiAplicacoes, setPdiAplicacoes] = useState(pdiAplicacoesIniciais);
+  const [pdiFichaRespostas, setPdiFichaRespostas] = useState([]);
+  const [pdiFichaHistorico, setPdiFichaHistorico] = useState([]);
   const [pdiAnamneses, setPdiAnamneses] = useState([]);
   const [pdiAuxiliaresVinculos, setPdiAuxiliaresVinculos] = useState(pdiAuxiliaresVinculosIniciais);
   const [pdiHistoricoPreenchimento, setPdiHistoricoPreenchimento] = useState(pdiHistoricoPreenchimentoIniciais);
   const [trimestrePeriods, setTrimestrePeriods] = useState(trimestrePeriodsIniciais);
+  // Configuração da Secretaria: se true (padrão atual), todo modelo PDI novo já nasce com a base
+  // de perguntas padrão (ver buildPerguntasModelo). Desligada, o modelo nasce sem perguntas.
+  const [pdiPreencherPerguntasPadrao, setPdiPreencherPerguntasPadrao] = useState(true);
   const [formPeriods, setFormPeriods] = useState(formulariosPrazos);
   const [escolas, setEscolas] = useState(escolasIniciais);
   const [vinculosEscolares, setVinculosEscolares] = useState(vinculosEscolaresIniciais);
+  const [turmaProfessores, setTurmaProfessores] = useState(turmaProfessoresIniciais);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
   const [diretores, setDiretores] = useState(diretoresIniciais);
@@ -237,6 +287,173 @@ export const DataProvider = ({ children }) => {
     });
   };
 
+  // --- PDI por disciplina: modelos -----------------------------------------------------------
+  // Toda pergunta é igualmente editável/removível, inclusive as que vieram prontas no modelo —
+  // `origem` é só informação organizacional (ver seção 6/33 do pedido), nunca proteção.
+  const nextPerguntaId = (modelos) => Math.max(0, ...modelos.flatMap(modelo => modelo.perguntas.map(pergunta => Number(pergunta.id)))) + 1;
+
+  // Todo modelo novo nasce com a base padrão comum (perguntas 1-9, Computação/BNCC, qualitativas
+  // 10-13) — ver buildPerguntasModelo em pdiModelos.js. Nenhuma habilidade específica de
+  // disciplina é inventada aqui; a Secretaria adiciona o bloco próprio da matéria depois, à mão,
+  // como qualquer outra pergunta. A base é só o ponto de partida — tudo continua editável/
+  // excluível normalmente, e cada modelo recebe objetos novos (nunca reaproveita referência de
+  // outro modelo).
+  const createPdiModelo = (payload) => {
+    let created;
+    setPdiModelos(prev => {
+      created = { id: nextId(prev), nome: payload.nome, disciplinaId: Number(payload.disciplinaId), status: 'ativa', perguntas: pdiPreencherPerguntasPadrao ? buildPerguntasModelo() : [] };
+      return [...prev, created];
+    });
+    return created;
+  };
+
+  const updatePdiModelo = (id, payload) => {
+    setPdiModelos(prev => prev.map(modelo => (modelo.id === Number(id) ? { ...modelo, ...payload } : modelo)));
+  };
+
+  // Excluir o modelo não afeta aplicações já criadas — elas guardam uma cópia (snapshot) das
+  // perguntas no momento em que foram abertas, independente do modelo continuar existindo.
+  const deletePdiModelo = (id) => {
+    setPdiModelos(prev => prev.filter(modelo => modelo.id !== Number(id)));
+  };
+
+  const createPdiModeloPergunta = (modeloId, payload) => {
+    setPdiModelos(prev => {
+      const novoId = nextPerguntaId(prev);
+      return prev.map(modelo => (modelo.id === Number(modeloId)
+        ? { ...modelo, perguntas: [...modelo.perguntas, { origem: 'personalizada', status: 'ativa', ...payload, id: novoId, ordem: modelo.perguntas.length + 1 }] }
+        : modelo));
+    });
+  };
+
+  const updatePdiModeloPergunta = (modeloId, perguntaId, payload) => {
+    setPdiModelos(prev => prev.map(modelo => (modelo.id === Number(modeloId)
+      ? { ...modelo, perguntas: modelo.perguntas.map(pergunta => (pergunta.id === Number(perguntaId) ? { ...pergunta, ...payload } : pergunta)) }
+      : modelo)));
+  };
+
+  const deletePdiModeloPergunta = (modeloId, perguntaId) => {
+    setPdiModelos(prev => prev.map(modelo => (modelo.id === Number(modeloId)
+      ? { ...modelo, perguntas: modelo.perguntas.filter(pergunta => pergunta.id !== Number(perguntaId)) }
+      : modelo)));
+  };
+
+  const reorderPdiModeloPergunta = (modeloId, perguntaId, direction) => {
+    setPdiModelos(prev => prev.map(modelo => {
+      if (modelo.id !== Number(modeloId)) return modelo;
+      const ordenadas = [...modelo.perguntas].sort((left, right) => Number(left.ordem) - Number(right.ordem));
+      const index = ordenadas.findIndex(item => item.id === Number(perguntaId));
+      const sibling = ordenadas[index + direction];
+      if (!sibling) return modelo;
+      const atual = ordenadas[index];
+      return {
+        ...modelo,
+        perguntas: modelo.perguntas.map(item => {
+          if (item.id === atual.id) return { ...item, ordem: sibling.ordem };
+          if (item.id === sibling.id) return { ...item, ordem: atual.ordem };
+          return item;
+        }),
+      };
+    }));
+  };
+
+  // --- PDI por disciplina: aplicações (vigência por escola) -----------------------------------
+  // Vigências são independentes entre escolas; dentro da MESMA escola, duas aplicações nunca
+  // podem ter períodos sobrepostos (ver src/utils/pdiFichas.js). Isso não é "uma aplicação por
+  // trimestre" — várias aplicações podem coexistir na mesma escola, desde que não se sobreponham.
+  const createPdiAplicacao = (payload) => {
+    if (payload.dataInicio > payload.dataFim) {
+      return { ok: false, error: 'A data de início não pode ser depois da data de encerramento.' };
+    }
+    // Só os modelos ATIVOS e escolhidos em `payload.modeloIds` entram nesta aplicação — sem
+    // seleção nenhuma (ou nenhum deles mais ativo), não há o que colocar na aplicação.
+    const modelosSelecionados = pdiModelos.filter(modelo => modelo.status === 'ativa' && payload.modeloIds?.includes(modelo.id));
+    if (modelosSelecionados.length === 0) {
+      return { ok: false, error: 'Selecione ao menos um modelo PDI ativo para esta aplicação.' };
+    }
+    if (existeSobreposicaoNaEscola(pdiAplicacoes, { escolaId: payload.escolaId, dataInicio: payload.dataInicio, dataFim: payload.dataFim })) {
+      return { ok: false, error: MENSAGEM_SOBREPOSICAO_APLICACAO };
+    }
+    let created;
+    setPdiAplicacoes(prev => {
+      // Snapshot simples: cópia das perguntas de cada modelo selecionado no momento da criação —
+      // mudanças futuras no modelo não afetam esta aplicação (ver seção 6/7 do pedido).
+      created = {
+        id: nextId(prev),
+        escolaId: Number(payload.escolaId),
+        dataInicio: payload.dataInicio,
+        dataFim: payload.dataFim,
+        criadaEm: new Date().toISOString(),
+        modelos: modelosSelecionados.map(modelo => ({
+          modeloId: modelo.id,
+          disciplinaId: modelo.disciplinaId,
+          nome: modelo.nome,
+          perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
+        })),
+      };
+      return [...prev, created];
+    });
+    return { ok: true, aplicacao: created };
+  };
+
+  const updatePdiAplicacao = (id, payload) => {
+    const atual = pdiAplicacoes.find(aplicacao => aplicacao.id === Number(id));
+    if (!atual) return { ok: false, error: 'Aplicação não encontrada.' };
+    const dataInicio = payload.dataInicio ?? atual.dataInicio;
+    const dataFim = payload.dataFim ?? atual.dataFim;
+    if (dataInicio > dataFim) {
+      return { ok: false, error: 'A data de início não pode ser depois da data de encerramento.' };
+    }
+    // A aplicação editada nunca conflita com ela mesma (`ignorarId`).
+    if (existeSobreposicaoNaEscola(pdiAplicacoes, { escolaId: atual.escolaId, dataInicio, dataFim, ignorarId: atual.id })) {
+      return { ok: false, error: MENSAGEM_SOBREPOSICAO_APLICACAO };
+    }
+    setPdiAplicacoes(prev => prev.map(aplicacao => (aplicacao.id === Number(id) ? { ...aplicacao, ...payload } : aplicacao)));
+    return { ok: true };
+  };
+
+  const deletePdiAplicacao = (id) => {
+    setPdiAplicacoes(prev => prev.filter(aplicacao => aplicacao.id !== Number(id)));
+  };
+
+  // Exclui todas as aplicações PDI de uma vez (todas as escolas) — usado pelo botão "Excluir
+  // todas as aplicações" na Secretaria, sempre com confirmação antes na tela.
+  const deleteAllPdiAplicacoes = () => {
+    setPdiAplicacoes([]);
+  };
+
+  // --- PDI por disciplina: respostas e histórico da ficha --------------------------------------
+  // Identidade da resposta: aplicacaoId + disciplinaId + alunoId + perguntaId — nunca colide
+  // entre aplicações diferentes (mesmo aluno, mesma disciplina, vigências sobrepostas) nem entre
+  // disciplinas diferentes do mesmo aluno na mesma aplicação (ver seção 7/8/22 do pedido).
+  const salvarRespostaFicha = (payload) => {
+    setPdiFichaRespostas(prev => {
+      const existente = prev.find(item => (
+        item.aplicacaoId === Number(payload.aplicacaoId)
+        && item.disciplinaId === Number(payload.disciplinaId)
+        && item.alunoId === Number(payload.alunoId)
+        && item.perguntaId === payload.perguntaId
+      ));
+      if (existente) return prev.map(item => (item.id === existente.id ? { ...item, ...payload } : item));
+      return [...prev, { id: nextId(prev), ...payload }];
+    });
+  };
+
+  // Um evento por ENVIO da ficha (não por pergunta). professorId no payload de
+  // salvarRespostaFicha guarda a autoria de cada resposta; aqui é só quem executou a ação.
+  const registrarPreenchimentoFicha = (aplicacaoId, disciplinaId, alunoId, autor, acao) => {
+    setPdiFichaHistorico(prev => [...prev, {
+      id: nextId(prev),
+      aplicacaoId: Number(aplicacaoId),
+      disciplinaId: Number(disciplinaId),
+      alunoId: Number(alunoId),
+      usuarioTipo: autor.tipo,
+      usuarioId: autor.id,
+      dataHora: new Date().toISOString(),
+      acao,
+    }]);
+  };
+
   // Uma anamnese por aluno (1:1). Cria na primeira vez que é salva; nas seguintes, atualiza
   // o registro existente. Não gera nenhum valor automaticamente — só grava o que foi preenchido.
   const savePdiAnamnese = (alunoId, payload) => {
@@ -264,24 +481,55 @@ export const DataProvider = ({ children }) => {
     }]);
   };
 
-  // Vincula um Auxiliar de Aprendizagem a um aluno. Se já existir um vínculo ativo para esse
-  // aluno, encerra-o (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrever —
-  // histórico nunca é apagado. Nunca cria vínculo Auxiliar->turma/escola.
-  const vincularAuxiliar = (alunoId, auxiliarId, dataInicio) => {
+  // Vincula um Auxiliar de Aprendizagem a uma TURMA (não mais a um aluno individual) — os
+  // alunos PDI acompanhados são sempre derivados dos alunos daquela turma (ver
+  // src/utils/auxiliares.js). Se já existir um vínculo ativo para essa turma, encerra-o
+  // (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrever — histórico nunca é
+  // apagado, e isso já garante no máximo um vínculo ativo por turma.
+  const vincularAuxiliar = (turmaId, auxiliarId, dataInicio) => {
     setPdiAuxiliaresVinculos(prev => {
       const encerrados = prev.map(item => (
-        item.alunoId === Number(alunoId) && item.status === 'ativo'
+        item.turmaId === Number(turmaId) && item.status === 'ativo'
           ? { ...item, dataFim: dataInicio, status: 'encerrado' }
           : item
       ));
-      return [...encerrados, { id: nextId(encerrados), alunoId: Number(alunoId), auxiliarId: Number(auxiliarId), dataInicio, dataFim: null, status: 'ativo' }];
+      return [...encerrados, { id: nextId(encerrados), turmaId: Number(turmaId), auxiliarId: Number(auxiliarId), dataInicio, dataFim: null, status: 'ativo' }];
     });
   };
 
-  // Encerra o vínculo ativo sem criar substituto — aluno fica temporariamente sem Auxiliar.
-  const encerrarAuxiliar = (alunoId, dataFim) => {
+  // Encerra o vínculo ativo da turma sem criar substituto — os alunos PDI dela ficam
+  // temporariamente sem Auxiliar.
+  const encerrarAuxiliar = (turmaId, dataFim) => {
     setPdiAuxiliaresVinculos(prev => prev.map(item => (
-      item.alunoId === Number(alunoId) && item.status === 'ativo'
+      item.turmaId === Number(turmaId) && item.status === 'ativo'
+        ? { ...item, dataFim, status: 'encerrado' }
+        : item
+    )));
+  };
+
+  // Vincula um professor a uma disciplina numa turma. No máximo um vínculo ATIVO por
+  // (turmaId, disciplinaId) — se já existir outro professor ativo ali, ele é encerrado
+  // (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrito, preservando o
+  // histórico de quem lecionou o quê e até quando (mesmo padrão do vínculo Auxiliar<->Turma).
+  // Um mesmo professor pode ter vários vínculos ativos ao mesmo tempo (turmas/disciplinas
+  // diferentes) — isso nunca foi restringido.
+  const vincularProfessorTurma = (turmaId, professorId, disciplinaId, dataInicio) => {
+    setTurmaProfessores(prev => {
+      const encerrados = prev.map(item => (
+        item.turmaId === Number(turmaId) && item.disciplinaId === Number(disciplinaId) && item.status === 'ativo'
+          ? { ...item, dataFim: dataInicio, status: 'encerrado' }
+          : item
+      ));
+      return [...encerrados, { id: nextId(encerrados), turmaId: Number(turmaId), professorId: Number(professorId), disciplinaId: Number(disciplinaId), dataInicio, dataFim: null, status: 'ativo' }];
+    });
+  };
+
+  // Encerra o vínculo sem criar substituto — a turma fica temporariamente sem professor daquela
+  // disciplina (o professor imediatamente para de ver as fichas PDI dela, mas o que ele já
+  // respondeu antes continua no histórico).
+  const encerrarVinculoProfessorTurma = (vinculoId, dataFim) => {
+    setTurmaProfessores(prev => prev.map(item => (
+      item.id === Number(vinculoId) && item.status === 'ativo'
         ? { ...item, dataFim, status: 'encerrado' }
         : item
     )));
@@ -385,15 +633,23 @@ export const DataProvider = ({ children }) => {
     pdiAcompanhamentos,
     pdiPerguntas,
     pdiRespostas,
+    pdiModelos,
+    pdiAplicacoes,
+    pdiFichaRespostas,
+    pdiFichaHistorico,
     pdiAnamneses,
     savePdiAnamnese,
     pdiAuxiliaresVinculos,
     vincularAuxiliar,
     encerrarAuxiliar,
+    vincularProfessorTurma,
+    encerrarVinculoProfessorTurma,
     pdiHistoricoPreenchimento,
     registrarPreenchimentoPdi,
     trimestrePeriods,
     updateTrimestrePeriod,
+    pdiPreencherPerguntasPadrao,
+    setPdiPreencherPerguntasPadrao,
     pendencias,
     indicadores,
     atividadesRecentes,
@@ -430,6 +686,19 @@ export const DataProvider = ({ children }) => {
     createPdiPergunta,
     updatePdiPergunta,
     deletePdiPergunta,
+    createPdiModelo,
+    updatePdiModelo,
+    deletePdiModelo,
+    createPdiModeloPergunta,
+    updatePdiModeloPergunta,
+    deletePdiModeloPergunta,
+    reorderPdiModeloPergunta,
+    createPdiAplicacao,
+    updatePdiAplicacao,
+    deletePdiAplicacao,
+    deleteAllPdiAplicacoes,
+    salvarRespostaFicha,
+    registrarPreenchimentoFicha,
     createPdiResposta: createItem(setPdiRespostas),
     updatePdiResposta: updateItem(setPdiRespostas),
     deletePdiResposta: deleteItem(setPdiRespostas),
