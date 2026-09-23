@@ -136,8 +136,19 @@ identificador do usuário autenticado.
 
 ## Não implementado ainda (de propósito)
 
-- Autenticação/autorização real (Identity/JWT) — `createdBy`/`updatedBy` continuam texto livre
-  até lá.
+- Autorização por perfil nas rotas (hoje qualquer conta autenticada acessa qualquer rota
+  protegida; a restrição por perfil existe só na interface). Também não há troca/redefinição de
+  senha, refresh token, nem criação de novas contas pela API — só as 10 contas de demonstração do
+  seed. `createdBy`/`updatedBy` continuam texto livre.
+
+## Autenticação (implementada)
+
+`POST /api/auth/login` (`{ email, senha }`) valida o hash bcrypt de `Pessoa.senhaHash` e devolve um
+JWT (12h) + dados básicos da pessoa. Todas as rotas em `/api/*` exigem `Authorization: Bearer
+<token>`; só `/health` e `/api/auth/login` são públicas. Requer `JWT_SECRET` (mínimo 32
+caracteres) no ambiente — no Render, configurar no painel, nunca no repositório. O seed
+(`npm run prisma:seed`) cria as 10 contas de demonstração com senha de teste `123456`: trocar ou
+remover antes de usar com usuários reais.
 - Modelo/Pergunta/Aplicação/Ficha/Resposta do PDI — decisões de negócio pendentes (ver
   auditoria anterior: Gestor em PDI, múltiplos modelos por disciplina, snapshot de contexto,
   reabertura pós-prazo).

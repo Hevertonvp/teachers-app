@@ -178,6 +178,10 @@ model Pessoa {
   perfil PerfilPessoa
   status StatusPessoa @default(ATIVO)
 
+  // Hash bcrypt da senha de login. Nulo = pessoa sem credencial (não consegue autenticar).
+  // Nunca retornado por nenhuma rota — ver src/api/routes/auth.ts.
+  senhaHash String? @db.VarChar(100)
+
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
   updatedAt DateTime? @updatedAt
