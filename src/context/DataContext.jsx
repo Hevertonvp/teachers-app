@@ -1,9 +1,9 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { apiFetch, getAuthToken } from '../services/api';
 import {
   auxiliares as auxiliaresIniciais,
   correcoesSimulados as correcoesIniciais,
   disciplinas,
-  escolas as escolasIniciais,
   eventosPedagogicos as eventosIniciais,
   formulariosPrazos,
   diretores as diretoresIniciais,
@@ -119,7 +119,12 @@ export const DataProvider = ({ children }) => {
   // de perguntas padrão (ver buildPerguntasModelo). Desligada, o modelo nasce sem perguntas.
   const [pdiPreencherPerguntasPadrao, setPdiPreencherPerguntasPadrao] = useState(true);
   const [formPeriods, setFormPeriods] = useState(formulariosPrazos);
-  const [escolas, setEscolas] = useState(escolasIniciais);
+  // Escolas é o piloto de integração real com o backend (Node/Express/Prisma/Neon) — todas as
+  // outras coleções deste contexto continuam mockadas. Ver README do backend e o resumo da
+  // integração para o raciocínio completo.
+  const [escolas, setEscolas] = useState([]);
+  const [escolasLoading, setEscolasLoading] = useState(true);
+  const [escolasError, setEscolasError] = useState(null);
   const [vinculosEscolares, setVinculosEscolares] = useState(vinculosEscolaresIniciais);
   const [turmas, setTurmas] = useState(turmasIniciais);
   const [turmaProfessores, setTurmaProfessores] = useState(turmaProfessoresIniciais);
@@ -661,6 +666,76 @@ export const DataProvider = ({ children }) => {
     setVinculosEscolares(prev => prev.map(vinculo => vinculo.id === Number(id) ? { ...vinculo, status: 'removido' } : vinculo));
   };
 
+  // --- Escolas (piloto de integração real com o backend) ----------------------------------
+  // O backend guarda status como 'ATIVA'/'INATIVA' (enum Postgres); todo o resto do frontend
+  // (Badge, filtros, canAccessEscola em utils/escolas.js) já compara com 'ativa'/'inativa'
+  // minúsculo. Normalizamos aqui, na fronteira, para não precisar mudar nada fora de Escolas.
+  const normalizeEscola = (escola) => ({ ...escola, status: escola.status === 'ATIVA' ? 'ativa' : 'inativa' });
+
+  const loadEscolas = useCallback(async () => {
+    setEscolasLoading(true);
+    setEscolasError(null);
+    try {
+      const data = await apiFetch('/api/escolas');
+      setEscolas(data.map(normalizeEscola));
+    } catch (error) {
+      setEscolasError(error.message);
+    } finally {
+      setEscolasLoading(false);
+    }
+  }, []);
+
+  // Sem token (ainda não logou) não há o que buscar — o AuthContext chama loadEscolas() logo
+  // depois de um login bem-sucedido.
+  useEffect(() => {
+    if (getAuthToken()) loadEscolas();
+    else setEscolasLoading(false);
+  }, [loadEscolas]);
+
+  // Sem optimistic update neste piloto: só atualiza o estado local com o registro que o backend
+  // efetivamente confirmou salvar. Em caso de erro, a lista atual permanece intacta.
+  const createEscola = async (payload) => {
+    try {
+      const escola = normalizeEscola(await apiFetch('/api/escolas', { method: 'POST', body: { nome: payload.nome } }));
+      setEscolas(prev => [...prev, escola]);
+      return { ok: true, escola };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  // O backend só grava `nome` neste endpoint — mudança de status é feita à parte, pelos
+  // endpoints dedicados de inativar/reativar (ver abaixo), nunca por aqui.
+  const updateEscola = async (id, payload) => {
+    try {
+      const escola = normalizeEscola(await apiFetch(`/api/escolas/${id}`, { method: 'PUT', body: { nome: payload.nome } }));
+      setEscolas(prev => prev.map(item => (item.id === Number(id) ? escola : item)));
+      return { ok: true, escola };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const inativarEscola = async (id) => {
+    try {
+      const escola = normalizeEscola(await apiFetch(`/api/escolas/${id}/inativar`, { method: 'POST' }));
+      setEscolas(prev => prev.map(item => (item.id === Number(id) ? escola : item)));
+      return { ok: true, escola };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const reativarEscola = async (id) => {
+    try {
+      const escola = normalizeEscola(await apiFetch(`/api/escolas/${id}/reativar`, { method: 'POST' }));
+      setEscolas(prev => prev.map(item => (item.id === Number(id) ? escola : item)));
+      return { ok: true, escola };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   const value = {
     professores,
     gestores,
@@ -675,6 +750,9 @@ export const DataProvider = ({ children }) => {
     turmaProfessores,
     disciplinas,
     escolas,
+    escolasLoading,
+    escolasError,
+    loadEscolas,
     vinculosEscolares,
     formularios,
     pdis,
@@ -761,8 +839,10 @@ export const DataProvider = ({ children }) => {
     updateFormPeriodForEscola,
     updateFormPeriodsForEscolas,
     setPdiEscolas,
-    createEscola: createItem(setEscolas),
-    updateEscola: updateItem(setEscolas),
+    createEscola,
+    updateEscola,
+    inativarEscola,
+    reativarEscola,
     createVinculoEscolar: createItem(setVinculosEscolares),
     updateVinculoEscolar: updateItem(setVinculosEscolares),
     desvincularEscola,

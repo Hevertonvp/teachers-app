@@ -18,13 +18,12 @@ export const LoginPage = () => {
     setErro('');
     setCarregando(true);
 
-    // Simular delay de requisição
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const resultado = await login(email, senha);
 
-    if (login(email, senha)) {
+    if (resultado.ok) {
       navigate('/dashboard');
     } else {
-      setErro('Email ou senha incorretos');
+      setErro(resultado.error);
     }
     setCarregando(false);
   };
