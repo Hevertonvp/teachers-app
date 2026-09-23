@@ -161,6 +161,9 @@ model Turma {
   vinculosProfessor  ProfessorTurmaDisciplina[]
   vinculosAuxiliar   AuxiliarTurma[]
 
+  // Cobre o filtro mais comum da listagem (GET /api/turmas?escolaId=...&anoLetivo=...&status=...)
+  // — Postgres também usa o prefixo desse índice (só escolaId, ou escolaId+anoLetivo) sozinho.
+  @@index([escolaId, anoLetivo, status])
   @@map("turmas")
 }
 
