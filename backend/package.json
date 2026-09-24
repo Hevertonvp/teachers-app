@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/api/server.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/api/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
