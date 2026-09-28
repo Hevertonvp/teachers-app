@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
   // assim, uma pessoa cadastrada ou editada em Gestão de Pessoas já entra corretamente aqui,
   // sem depender de recarregar a página. Por isso o AuthProvider precisa estar DENTRO do
   // DataProvider (ver App.jsx).
-  const { professores, gestores, diretores, secretarias, auxiliares, loadEscolas } = useData();
+  const { professores, gestores, diretores, secretarias, auxiliares, loadEscolas, loadTurmas, loadDisciplinasReais } = useData();
 
   // Login REAL: quem valida e-mail/senha é o backend (bcrypt + JWT). O array `usuarios` do mock
   // continua servindo só para ligar a conta ao perfil detalhado (turmas, disciplinas, avatar...)
@@ -92,6 +92,8 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     loadEscolas();
+    loadTurmas();
+    loadDisciplinasReais();
     return { ok: true };
   };
 

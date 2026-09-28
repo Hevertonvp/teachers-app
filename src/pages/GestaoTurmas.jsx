@@ -27,7 +27,7 @@ const blankTurma = (escolaId) => ({
 export const GestaoTurmas = () => {
   const { user } = useAuth();
   const {
-    escolas, turmas, turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos,
+    escolas, turmas, turmasLoading, turmasError, loadTurmas, turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos,
     createTurma, updateTurma, inativarTurma, reativarTurma,
   } = useData();
 
@@ -38,6 +38,7 @@ export const GestaoTurmas = () => {
   const [turmaForm, setTurmaForm] = useState(null);
   const [editingTurma, setEditingTurma] = useState(null);
   const [turmaError, setTurmaError] = useState('');
+  const [salvando, setSalvando] = useState(false);
   const [inativandoTurma, setInativandoTurma] = useState(null);
   const [reativandoTurma, setReativandoTurma] = useState(null);
   const [message, setMessage] = useState('');
@@ -86,7 +87,7 @@ export const GestaoTurmas = () => {
     setTurmaForm(prev => ({ ...prev, segmento, nivel: niveisDoSegmento(segmento)[0]?.value }));
   };
 
-  const salvarTurma = (event) => {
+  const salvarTurma = async (event) => {
     event.preventDefault();
     setTurmaError('');
     const base = {
@@ -99,9 +100,10 @@ export const GestaoTurmas = () => {
     const payload = turmaForm.etapa === 'fundamental'
       ? { ...base, anoSerie: Number(turmaForm.anoSerie), segmento: null, nivel: null }
       : { ...base, anoSerie: null, segmento: turmaForm.segmento, nivel: turmaForm.nivel };
-    if (!editingTurma) payload.quantidadeAlunos = 0;
 
-    const resultado = editingTurma ? updateTurma(editingTurma.id, payload) : createTurma(payload);
+    setSalvando(true);
+    const resultado = editingTurma ? await updateTurma(editingTurma.id, payload) : await createTurma(payload);
+    setSalvando(false);
     if (!resultado.ok) {
       setTurmaError(resultado.error);
       return;
@@ -121,10 +123,17 @@ export const GestaoTurmas = () => {
             <p className="mt-2 max-w-2xl text-slate-600">Educação Infantil e Ensino Fundamental, período regular (manhã/tarde).</p>
             <p className="mt-1 text-xs text-slate-500">Turmas de período integral ainda não fazem parte do módulo PDI.</p>
           </div>
-          <Button onClick={abrirNovaTurma} disabled={escolasOrdenadas.length === 0}>+ Nova turma</Button>
+          <Button onClick={abrirNovaTurma} disabled={escolasOrdenadas.length === 0 || turmasLoading}>+ Nova turma</Button>
         </div>
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+
+        {turmasError && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+            <span>Não foi possível carregar as turmas: {turmasError}</span>
+            <Button size="sm" variant="outline" onClick={loadTurmas}>Tentar novamente</Button>
+          </div>
+        )}
 
         <Card>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -156,11 +165,15 @@ export const GestaoTurmas = () => {
           </div>
         </Card>
 
-        {turmasFiltradas.length === 0 ? (
+        {turmasLoading ? (
+          <Card><p className="text-center text-slate-500">Carregando turmas...</p></Card>
+        ) : turmasFiltradas.length === 0 ? (
           turmas.length === 0 ? (
-            <EmptyState title="Nenhuma turma cadastrada" description="Crie a primeira turma escolhendo uma escola.">
-              <Button onClick={abrirNovaTurma}>+ Nova turma</Button>
-            </EmptyState>
+            !turmasError && (
+              <EmptyState title="Nenhuma turma cadastrada" description="Crie a primeira turma escolhendo uma escola.">
+                <Button onClick={abrirNovaTurma}>+ Nova turma</Button>
+              </EmptyState>
+            )
           ) : (
             <EmptyState title="Nenhuma turma para os filtros escolhidos" description="Ajuste os filtros acima para ver outras turmas." />
           )
@@ -261,7 +274,10 @@ export const GestaoTurmas = () => {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={fecharModal}>Cancelar</Button><Button type="submit">Salvar</Button></div>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="secondary" onClick={fecharModal} disabled={salvando}>Cancelar</Button>
+                <Button type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
+              </div>
             </form>
           </Modal>
         )}
@@ -275,7 +291,12 @@ export const GestaoTurmas = () => {
             })()}
             confirmLabel="Inativar"
             onCancel={() => setInativandoTurma(null)}
-            onConfirm={() => { inativarTurma(inativandoTurma.id); setInativandoTurma(null); setMessage(`Turma "${inativandoTurma.nome}" inativada com sucesso.`); }}
+            onConfirm={async () => {
+              const alvo = inativandoTurma;
+              setInativandoTurma(null);
+              const resultado = await inativarTurma(alvo.id);
+              setMessage(resultado.ok ? `Turma "${alvo.nome}" inativada com sucesso.` : resultado.error);
+            }}
           />
         )}
 
@@ -285,11 +306,11 @@ export const GestaoTurmas = () => {
             message={`Deseja reativar a turma "${reativandoTurma.nome}"? Ela volta a aparecer como opção normal para novos vínculos.`}
             confirmLabel="Reativar"
             onCancel={() => setReativandoTurma(null)}
-            onConfirm={() => {
-              const resultado = reativarTurma(reativandoTurma.id);
+            onConfirm={async () => {
+              const alvo = reativandoTurma;
               setReativandoTurma(null);
-              if (!resultado.ok) { setMessage(resultado.error); return; }
-              setMessage(`Turma "${reativandoTurma.nome}" reativada com sucesso.`);
+              const resultado = await reativarTurma(alvo.id);
+              setMessage(resultado.ok ? `Turma "${alvo.nome}" reativada com sucesso.` : resultado.error);
             }}
           />
         )}

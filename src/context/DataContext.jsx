@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiFetch, getAuthToken } from '../services/api';
+import { listarDisciplinas } from '../services/disciplinas';
+import { criarTurma as criarTurmaApi, editarTurma, inativarTurmaApi, listarTurmas, reativarTurmaApi } from '../services/turmas';
 import {
   auxiliares as auxiliaresIniciais,
   correcoesSimulados as correcoesIniciais,
@@ -15,7 +17,6 @@ import {
   professores as professoresIniciais,
   secretarias as secretariasIniciais,
   trimestrePeriodsIniciais,
-  turmas as turmasIniciais,
   turmaProfessores as turmaProfessoresIniciais,
   vinculosEscolares as vinculosEscolaresIniciais,
 } from '../data/mockData';
@@ -35,7 +36,6 @@ import { existeSobreposicaoNaEscola, MENSAGEM_SOBREPOSICAO_APLICACAO } from '../
 import { pdiSummary } from '../utils/pdi';
 import { canSendMessage } from '../utils/mensagens';
 import { CURRENT_DATE } from '../utils/formAvailability';
-import { nomeTurma, turmaConflitante } from '../utils/turmas';
 
 const DataContext = createContext();
 
@@ -111,8 +111,22 @@ export const DataProvider = ({ children }) => {
   const [escolasLoading, setEscolasLoading] = useState(true);
   const [escolasError, setEscolasError] = useState(null);
   const [vinculosEscolares, setVinculosEscolares] = useState(vinculosEscolaresIniciais);
-  const [turmas, setTurmas] = useState(turmasIniciais);
+  // Turmas é o segundo piloto de integração real com o backend (depois de Escolas) — igual lá,
+  // sem optimistic update: só atualiza o estado local com o que o backend confirmou salvar. As
+  // 544 turmas reais no Neon foram semeadas com os MESMOS ids que este array mock sempre teve
+  // (ver backend/scripts/seed-turmas-reais.ts), então turmaProfessores/pdiAlunos/
+  // pdiAuxiliaresVinculos abaixo (ainda 100% mock) continuam resolvendo corretamente pelos
+  // mesmos turmaId de sempre — nenhuma outra tela precisou mudar por causa disso.
+  const [turmas, setTurmas] = useState([]);
+  const [turmasLoading, setTurmasLoading] = useState(true);
+  const [turmasError, setTurmasError] = useState(null);
   const [turmaProfessores, setTurmaProfessores] = useState(turmaProfessoresIniciais);
+  // Disciplinas reais (10 já cadastradas no Neon) — fonte nova para os próximos blocos
+  // (Professor↔Turma↔Disciplina, Modelos PDI). O mock `disciplinas` (importado acima) continua
+  // sendo quem alimenta o PDI por disciplina hoje; nada foi migrado para esta lista ainda.
+  const [disciplinasReais, setDisciplinasReais] = useState([]);
+  const [disciplinasReaisLoading, setDisciplinasReaisLoading] = useState(true);
+  const [disciplinasReaisError, setDisciplinasReaisError] = useState(null);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
   const [diretores, setDiretores] = useState(diretoresIniciais);
@@ -499,54 +513,78 @@ export const DataProvider = ({ children }) => {
     )));
   };
 
-  // --- Gestão de Turmas (Secretaria) ------------------------------------------------------
+  // --- Gestão de Turmas (piloto de integração real com o backend, igual Escolas) -----------
   // Turma nunca é excluída fisicamente: tem `status` ('ativa'/'inativa'), preservando o registro
   // e todos os relacionamentos que apontam para o mesmo `id` (turmaProfessores.turmaId,
-  // pdiAlunos.turmaId, pdiAuxiliaresVinculos.turmaId — ver utils/turmas.js). O nome de exibição
-  // é sempre gerado por nomeTurma(), nunca digitado pela Secretaria.
-  // Mensagem de conflito de identidade — distingue duplicar uma turma ATIVA de tentar recriar
-  // uma que já existe INATIVA (nesse caso a ação correta é reativar, não cadastrar de novo; ver
-  // seção 1/3 do pedido de correção: turma inativa continua ocupando sua identidade histórica).
-  const mensagemConflitoTurma = (conflito) => (conflito.status === 'inativa'
-    ? `Já existe uma turma com essa configuração neste ano letivo (${conflito.nome}, inativa). Reative a turma existente em vez de criar uma nova.`
-    : `Já existe uma turma ativa com essa combinação de escola, ano letivo, série/segmento, turno e identificador (${conflito.nome}).`);
+  // pdiAlunos.turmaId, pdiAuxiliaresVinculos.turmaId — ver utils/turmas.js). Nome de exibição e
+  // detecção de conflito de identidade agora são responsabilidade do backend (ver
+  // backend/src/domain/turma.ts) — o frontend só repassa o erro que ele devolver.
+  const loadTurmas = useCallback(async () => {
+    setTurmasLoading(true);
+    setTurmasError(null);
+    try {
+      setTurmas(await listarTurmas());
+    } catch (error) {
+      setTurmasError(error.message);
+    } finally {
+      setTurmasLoading(false);
+    }
+  }, []);
 
-  const createTurma = (payload) => {
-    const conflito = turmaConflitante(turmas, payload);
-    if (conflito) return { ok: false, error: mensagemConflitoTurma(conflito) };
-    const turma = { id: nextId(turmas), ...payload, nome: nomeTurma(payload), status: 'ativa' };
-    setTurmas(prev => [...prev, turma]);
-    return { ok: true, turma };
+  const createTurma = async (payload) => {
+    try {
+      const turma = await criarTurmaApi(payload);
+      setTurmas(prev => [...prev, turma]);
+      return { ok: true, turma };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Reaproveita o `id` e recalcula o nome de exibição a partir dos campos enviados — nunca troca
-  // o id nem remove o registro, então turmaProfessores/pdiAlunos/pdiAuxiliaresVinculos que já
-  // apontam para ele continuam funcionando sem nenhuma alteração.
-  const updateTurma = (id, payload) => {
-    const atual = turmas.find(turma => turma.id === Number(id));
-    if (!atual) return { ok: false, error: 'Turma não encontrada.' };
-    const mesclada = { ...atual, ...payload };
-    const conflito = turmaConflitante(turmas, mesclada, atual.id);
-    if (conflito) return { ok: false, error: mensagemConflitoTurma(conflito) };
-    const turmaAtualizada = { ...mesclada, nome: nomeTurma(mesclada) };
-    setTurmas(prev => prev.map(turma => (turma.id === Number(id) ? turmaAtualizada : turma)));
-    return { ok: true, turma: turmaAtualizada };
+  const updateTurma = async (id, payload) => {
+    try {
+      const turma = await editarTurma(id, payload);
+      setTurmas(prev => prev.map(item => (item.id === Number(id) ? turma : item)));
+      return { ok: true, turma };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
   // Inativar/reativar só muda `status` — nunca apaga a turma nem cascateia para nenhum vínculo
-  // (professor, aluno PDI ou Auxiliar continuam exatamente como estavam).
-  const inativarTurma = (id) => {
-    setTurmas(prev => prev.map(turma => (turma.id === Number(id) ? { ...turma, status: 'inativa' } : turma)));
+  // (professor, aluno PDI ou Auxiliar continuam exatamente como estavam, pois são mock e nem
+  // sabem que a turma agora é real).
+  const inativarTurma = async (id) => {
+    try {
+      const turma = await inativarTurmaApi(id);
+      setTurmas(prev => prev.map(item => (item.id === Number(id) ? turma : item)));
+      return { ok: true, turma };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  const reativarTurma = (id) => {
-    const atual = turmas.find(turma => turma.id === Number(id));
-    if (!atual) return { ok: false, error: 'Turma não encontrada.' };
-    const conflito = turmaConflitante(turmas, atual, atual.id);
-    if (conflito) return { ok: false, error: `Já existe outra turma (${conflito.nome}, ${conflito.status === 'ativa' ? 'ativa' : 'inativa'}) com essa mesma combinação — ajuste-a antes de reativar esta.` };
-    setTurmas(prev => prev.map(turma => (turma.id === Number(id) ? { ...turma, status: 'ativa' } : turma)));
-    return { ok: true };
+  const reativarTurma = async (id) => {
+    try {
+      const turma = await reativarTurmaApi(id);
+      setTurmas(prev => prev.map(item => (item.id === Number(id) ? turma : item)));
+      return { ok: true, turma };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
+
+  const loadDisciplinasReais = useCallback(async () => {
+    setDisciplinasReaisLoading(true);
+    setDisciplinasReaisError(null);
+    try {
+      setDisciplinasReais(await listarDisciplinas());
+    } catch (error) {
+      setDisciplinasReaisError(error.message);
+    } finally {
+      setDisciplinasReaisLoading(false);
+    }
+  }, []);
 
   // Vincula um professor a uma disciplina numa turma. No máximo um vínculo ATIVO por
   // (turmaId, disciplinaId) — se já existir outro professor ativo ali, ele é encerrado
@@ -670,12 +708,19 @@ export const DataProvider = ({ children }) => {
     }
   }, []);
 
-  // Sem token (ainda não logou) não há o que buscar — o AuthContext chama loadEscolas() logo
-  // depois de um login bem-sucedido.
+  // Sem token (ainda não logou) não há o que buscar — o AuthContext chama loadEscolas()/
+  // loadTurmas()/loadDisciplinasReais() logo depois de um login bem-sucedido.
   useEffect(() => {
-    if (getAuthToken()) loadEscolas();
-    else setEscolasLoading(false);
-  }, [loadEscolas]);
+    if (getAuthToken()) {
+      loadEscolas();
+      loadTurmas();
+      loadDisciplinasReais();
+    } else {
+      setEscolasLoading(false);
+      setTurmasLoading(false);
+      setDisciplinasReaisLoading(false);
+    }
+  }, [loadEscolas, loadTurmas, loadDisciplinasReais]);
 
   // Sem optimistic update neste piloto: só atualiza o estado local com o registro que o backend
   // efetivamente confirmou salvar. Em caso de erro, a lista atual permanece intacta.
@@ -721,19 +766,39 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  // `quantidadeAlunos` não existe no backend (Turma real não guarda uma contagem solta de
+  // alunos) — antes vinha de um número fixo digitado à mão no mock. Substituímos por uma
+  // contagem honesta dos alunos PDI mock hoje vinculados àquele turmaId (mesmo cálculo que
+  // vinculosDaTurma já faz em utils/turmas.js), em vez de inventar um valor ou deixar undefined
+  // quebrando as legendas de Dashboard/Planejamentos que leem turma.quantidadeAlunos.
+  const turmasComQuantidadeAlunos = useMemo(
+    () => turmas.map(turma => ({
+      ...turma,
+      quantidadeAlunos: pdiAlunos.filter(aluno => aluno.turmaId === turma.id && aluno.status === 'ativo').length,
+    })),
+    [turmas, pdiAlunos],
+  );
+
   const value = {
     professores,
     gestores,
     diretores,
     secretarias: secretariasIniciais,
     auxiliares,
-    turmas,
+    turmas: turmasComQuantidadeAlunos,
+    turmasLoading,
+    turmasError,
+    loadTurmas,
     createTurma,
     updateTurma,
     inativarTurma,
     reativarTurma,
     turmaProfessores,
     disciplinas,
+    disciplinasReais,
+    disciplinasReaisLoading,
+    disciplinasReaisError,
+    loadDisciplinasReais,
     escolas,
     escolasLoading,
     escolasError,
