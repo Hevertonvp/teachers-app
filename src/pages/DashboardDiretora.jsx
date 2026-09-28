@@ -28,7 +28,7 @@ export const DashboardDiretora = () => {
   const totalProfissionais = new Set(vinculosDasEscolas.map(vinculo => `${vinculo.usuarioTipo}:${vinculo.usuarioId}`)).size;
   const escolasAtivas = escolasVisualizadas.filter(escola => escola.status === 'ativa').length;
   const escolasInativas = escolasVisualizadas.length - escolasAtivas;
-  const totalAlunos = resumos.reduce((total, item) => total + item.totalAlunos, 0);
+  // Sem cadastro geral de alunos ainda — ver resumoEscola em utils/escolas.js.
   const totalTurmas = resumos.reduce((total, item) => total + item.totalTurmas, 0);
   const indicadores = [
     { label: 'Formulário 1/3', value: resumos.length ? Math.round(resumos.reduce((total, item) => total + item.formulario, 0) / resumos.length) : 0 },
@@ -52,7 +52,7 @@ export const DashboardDiretora = () => {
               <StatCard label="Inativas" value={escolasInativas} description="escolas" />
               <StatCard label="Profissionais" value={totalProfissionais} description="nas escolas" />
               <StatCard label="Turmas" value={totalTurmas} description="nas escolas" />
-              <StatCard label="Alunos" value={totalAlunos} description="matriculados" />
+              <StatCard label="Alunos" value="—" description="indisponível" />
             </div>
           </div>
         </section>
@@ -73,7 +73,7 @@ export const DashboardDiretora = () => {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="font-bold text-slate-900">{resumo.escola.nome}</h3>
-                      <p className="mt-1 text-sm text-slate-500">{resumo.totalTurmas} turmas · {resumo.totalAlunos} alunos</p>
+                      <p className="mt-1 text-sm text-slate-500">{resumo.totalTurmas} turmas</p>
                     </div>
                     <Badge variant={resumo.escola.status === 'ativa' ? 'green' : 'gray'}>{resumo.escola.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge>
                   </div>

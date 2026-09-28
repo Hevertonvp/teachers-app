@@ -297,7 +297,6 @@ export const DashboardProfessor = () => {
                   <div key={turma.id} className="rounded-xl border border-slate-200 p-4">
                     <p className="font-semibold text-slate-900">{turma.nome}</p>
                     <p className="mt-1 text-sm text-slate-600">{turma.ciclo}</p>
-                    <p className="mt-2 text-xs font-semibold text-slate-500">{turma.quantidadeAlunos} alunos</p>
                   </div>
                 ))}
               </div>

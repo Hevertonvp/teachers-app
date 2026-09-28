@@ -82,7 +82,6 @@ export const VisualizarPlanejamento = () => {
           <Card>
             <p className="text-gray-600 text-sm mb-1">Turma</p>
             <p className="font-semibold text-slate-700">{turma?.nome}</p>
-            <p className="text-xs text-gray-500 mt-1">👥 {turma?.quantidadeAlunos} alunos</p>
           </Card>
           <Card>
             <p className="text-gray-600 text-sm mb-1">Disciplina</p>

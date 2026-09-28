@@ -109,7 +109,7 @@ export const ListaPlanejamentosGestor = () => {
                            'Concluído'}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500">Professor(a)</p>
                           <ProfessorName professor={professor} />
@@ -125,10 +125,6 @@ export const ListaPlanejamentosGestor = () => {
                         <div>
                           <p className="text-gray-500">Período</p>
                           <p className="font-medium text-slate-700">{planejamento.dataInicio}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Alunos</p>
-                          <p className="font-medium text-slate-700">{turma?.quantidadeAlunos}</p>
                         </div>
                       </div>
                     </div>

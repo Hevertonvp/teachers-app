@@ -17,7 +17,7 @@ export const DashboardSecretaria = () => {
   const contexto = { turmas, formularios, pdis, correcoes, vinculosEscolares };
   const escolasVisualizadas = activeEscolaId === null ? escolas : escolas.filter(escola => escola.id === activeEscolaId);
   const resumos = escolasVisualizadas.map(escola => resumoEscola(escola, contexto));
-  const totalAlunos = resumos.reduce((total, item) => total + item.totalAlunos, 0);
+  // Sem cadastro geral de alunos ainda — ver resumoEscola em utils/escolas.js.
   const profissionais = [
     ...professores.map(professor => ({ tipo: 'professor', id: professor.id, status: professor.status })),
     ...gestores.map(gestor => ({ tipo: 'gestor', id: gestor.id, status: gestor.status })),
@@ -51,7 +51,7 @@ export const DashboardSecretaria = () => {
     { key: 'correcoes', header: 'Correções', render: row => `${row.correcoes}%` },
     { key: 'totalProfissionais', header: 'Pessoas' },
     { key: 'totalTurmas', header: 'Turmas' },
-    { key: 'totalAlunos', header: 'Alunos' },
+    { key: 'totalAlunos', header: 'Alunos', render: () => '—' },
   ];
 
   return (
@@ -75,7 +75,7 @@ export const DashboardSecretaria = () => {
               <StatCard label="Inativas" value={escolasInativas} description="escolas" />
               <StatCard label="Profissionais" value={totalProfissionais} description="na rede" />
               <StatCard label="Turmas" value={turmasVisualizadas.length} description={activeEscolaId === null ? 'na rede' : 'na escola'} />
-              <StatCard label="Alunos" value={totalAlunos} description="matriculados" />
+              <StatCard label="Alunos" value="—" description="indisponível" />
             </div>
           </div>
         </section>

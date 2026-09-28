@@ -113,14 +113,17 @@ const percentageComplete = (items) => {
 // só muda o eixo de agrupamento de professorId para escolaId.
 export const resumoEscola = (escola, { turmas, formularios, pdis, correcoes, vinculosEscolares }) => {
   const turmasDaEscola = turmas.filter(turma => turma.escolaId === escola.id);
-  const totalAlunos = turmasDaEscola.reduce((total, turma) => total + (turma.quantidadeAlunos || 0), 0);
   const totalProfissionais = countProfissionaisDaEscola(vinculosEscolares, escola.id);
 
   return {
     id: escola.id,
     escola,
     totalTurmas: turmasDaEscola.length,
-    totalAlunos,
+    // Não existe cadastro geral de alunos hoje — Turma real não guarda "quantidade de alunos"
+    // (isso era um número fixo digitado à mão no mock). `null` sinaliza "indisponível" pras telas
+    // que consomem isso, em vez de inventar um total ou usar contagem de alunos PDI (que é outra
+    // coisa: poucos alunos por turma têm PDI, não é o total da turma).
+    totalAlunos: null,
     totalProfissionais,
     formulario: percentageComplete(formularios.filter(item => item.escolaId === escola.id)),
     pdi: percentageComplete(pdis.filter(item => item.escolaId === escola.id)),

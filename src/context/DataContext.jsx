@@ -766,26 +766,20 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // `quantidadeAlunos` não existe no backend (Turma real não guarda uma contagem solta de
-  // alunos) — antes vinha de um número fixo digitado à mão no mock. Substituímos por uma
-  // contagem honesta dos alunos PDI mock hoje vinculados àquele turmaId (mesmo cálculo que
-  // vinculosDaTurma já faz em utils/turmas.js), em vez de inventar um valor ou deixar undefined
-  // quebrando as legendas de Dashboard/Planejamentos que leem turma.quantidadeAlunos.
-  const turmasComQuantidadeAlunos = useMemo(
-    () => turmas.map(turma => ({
-      ...turma,
-      quantidadeAlunos: pdiAlunos.filter(aluno => aluno.turmaId === turma.id && aluno.status === 'ativo').length,
-    })),
-    [turmas, pdiAlunos],
-  );
-
   const value = {
     professores,
     gestores,
     diretores,
     secretarias: secretariasIniciais,
     auxiliares,
-    turmas: turmasComQuantidadeAlunos,
+    // `quantidadeAlunos` NÃO existe aqui de propósito — Turma real não guarda contagem de alunos
+    // (não temos cadastro geral de alunos pra calcular isso de verdade), e usar `pdiAlunos.length`
+    // como substituto já foi tentado e revertido: são coisas diferentes (total da turma vs.
+    // quantos daquela turma têm PDI). Onde a UI precisava de "quantidade de alunos", ou foi
+    // removido (legendas secundárias) ou virou "—"/indisponível (StatCards de rede — ver
+    // resumoEscola em utils/escolas.js). Uma contagem real de matrícula fica pra quando existir
+    // uma fonte de verdade de alunos.
+    turmas,
     turmasLoading,
     turmasError,
     loadTurmas,

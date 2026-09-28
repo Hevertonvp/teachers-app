@@ -5,11 +5,18 @@ import { InstrumentManager } from '../components/InstrumentManager';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { apiFetch } from '../services/api';
+import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { criarVinculoAuxiliarTurma, encerrarVinculoAuxiliarTurma, listarAuxiliaresReais, listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
 import { MainLayout } from '../layouts/Layouts';
 import { escolaName, inputClass, turmaName } from '../utils/display';
 import { formatDate } from '../utils/pdi';
 import { CURRENT_DATE } from '../utils/formAvailability';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
+
+// Vínculos reais (ProfessorTurmaDisciplina/AuxiliarTurma) guardam `dataInicio`/`dataFim` como
+// DateTime ISO completo (ex.: "2026-09-28T14:30:00.000Z"), diferente do mock (`formatDate` acima,
+// que espera "AAAA-MM-DD" puro) — por isso um formatador próprio aqui, em vez de reaproveitar.
+const formatDataReal = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
 const statusOptions = [
   { value: 'ativo', label: 'Ativo' },
@@ -154,6 +161,161 @@ const VinculosTurmaProfessorModal = ({ professor, professores, turmas, disciplin
   );
 };
 
+// Turmas/disciplinas REAIS de um professor (ProfessorTurmaDisciplina, backend) — substitui, só
+// dentro de ProfessoresReaisManager, o modal mock acima (que continua existindo só pra
+// Supervisores(as)/Diretores(as) mock em PessoasManager, código antigo não tocado nesta etapa).
+// `turmasDoProfessor` já vem restrita às escolas onde o professor tem VinculoEscolar ATIVO
+// dentro do escopo de quem está gerenciando (professor.escolas, devolvido assim pelo backend em
+// GET /api/pessoas/professores) — nunca a rede inteira.
+const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disciplinasReais, onClose }) => {
+  const [vinculos, setVinculos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [novoVinculo, setNovoVinculo] = useState({ turmaId: turmasDoProfessor[0]?.id ?? '', disciplinaId: disciplinasReais[0]?.id ?? '' });
+  const [ocupantesDaTurma, setOcupantesDaTurma] = useState([]);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState('');
+  const [erroForm, setErroForm] = useState('');
+
+  const carregar = async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      setVinculos(await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id }));
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  // Só pra mostrar o aviso "fulano já leciona isso aqui" antes de confirmar — quem decide de
+  // verdade (e faz a troca de forma atômica) é sempre o backend.
+  useEffect(() => {
+    if (!novoVinculo.turmaId) { setOcupantesDaTurma([]); return; }
+    listarVinculosProfessorTurmaDisciplina({ turmaId: novoVinculo.turmaId }).then(setOcupantesDaTurma).catch(() => setOcupantesDaTurma([]));
+  }, [novoVinculo.turmaId]);
+
+  const vinculosAtivos = vinculos.filter(item => item.status === 'ATIVO').sort((a, b) => a.turmaNome.localeCompare(b.turmaNome));
+  const historico = vinculos.filter(item => item.status === 'ENCERRADO').sort((a, b) => new Date(b.dataInicio) - new Date(a.dataInicio));
+  const ocupanteAtual = ocupantesDaTurma.find(item => item.status === 'ATIVO' && item.disciplinaId === Number(novoVinculo.disciplinaId));
+  const conflitoComOutro = ocupanteAtual && ocupanteAtual.professorId !== professor.id ? ocupanteAtual : null;
+
+  const vincular = async (event) => {
+    event.preventDefault();
+    setErroForm('');
+    setSalvando(true);
+    try {
+      await criarVinculoProfessorTurmaDisciplina({ turmaId: Number(novoVinculo.turmaId), professorId: professor.id, disciplinaId: Number(novoVinculo.disciplinaId) });
+      setMensagem('Vínculo criado com sucesso.');
+      await carregar();
+    } catch (error) {
+      setErroForm(error.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const encerrar = async (vinculo) => {
+    try {
+      await encerrarVinculoProfessorTurmaDisciplina(vinculo.id);
+      setMensagem('Vínculo encerrado com sucesso.');
+      await carregar();
+    } catch (error) {
+      setMensagem(error.message);
+    }
+  };
+
+  return (
+    <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onClose}>
+      <div className="space-y-5">
+        {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
+        {erro && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+            <span>Não foi possível carregar os vínculos: {erro}</span>
+            <Button size="sm" variant="outline" onClick={carregar}>Tentar novamente</Button>
+          </div>
+        )}
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-slate-700">Vínculos ativos</p>
+          {carregando ? (
+            <p className="text-sm text-slate-500">Carregando...</p>
+          ) : vinculosAtivos.length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhuma turma vinculada no momento.</p>
+          ) : (
+            <div className="space-y-2">
+              {vinculosAtivos.map(vinculo => (
+                <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+                  <div>
+                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
+                    <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
+                  </div>
+                  <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {turmasDoProfessor.length === 0 ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Este professor não tem turmas disponíveis nas escolas onde você o administra. Verifique se há turmas ativas cadastradas.
+          </p>
+        ) : (
+          <form onSubmit={vincular} className="space-y-3 border-t border-slate-200 pt-4">
+            <p className="text-sm font-semibold text-slate-700">Vincular a uma turma/disciplina</p>
+            {erroForm && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erroForm}</div>}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormField label="Turma">
+                <select className={inputClass} value={novoVinculo.turmaId} onChange={event => setNovoVinculo(prev => ({ ...prev, turmaId: event.target.value }))}>
+                  {turmasDoProfessor.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Disciplina">
+                <select className={inputClass} value={novoVinculo.disciplinaId} onChange={event => setNovoVinculo(prev => ({ ...prev, disciplinaId: event.target.value }))}>
+                  {disciplinasReais.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
+                </select>
+              </FormField>
+            </div>
+            {conflitoComOutro && (
+              <p className="text-xs font-semibold text-amber-700">
+                Atualmente, outro professor (#{conflitoComOutro.professorId}) leciona esta disciplina nesta turma — vincular aqui encerra o vínculo dele automaticamente.
+              </p>
+            )}
+            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+          </form>
+        )}
+
+        {historico.length > 0 && (
+          <div className="border-t border-slate-200 pt-4">
+            <p className="mb-2 text-sm font-semibold text-slate-700">Histórico</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead><tr className="text-xs font-semibold uppercase tracking-wide text-slate-400"><th className="pb-2 pr-4">Turma</th><th className="pb-2 pr-4">Disciplina</th><th className="pb-2 pr-4">Início</th><th className="pb-2">Fim</th></tr></thead>
+                <tbody>
+                  {historico.map(item => (
+                    <tr key={item.id} className="border-t border-slate-100">
+                      <td className="py-2 pr-4">{item.turmaNome}</td>
+                      <td className="py-2 pr-4">{item.disciplinaNome}</td>
+                      <td className="py-2 pr-4">{formatDataReal(item.dataInicio)}</td>
+                      <td className="py-2">{formatDataReal(item.dataFim)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end"><Button variant="secondary" onClick={onClose}>Fechar</Button></div>
+      </div>
+    </Modal>
+  );
+};
+
 // --- Professores (conta real, backend) ------------------------------------------------------
 // Único ponto do app onde uma nova PESSOA real (com login/JWT de verdade) é criada — Secretaria
 // em qualquer escola, Diretora só nas suas (checado de novo no backend, nunca só aqui). Ver
@@ -201,15 +363,10 @@ const SenhaTemporariaModal = ({ pessoa, senha, mensagem, onClose }) => {
 };
 
 const ProfessoresReaisManager = ({ user }) => {
-  const { turmas: turmasMock, disciplinas, professores: professoresMock, turmaProfessores, vincularProfessorTurma, encerrarVinculoProfessorTurma } = useData();
+  const { turmas, disciplinasReais } = useData();
 
   const [professores, setProfessores] = useState([]);
   const [minhasEscolas, setMinhasEscolas] = useState([]);
-  // "Turmas e disciplinas" (mock, sem checagem possível no backend) só oferece turmas das
-  // escolas que o usuário logado administra — sem isso, a Diretora poderia vincular um professor
-  // a uma turma de outra escola por esse modal, mesmo não podendo cadastrá-lo lá diretamente.
-  const escolaIdsPermitidos = new Set(minhasEscolas.map(escola => escola.id));
-  const turmasPermitidas = turmasMock.filter(turma => escolaIdsPermitidos.has(turma.escolaId));
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
 
@@ -410,17 +567,215 @@ const ProfessoresReaisManager = ({ user }) => {
       )}
 
       {managingTurmas && (
-        <VinculosTurmaProfessorModal
+        <VinculosPedagogicosProfessorModal
           professor={managingTurmas}
-          professores={professoresMock}
-          turmas={turmasPermitidas}
-          disciplinas={disciplinas}
-          escolas={minhasEscolas}
-          turmaProfessores={turmaProfessores}
-          vincularProfessorTurma={vincularProfessorTurma}
-          encerrarVinculoProfessorTurma={encerrarVinculoProfessorTurma}
+          turmasDoProfessor={turmas.filter(turma => (
+            turma.status === 'ativa' && managingTurmas.escolas.some(escola => escola.id === turma.escolaId)
+          ))}
+          disciplinasReais={disciplinasReais}
           onClose={() => setManagingTurmas(null)}
         />
+      )}
+    </div>
+  );
+};
+
+// --- Auxiliares (vínculo real com turma, backend) ---------------------------------------------
+// Auxiliar não tem VinculoEscolar nesta etapa (não foi pedido) — por isso a listagem abaixo não é
+// escopada por escola (mostra todos os Auxiliares ativos da rede); o escopo de verdade acontece
+// na hora de vincular, restrito às turmas das escolas que o usuário logado administra
+// (minhasEscolas, mesmo endpoint já usado por ProfessoresReaisManager).
+const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => {
+  const [vinculos, setVinculos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [turmaId, setTurmaId] = useState(turmasPermitidas[0]?.id ?? '');
+  const [ocupanteDaTurma, setOcupanteDaTurma] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState('');
+  const [erroForm, setErroForm] = useState('');
+
+  const carregar = async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      setVinculos(await listarVinculosAuxiliarTurma({ auxiliarId: auxiliar.id }));
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  useEffect(() => {
+    if (!turmaId) { setOcupanteDaTurma(null); return; }
+    listarVinculosAuxiliarTurma({ turmaId }).then(lista => setOcupanteDaTurma(lista.find(item => item.status === 'ATIVO') || null)).catch(() => setOcupanteDaTurma(null));
+  }, [turmaId]);
+
+  const vinculosAtivos = vinculos.filter(item => item.status === 'ATIVO').sort((a, b) => a.turmaNome.localeCompare(b.turmaNome));
+  const historico = vinculos.filter(item => item.status === 'ENCERRADO').sort((a, b) => new Date(b.dataInicio) - new Date(a.dataInicio));
+  const conflitoComOutro = ocupanteDaTurma && ocupanteDaTurma.auxiliarId !== auxiliar.id ? ocupanteDaTurma : null;
+
+  const vincular = async (event) => {
+    event.preventDefault();
+    setErroForm('');
+    setSalvando(true);
+    try {
+      await criarVinculoAuxiliarTurma({ turmaId: Number(turmaId), auxiliarId: auxiliar.id });
+      setMensagem('Vínculo criado com sucesso.');
+      await carregar();
+    } catch (error) {
+      setErroForm(error.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const encerrar = async (vinculo) => {
+    try {
+      await encerrarVinculoAuxiliarTurma(vinculo.id);
+      setMensagem('Vínculo encerrado com sucesso.');
+      await carregar();
+    } catch (error) {
+      setMensagem(error.message);
+    }
+  };
+
+  return (
+    <Modal title={`Turmas — ${auxiliar.nome}`} onClose={onClose}>
+      <div className="space-y-5">
+        {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
+        {erro && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+            <span>Não foi possível carregar os vínculos: {erro}</span>
+            <Button size="sm" variant="outline" onClick={carregar}>Tentar novamente</Button>
+          </div>
+        )}
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-slate-700">Turmas ativas</p>
+          {carregando ? (
+            <p className="text-sm text-slate-500">Carregando...</p>
+          ) : vinculosAtivos.length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhuma turma vinculada no momento.</p>
+          ) : (
+            <div className="space-y-2">
+              {vinculosAtivos.map(vinculo => (
+                <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+                  <div>
+                    <p className="font-semibold text-slate-900">{vinculo.turmaNome}</p>
+                    <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
+                  </div>
+                  <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {turmasPermitidas.length === 0 ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Não há turmas ativas nas escolas que você administra.
+          </p>
+        ) : (
+          <form onSubmit={vincular} className="space-y-3 border-t border-slate-200 pt-4">
+            <p className="text-sm font-semibold text-slate-700">Vincular a uma turma</p>
+            {erroForm && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erroForm}</div>}
+            <FormField label="Turma">
+              <select className={inputClass} value={turmaId} onChange={event => setTurmaId(event.target.value)}>
+                {turmasPermitidas.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+              </select>
+            </FormField>
+            {conflitoComOutro && (
+              <p className="text-xs font-semibold text-amber-700">
+                Esta turma já tem um Auxiliar ativo — vincular aqui encerra o vínculo dele automaticamente.
+              </p>
+            )}
+            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+          </form>
+        )}
+
+        {historico.length > 0 && (
+          <div className="border-t border-slate-200 pt-4">
+            <p className="mb-2 text-sm font-semibold text-slate-700">Histórico</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead><tr className="text-xs font-semibold uppercase tracking-wide text-slate-400"><th className="pb-2 pr-4">Turma</th><th className="pb-2 pr-4">Início</th><th className="pb-2">Fim</th></tr></thead>
+                <tbody>
+                  {historico.map(item => (
+                    <tr key={item.id} className="border-t border-slate-100">
+                      <td className="py-2 pr-4">{item.turmaNome}</td>
+                      <td className="py-2 pr-4">{formatDataReal(item.dataInicio)}</td>
+                      <td className="py-2">{formatDataReal(item.dataFim)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end"><Button variant="secondary" onClick={onClose}>Fechar</Button></div>
+      </div>
+    </Modal>
+  );
+};
+
+const AuxiliaresReaisManager = () => {
+  const { turmas } = useData();
+  const [auxiliares, setAuxiliares] = useState([]);
+  const [minhasEscolas, setMinhasEscolas] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [managingTurmas, setManagingTurmas] = useState(null);
+
+  const carregar = async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const [listaAuxiliares, listaEscolas] = await Promise.all([listarAuxiliaresReais(), apiFetch('/api/pessoas/minhas-escolas')]);
+      setAuxiliares(listaAuxiliares);
+      setMinhasEscolas(listaEscolas);
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  const turmasPermitidas = turmas.filter(turma => turma.status === 'ativa' && minhasEscolas.some(escola => escola.id === turma.escolaId));
+
+  const columns = [
+    { key: 'nome', header: 'Nome', render: row => <PersonName nome={row.nome} /> },
+    { key: 'email', header: 'E-mail' },
+    { key: 'acoes', header: 'Ações', render: row => <Button size="sm" variant="outline" onClick={() => setManagingTurmas(row)}>Turmas</Button> },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="max-w-2xl text-sm text-slate-600">Vínculo de Auxiliares de Aprendizagem com turmas das escolas que você administra.</p>
+
+      {erro && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+          <span>Não foi possível carregar os auxiliares: {erro}</span>
+          <Button size="sm" variant="outline" onClick={carregar}>Tentar novamente</Button>
+        </div>
+      )}
+
+      {carregando ? (
+        <Card><p className="text-center text-slate-500">Carregando auxiliares...</p></Card>
+      ) : auxiliares.length === 0 ? (
+        !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum Auxiliar ativo</p></Card>
+      ) : (
+        <DataTable columns={columns} rows={auxiliares} />
+      )}
+
+      {managingTurmas && (
+        <VinculosTurmaAuxiliarModal auxiliar={managingTurmas} turmasPermitidas={turmasPermitidas} onClose={() => setManagingTurmas(null)} />
       )}
     </div>
   );
@@ -534,10 +889,14 @@ export const GestaoPessoas = () => {
   const tabs = podeGerenciarPessoasAmplo
     ? [
       { key: 'professores', label: 'Professores(as)' },
+      { key: 'auxiliares', label: 'Auxiliares' },
       { key: 'supervisores', label: 'Supervisores(as)' },
       { key: 'diretores', label: 'Diretores(as)' },
     ]
-    : [{ key: 'professores', label: 'Professores(as)' }];
+    : [
+      { key: 'professores', label: 'Professores(as)' },
+      { key: 'auxiliares', label: 'Auxiliares' },
+    ];
 
   return (
     <MainLayout>
@@ -560,6 +919,8 @@ export const GestaoPessoas = () => {
         </div>
 
         {tab === 'professores' && <ProfessoresReaisManager user={user} />}
+
+        {tab === 'auxiliares' && <AuxiliaresReaisManager />}
 
         {tab === 'supervisores' && podeGerenciarPessoasAmplo && (
           <PessoasManager

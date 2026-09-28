@@ -7,12 +7,12 @@ import bcrypt from 'bcryptjs';
 
 export const pessoasRouter = Router();
 
-type Actor = { id: number; perfil: string };
+export type Actor = { id: number; perfil: string };
 
 // Secretaria administra a rede inteira; Diretora só as escolas onde tem vínculo ATIVO como
 // DIRETORA. Único jeito de saber isso é consultando o banco — nunca confiar em nada vindo do
 // frontend (ver seção 17 do pedido de autenticação).
-async function escolasPermitidas(actor: Actor): Promise<number[] | null> {
+export async function escolasPermitidas(actor: Actor): Promise<number[] | null> {
   if (actor.perfil === 'SECRETARIA') return null; // null = sem filtro (todas)
   const vinculos = await prisma.vinculoEscolar.findMany({
     where: { pessoaId: actor.id, status: 'ATIVO' },
@@ -21,7 +21,7 @@ async function escolasPermitidas(actor: Actor): Promise<number[] | null> {
   return vinculos.map((v) => v.escolaId);
 }
 
-function exigirSecretariaOuDiretora(actor: Actor) {
+export function exigirSecretariaOuDiretora(actor: Actor) {
   if (actor.perfil !== 'SECRETARIA' && actor.perfil !== 'DIRETORA') {
     throw new ForbiddenError('Você não tem permissão para gerenciar professores.');
   }
@@ -211,4 +211,18 @@ pessoasRouter.post('/professores/:id/reativar', async (req, res) => {
   exigirSecretariaOuDiretora(actor);
   await mudarStatusProfessor(actor, Number(req.params.id), 'ATIVO');
   res.json({ ok: true });
+});
+
+// Lista de Auxiliares pra popular o seletor de "vincular Auxiliar à turma" (ver
+// auxiliarTurma.ts). Sem escopo por escola: diferente de Professor, Auxiliar não tem hoje um
+// conceito de VinculoEscolar (não foi pedido nesta etapa) — quem limita o alcance de verdade é o
+// escopo da TURMA (escolasPermitidas), checado em auxiliarTurma.ts na hora de criar o vínculo.
+pessoasRouter.get('/auxiliares', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretariaOuDiretora(actor);
+  const auxiliares = await prisma.pessoa.findMany({
+    where: { perfil: 'AUXILIAR', status: 'ATIVO' },
+    orderBy: { nome: 'asc' },
+  });
+  res.json(auxiliares.map(formatarPessoa));
 });
