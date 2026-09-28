@@ -30,6 +30,7 @@ import {
   pdiRespostasAcompanhamento,
 } from '../data/pdiData';
 import { buildPerguntasModelo, pdiModelosIniciais } from '../data/pdiModelos';
+import { getEscolaIdsAplicaveis, RECURSOS } from '../utils/aplicabilidade';
 import { existeSobreposicaoNaEscola, MENSAGEM_SOBREPOSICAO_APLICACAO } from '../utils/pdiFichas';
 import { pdiSummary } from '../utils/pdi';
 import { canSendMessage } from '../utils/mensagens';
@@ -38,41 +39,25 @@ import { nomeTurma, turmaConflitante } from '../utils/turmas';
 
 const DataContext = createContext();
 
-// Aplicação PDI de teste (escola 10 = Prudenciana, vigente na CURRENT_DATE) — permite validar o
-// PDI por disciplina (Inglês) de imediato, sem precisar criar uma aplicação pela tela da
-// Secretaria antes. Segue exatamente o mesmo formato produzido por createPdiAplicacao abaixo
-// (snapshot dos modelos ativos no momento da criação).
-const pdiAplicacoesIniciais = [
-  {
-    id: 1,
-    escolaId: 10,
-    dataInicio: '2026-09-01',
-    dataFim: '2026-09-30',
-    criadaEm: '2026-09-01T08:00:00.000Z',
-    modelos: pdiModelosIniciais.filter(modelo => modelo.status === 'ativa').map(modelo => ({
-      modeloId: modelo.id,
-      disciplinaId: modelo.disciplinaId,
-      nome: modelo.nome,
-      perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
-    })),
-  },
-  // Segunda escola (CAIC, escolaId 1) com aplicação própria — usada no cenário de teste
-  // Heverton x Renato (ver mockData.js/pdiData.js), para que a turma do Heverton no CAIC também
-  // gere fichas de verdade.
-  {
-    id: 2,
-    escolaId: 1,
-    dataInicio: '2026-09-01',
-    dataFim: '2026-09-30',
-    criadaEm: '2026-09-01T08:00:00.000Z',
-    modelos: pdiModelosIniciais.filter(modelo => modelo.status === 'ativa').map(modelo => ({
-      modeloId: modelo.id,
-      disciplinaId: modelo.disciplinaId,
-      nome: modelo.nome,
-      perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
-    })),
-  },
-];
+// Aplicação PDI de teste vigente na CURRENT_DATE, para TODAS as escolas compatíveis com o módulo
+// (ver ESCOLAS_COMPATIVEIS em utils/aplicabilidade.js) e TODOS os modelos ativos (uma por
+// disciplina, ver pdiModelosIniciais) — permite validar de imediato o direcionamento de fichas
+// por perfil (professor/gestor/diretora/auxiliar), sem precisar passar pela tela da Secretaria
+// antes. Mesmo formato que createPdiAplicacao produz (snapshot dos modelos ativos no momento da
+// criação).
+const pdiAplicacoesIniciais = getEscolaIdsAplicaveis(RECURSOS.PDI).map(escolaId => ({
+  id: escolaId,
+  escolaId,
+  dataInicio: '2026-09-01',
+  dataFim: '2026-09-30',
+  criadaEm: '2026-09-01T08:00:00.000Z',
+  modelos: pdiModelosIniciais.filter(modelo => modelo.status === 'ativa').map(modelo => ({
+    modeloId: modelo.id,
+    disciplinaId: modelo.disciplinaId,
+    nome: modelo.nome,
+    perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
+  })),
+}));
 
 const completedStatuses = ['concluido', 'concluído'];
 const pendingStatuses = ['pendente', 'em_andamento', 'em_atraso'];

@@ -7,19 +7,22 @@ import { HABILIDADE_OPCOES, PDI_HABILIDADES_EXEMPLO, PDI_INDICADORES_ESTRUTURADO
 // a base de dados de origem já não era consistente nesse ponto (ver ressalva na análise).
 // responsavelNome/Parentesco/Telefone1/Telefone2: dados mínimos do responsável legal,
 // obrigatórios desde a introdução dessa regra no cadastro do aluno (ver PdiPage.jsx).
+// turmaId remapeado após a regeneração de turmas (ver commit "Turmas: regenera as 34 escolas...")
+// — mesma tabela usada em turmaProfessoresBase: 1->34, 2->50, 3->82, 4->50, 5->98, 6->98, 7->22,
+// 8->26, 9->78, 10->78.
 const alunosBase = [
-  ['João Silva', '2014-03-12', 1, 7, 5, '2022-02-03', '2026-08-05', 'TEA informado pela família', 'F84.0', 'ativo', 'Marta Silva', 'mae', '(32) 98811-2233', ''],
-  ['Ana Costa', '2013-11-08', 1, 9, 6, '2021-02-01', '2026-08-06', 'TDAH informado no cadastro', 'F90.0', 'ativo', 'Roberta Costa', 'mae', '(32) 98822-3344', '(32) 3271-1002'],
-  ['Pedro Lima', '2015-01-20', 6, 5, 3, '2023-02-06', '2026-08-08', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Antônio Lima', 'pai', '(32) 98833-4455', ''],
-  ['Mariana Alves', '2014-07-02', 2, 1, 1, '2022-02-07', '2026-08-01', 'Dificuldade persistente de aprendizagem informada', '', 'ativo', 'Débora Alves', 'mae', '(32) 98844-5566', ''],
-  ['Lucas Pereira', '2015-05-17', 3, 2, 1, '2023-02-01', '2026-08-02', 'Necessidade de apoio pedagógico individualizado', '', 'ativo', 'Sandra Pereira', 'avo_f', '(32) 98855-6677', ''],
-  ['Camila Ribeiro', '2013-09-29', 3, 4, 2, '2021-02-08', '2026-08-07', 'Deficiência intelectual informada pela família', 'F79', 'ativo', 'Fábio Ribeiro', 'pai', '(32) 98866-7788', '(32) 3271-1003'],
-  ['Sofia Martins', '2014-12-10', 6, 6, 4, '2022-02-02', '2026-08-09', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Renata Martins', 'mae', '(32) 98877-8899', ''],
-  ['Gustavo Lima', '2012-06-14', 4, 10, 11, '2020-02-03', '2026-08-03', 'Baixa visão informada no cadastro', 'H54.2', 'ativo', 'Cláudio Lima', 'pai', '(32) 98888-9900', ''],
-  ['Isabela Rocha', '2015-04-25', 5, 3, 12, '2023-02-06', '2026-08-11', 'Transtorno de linguagem informado', 'F80.9', 'ativo', 'Vanessa Rocha', 'mae', '(32) 98899-0011', ''],
-  ['Tiago Moreira', '2013-02-18', 5, 8, 10, '2021-02-04', '2026-08-04', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Osvaldo Moreira', 'avo_m', '(32) 98800-1122', ''],
-  ['Larissa Gomes', '2014-10-22', 6, 6, 15, '2022-02-01', '2026-08-10', 'Necessidade de apoio pedagógico individualizado', '', 'arquivado', 'Patrícia Gomes', 'mae', '(32) 98811-2244', ''],
-  ['Rafael Cardoso', '2015-08-19', 6, 5, 14, '2023-02-02', '2026-08-12', 'TEA informado pela família', 'F84.0', 'ativo', 'Marcelo Cardoso', 'pai', '(32) 98822-3355', ''],
+  ['João Silva', '2014-03-12', 1, 22, 5, '2022-02-03', '2026-08-05', 'TEA informado pela família', 'F84.0', 'ativo', 'Marta Silva', 'mae', '(32) 98811-2233', ''],
+  ['Ana Costa', '2013-11-08', 1, 78, 6, '2021-02-01', '2026-08-06', 'TDAH informado no cadastro', 'F90.0', 'ativo', 'Roberta Costa', 'mae', '(32) 98822-3344', '(32) 3271-1002'],
+  ['Pedro Lima', '2015-01-20', 6, 98, 3, '2023-02-06', '2026-08-08', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Antônio Lima', 'pai', '(32) 98833-4455', ''],
+  ['Mariana Alves', '2014-07-02', 2, 34, 1, '2022-02-07', '2026-08-01', 'Dificuldade persistente de aprendizagem informada', '', 'ativo', 'Débora Alves', 'mae', '(32) 98844-5566', ''],
+  ['Lucas Pereira', '2015-05-17', 3, 50, 1, '2023-02-01', '2026-08-02', 'Necessidade de apoio pedagógico individualizado', '', 'ativo', 'Sandra Pereira', 'avo_f', '(32) 98855-6677', ''],
+  ['Camila Ribeiro', '2013-09-29', 3, 50, 2, '2021-02-08', '2026-08-07', 'Deficiência intelectual informada pela família', 'F79', 'ativo', 'Fábio Ribeiro', 'pai', '(32) 98866-7788', '(32) 3271-1003'],
+  ['Sofia Martins', '2014-12-10', 6, 98, 4, '2022-02-02', '2026-08-09', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Renata Martins', 'mae', '(32) 98877-8899', ''],
+  ['Gustavo Lima', '2012-06-14', 4, 78, 11, '2020-02-03', '2026-08-03', 'Baixa visão informada no cadastro', 'H54.2', 'ativo', 'Cláudio Lima', 'pai', '(32) 98888-9900', ''],
+  ['Isabela Rocha', '2015-04-25', 5, 82, 12, '2023-02-06', '2026-08-11', 'Transtorno de linguagem informado', 'F80.9', 'ativo', 'Vanessa Rocha', 'mae', '(32) 98899-0011', ''],
+  ['Tiago Moreira', '2013-02-18', 5, 26, 10, '2021-02-04', '2026-08-04', 'Acompanhamento pedagógico sem CID informado', '', 'ativo', 'Osvaldo Moreira', 'avo_m', '(32) 98800-1122', ''],
+  ['Larissa Gomes', '2014-10-22', 6, 98, 15, '2022-02-01', '2026-08-10', 'Necessidade de apoio pedagógico individualizado', '', 'arquivado', 'Patrícia Gomes', 'mae', '(32) 98811-2244', ''],
+  ['Rafael Cardoso', '2015-08-19', 6, 98, 14, '2023-02-02', '2026-08-12', 'TEA informado pela família', 'F84.0', 'ativo', 'Marcelo Cardoso', 'pai', '(32) 98822-3355', ''],
   // Alunos de teste do PDI por disciplina (Inglês) — cenário Heverton x Renato (ver
   // turmaProfessores em mockData.js e src/data/pdiModelos.js).
   // Heverton (professorId 16): 2 alunos PDI em cada uma de suas 4 turmas de Inglês —
@@ -70,17 +73,17 @@ export const pdiAlunos = alunosBase.map(([
 // registros anteriores (dataFim preenchida, status 'encerrado'), nunca apagam ou sobrescrevem.
 // Os alunos acompanhados por um Auxiliar são sempre derivados dos alunos PDI da(s) turma(s) em
 // que ele tem vínculo ativo agora (ver utils/auxiliares.js) — nunca um vínculo direto por aluno.
-// auxiliarId 1=Débora (turma 7, onde está João Silva), 2=Ricardo (turmas 3 e 1, onde estão
+// auxiliarId 1=Débora (turma 22, onde está João Silva), 2=Ricardo (turmas 82 e 34, onde estão
 // Isabela Rocha e Mariana Alves), 3=Simone (turma 11, onde estão Beatriz Nunes e Caio Ferreira —
-// exemplo de um Auxiliar acompanhando vários alunos automaticamente pela mesma turma). A turma 9
-// (Ana Costa) fica sem Auxiliar (estado válido). A turma 4 (Camila Ribeiro) tem histórico de
-// troca de Auxiliar (Débora -> Ricardo).
+// exemplo de um Auxiliar acompanhando vários alunos automaticamente pela mesma turma). A turma 78
+// (Ana Costa) fica sem Auxiliar (estado válido). A turma 50 (Camila Ribeiro) tem histórico de
+// troca de Auxiliar (Débora -> Ricardo). turmaId remapeado — ver comentário em alunosBase acima.
 export const pdiAuxiliaresVinculos = [
-  { id: 1, turmaId: 7, auxiliarId: 1, dataInicio: '2026-02-10', dataFim: null, status: 'ativo' },
-  { id: 2, turmaId: 3, auxiliarId: 2, dataInicio: '2026-02-15', dataFim: null, status: 'ativo' },
-  { id: 3, turmaId: 1, auxiliarId: 2, dataInicio: '2026-03-01', dataFim: null, status: 'ativo' },
-  { id: 4, turmaId: 4, auxiliarId: 1, dataInicio: '2026-02-01', dataFim: '2026-05-20', status: 'encerrado' },
-  { id: 5, turmaId: 4, auxiliarId: 2, dataInicio: '2026-05-21', dataFim: null, status: 'ativo' },
+  { id: 1, turmaId: 22, auxiliarId: 1, dataInicio: '2026-02-10', dataFim: null, status: 'ativo' },
+  { id: 2, turmaId: 82, auxiliarId: 2, dataInicio: '2026-02-15', dataFim: null, status: 'ativo' },
+  { id: 3, turmaId: 34, auxiliarId: 2, dataInicio: '2026-03-01', dataFim: null, status: 'ativo' },
+  { id: 4, turmaId: 50, auxiliarId: 1, dataInicio: '2026-02-01', dataFim: '2026-05-20', status: 'encerrado' },
+  { id: 5, turmaId: 50, auxiliarId: 2, dataInicio: '2026-05-21', dataFim: null, status: 'ativo' },
   { id: 6, turmaId: 11, auxiliarId: 3, dataInicio: '2026-08-20', dataFim: null, status: 'ativo' },
 ];
 

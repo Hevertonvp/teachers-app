@@ -147,17 +147,27 @@ export const buildPerguntasModelo = ({
   return [...perguntasEstruturadas, ...perguntasProcedimentos, ...orientacaoComputacao, ...perguntasComputacao, ...perguntasQualitativas];
 };
 
-// Único modelo cadastrado nesta etapa: Inglês. Novas disciplinas passam a ter PDI só cadastrando
-// um novo item aqui (ou pela tela da Secretaria, ver createPdiModelo em DataContext.jsx) — nada
-// no restante do módulo (autorização, aplicação, respostas, dashboard) precisa mudar.
+// Um modelo por disciplina, cobrindo as 10 disciplinas cadastradas em mockData.js — usado para
+// testar o direcionamento de fichas por perfil (professor/gestor/diretora/auxiliar) sem precisar
+// passar pela tela da Secretaria primeiro. Só Inglês tem o bloco "Procedimentos Esperados"
+// preenchido (EF06LI*, ver PDI_HABILIDADES_EXEMPLO) — as demais nascem só com a base padrão
+// (1-9, Computação/BNCC, qualitativas), porque não há habilidades específicas confirmadas para
+// as outras disciplinas ainda (ver comentário de buildPerguntasModelo acima).
 export const pdiModelosIniciais = [
   {
     id: 1,
     nome: 'PDI - Inglês',
     disciplinaId: DISCIPLINA_INGLES_ID,
     status: 'ativa',
-    // Só o bloco de habilidades específicas (EF06LI*) precisa ser informado — o resto (1-9,
-    // Computação/BNCC, qualitativas) já vem da base padrão por default.
     perguntas: buildPerguntasModelo({ procedimentosEsperados: PDI_HABILIDADES_EXEMPLO }),
   },
+  { id: 2, nome: 'PDI - Língua Portuguesa', disciplinaId: 1, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 3, nome: 'PDI - Matemática', disciplinaId: 2, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 4, nome: 'PDI - Ciências', disciplinaId: 3, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 5, nome: 'PDI - História', disciplinaId: 4, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 6, nome: 'PDI - Geografia', disciplinaId: 5, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 7, nome: 'PDI - Redação', disciplinaId: 7, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 8, nome: 'PDI - Arte', disciplinaId: 8, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 9, nome: 'PDI - Educação Física', disciplinaId: 9, status: 'ativa', perguntas: buildPerguntasModelo() },
+  { id: 10, nome: 'PDI - Ensino Religioso', disciplinaId: 10, status: 'ativa', perguntas: buildPerguntasModelo() },
 ];
