@@ -45,7 +45,16 @@ export const canViewSupervisoras = (user) => isDiretora(user);
 // Administração cadastral de pessoas (professores, supervisores, diretores): criar, editar,
 // ativar/inativar. Distinta de canAcompanharProfessores (que é acompanhamento/monitoramento,
 // compartilhado com Supervisor) — Secretaria não vira "supervisor com mais permissão".
+// Continua exclusiva da Secretaria: é quem controla as abas Supervisores(as)/Diretores(as) em
+// Gestão de Pessoas. A Diretora NUNCA cria/edita Supervisor ou Diretora, só Professor — ver
+// canManageProfessores abaixo, que é mais estreita.
 export const canManagePessoas = (user) => isSecretaria(user);
+
+// Cadastro real de Professor (conta autenticável, backend) — Secretaria em qualquer escola da
+// rede; Diretora só nas escolas onde tem vínculo ativo (checado de verdade no backend, nunca só
+// aqui). Deliberadamente mais estreita que canManagePessoas: não dá acesso a Supervisores/
+// Diretores.
+export const canManageProfessores = (user) => isSecretaria(user) || isDiretora(user);
 
 // Gestão de Turmas (criar/editar/inativar) — exclusiva da Secretaria, não herdada por
 // canManagePedagogico (Gestor não cria/edita turma, só usa as que a Secretaria cadastrou).

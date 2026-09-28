@@ -5,8 +5,9 @@ import { EscolaProvider } from './context/EscolaContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { isAuxiliar, isDiretora, isGestor, isProfessor, isSecretaria } from './utils/roles';
 import { FormAvailabilityGate } from './components/FormAvailabilityGate';
-import { ProtectedRoute } from './routes/ProtectedRoute';
+import { ProtectedRoute, PrimeiroAcessoRoute } from './routes/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
+import { PrimeiroAcessoPage } from './pages/PrimeiroAcessoPage';
 import { DashboardProfessor } from './pages/DashboardProfessor';
 import { DashboardGestor } from './pages/DashboardGestor';
 import { DashboardSecretaria } from './pages/DashboardSecretaria';
@@ -53,6 +54,7 @@ const DashboardRouter = () => {
 
 const AppRoutes = () => <Routes>
   <Route path="/login" element={<LoginPage />} />
+  <Route path="/primeiro-acesso" element={<PrimeiroAcessoRoute><PrimeiroAcessoPage /></PrimeiroAcessoRoute>} />
   <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
   <Route path="/formulario-um-terco" element={<ProtectedRoute><FormAvailabilityGate formId="formulario_um_terco"><FormularioUmTerco /></FormAvailabilityGate></ProtectedRoute>} />
   <Route path="/formulario-um-terco/criar" element={<ProtectedRoute><CriarFormularioUmTerco /></ProtectedRoute>} />

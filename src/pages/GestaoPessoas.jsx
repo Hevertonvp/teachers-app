@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Badge, Button, FormField, Modal, PersonName } from '../components/Common';
+import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, Modal, PersonName } from '../components/Common';
 import { InstrumentManager } from '../components/InstrumentManager';
-import { ProfessorName } from '../components/ProfessorName';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { apiFetch } from '../services/api';
 import { MainLayout } from '../layouts/Layouts';
 import { escolaName, inputClass, turmaName } from '../utils/display';
 import { formatDate } from '../utils/pdi';
 import { CURRENT_DATE } from '../utils/formAvailability';
-import { canManagePessoas } from '../utils/roles';
+import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
 
 const statusOptions = [
   { value: 'ativo', label: 'Ativo' },
@@ -154,6 +154,278 @@ const VinculosTurmaProfessorModal = ({ professor, professores, turmas, disciplin
   );
 };
 
+// --- Professores (conta real, backend) ------------------------------------------------------
+// Único ponto do app onde uma nova PESSOA real (com login/JWT de verdade) é criada — Secretaria
+// em qualquer escola, Diretora só nas suas (checado de novo no backend, nunca só aqui). Ver
+// backend/src/api/routes/pessoas.ts para as regras completas.
+const SenhaTemporariaModal = ({ pessoa, senha, mensagem, onClose }) => {
+  const [copiado, setCopiado] = useState(false);
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(senha);
+      setCopiado(true);
+    } catch {
+      setCopiado(false);
+    }
+  };
+
+  return (
+    <Modal title="Professor cadastrado com sucesso" onClose={onClose}>
+      {senha ? (
+        <div className="space-y-4">
+          <div className="rounded-lg bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Login</p>
+            <p className="mt-1 font-mono text-sm text-slate-900">{pessoa.email}</p>
+          </div>
+          <div className="rounded-lg bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Senha temporária</p>
+            <p className="mt-1 font-mono text-lg font-bold text-slate-900">{senha}</p>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Esta senha será exibida somente agora — anote ou copie antes de fechar. O professor deverá alterá-la no primeiro acesso. Repasse pessoalmente ou por WhatsApp.
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={copiar}>{copiado ? 'Copiado!' : 'Copiar senha'}</Button>
+            <Button onClick={onClose}>Concluir</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-slate-600">{mensagem || 'Professor vinculado com sucesso.'}</p>
+          <div className="flex justify-end"><Button onClick={onClose}>Concluir</Button></div>
+        </div>
+      )}
+    </Modal>
+  );
+};
+
+const ProfessoresReaisManager = ({ user }) => {
+  const { turmas: turmasMock, disciplinas, professores: professoresMock, turmaProfessores, vincularProfessorTurma, encerrarVinculoProfessorTurma } = useData();
+
+  const [professores, setProfessores] = useState([]);
+  const [minhasEscolas, setMinhasEscolas] = useState([]);
+  // "Turmas e disciplinas" (mock, sem checagem possível no backend) só oferece turmas das
+  // escolas que o usuário logado administra — sem isso, a Diretora poderia vincular um professor
+  // a uma turma de outra escola por esse modal, mesmo não podendo cadastrá-lo lá diretamente.
+  const escolaIdsPermitidos = new Set(minhasEscolas.map(escola => escola.id));
+  const turmasPermitidas = turmasMock.filter(turma => escolaIdsPermitidos.has(turma.escolaId));
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  const [form, setForm] = useState(null);
+  const [formError, setFormError] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [resultadoCriacao, setResultadoCriacao] = useState(null);
+  const [resetando, setResetando] = useState(null);
+  const [mudandoStatus, setMudandoStatus] = useState(null);
+  const [managingTurmas, setManagingTurmas] = useState(null);
+  const [mensagem, setMensagem] = useState('');
+
+  const carregar = async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const [listaProfessores, listaEscolas] = await Promise.all([
+        apiFetch('/api/pessoas/professores'),
+        apiFetch('/api/pessoas/minhas-escolas'),
+      ]);
+      setProfessores(listaProfessores);
+      setMinhasEscolas(listaEscolas);
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [] }); };
+  const fecharCadastro = () => { setForm(null); setFormError(''); };
+
+  const toggleEscola = (escolaId) => {
+    setForm(prev => ({
+      ...prev,
+      escolaIds: prev.escolaIds.includes(escolaId) ? prev.escolaIds.filter(id => id !== escolaId) : [...prev.escolaIds, escolaId],
+    }));
+  };
+
+  const salvarCadastro = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    if (form.escolaIds.length === 0) {
+      setFormError('Selecione ao menos uma escola.');
+      return;
+    }
+    setSalvando(true);
+    try {
+      const resultado = await apiFetch('/api/pessoas/professores', {
+        method: 'POST',
+        body: { nome: form.nome || undefined, email: form.email, escolaIds: form.escolaIds },
+      });
+      fecharCadastro();
+      setResultadoCriacao(resultado);
+      await carregar();
+    } catch (error) {
+      setFormError(error.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const confirmarResetarSenha = async () => {
+    const alvo = resetando;
+    try {
+      const resultado = await apiFetch(`/api/pessoas/professores/${alvo.id}/resetar-senha`, { method: 'POST' });
+      setResetando(null);
+      setResultadoCriacao({ pessoa: alvo, senhaTemporaria: resultado.senhaTemporaria });
+    } catch (error) {
+      setResetando(null);
+      setMensagem(error.message);
+    }
+  };
+
+  const confirmarMudarStatus = async () => {
+    const { professor, novoStatus } = mudandoStatus;
+    try {
+      await apiFetch(`/api/pessoas/professores/${professor.id}/${novoStatus === 'ATIVO' ? 'reativar' : 'inativar'}`, { method: 'POST' });
+      setMudandoStatus(null);
+      setMensagem(novoStatus === 'ATIVO' ? `${professor.nome} reativado(a) com sucesso.` : `${professor.nome} inativado(a) com sucesso.`);
+      await carregar();
+    } catch (error) {
+      setMudandoStatus(null);
+      setMensagem(error.message);
+    }
+  };
+
+  const columns = [
+    { key: 'nome', header: 'Nome', render: row => <PersonName nome={row.nome} /> },
+    { key: 'email', header: 'E-mail' },
+    { key: 'escolas', header: 'Escolas', render: row => (
+      row.escolas.length === 0
+        ? <span className="text-xs text-slate-400">Nenhuma nesta visão</span>
+        : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
+    ) },
+    { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ATIVO' ? 'green' : 'gray'}>{row.status === 'ATIVO' ? 'Ativo' : 'Inativo'}</Badge> },
+    { key: 'acoes', header: 'Ações', render: row => (
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={() => setManagingTurmas(row)}>Turmas e disciplinas</Button>
+        <ActionMenu items={[
+          { label: 'Gerar nova senha temporária', onClick: () => setResetando(row) },
+          row.status === 'ATIVO'
+            ? { label: 'Inativar', variant: 'danger', onClick: () => setMudandoStatus({ professor: row, novoStatus: 'INATIVO' }) }
+            : { label: 'Reativar', onClick: () => setMudandoStatus({ professor: row, novoStatus: 'ATIVO' }) },
+        ]} />
+      </div>
+    ) },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <p className="max-w-2xl text-sm text-slate-600">
+          {isSecretaria(user)
+            ? 'Cadastro de contas reais de Professor(a), com login e senha próprios.'
+            : 'Professores(as) vinculados às escolas que você administra.'}
+        </p>
+        <Button onClick={abrirCadastro} disabled={carregando}>+ Cadastrar professor</Button>
+      </div>
+
+      {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
+
+      {erro && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+          <span>Não foi possível carregar os professores: {erro}</span>
+          <Button size="sm" variant="outline" onClick={carregar}>Tentar novamente</Button>
+        </div>
+      )}
+
+      {carregando ? (
+        <Card><p className="text-center text-slate-500">Carregando professores...</p></Card>
+      ) : professores.length === 0 ? (
+        !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum professor nesta visão</p><p className="mt-1 text-sm text-slate-500">Cadastre o primeiro professor com uma conta real.</p></Card>
+      ) : (
+        <DataTable columns={columns} rows={professores} />
+      )}
+
+      {form && (
+        <Modal title="Cadastrar professor" onClose={fecharCadastro}>
+          <form onSubmit={salvarCadastro} className="space-y-4">
+            {formError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{formError}</div>}
+            <FormField label="E-mail">
+              <input className={inputClass} type="email" value={form.email} onChange={event => setForm(prev => ({ ...prev, email: event.target.value }))} required />
+            </FormField>
+            <FormField label="Nome completo">
+              <input className={inputClass} value={form.nome} onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))} />
+              <p className="mt-1 text-xs text-slate-500">Se já existir uma conta com esse e-mail, o nome informado é ignorado — o professor só será vinculado à(s) escola(s) selecionada(s).</p>
+            </FormField>
+            <FormField label="Escolas de vínculo">
+              <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
+                {minhasEscolas.map(escola => (
+                  <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked={form.escolaIds.includes(escola.id)} onChange={() => toggleEscola(escola.id)} />
+                    {escola.nome}
+                  </label>
+                ))}
+              </div>
+            </FormField>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
+              <Button type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {resultadoCriacao && (
+        <SenhaTemporariaModal
+          pessoa={resultadoCriacao.pessoa}
+          senha={resultadoCriacao.senhaTemporaria}
+          mensagem={resultadoCriacao.mensagem}
+          onClose={() => setResultadoCriacao(null)}
+        />
+      )}
+
+      {resetando && (
+        <ConfirmDialog
+          title="Gerar nova senha temporária"
+          message={`Isso invalida a senha atual de ${resetando.nome} imediatamente (qualquer sessão aberta também é encerrada). Deseja continuar?`}
+          confirmLabel="Gerar nova senha"
+          onCancel={() => setResetando(null)}
+          onConfirm={confirmarResetarSenha}
+        />
+      )}
+
+      {mudandoStatus && (
+        <ConfirmDialog
+          title={mudandoStatus.novoStatus === 'ATIVO' ? 'Reativar professor' : 'Inativar professor'}
+          message={mudandoStatus.novoStatus === 'ATIVO'
+            ? `Deseja reativar ${mudandoStatus.professor.nome}? O login volta a funcionar normalmente.`
+            : `Deseja inativar ${mudandoStatus.professor.nome}? O login é bloqueado e qualquer sessão aberta é encerrada na hora. O histórico é preservado.`}
+          confirmLabel={mudandoStatus.novoStatus === 'ATIVO' ? 'Reativar' : 'Inativar'}
+          onCancel={() => setMudandoStatus(null)}
+          onConfirm={confirmarMudarStatus}
+        />
+      )}
+
+      {managingTurmas && (
+        <VinculosTurmaProfessorModal
+          professor={managingTurmas}
+          professores={professoresMock}
+          turmas={turmasPermitidas}
+          disciplinas={disciplinas}
+          escolas={minhasEscolas}
+          turmaProfessores={turmaProfessores}
+          vincularProfessorTurma={vincularProfessorTurma}
+          encerrarVinculoProfessorTurma={encerrarVinculoProfessorTurma}
+          onClose={() => setManagingTurmas(null)}
+        />
+      )}
+    </div>
+  );
+};
+
 const PessoasManager = ({ title, description, usuarioTipo, records, fields, columns, onCreate, onUpdate, escolas, vinculosEscolares, createVinculoEscolar, desvincularEscola, emptyDescription }) => {
   const [managingPessoa, setManagingPessoa] = useState(null);
   const [managingTurmas, setManagingTurmas] = useState(null);
@@ -218,14 +490,10 @@ const PessoasManager = ({ title, description, usuarioTipo, records, fields, colu
 export const GestaoPessoas = () => {
   const { user, registrarUsuario } = useAuth();
   const {
-    professores,
     gestores,
     diretores,
     escolas,
     vinculosEscolares,
-    createProfessor,
-    updateProfessor,
-    disciplinas,
     createGestor,
     updateGestor,
     createDiretor,
@@ -235,45 +503,12 @@ export const GestaoPessoas = () => {
   } = useData();
   const [tab, setTab] = useState('professores');
 
-  if (!canManagePessoas(user)) return <Navigate to="/dashboard" replace />;
+  if (!canManageProfessores(user)) return <Navigate to="/dashboard" replace />;
+  // Supervisores(as)/Diretores(as) continuam exclusivos da Secretaria — a Diretora só enxerga a
+  // aba Professores(as), mesmo passando na checagem acima.
+  const podeGerenciarPessoasAmplo = canManagePessoas(user);
 
-  const professorFields = [
-    { name: 'nome', label: 'Nome completo', required: true },
-    { name: 'disciplinas', label: 'Matéria(s) que leciona', required: true, kind: 'multi-select', options: disciplinas.map(disciplina => ({ value: disciplina.id, label: disciplina.nome })), defaultValue: [] },
-    { name: 'escolaIds', label: 'Escolas de vínculo', required: true, kind: 'multi-select', options: escolas.map(escola => ({ value: escola.id, label: `${escola.nome}${escola.status !== 'ativa' ? ' (inativa)' : ''}` })), defaultValue: [] },
-    { name: 'email', label: 'E-mail', required: true },
-    { name: 'status', label: 'Status', required: true, options: statusOptions, defaultValue: 'ativo' },
-  ];
-  const professorColumns = [
-    { key: 'nome', header: 'Nome', render: row => <ProfessorName professor={row} /> },
-    { key: 'disciplinas', header: 'Matérias', render: row => row.disciplinas.map(id => disciplinas.find(disciplina => disciplina.id === id)?.nome).filter(Boolean).join(', ') || 'Não informadas' },
-    { key: 'email', header: 'E-mail' },
-    { key: 'status', header: 'Status', render: row => <StatusBadgePessoa status={row.status} /> },
-  ];
-
-  const createProfessorWithLinks = (payload) => {
-    const { escolaIds = [], ...professorPayload } = payload;
-    const created = createProfessor(professorPayload);
-    escolaIds.forEach(escolaId => createVinculoEscolar({ escolaId, usuarioTipo: 'professor', usuarioId: created.id, status: 'ativo' }));
-    // Sem isso, o professor ficava cadastrado mas sem nenhuma conta pra entrar no sistema.
-    registrarUsuario({ email: created.email, tipo: 'professor', perfilId: created.id });
-  };
-
-  const updateProfessorWithLinks = (id, payload) => {
-    const { escolaIds = [], ...professorPayload } = payload;
-    updateProfessor(id, professorPayload);
-    const activeLinks = vinculosEscolares.filter(vinculo => vinculo.usuarioTipo === 'professor' && vinculo.usuarioId === Number(id) && vinculo.status === 'ativo');
-    activeLinks.filter(vinculo => !escolaIds.includes(vinculo.escolaId)).forEach(vinculo => desvincularEscola(vinculo.id));
-    escolaIds.filter(escolaId => !activeLinks.some(vinculo => vinculo.escolaId === escolaId)).forEach(escolaId => createVinculoEscolar({ escolaId, usuarioTipo: 'professor', usuarioId: Number(id), status: 'ativo' }));
-  };
-  const professoresComEscolas = professores.map(professor => ({
-    ...professor,
-    escolaIds: vinculosEscolares
-      .filter(vinculo => vinculo.usuarioTipo === 'professor' && vinculo.usuarioId === professor.id && vinculo.status === 'ativo')
-      .map(vinculo => vinculo.escolaId),
-  }));
-
-  // Mesma lógica do professor: criar a pessoa sem criar a conta a deixaria sem forma de entrar.
+  // Mesma lógica do professor mock antigo: criar a pessoa sem criar a conta a deixaria sem forma de entrar.
   const createGestorWithLogin = (payload) => {
     const created = createGestor(payload);
     registrarUsuario({ email: created.email, tipo: 'gestor', perfilId: created.id });
@@ -296,11 +531,13 @@ export const GestaoPessoas = () => {
     { key: 'status', header: 'Status', render: row => <StatusBadgePessoa status={row.status} /> },
   ];
 
-  const tabs = [
-    { key: 'professores', label: 'Professores(as)' },
-    { key: 'supervisores', label: 'Supervisores(as)' },
-    { key: 'diretores', label: 'Diretores(as)' },
-  ];
+  const tabs = podeGerenciarPessoasAmplo
+    ? [
+      { key: 'professores', label: 'Professores(as)' },
+      { key: 'supervisores', label: 'Supervisores(as)' },
+      { key: 'diretores', label: 'Diretores(as)' },
+    ]
+    : [{ key: 'professores', label: 'Professores(as)' }];
 
   return (
     <MainLayout>
@@ -322,25 +559,9 @@ export const GestaoPessoas = () => {
           ))}
         </div>
 
-        {tab === 'professores' && (
-          <PessoasManager
-            title="Professores(as)"
-            description="Cadastro dos professores(as) da rede."
-            usuarioTipo="professor"
-            records={professoresComEscolas}
-            fields={professorFields}
-            columns={professorColumns}
-            onCreate={createProfessorWithLinks}
-            onUpdate={updateProfessorWithLinks}
-            escolas={escolas}
-            vinculosEscolares={vinculosEscolares}
-            createVinculoEscolar={createVinculoEscolar}
-            desvincularEscola={desvincularEscola}
-            emptyDescription="Cadastre o(a) primeiro(a) professor(a) da rede."
-          />
-        )}
+        {tab === 'professores' && <ProfessoresReaisManager user={user} />}
 
-        {tab === 'supervisores' && (
+        {tab === 'supervisores' && podeGerenciarPessoasAmplo && (
           <PessoasManager
             title="Supervisores(as)"
             description="Cadastro dos supervisores(as) responsáveis pela gestão operacional das escolas vinculadas."
@@ -358,7 +579,7 @@ export const GestaoPessoas = () => {
           />
         )}
 
-        {tab === 'diretores' && (
+        {tab === 'diretores' && podeGerenciarPessoasAmplo && (
           <PessoasManager
             title="Diretores(as)"
             description="Cadastro dos diretores(as) responsáveis por cada escola."
