@@ -55,6 +55,23 @@ async function main() {
     });
   }
   console.log(`Seed concluído: ${CONTAS_DEMONSTRACAO.length} contas de demonstração garantidas.`);
+
+  // DADO DE DESENVOLVIMENTO/TESTE — sem isso, a Diretora de demonstração não administra
+  // escola nenhuma (0 vínculos reais existiam antes desta linha), e o fluxo de cadastro de
+  // professor por Diretora não tem como ser testado. Escola #10 = Prudenciana (mesma escola dos
+  // cenários de teste do PDI). Nunca usar em produção com dado real sem revisar antes.
+  const diretoraDemo = await prisma.pessoa.findUnique({ where: { email: 'diretora@escola.gov.br' } });
+  if (diretoraDemo) {
+    const vinculoJaExiste = await prisma.vinculoEscolar.findFirst({
+      where: { escolaId: 10, pessoaId: diretoraDemo.id, status: 'ATIVO' },
+    });
+    if (!vinculoJaExiste) {
+      await prisma.vinculoEscolar.create({
+        data: { escolaId: 10, pessoaId: diretoraDemo.id, status: 'ATIVO', dataInicio: new Date('2026-02-01') },
+      });
+    }
+    console.log('Seed concluído: vínculo de teste Diretora demo <-> Escola #10 garantido.');
+  }
 }
 
 main()

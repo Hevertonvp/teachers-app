@@ -182,6 +182,18 @@ model Pessoa {
   // Nunca retornado por nenhuma rota — ver src/api/routes/auth.ts.
   senhaHash String? @db.VarChar(100)
 
+  // true = senhaHash é uma senha temporária (gerada no cadastro ou em "gerar nova senha
+  // temporária"), ainda não trocada pela pessoa. Bloqueia navegação normal no app (ver
+  // bloquearSenhaTemporariaPendente em api/middleware/auth.ts) até /api/auth/trocar-senha.
+  senhaTemporaria         Boolean   @default(false)
+  senhaTemporariaExpiraEm DateTime?
+
+  // Incrementado sempre que uma sessão anterior deve parar de funcionar imediatamente (troca de
+  // senha, reset administrativo, inativação) — o JWT carrega a versão vigente no momento em que
+  // foi emitido; requireAuth compara com o valor atual no banco a cada requisição (ver
+  // api/middleware/auth.ts). Sem isso, um token antigo continuaria válido até expirar (12h).
+  authVersion Int @default(1)
+
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
   updatedAt DateTime? @updatedAt
@@ -191,8 +203,36 @@ model Pessoa {
   vinculosEscolares      VinculoEscolar[]
   vinculosComoProfessor  ProfessorTurmaDisciplina[] @relation("ProfessorVinculo")
   vinculosComoAuxiliar   AuxiliarTurma[]            @relation("AuxiliarVinculo")
+  eventos                PessoaEvento[]             @relation("PessoaEventoPessoa")
 
   @@map("pessoas")
+}
+
+enum TipoEventoPessoa {
+  CRIACAO
+  VINCULO_CRIADO
+  RESET_SENHA
+  PRIMEIRO_ACESSO_CONCLUIDO
+  INATIVACAO
+  REATIVACAO
+}
+
+// Log de auditoria append-only (nunca sobrescrito) das ações sensíveis sobre uma Pessoa — mesmo
+// padrão de histórico já usado em turmaProfessores/pdiFichaHistorico no frontend: cada evento é
+// uma linha nova, nunca um campo único sobrescrito, para não perder o rastro de resets repetidos.
+// Nunca guarda senha nem hash (ver CLAUDE.md/pedido de autenticação).
+model PessoaEvento {
+  id       Int              @id @default(autoincrement())
+  pessoaId Int
+  pessoa   Pessoa           @relation("PessoaEventoPessoa", fields: [pessoaId], references: [id], onDelete: Restrict)
+  tipo     TipoEventoPessoa
+  autorId  Int
+  detalhe  String?          @db.VarChar(200)
+
+  criadoEm DateTime @default(now())
+
+  @@index([pessoaId, criadoEm])
+  @@map("pessoa_eventos")
 }
 
 // Vínculo genérico Pessoa↔Escola (qualquer perfil). Nunca apagado fisicamente.
