@@ -213,16 +213,28 @@ pessoasRouter.post('/professores/:id/reativar', async (req, res) => {
   res.json({ ok: true });
 });
 
-// Lista de Auxiliares pra popular o seletor de "vincular Auxiliar à turma" (ver
-// auxiliarTurma.ts). Sem escopo por escola: diferente de Professor, Auxiliar não tem hoje um
-// conceito de VinculoEscolar (não foi pedido nesta etapa) — quem limita o alcance de verdade é o
-// escopo da TURMA (escolasPermitidas), checado em auxiliarTurma.ts na hora de criar o vínculo.
+// Lista de Auxiliares pra popular o seletor de "vincular Auxiliar à turma/escola" (ver
+// auxiliarTurma.ts e vinculosEscolares.ts). NÃO é filtrada pelo escopo de quem pergunta — ao
+// contrário de Professor (que tem um fluxo de "cadastrar por e-mail" para o primeiro vínculo),
+// um Auxiliar já existente sem vínculo escolar nenhum ainda precisa aparecer aqui pra alguém
+// poder dar a ele o primeiro VinculoEscolar. O que É escopado é a lista de `escolas` de cada um
+// (nunca mostra vínculos de escolas fora do escopo de quem está vendo, mesma regra de
+// privacidade já aplicada a /professores).
 pessoasRouter.get('/auxiliares', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretariaOuDiretora(actor);
+  const permitidas = await escolasPermitidas(actor);
+
   const auxiliares = await prisma.pessoa.findMany({
     where: { perfil: 'AUXILIAR', status: 'ATIVO' },
     orderBy: { nome: 'asc' },
+    include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } } },
   });
-  res.json(auxiliares.map(formatarPessoa));
+
+  res.json(auxiliares.map((auxiliar) => ({
+    ...formatarPessoa(auxiliar),
+    escolas: auxiliar.vinculosEscolares
+      .filter((vinculo) => !permitidas || permitidas.includes(vinculo.escolaId))
+      .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome })),
+  })));
 });

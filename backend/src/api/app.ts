@@ -11,6 +11,7 @@ import { turmasRouter } from './routes/turmas.js';
 import { pessoasRouter } from './routes/pessoas.js';
 import { professorTurmaDisciplinaRouter } from './routes/professorTurmaDisciplina.js';
 import { auxiliarTurmaRouter } from './routes/auxiliarTurma.js';
+import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
 
 export function createApp() {
   const app = express();
@@ -42,6 +43,7 @@ export function createApp() {
   app.use('/api/pessoas', pessoasRouter);
   app.use('/api/professor-turma-disciplina', professorTurmaDisciplinaRouter);
   app.use('/api/auxiliar-turma', auxiliarTurmaRouter);
+  app.use('/api/vinculos-escolares', vinculosEscolaresRouter);
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 

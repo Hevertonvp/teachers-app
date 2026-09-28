@@ -21,8 +21,7 @@ const formatarVinculo = (vinculo: {
   dataFim: vinculo.dataFim,
 });
 
-// Diferente de Professor, Auxiliar não tem VinculoEscolar nesta etapa (não foi pedido) — o único
-// escopo que existe de verdade é o da escola DA TURMA, checado aqui contra quem está pedindo.
+// Escopo de quem está pedindo (Secretaria/Diretora) — igual professorTurmaDisciplina.ts.
 async function exigirEscolaNoEscopo(actor: Actor, escolaId: number) {
   const permitidas = await escolasPermitidas(actor);
   if (permitidas && !permitidas.includes(escolaId)) {
@@ -72,6 +71,15 @@ auxiliarTurmaRouter.post('/', async (req, res) => {
   const auxiliar = await prisma.pessoa.findUnique({ where: { id: auxiliarId } });
   if (!auxiliar || auxiliar.perfil !== 'AUXILIAR') throw new NotFoundError('Auxiliar não encontrado.');
   if (auxiliar.status !== 'ATIVO') throw new ValidationError('Este Auxiliar está inativo.');
+
+  // Auxiliar também precisa de VinculoEscolar ATIVO com a escola da turma antes de receber
+  // turma — deixa o domínio coerente com Professor (ver vinculosEscolares.ts).
+  const vinculoEscolar = await prisma.vinculoEscolar.findFirst({
+    where: { pessoaId: auxiliarId, escolaId: turma.escolaId, status: 'ATIVO' },
+  });
+  if (!vinculoEscolar) {
+    throw new ValidationError('O Auxiliar precisa estar vinculado à escola desta turma antes de ser atribuído a ela.');
+  }
 
   const atual = await prisma.auxiliarTurma.findFirst({ where: { turmaId, status: 'ATIVO' } });
 
