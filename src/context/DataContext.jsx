@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiFetch, getAuthToken } from '../services/api';
 import { listarDisciplinas } from '../services/disciplinas';
 import { criarTurma as criarTurmaApi, editarTurma, inativarTurmaApi, listarTurmas, reativarTurmaApi } from '../services/turmas';
+import { arquivarPdiAlunoReal, criarPdiAlunoReal, editarPdiAlunoReal, listarPdiAlunos, reativarPdiAlunoReal } from '../services/pdiAlunos';
 import {
   auxiliares as auxiliaresIniciais,
   correcoesSimulados as correcoesIniciais,
@@ -127,6 +128,16 @@ export const DataProvider = ({ children }) => {
   const [disciplinasReais, setDisciplinasReais] = useState([]);
   const [disciplinasReaisLoading, setDisciplinasReaisLoading] = useState(true);
   const [disciplinasReaisError, setDisciplinasReaisError] = useState(null);
+  // Aluno PDI real (Neon) — fonte nova e PARALELA ao mock `pdiAlunos` abaixo. Os 26 alunos mock
+  // foram migrados com os MESMOS ids (confirmado com o usuário), mas isso não torna as duas
+  // fontes intercambiáveis: o real nunca tem professorId/escolaId solto/dataNascimento/
+  // condicaoInformada/cid (proibido explicitamente — autorização e vínculos são sempre derivados
+  // de turmaId). Só PdiPage.jsx e PdiAlunoPerfil.jsx usam `pdiAlunosReais`; todo o resto do PDI
+  // (Anamnese, Meus Alunos do Auxiliar, Fichas/Respostas, Meus PDIs, Dashboards) continua 100%
+  // no mock `pdiAlunos`, que seguimos sem tocar.
+  const [pdiAlunosReais, setPdiAlunosReais] = useState([]);
+  const [pdiAlunosReaisLoading, setPdiAlunosReaisLoading] = useState(true);
+  const [pdiAlunosReaisError, setPdiAlunosReaisError] = useState(null);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
   const [diretores, setDiretores] = useState(diretoresIniciais);
@@ -586,6 +597,59 @@ export const DataProvider = ({ children }) => {
     }
   }, []);
 
+  // --- Aluno PDI real (piloto igual Escolas/Turmas) ----------------------------------------
+  const loadPdiAlunosReais = useCallback(async () => {
+    setPdiAlunosReaisLoading(true);
+    setPdiAlunosReaisError(null);
+    try {
+      setPdiAlunosReais(await listarPdiAlunos());
+    } catch (error) {
+      setPdiAlunosReaisError(error.message);
+    } finally {
+      setPdiAlunosReaisLoading(false);
+    }
+  }, []);
+
+  const createPdiAlunoReal = async (payload) => {
+    try {
+      const aluno = await criarPdiAlunoReal(payload);
+      setPdiAlunosReais(prev => [...prev, aluno]);
+      return { ok: true, aluno };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const updatePdiAlunoReal = async (id, payload) => {
+    try {
+      const aluno = await editarPdiAlunoReal(id, payload);
+      setPdiAlunosReais(prev => prev.map(item => (item.id === Number(id) ? aluno : item)));
+      return { ok: true, aluno };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const arquivarPdiAluno = async (id) => {
+    try {
+      const aluno = await arquivarPdiAlunoReal(id);
+      setPdiAlunosReais(prev => prev.map(item => (item.id === Number(id) ? aluno : item)));
+      return { ok: true, aluno };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const reativarPdiAluno = async (id) => {
+    try {
+      const aluno = await reativarPdiAlunoReal(id);
+      setPdiAlunosReais(prev => prev.map(item => (item.id === Number(id) ? aluno : item)));
+      return { ok: true, aluno };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   // Vincula um professor a uma disciplina numa turma. No máximo um vínculo ATIVO por
   // (turmaId, disciplinaId) — se já existir outro professor ativo ali, ele é encerrado
   // (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrito, preservando o
@@ -709,18 +773,20 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   // Sem token (ainda não logou) não há o que buscar — o AuthContext chama loadEscolas()/
-  // loadTurmas()/loadDisciplinasReais() logo depois de um login bem-sucedido.
+  // loadTurmas()/loadDisciplinasReais()/loadPdiAlunosReais() logo depois de um login bem-sucedido.
   useEffect(() => {
     if (getAuthToken()) {
       loadEscolas();
       loadTurmas();
       loadDisciplinasReais();
+      loadPdiAlunosReais();
     } else {
       setEscolasLoading(false);
       setTurmasLoading(false);
       setDisciplinasReaisLoading(false);
+      setPdiAlunosReaisLoading(false);
     }
-  }, [loadEscolas, loadTurmas, loadDisciplinasReais]);
+  }, [loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais]);
 
   // Sem optimistic update neste piloto: só atualiza o estado local com o registro que o backend
   // efetivamente confirmou salvar. Em caso de erro, a lista atual permanece intacta.
@@ -793,6 +859,14 @@ export const DataProvider = ({ children }) => {
     disciplinasReaisLoading,
     disciplinasReaisError,
     loadDisciplinasReais,
+    pdiAlunosReais,
+    pdiAlunosReaisLoading,
+    pdiAlunosReaisError,
+    loadPdiAlunosReais,
+    createPdiAlunoReal,
+    updatePdiAlunoReal,
+    arquivarPdiAluno,
+    reativarPdiAluno,
     escolas,
     escolasLoading,
     escolasError,

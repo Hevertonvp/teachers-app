@@ -1,18 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal, StatCard } from '../components/Common';
-import { ProfessorName } from '../components/ProfessorName';
 import { MetaStatusBadge, PdiLevelSelector, TrendBadge } from '../components/PdiControls';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { escolaName, inputClass, professorName, turmaName } from '../utils/display';
-import { canAccessEscola, gestorVinculadoEscola, professoresDaEscola, professoresDaTurma } from '../utils/escolas';
+import { canAccessEscola, gestorVinculadoEscola, professoresDaTurma } from '../utils/escolas';
 import { formatDate, metaStatusOptions, parentescoOptions, pdiAreas, pdiNivelOptions, pdiTrend } from '../utils/pdi';
 import { historicoAuxiliaresDaTurma, vinculoAtivoDaTurma } from '../utils/auxiliares';
 import { CURRENT_DATE, formatFullDate } from '../utils/formAvailability';
 import { fichasDoAlunoParaGestor } from '../utils/pdiFichas';
-import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico } from '../utils/roles';
+import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico, canViewPdiAlunos } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 
 const flatIndicators = pdiAreas.flatMap(group => group.indicadores.map(indicador => ({ area: group.area, indicador })));
@@ -39,7 +38,8 @@ export const PdiAlunoPerfil = () => {
   const location = useLocation();
   const { user } = useAuth();
   const {
-    pdiAlunos,
+    pdiAlunosReais,
+    updatePdiAlunoReal,
     pdiAvaliacoes,
     pdiMetas,
     pdiAcompanhamentos,
@@ -56,7 +56,6 @@ export const PdiAlunoPerfil = () => {
     pdiAuxiliaresVinculos,
     vincularAuxiliar,
     encerrarAuxiliar,
-    updatePdiAluno,
     createPdiAvaliacao,
     updatePdiAvaliacao,
     deletePdiAvaliacao,
@@ -69,11 +68,11 @@ export const PdiAlunoPerfil = () => {
     createPdiResposta,
   } = useData();
 
-  const aluno = pdiAlunos.find(item => item.id === Number(id));
+  const aluno = pdiAlunosReais.find(item => item.id === Number(id));
   const isProfessor = isProfessorRole(user);
   const canManagePdi = canManagePedagogico(user);
+  const canView = canViewPdiAlunos(user);
   const { activeEscolaId } = useEscola();
-  const professoresOptions = professoresDaEscola(professores, vinculosEscolares, activeEscolaId, user);
   // Supervisora: consulta permitida mesmo com a escola inativa (histórico), desde que
   // vinculada a ela — diferente de canAccessEscola, que bloqueia integralmente escola inativa.
   const hasEscolaAccess = isSecretaria(user)
@@ -107,14 +106,15 @@ export const PdiAlunoPerfil = () => {
     })).filter(group => group.registros.length > 0);
   }, [acompanhamentos]);
 
-  // A Secretaria administra o PDI (perguntas, escolas e vigência) e por isso também precisa
-  // consultar alunos e gráficos de evolução — Diretora e Auxiliar ficam de fora deste módulo
-  // (Auxiliar tem sua própria tela de consulta em /meus-alunos/:id).
-  if (isDiretora(user) || isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
+  // Auxiliar tem sua própria tela de consulta em /meus-alunos/:id, fora deste módulo.
+  if (isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
   // Professor não usa mais este perfil para o PDI por disciplina — vai direto de "Meus PDIs"
   // para a ficha (aplicação + disciplina + aluno). O acesso não depende mais de
   // aluno.professorId (ver src/utils/pdiFichas.js).
   if (isProfessor) return <Navigate to="/pdi/meus-pdis" replace />;
+  // Diretora ganhou consulta (nunca edição — canEditPdi abaixo já exclui ela) escopada às
+  // próprias escolas, quando Aluno PDI virou real (ver PdiPage.jsx e canViewPdiAlunos).
+  if (!canView) return <Navigate to="/dashboard" replace />;
 
   const avaliacoes = pdiAvaliacoes.filter(item => item.alunoId === Number(id));
   const metas = pdiMetas.filter(item => item.alunoId === Number(id));
@@ -172,23 +172,22 @@ export const PdiAlunoPerfil = () => {
   // exigir vínculo de "leciona" (ver seção 16 do pedido e src/utils/pdiFichas.js).
   const fichasGestor = isGestor(user) ? fichasDoAlunoParaGestor(aluno, { pdiAplicacoes, disciplinas, turmas }) : [];
 
-  const saveAluno = (event) => {
+  const saveAluno = async (event) => {
     event.preventDefault();
     if (!canEditPdi) return;
-    if (!alunoForm.nome?.trim() || !alunoForm.escolaId || !alunoForm.turmaId) {
-      setMessage('Preencha nome, escola e turma antes de salvar.');
+    if (!alunoForm.nome?.trim() || !alunoForm.turmaId) {
+      setMessage('Preencha nome e turma antes de salvar.');
       return;
     }
-    if (!alunoForm.responsavelNome?.trim() || !alunoForm.responsavelParentesco || !alunoForm.responsavelTelefone1?.trim()) {
-      setMessage('Informe nome, parentesco e telefone principal do responsável legal.');
+    if (!alunoForm.responsavelNome?.trim() || !alunoForm.responsavelParentesco || !alunoForm.responsavelTelefone?.trim()) {
+      setMessage('Informe nome, parentesco e telefone do responsável legal.');
       return;
     }
-    const turmaSelecionada = turmas.find(item => item.id === Number(alunoForm.turmaId));
-    if (!turmaSelecionada || turmaSelecionada.escolaId !== Number(alunoForm.escolaId)) {
-      setMessage('A turma selecionada não pertence à escola selecionada.');
+    const resultado = await updatePdiAlunoReal(aluno.id, alunoForm);
+    if (!resultado.ok) {
+      setMessage(resultado.error);
       return;
     }
-    updatePdiAluno(aluno.id, isProfessor ? { ...alunoForm, professorId: user.id } : alunoForm);
     setAlunoForm(null);
     setMessage('Dados do aluno atualizados com sucesso.');
   };
@@ -294,15 +293,10 @@ export const PdiAlunoPerfil = () => {
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant={aluno.status === 'arquivado' ? 'gray' : 'green'}>{aluno.status === 'arquivado' ? 'Arquivado' : 'Ativo'}</Badge>
               <TrendBadge trend={trend} />
-              <span className="text-sm text-slate-500">Início: {formatDate(aluno.dataInicio)}</span>
             </div>
             <div className="mt-4 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-              <div><strong>Professor(a) responsável:</strong> <ProfessorName professorId={aluno.professorId} className="mt-1" /></div>
-              <p><strong>Entrada na rede:</strong> {formatDate(aluno.dataEntradaRede)}</p>
-              <p><strong>Condição informada:</strong> {aluno.condicaoInformada || 'Não informada'}</p>
-              <p><strong>CID:</strong> {aluno.cid || 'Não informado'}</p>
               <p><strong>Responsável legal:</strong> {aluno.responsavelNome || 'Não informado'}{aluno.responsavelParentesco ? ` (${parentescoOptions.find(item => item.value === aluno.responsavelParentesco)?.label || aluno.responsavelParentesco})` : ''}</p>
-              <p><strong>Telefone do responsável:</strong> {aluno.responsavelTelefone1 || 'Não informado'}{aluno.responsavelTelefone2 ? ` / ${aluno.responsavelTelefone2}` : ''}</p>
+              <p><strong>Telefone do responsável:</strong> {aluno.responsavelTelefone || 'Não informado'}</p>
               <div className="md:col-span-2">
                 <strong>Professores(as) da turma:</strong>
                 <ul className="mt-1 space-y-0.5">
@@ -548,9 +542,8 @@ export const PdiAlunoPerfil = () => {
                 <FormField label="Escola"><select className={inputClass} value={alunoForm.escolaId} onChange={event => { const escolaId = Number(event.target.value); setAlunoForm(prev => ({ ...prev, escolaId, turmaId: turmas.some(item => item.id === prev.turmaId && item.escolaId === escolaId) ? prev.turmaId : '' })); }} required disabled={activeEscolaId !== null}>{(activeEscolaId !== null ? escolas.filter(item => item.id === activeEscolaId) : escolas).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
                 <FormField label="Turma"><select className={inputClass} value={alunoForm.turmaId} onChange={event => setAlunoForm(prev => ({ ...prev, turmaId: Number(event.target.value) }))} required>
                   <option value="" disabled>{alunoForm.escolaId ? 'Selecione a turma' : 'Selecione a escola primeiro'}</option>
-                  {turmas.filter(item => item.escolaId === Number(alunoForm.escolaId)).map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+                  {turmas.filter(item => item.status === 'ativa' && item.escolaId === Number(alunoForm.escolaId)).map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
                 </select></FormField>
-                {!isProfessor && <FormField label="Professor(a) responsável"><select className={inputClass} value={alunoForm.professorId} onChange={event => setAlunoForm(prev => ({ ...prev, professorId: Number(event.target.value) }))}>{professoresOptions.map(professor => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></FormField>}
                 <div className="md:col-span-2">
                   <p className="mb-1.5 text-sm font-semibold text-slate-700">Professores(as) da turma</p>
                   {(() => {
@@ -564,13 +557,8 @@ export const PdiAlunoPerfil = () => {
                   <p className="text-sm font-semibold text-slate-700 md:col-span-2">Responsável legal</p>
                   <FormField label="Nome do responsável"><input className={inputClass} value={alunoForm.responsavelNome || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelNome: event.target.value }))} required /></FormField>
                   <FormField label="Parentesco"><select className={inputClass} value={alunoForm.responsavelParentesco || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelParentesco: event.target.value }))} required><option value="" disabled>Selecione</option>{parentescoOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FormField>
-                  <FormField label="Telefone principal"><input className={inputClass} value={alunoForm.responsavelTelefone1 || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelTelefone1: event.target.value }))} required /></FormField>
-                  <FormField label="Telefone secundário"><input className={inputClass} value={alunoForm.responsavelTelefone2 || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelTelefone2: event.target.value }))} placeholder="Opcional" /></FormField>
+                  <FormField label="Telefone principal"><input className={inputClass} value={alunoForm.responsavelTelefone || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelTelefone: event.target.value }))} required /></FormField>
                 </div>
-                <FormField label="Data de entrada na rede"><input className={inputClass} type="date" value={alunoForm.dataEntradaRede || ''} onChange={event => setAlunoForm(prev => ({ ...prev, dataEntradaRede: event.target.value }))} placeholder="Opcional" /></FormField>
-                <FormField label="Data de início do acompanhamento"><input className={inputClass} type="date" value={alunoForm.dataInicio || ''} onChange={event => setAlunoForm(prev => ({ ...prev, dataInicio: event.target.value }))} placeholder="Opcional" /></FormField>
-                <FormField label="Transtorno/condição informada"><input className={inputClass} value={alunoForm.condicaoInformada || ''} onChange={event => setAlunoForm(prev => ({ ...prev, condicaoInformada: event.target.value }))} placeholder="Opcional" /></FormField>
-                <FormField label="CID, quando houver"><input className={inputClass} value={alunoForm.cid || ''} onChange={event => setAlunoForm(prev => ({ ...prev, cid: event.target.value }))} placeholder="Opcional" /></FormField>
               </div>
               <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setAlunoForm(null)}>Cancelar</Button><Button type="submit">Salvar</Button></div>
             </form>

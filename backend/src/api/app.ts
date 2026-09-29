@@ -12,6 +12,7 @@ import { pessoasRouter } from './routes/pessoas.js';
 import { professorTurmaDisciplinaRouter } from './routes/professorTurmaDisciplina.js';
 import { auxiliarTurmaRouter } from './routes/auxiliarTurma.js';
 import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
+import { pdiAlunosRouter } from './routes/pdiAlunos.js';
 
 export function createApp() {
   const app = express();
@@ -44,6 +45,9 @@ export function createApp() {
   app.use('/api/professor-turma-disciplina', professorTurmaDisciplinaRouter);
   app.use('/api/auxiliar-turma', auxiliarTurmaRouter);
   app.use('/api/vinculos-escolares', vinculosEscolaresRouter);
+  // O pedido sugeria /api/pdi/alunos; adaptado ao padrão flat já usado pelo resto da API
+  // (professor-turma-disciplina, auxiliar-turma, vinculos-escolares — nunca rotas aninhadas).
+  app.use('/api/pdi-alunos', pdiAlunosRouter);
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 

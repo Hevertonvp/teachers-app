@@ -28,6 +28,12 @@ export const isAuxiliar = (user) => user?.tipo === ROLES.AUXILIAR;
 const PEDAGOGICO_MANAGE_ROLES = [ROLES.GESTOR, ROLES.SECRETARIA];
 export const canManagePedagogico = (user) => PEDAGOGICO_MANAGE_ROLES.includes(user?.tipo);
 
+// Consultar (nunca criar/editar/arquivar) a listagem real de Alunos PDI — Diretora ganhou este
+// acesso de leitura, escopado às próprias escolas, quando Aluno PDI virou real (backend já
+// aplica a mesma restrição; aqui é só o gate de UI). Deliberadamente mais estreita que
+// canManagePedagogico, que continua sendo só Gestor/Secretaria.
+export const canViewPdiAlunos = (user) => canManagePedagogico(user) || isDiretora(user);
+
 // Preencher (não gerenciar) os instrumentos pedagógicos — papel do Professor.
 export const canFillPedagogico = (user) => isProfessor(user);
 
