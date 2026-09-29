@@ -6,6 +6,28 @@ import { escolasPermitidas, exigirSecretariaOuDiretora, type Actor } from './pes
 
 export const vinculosEscolaresRouter = Router();
 
+// Escopo de escola do PRÓPRIO usuário autenticado — usado pelo EscolaContext do frontend (seletor
+// de escola/Dashboards/PDI). Qualquer perfil pode chamar (é sempre "meus vínculos", nunca de
+// outra pessoa); o ator vem sempre do JWT (res.locals.pessoa), nunca de um id enviado pelo
+// frontend (ver seção 8 do pedido). Devolve mesmo escola INATIVA (histórico) — quem decide o que
+// fazer com isso é o frontend, igual já acontecia com o mock (Gestor com escola inativa continua
+// vendo a escola, só perde edição — ver PdiPage.jsx).
+vinculosEscolaresRouter.get('/me', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  const vinculos = await prisma.vinculoEscolar.findMany({
+    where: { pessoaId: actor.id, status: 'ATIVO' },
+    include: { escola: true },
+    orderBy: { escola: { nome: 'asc' } },
+  });
+
+  res.json(vinculos.map((vinculo) => ({
+    id: vinculo.id,
+    escolaId: vinculo.escolaId,
+    escolaNome: vinculo.escola.nome,
+    escolaStatus: vinculo.escola.status,
+  })));
+});
+
 const PERFIS_ESCOPO_DIRETORA = ['PROFESSOR', 'AUXILIAR'];
 
 // Diretora só gerencia vínculo escolar de Professor/Auxiliar, e só dentro das próprias escolas
