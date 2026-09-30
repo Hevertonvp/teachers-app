@@ -64,7 +64,11 @@ export const EscolaProvider = ({ children }) => {
   const userEscolas = useMemo(() => {
     if (isSecretaria(user)) return escolas;
     const ids = new Set(vinculosReais.map((vinculo) => vinculo.escolaId));
-    return escolas.filter((escola) => ids.has(escola.id));
+    // Operacional exige as DUAS coisas: vínculo ATIVO e escola ATIVA — escola inativa nunca
+    // aparece como opção operacional, mesmo com vínculo ativo (histórico fica só no backend,
+    // que continua devolvendo o vínculo; quem decide "consulta histórica" administrativa é
+    // Secretaria, em telas próprias, não este seletor).
+    return escolas.filter((escola) => ids.has(escola.id) && escola.status === 'ativa');
   }, [user, escolas, vinculosReais]);
 
   // 1 escola -> seleciona automaticamente. 2+ -> exige seleção (via EscolaSelector). Se a escola

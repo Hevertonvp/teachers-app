@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal, OrderButtons } from '../components/Common';
 import { useData } from '../context/DataContext';
@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
 import { CURRENT_DATE, formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
-import { canManagePedagogico } from '../utils/roles';
+import { canManagePedagogico, isSecretaria } from '../utils/roles';
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
 import { aplicacaoConflitanteNaEscola, statusVigenciaAplicacao } from '../utils/pdiFichas';
 import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
@@ -25,6 +25,16 @@ const TIPO_RESPOSTA_OPTIONS = [
 const tipoLabel = (value) => TIPO_RESPOSTA_OPTIONS.find(option => option.value === value)?.label || value;
 
 const blankPergunta = (ordem) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, ordem, status: 'ativa' });
+
+// Troca a `ordem` entre a pergunta e a vizinha (-1 sobe, +1 desce) — a API real espera o par
+// completo {id, ordem} de tudo que muda, aplicado em transação (ver reordenarPdiModeloPerguntasReais).
+const calcularReordenacao = (perguntasOrdenadas, perguntaId, direction) => {
+  const index = perguntasOrdenadas.findIndex(item => item.id === perguntaId);
+  const vizinha = perguntasOrdenadas[index + direction];
+  if (!vizinha) return [];
+  const atual = perguntasOrdenadas[index];
+  return [{ id: atual.id, ordem: vizinha.ordem }, { id: vizinha.id, ordem: atual.ordem }];
+};
 // Criação: uma ou mais escolas de uma vez (`escolaIds` + `todasEscolas`). A Secretaria não
 // escolhe modelos/disciplinas aqui — a aplicação é da escola, e usa automaticamente todos os
 // modelos ativos no momento da criação (ver salvarAplicacao). Edição continua sendo sempre de
@@ -43,18 +53,26 @@ export const FormularioPdiPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
-    disciplinas, escolas, pdiModelos, pdiAplicacoes,
-    createPdiModelo, deletePdiModelo, createPdiModeloPergunta, updatePdiModeloPergunta, deletePdiModeloPergunta, reorderPdiModeloPergunta,
+    disciplinasReais, escolas, pdiAplicacoes,
+    pdiModelosReais, pdiModelosReaisLoading, pdiModelosReaisError, loadPdiModelosReais,
+    createPdiModeloReal, inativarPdiModelo, reativarPdiModeloReal,
+    createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal,
     createPdiAplicacao, updatePdiAplicacao, deletePdiAplicacao, deleteAllPdiAplicacoes,
   } = useData();
 
-  const [tab, setTab] = useState('modelos');
+  const souSecretaria = isSecretaria(user);
+  // Gestor também cria/edita Aplicações (não mudou nesta tarefa), mas Modelo PDI é exclusivo da
+  // Secretaria (seção 8/25 do pedido) — ela nem vê a aba. O backend também recusa (403) qualquer
+  // tentativa de gerenciar Modelo/Pergunta fora da Secretaria, então isso não é só cosmético.
+  const [tab, setTab] = useState(souSecretaria ? 'modelos' : 'aplicacoes');
   // null = grade de modelos; com valor = editor ("construtor de formulário") do modelo aberto.
   const [modeloEditandoId, setModeloEditandoId] = useState(null);
   const [novoModeloForm, setNovoModeloForm] = useState(null);
+  const [salvandoModelo, setSalvandoModelo] = useState(false);
   const [perguntaForm, setPerguntaForm] = useState(null);
-  const [deletingPergunta, setDeletingPergunta] = useState(null);
-  const [deletingModelo, setDeletingModelo] = useState(null);
+  const [salvandoPergunta, setSalvandoPergunta] = useState(false);
+  const [inativandoPergunta, setInativandoPergunta] = useState(null);
+  const [mudandoStatusModelo, setMudandoStatusModelo] = useState(null);
   const [aplicacaoForm, setAplicacaoForm] = useState(null);
   const [editingAplicacao, setEditingAplicacao] = useState(null);
   const [aplicacaoError, setAplicacaoError] = useState('');
@@ -62,16 +80,20 @@ export const FormularioPdiPage = () => {
   const [confirmandoExcluirTodasAplicacoes, setConfirmandoExcluirTodasAplicacoes] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Carregado sempre que a tela abre (Secretaria ou Gestor) — Aplicações precisa da lista real
+  // pra fazer snapshot dos modelos ativos, mesmo que quem esteja olhando não gerencie Modelo.
+  useEffect(() => { loadPdiModelosReais(); }, [loadPdiModelosReais]);
+
   if (!canManagePedagogico(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas);
-  const modelosAtivos = pdiModelos.filter(modelo => modelo.status === 'ativa');
-  const disciplinasComModelo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
-  const disciplinasDisponiveis = disciplinas.filter(disciplina => !disciplinasComModelo.has(disciplina.id));
-  const modeloSelecionado = pdiModelos.find(modelo => modelo.id === modeloEditandoId) || null;
-  const perguntasDoModelo = modeloSelecionado ? [...modeloSelecionado.perguntas].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
+  const modelosAtivos = pdiModelosReais.filter(modelo => modelo.status === 'ativa');
+  const disciplinasComModeloAtivo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
+  const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !disciplinasComModeloAtivo.has(disciplina.id));
+  const modeloSelecionado = pdiModelosReais.find(modelo => modelo.id === modeloEditandoId) || null;
+  const perguntasDoModelo = modeloSelecionado ? [...(modeloSelecionado.perguntas || [])].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
   const aplicacoesComStatus = [...pdiAplicacoes]
     .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio))
     .map(aplicacao => ({ aplicacao, status: statusVigenciaAplicacao(aplicacao) }));
@@ -79,16 +101,22 @@ export const FormularioPdiPage = () => {
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '' });
   const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); };
 
-  const criarModelo = (event) => {
+  const criarModelo = async (event) => {
     event.preventDefault();
     if (!novoModeloForm?.disciplinaId) {
       setMessage('Escolha a disciplina do novo modelo.');
       return;
     }
-    const disciplina = disciplinas.find(item => item.id === Number(novoModeloForm.disciplinaId));
-    const modelo = createPdiModelo({ nome: novoModeloForm.nome?.trim() || `PDI - ${disciplina?.nome}`, disciplinaId: novoModeloForm.disciplinaId });
+    const disciplina = disciplinasReais.find(item => item.id === Number(novoModeloForm.disciplinaId));
+    setSalvandoModelo(true);
+    const resultado = await createPdiModeloReal({ nome: novoModeloForm.nome?.trim() || `PDI - ${disciplina?.nome}`, disciplinaId: Number(novoModeloForm.disciplinaId) });
+    setSalvandoModelo(false);
+    if (!resultado.ok) {
+      setMessage(resultado.error);
+      return;
+    }
     // Fluxo direto: criar já abre a edição do modelo recém-criado, sem passo intermediário.
-    setModeloEditandoId(modelo.id);
+    setModeloEditandoId(resultado.modelo.id);
     setNovoModeloForm(null);
     setMessage('Modelo PDI criado com sucesso.');
   };
@@ -111,7 +139,7 @@ export const FormularioPdiPage = () => {
     }));
   };
 
-  const salvarPergunta = (event) => {
+  const salvarPergunta = async (event) => {
     event.preventDefault();
     if (!modeloSelecionado) return;
     const opcoes = perguntaForm.tipoResposta === 'selecao' ? perguntaForm.opcoes.map(opcao => opcao.trim()).filter(Boolean) : [];
@@ -129,13 +157,16 @@ export const FormularioPdiPage = () => {
     }
 
     const payload = { ...perguntaForm, opcoes };
-    if (perguntaForm.id) {
-      updatePdiModeloPergunta(modeloSelecionado.id, perguntaForm.id, payload);
-      setMessage('Item atualizado com sucesso.');
-    } else {
-      createPdiModeloPergunta(modeloSelecionado.id, payload);
-      setMessage('Item adicionado ao modelo com sucesso.');
+    setSalvandoPergunta(true);
+    const resultado = perguntaForm.id
+      ? await updatePdiModeloPerguntaReal(modeloSelecionado.id, perguntaForm.id, payload)
+      : await createPdiModeloPerguntaReal(modeloSelecionado.id, payload);
+    setSalvandoPergunta(false);
+    if (!resultado.ok) {
+      setMessage(resultado.error);
+      return;
     }
+    setMessage(perguntaForm.id ? 'Item atualizado com sucesso.' : 'Item adicionado ao modelo com sucesso.');
     setPerguntaForm(null);
   };
 
@@ -213,26 +244,39 @@ export const FormularioPdiPage = () => {
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
 
         <div className="flex gap-2">
-          <button type="button" onClick={() => setTab('modelos')} className={tabButtonClass(tab === 'modelos')}>Modelos</button>
+          {souSecretaria && <button type="button" onClick={() => setTab('modelos')} className={tabButtonClass(tab === 'modelos')}>Modelos</button>}
           <button type="button" onClick={() => setTab('aplicacoes')} className={tabButtonClass(tab === 'aplicacoes')}>Aplicações</button>
         </div>
 
-        {/* --- Modelos PDI ------------------------------------------------------------------ */}
-        {tab === 'modelos' && (
+        {/* --- Modelos PDI (exclusivo da Secretaria) ----------------------------------------- */}
+        {tab === 'modelos' && souSecretaria && (
           <Card>
-            {modeloSelecionado ? (
+            {pdiModelosReaisError && (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                <span>Não foi possível carregar os modelos: {pdiModelosReaisError}</span>
+                <Button size="sm" variant="outline" onClick={loadPdiModelosReais}>Tentar novamente</Button>
+              </div>
+            )}
+            {pdiModelosReaisLoading ? (
+              <p className="text-center text-slate-500">Carregando modelos...</p>
+            ) : modeloSelecionado ? (
               <>
                 <button type="button" onClick={() => setModeloEditandoId(null)} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar aos modelos</button>
 
                 <div className="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{disciplinas.find(item => item.id === modeloSelecionado.disciplinaId)?.nome || 'Disciplina não encontrada'}</p>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{modeloSelecionado.disciplinaNome || 'Disciplina não encontrada'}</p>
                     <h2 className="mt-1 text-xl font-bold text-slate-950">{modeloSelecionado.nome}</h2>
-                    <p className="mt-1 text-sm text-slate-600">Itens do formulário — todos podem ser editados, reordenados ou excluídos, inclusive os que vieram prontos.</p>
+                    <p className="mt-1 text-sm text-slate-600">Itens do formulário — todos podem ser editados, reordenados ou inativados, inclusive os que vieram prontos.</p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Badge variant={modeloSelecionado.status === 'ativa' ? 'green' : 'gray'}>{modeloSelecionado.status === 'ativa' ? 'Ativo' : 'Inativo'}</Badge>
                     <Button size="sm" onClick={() => setPerguntaForm(blankPergunta(perguntasDoModelo.length + 1))}>+ Adicionar item</Button>
-                    <ActionMenu items={[{ label: 'Excluir modelo', variant: 'danger', onClick: () => setDeletingModelo(modeloSelecionado) }]} />
+                    <ActionMenu items={[
+                      modeloSelecionado.status === 'ativa'
+                        ? { label: 'Inativar modelo', variant: 'danger', onClick: () => setMudandoStatusModelo({ modelo: modeloSelecionado, ativar: false }) }
+                        : { label: 'Reativar modelo', onClick: () => setMudandoStatusModelo({ modelo: modeloSelecionado, ativar: true }) },
+                    ]} />
                   </div>
                 </div>
 
@@ -250,14 +294,16 @@ export const FormularioPdiPage = () => {
                         </p>
                       </div>
                       <OrderButtons
-                        onUp={() => reorderPdiModeloPergunta(modeloSelecionado.id, pergunta.id, -1)}
-                        onDown={() => reorderPdiModeloPergunta(modeloSelecionado.id, pergunta.id, 1)}
+                        onUp={() => reorderPdiModeloPerguntaReal(modeloSelecionado.id, calcularReordenacao(perguntasDoModelo, pergunta.id, -1))}
+                        onDown={() => reorderPdiModeloPerguntaReal(modeloSelecionado.id, calcularReordenacao(perguntasDoModelo, pergunta.id, 1))}
                         upDisabled={index === 0}
                         downDisabled={index === perguntasDoModelo.length - 1}
                       />
                       <ActionMenu items={[
                         { label: 'Editar', onClick: () => setPerguntaForm({ ...pergunta, opcoes: pergunta.opcoes || [] }) },
-                        { label: 'Excluir', variant: 'danger', onClick: () => setDeletingPergunta(pergunta) },
+                        pergunta.status === 'ativa'
+                          ? { label: 'Inativar', variant: 'danger', onClick: () => setInativandoPergunta({ pergunta, ativar: false }) }
+                          : { label: 'Reativar', onClick: () => setInativandoPergunta({ pergunta, ativar: true }) },
                       ]} />
                     </div>
                   ))}
@@ -272,11 +318,11 @@ export const FormularioPdiPage = () => {
                     <h2 className="mt-1 text-xl font-bold text-slate-950">Formulários por disciplina</h2>
                     <p className="mt-1 text-sm text-slate-600">Configurado poucas vezes — normalmente só quando uma disciplina nova entra no PDI.</p>
                   </div>
-                  {pdiModelos.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
+                  {pdiModelosReais.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
                 </div>
-                {disciplinasDisponiveis.length === 0 && pdiModelos.length > 0 && <p className="mt-2 text-xs text-slate-500">Todas as disciplinas cadastradas já possuem um modelo PDI ativo.</p>}
+                {disciplinasDisponiveis.length === 0 && pdiModelosReais.length > 0 && <p className="mt-2 text-xs text-slate-500">Todas as disciplinas cadastradas já possuem um modelo PDI ativo.</p>}
 
-                {pdiModelos.length === 0 ? (
+                {pdiModelosReais.length === 0 ? (
                   <div className="mt-4">
                     <EmptyState title="Nenhum modelo PDI configurado" description="Crie o primeiro modelo escolhendo uma disciplina.">
                       <Button size="sm" onClick={abrirNovoModelo}>+ Novo modelo</Button>
@@ -284,14 +330,17 @@ export const FormularioPdiPage = () => {
                   </div>
                 ) : (
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {pdiModelos.map(modelo => {
-                      const disciplina = disciplinas.find(item => item.id === modelo.disciplinaId);
+                    {pdiModelosReais.map(modelo => {
                       return (
                         <div key={modelo.id} className="flex flex-col justify-between rounded-xl border border-slate-200 p-4 transition hover:border-teal-300 hover:shadow-sm">
                           <div>
                             <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{disciplina?.nome || 'Disciplina não encontrada'}</p>
-                              <ActionMenu items={[{ label: 'Excluir modelo', variant: 'danger', onClick: () => setDeletingModelo(modelo) }]} />
+                              <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{modelo.disciplinaNome || 'Disciplina não encontrada'}</p>
+                              <ActionMenu items={[
+                                modelo.status === 'ativa'
+                                  ? { label: 'Inativar modelo', variant: 'danger', onClick: () => setMudandoStatusModelo({ modelo, ativar: false }) }
+                                  : { label: 'Reativar modelo', onClick: () => setMudandoStatusModelo({ modelo, ativar: true }) },
+                              ]} />
                             </div>
                             <p className="mt-0.5 text-sm text-slate-500">{modelo.nome}</p>
                             <p className="mt-3 text-sm text-slate-600">{modelo.perguntas.length} {modelo.perguntas.length === 1 ? 'item' : 'itens'}</p>
@@ -355,7 +404,11 @@ export const FormularioPdiPage = () => {
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {aplicacao.modelos.length === 0
                                   ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
-                                  : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{disciplinas.find(item => item.id === modelo.disciplinaId)?.nome || modelo.nome}</Badge>)}
+                                  // Mostra o nome do modelo já snapshotado, nunca re-consulta disciplina por id: o
+                                  // snapshot pode ter sido feito antes ou depois da migração de Modelos PDI pro
+                                  // Neon, e os dois momentos usam espaços de id de disciplina DIFERENTES (mock vs.
+                                  // real) — o nome do modelo é a única informação sempre correta independente disso.
+                                  : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.nome}</Badge>)}
                               </div>
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
@@ -383,8 +436,8 @@ export const FormularioPdiPage = () => {
                 </select>
               </FormField>
               <FormField label="Nome do modelo (opcional)"><input className={inputClass} value={novoModeloForm.nome} onChange={event => setNovoModeloForm(prev => ({ ...prev, nome: event.target.value }))} placeholder="Ex.: PDI - Matemática" /></FormField>
-              <p className="text-xs text-slate-500">O modelo já nasce com o conjunto padrão de itens (conforme a opção em Configurações) e abre direto para edição.</p>
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)}>Cancelar</Button><Button type="submit">Criar modelo</Button></div>
+              <p className="text-xs text-slate-500">O modelo já nasce com o conjunto padrão de itens e abre direto para edição.</p>
+              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)} disabled={salvandoModelo}>Cancelar</Button><Button type="submit" disabled={salvandoModelo}>{salvandoModelo ? 'Criando...' : 'Criar modelo'}</Button></div>
             </form>
           </Modal>
         )}
@@ -446,9 +499,7 @@ export const FormularioPdiPage = () => {
 
               <FormField label="Seção (agrupamento no formulário)"><input className={inputClass} value={perguntaForm.secao || ''} onChange={event => setPerguntaForm(prev => ({ ...prev, secao: event.target.value }))} placeholder="Ex.: Registro pedagógico" /></FormField>
 
-              <FormField label="Status"><select className={inputClass} value={perguntaForm.status} onChange={event => setPerguntaForm(prev => ({ ...prev, status: event.target.value }))}><option value="ativa">Ativa</option><option value="inativa">Inativa</option></select></FormField>
-
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setPerguntaForm(null)}>Cancelar</Button><Button type="submit">Salvar</Button></div>
+              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setPerguntaForm(null)} disabled={salvandoPergunta}>Cancelar</Button><Button type="submit" disabled={salvandoPergunta}>{salvandoPergunta ? 'Salvando...' : 'Salvar'}</Button></div>
             </form>
           </Modal>
         )}
@@ -504,25 +555,36 @@ export const FormularioPdiPage = () => {
           </Modal>
         )}
 
-        {deletingPergunta && (
+        {inativandoPergunta && (
           <ConfirmDialog
-            title="Excluir item"
-            message="Deseja excluir este item do modelo? Aplicações já criadas continuam com a versão que tinham no momento em que foram abertas — só novas aplicações deixam de incluir este item."
-            onCancel={() => setDeletingPergunta(null)}
-            onConfirm={() => { deletePdiModeloPergunta(modeloSelecionado.id, deletingPergunta.id); setDeletingPergunta(null); setMessage('Item excluído do modelo com sucesso.'); }}
+            title={inativandoPergunta.ativar ? 'Reativar item' : 'Inativar item'}
+            message={inativandoPergunta.ativar
+              ? 'Deseja reativar este item? Ele volta a aparecer no modelo operacional.'
+              : 'Deseja inativar este item? Aplicações já criadas continuam com a versão que tinham no momento em que foram abertas — só novas aplicações deixam de incluir este item. O histórico é preservado.'}
+            confirmLabel={inativandoPergunta.ativar ? 'Reativar' : 'Inativar'}
+            onCancel={() => setInativandoPergunta(null)}
+            onConfirm={async () => {
+              const { pergunta, ativar } = inativandoPergunta;
+              setInativandoPergunta(null);
+              const resultado = ativar ? await reativarPdiPergunta(modeloSelecionado.id, pergunta.id) : await inativarPdiPergunta(modeloSelecionado.id, pergunta.id);
+              setMessage(resultado.ok ? `Item ${ativar ? 'reativado' : 'inativado'} com sucesso.` : resultado.error);
+            }}
           />
         )}
 
-        {deletingModelo && (
+        {mudandoStatusModelo && (
           <ConfirmDialog
-            title="Excluir modelo PDI"
-            message={`Deseja excluir o modelo "${deletingModelo.nome}"? Todos os seus itens serão removidos. Aplicações já criadas não são afetadas — elas mantêm a cópia dos itens de quando foram abertas. Novas aplicações deixam de incluir esta disciplina até um novo modelo ser cadastrado.`}
-            onCancel={() => setDeletingModelo(null)}
-            onConfirm={() => {
-              deletePdiModelo(deletingModelo.id);
-              if (modeloEditandoId === deletingModelo.id) setModeloEditandoId(null);
-              setDeletingModelo(null);
-              setMessage('Modelo PDI excluído com sucesso.');
+            title={mudandoStatusModelo.ativar ? 'Reativar modelo PDI' : 'Inativar modelo PDI'}
+            message={mudandoStatusModelo.ativar
+              ? `Deseja reativar o modelo "${mudandoStatusModelo.modelo.nome}"? Bloqueado se já existir outro modelo ativo para a mesma disciplina.`
+              : `Deseja inativar o modelo "${mudandoStatusModelo.modelo.nome}"? Ele deixa de estar disponível para novas aplicações, mas aplicações já criadas mantêm a cópia dos itens de quando foram abertas. O histórico é preservado.`}
+            confirmLabel={mudandoStatusModelo.ativar ? 'Reativar' : 'Inativar'}
+            onCancel={() => setMudandoStatusModelo(null)}
+            onConfirm={async () => {
+              const { modelo, ativar } = mudandoStatusModelo;
+              setMudandoStatusModelo(null);
+              const resultado = ativar ? await reativarPdiModeloReal(modelo.id) : await inativarPdiModelo(modelo.id);
+              setMessage(resultado.ok ? `Modelo PDI ${ativar ? 'reativado' : 'inativado'} com sucesso.` : resultado.error);
             }}
           />
         )}

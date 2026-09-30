@@ -4,6 +4,11 @@ import { listarDisciplinas } from '../services/disciplinas';
 import { criarTurma as criarTurmaApi, editarTurma, inativarTurmaApi, listarTurmas, reativarTurmaApi } from '../services/turmas';
 import { arquivarPdiAlunoReal, criarPdiAlunoReal, editarPdiAlunoReal, listarPdiAlunos, reativarPdiAlunoReal } from '../services/pdiAlunos';
 import {
+  criarPdiModeloPerguntaReal, criarPdiModeloReal, editarPdiModeloPerguntaReal, inativarPdiModeloReal,
+  inativarPdiPerguntaReal, listarPdiModelosReais, reativarPdiModeloReal, reativarPdiPerguntaReal,
+  reordenarPdiModeloPerguntasReais,
+} from '../services/pdiModelos';
+import {
   auxiliares as auxiliaresIniciais,
   correcoesSimulados as correcoesIniciais,
   disciplinas,
@@ -138,6 +143,15 @@ export const DataProvider = ({ children }) => {
   const [pdiAlunosReais, setPdiAlunosReais] = useState([]);
   const [pdiAlunosReaisLoading, setPdiAlunosReaisLoading] = useState(true);
   const [pdiAlunosReaisError, setPdiAlunosReaisError] = useState(null);
+  // Modelo/Pergunta PDI real — diferente de Turmas/Escolas/AlunoPdi, NÃO carrega automaticamente
+  // no login (GET é Secretaria+Gestor apenas; todo o resto do app faria uma chamada 403 inútil).
+  // Quem carrega é FormularioPdiPage.jsx, ao montar. `pdiModelos` (mock, abaixo) continua
+  // alimentando todo o resto do PDI por disciplina ainda não migrado (Fichas/Respostas/Meus
+  // PDIs). createPdiAplicacao usa `pdiModelosReais` (ver mais abaixo) — Aplicações continuam
+  // mock, mas o snapshot de "quais modelos estão ativos agora" passa a vir do Neon.
+  const [pdiModelosReais, setPdiModelosReais] = useState([]);
+  const [pdiModelosReaisLoading, setPdiModelosReaisLoading] = useState(true);
+  const [pdiModelosReaisError, setPdiModelosReaisError] = useState(null);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
   const [diretores, setDiretores] = useState(diretoresIniciais);
@@ -374,6 +388,87 @@ export const DataProvider = ({ children }) => {
     }));
   };
 
+  // --- Modelo/Pergunta PDI real (piloto igual Turmas/Escolas/AlunoPdi) -----------------------
+  const loadPdiModelosReais = useCallback(async () => {
+    setPdiModelosReaisLoading(true);
+    setPdiModelosReaisError(null);
+    try {
+      setPdiModelosReais(await listarPdiModelosReais());
+    } catch (error) {
+      setPdiModelosReaisError(error.message);
+    } finally {
+      setPdiModelosReaisLoading(false);
+    }
+  }, []);
+
+  const createPdiModeloReal = async (payload) => {
+    try {
+      const modelo = await criarPdiModeloReal(payload);
+      setPdiModelosReais(prev => [...prev, modelo]);
+      return { ok: true, modelo };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const mudarStatusPdiModeloReal = async (id, ativar) => {
+    try {
+      const modelo = await (ativar ? reativarPdiModeloReal(id) : inativarPdiModeloReal(id));
+      setPdiModelosReais(prev => prev.map(item => (item.id === Number(id) ? { ...item, ...modelo, perguntas: item.perguntas } : item)));
+      return { ok: true, modelo };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+  const inativarPdiModelo = (id) => mudarStatusPdiModeloReal(id, false);
+  const reativarPdiModeloReaisFn = (id) => mudarStatusPdiModeloReal(id, true);
+
+  const atualizarPerguntaNoModelo = (modeloId, pergunta) => {
+    setPdiModelosReais(prev => prev.map(modelo => (modelo.id === Number(modeloId)
+      ? { ...modelo, perguntas: [...(modelo.perguntas || []).filter(item => item.id !== pergunta.id), pergunta] }
+      : modelo)));
+  };
+
+  const createPdiModeloPerguntaRealFn = async (modeloId, payload) => {
+    try {
+      const pergunta = await criarPdiModeloPerguntaReal(modeloId, payload);
+      atualizarPerguntaNoModelo(modeloId, pergunta);
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const updatePdiModeloPerguntaRealFn = async (modeloId, perguntaId, payload) => {
+    try {
+      const pergunta = await editarPdiModeloPerguntaReal(perguntaId, payload);
+      atualizarPerguntaNoModelo(modeloId, pergunta);
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const mudarStatusPdiPerguntaReal = async (modeloId, perguntaId, ativar) => {
+    try {
+      const pergunta = await (ativar ? reativarPdiPerguntaReal(perguntaId) : inativarPdiPerguntaReal(perguntaId));
+      atualizarPerguntaNoModelo(modeloId, pergunta);
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const reorderPdiModeloPerguntaReal = async (modeloId, ordens) => {
+    try {
+      const perguntas = await reordenarPdiModeloPerguntasReais(modeloId, ordens);
+      setPdiModelosReais(prev => prev.map(modelo => (modelo.id === Number(modeloId) ? { ...modelo, perguntas } : modelo)));
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   // --- PDI por disciplina: aplicações (vigência por escola) -----------------------------------
   // Vigências são independentes entre escolas; dentro da MESMA escola, duas aplicações nunca
   // podem ter períodos sobrepostos (ver src/utils/pdiFichas.js). Isso não é "uma aplicação por
@@ -383,8 +478,10 @@ export const DataProvider = ({ children }) => {
       return { ok: false, error: 'A data de início não pode ser depois da data de encerramento.' };
     }
     // Só os modelos ATIVOS e escolhidos em `payload.modeloIds` entram nesta aplicação — sem
-    // seleção nenhuma (ou nenhum deles mais ativo), não há o que colocar na aplicação.
-    const modelosSelecionados = pdiModelos.filter(modelo => modelo.status === 'ativa' && payload.modeloIds?.includes(modelo.id));
+    // seleção nenhuma (ou nenhum deles mais ativo), não há o que colocar na aplicação. A partir
+    // da migração de Modelos PDI para o Neon, a fonte é sempre `pdiModelosReais` — nunca mais o
+    // mock `pdiModelos` (que ficou congelado com os 10 modelos originais).
+    const modelosSelecionados = pdiModelosReais.filter(modelo => modelo.status === 'ativa' && payload.modeloIds?.includes(modelo.id));
     if (modelosSelecionados.length === 0) {
       return { ok: false, error: 'Selecione ao menos um modelo PDI ativo para esta aplicação.' };
     }
@@ -867,6 +964,18 @@ export const DataProvider = ({ children }) => {
     updatePdiAlunoReal,
     arquivarPdiAluno,
     reativarPdiAluno,
+    pdiModelosReais,
+    pdiModelosReaisLoading,
+    pdiModelosReaisError,
+    loadPdiModelosReais,
+    createPdiModeloReal,
+    inativarPdiModelo,
+    reativarPdiModeloReal: reativarPdiModeloReaisFn,
+    createPdiModeloPerguntaReal: createPdiModeloPerguntaRealFn,
+    updatePdiModeloPerguntaReal: updatePdiModeloPerguntaRealFn,
+    inativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, false),
+    reativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, true),
+    reorderPdiModeloPerguntaReal,
     escolas,
     escolasLoading,
     escolasError,

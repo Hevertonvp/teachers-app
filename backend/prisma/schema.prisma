@@ -118,6 +118,7 @@ model Disciplina {
   nome String @unique @db.VarChar(100)
 
   vinculosProfessor ProfessorTurmaDisciplina[]
+  modelosPdi        ModeloPdi[]
 
   @@map("disciplinas")
 }
@@ -319,4 +320,76 @@ model AlunoPdi {
 
   @@index([turmaId])
   @@map("alunos_pdi")
+}
+
+// Modelo PDI: define QUAIS perguntas existem para uma disciplina. No máximo um ATIVO por
+// disciplina — GARANTIDO POR ÍNDICE ÚNICO PARCIAL no Postgres (WHERE status = 'ATIVA'), mesma
+// estratégia de ProfessorTurmaDisciplina/AuxiliarTurma (ver migration.sql). Nunca apagado
+// fisicamente: reativar/inativar preserva histórico. Disciplina nunca é alterada após a criação
+// (a UI atual não oferece isso — ver GestaoPdi no frontend).
+model ModeloPdi {
+  id           Int            @id @default(autoincrement())
+  nome         String         @db.VarChar(200)
+  disciplinaId Int
+  disciplina   Disciplina     @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  status       StatusRegistro @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  perguntas PerguntaPdi[]
+
+  @@index([disciplinaId, status])
+  @@map("modelos_pdi")
+}
+
+// Cada modelo carrega sua própria lista de perguntas — TODAS igualmente editáveis/reordenáveis/
+// inativáveis, mesmo as que nascem com o modelo (`origem` é só informativo, nunca proteção — ver
+// seção 16 do pedido). `opcoes` (seleção/marcação) e `complementar` (campo condicional extra,
+// {gatilho, label}) usam Json por serem estruturas variáveis por pergunta — evita improvisar
+// string concatenada e preserva a ordem das opções como veio.
+enum OrigemPerguntaPdi {
+  ESTRUTURADA
+  HABILIDADE
+  ORIENTACAO
+  QUALITATIVA
+  PERSONALIZADA
+}
+
+enum TipoRespostaPdi {
+  TEXTO
+  SELECAO
+  MARCACAO
+  NUMERO
+  ORIENTACAO
+}
+
+model PerguntaPdi {
+  id       Int       @id @default(autoincrement())
+  modeloId Int
+  modelo   ModeloPdi @relation(fields: [modeloId], references: [id], onDelete: Restrict)
+
+  secao        String            @db.VarChar(100)
+  subsecao     String?           @db.VarChar(100)
+  codigo       String?           @db.VarChar(20)
+  texto        String            @db.Text
+  indicador    String?           @db.VarChar(100)
+  origem       OrigemPerguntaPdi
+  tipoResposta TipoRespostaPdi
+  opcoes       Json?
+  complementar Json?
+  ordem        Int
+  status       StatusRegistro    @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  @@index([modeloId, ordem])
+  @@map("perguntas_pdi")
 }
