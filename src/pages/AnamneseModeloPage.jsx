@@ -134,7 +134,7 @@ export const AnamneseModeloPage = () => {
             <h1 className="text-3xl font-bold text-slate-950">Modelo de Anamnese</h1>
             <p className="mt-2 max-w-2xl text-slate-600">Define as perguntas configuráveis da Anamnese (aspectos comportamentais/psicomotores/cognitivos, comunicação, escrita, leitura). Identificação, responsáveis e medicação continuam fixos, fora daqui.</p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
+          <Button variant="outline" onClick={() => navigate('/pdi/configuracoes')}>Concluir</Button>
         </div>
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
