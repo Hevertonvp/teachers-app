@@ -2,10 +2,21 @@ import type { Turma } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 import { validarECalcularTurma, type DadosTurma } from '../../domain/turma.js';
-import { ConflictError, NotFoundError, ValidationError } from '../../domain/errors.js';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { prisma } from '../../lib/prisma.js';
 
 export const turmasRouter = Router();
+
+type Actor = { id: number; perfil: string };
+
+// Turma é configuração de rede — só a Secretaria administra (criar/editar/inativar/reativar),
+// igual Escola (ver escolas.ts). Gestor/Diretora/Professor/Auxiliar nunca escrevem aqui; esta
+// tarefa não amplia a permissão deles. Leitura (GET) continua sem restrição.
+function exigirSecretaria(actor: Actor) {
+  if (actor.perfil !== 'SECRETARIA') {
+    throw new ForbiddenError('Somente a Secretaria pode gerenciar Turmas.');
+  }
+}
 
 const salvarTurmaSchema = z.object({
   escolaId: z.number().int(),
@@ -80,6 +91,7 @@ turmasRouter.get('/:id', async (req, res) => {
 });
 
 turmasRouter.post('/', async (req, res) => {
+  exigirSecretaria(res.locals.pessoa as Actor);
   const input = salvarTurmaSchema.parse(req.body);
   const dados = paraDadosTurma(input);
   const { nome, identidadeChave } = validarECalcularTurma(dados);
@@ -107,6 +119,7 @@ turmasRouter.post('/', async (req, res) => {
 });
 
 turmasRouter.put('/:id', async (req, res) => {
+  exigirSecretaria(res.locals.pessoa as Actor);
   const id = Number(req.params.id);
   const existente = await prisma.turma.findUnique({ where: { id } });
   if (!existente) throw new NotFoundError('Turma não encontrada.');
@@ -140,6 +153,7 @@ turmasRouter.put('/:id', async (req, res) => {
 });
 
 turmasRouter.post('/:id/inativar', async (req, res) => {
+  exigirSecretaria(res.locals.pessoa as Actor);
   const id = Number(req.params.id);
   const existente = await prisma.turma.findUnique({ where: { id } });
   if (!existente) throw new NotFoundError('Turma não encontrada.');
@@ -152,6 +166,7 @@ turmasRouter.post('/:id/inativar', async (req, res) => {
 });
 
 turmasRouter.post('/:id/reativar', async (req, res) => {
+  exigirSecretaria(res.locals.pessoa as Actor);
   const id = Number(req.params.id);
   const existente = await prisma.turma.findUnique({ where: { id } });
   if (!existente) throw new NotFoundError('Turma não encontrada.');

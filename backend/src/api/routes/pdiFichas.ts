@@ -455,9 +455,17 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
     })),
   );
 
+  // updatedBy/updatedAt da Ficha precisam refletir quem de fato salvou algo aqui, mesmo quando o
+  // status não muda (ex.: editar uma resposta de uma Ficha já CONCLUIDA) — nunca só quando há
+  // transição de status, senão a auditoria da Ficha fica presa no último editor de STATUS, não no
+  // último editor de DADO. updatedBy é só auditoria de autoria; não mexe em professorResponsavelId/
+  // snapshots/createdBy/concluidaPor.
   const novoStatus = statusAposSalvarResposta(ficha.status as 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA', respostasAplicaveis.length > 0);
-  if (novoStatus !== ficha.status) {
-    await prisma.fichaPdi.update({ where: { id: fichaId }, data: { status: novoStatus, updatedBy: String(actor.id) } });
+  if (respostasAplicaveis.length > 0) {
+    await prisma.fichaPdi.update({
+      where: { id: fichaId },
+      data: { ...(novoStatus !== ficha.status ? { status: novoStatus } : {}), updatedBy: String(actor.id) },
+    });
   }
 
   const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });

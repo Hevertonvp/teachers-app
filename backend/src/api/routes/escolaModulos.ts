@@ -1,9 +1,18 @@
 import { ModuloSistema } from '@prisma/client';
 import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
-import { NotFoundError, ValidationError } from '../../domain/errors.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 
 export const escolaModulosRouter = Router();
+
+type Actor = { id: number; perfil: string };
+
+// Habilitar/desabilitar módulo é administração de Escola — só a Secretaria (ver escolas.ts).
+function exigirSecretaria(actor: Actor) {
+  if (actor.perfil !== 'SECRETARIA') {
+    throw new ForbiddenError('Somente a Secretaria pode gerenciar módulos da Escola.');
+  }
+}
 
 async function garantirEscolaExiste(escolaId: number) {
   const existe = await prisma.escola.findUnique({ where: { id: escolaId } });
@@ -35,10 +44,12 @@ escolaModulosRouter.get('/:escolaId/modulos', async (req, res) => {
 });
 
 escolaModulosRouter.post('/:escolaId/modulos/:modulo/habilitar', async (req, res) => {
+  exigirSecretaria(res.locals.pessoa as Actor);
   res.json(await definirStatus(req.params.escolaId, req.params.modulo, true));
 });
 
 escolaModulosRouter.post('/:escolaId/modulos/:modulo/desabilitar', async (req, res) => {
+  exigirSecretaria(res.locals.pessoa as Actor);
   res.json(await definirStatus(req.params.escolaId, req.params.modulo, false));
 });
 
