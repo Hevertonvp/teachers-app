@@ -298,12 +298,13 @@ export const FormularioPdiPage = () => {
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <h1 className="text-3xl font-bold text-slate-950">Modelos PDI</h1>
+            <h1 className="text-3xl font-bold text-slate-950">Configuração do PDI</h1>
             <p className="mt-2 max-w-2xl text-slate-600">
               <strong className="font-semibold text-slate-800">Modelos</strong> definem o que é perguntado em cada disciplina. <strong className="font-semibold text-slate-800">Aplicações</strong> definem quando e em qual escola os professores preenchem esses formulários.
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
+            {souSecretaria && <Button variant="outline" onClick={() => navigate('/pdi/anamnese-modelo')}>Modelo de Anamnese</Button>}
             <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { BackButton, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -156,7 +156,11 @@ export const PdiPage = () => {
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <BackButton />
+            {/* Link explícito pra /pdi, nunca navigate(-1): a pilha de histórico do navegador aqui
+                alterna com o perfil do aluno (PdiAlunoPerfil.jsx usa <Link to="/pdi/alunos">, que
+                empilha uma entrada nova em vez de "voltar") — navigate(-1) ficava preso num loop
+                entre esta lista e o último aluno aberto em vez de voltar pra tela principal do PDI. */}
+            <Link to="/pdi" className="text-sm font-semibold text-teal-700 hover:underline">← Voltar</Link>
             <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">Alunos PDI</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Alunos em acompanhamento</h1>
             <p className="mt-2 max-w-3xl text-slate-600">Cadastro dos alunos acompanhados pelo PDI: turma, escola e responsável legal.</p>

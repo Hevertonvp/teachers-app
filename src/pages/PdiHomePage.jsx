@@ -6,7 +6,7 @@ import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { MainLayout } from '../layouts/Layouts';
 import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
-import { canManagePedagogico, isProfessor as isProfessorRole, isSecretaria } from '../utils/roles';
+import { canManagePedagogico, isProfessor as isProfessorRole } from '../utils/roles';
 import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 
 export const PdiHomePage = () => {
@@ -34,55 +34,16 @@ export const PdiHomePage = () => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {isSecretaria(user) ? (
-            <>
-              <Card>
-                <div className="flex h-full flex-col justify-between gap-6">
-                  <div>
-                    <p className="text-sm font-semibold text-teal-700">Por disciplina</p>
-                    <h2 className="mt-2 text-2xl font-bold text-slate-950">Modelos PDI</h2>
-                    <p className="mt-2 text-sm text-slate-600">Crie e gerencie os modelos e perguntas de cada disciplina, suas versões/status, e as Aplicações PDI por escola.</p>
-                  </div>
-                  <Link to="/pdi/formulario"><Button>Gerenciar formulário</Button></Link>
-                </div>
-              </Card>
-
-              <Card>
-                <div className="flex h-full flex-col justify-between gap-6">
-                  <div>
-                    <p className="text-sm font-semibold text-teal-700">Configuração geral</p>
-                    <h2 className="mt-2 text-2xl font-bold text-slate-950">Modelo de Anamnese</h2>
-                    <p className="mt-2 text-sm text-slate-600">Estrutura e perguntas configuráveis da Anamnese — única para toda a rede, não específica de disciplina.</p>
-                  </div>
-                  <Link to="/pdi/anamnese-modelo"><Button variant="outline">Gerenciar Anamnese</Button></Link>
-                </div>
-              </Card>
-            </>
-          ) : (
-            <Card>
-              <div className="flex h-full flex-col justify-between gap-6">
-                {isGestor ? (
-                  <>
-                    <div>
-                      <p className="text-sm font-semibold text-teal-700">Gestão de aplicações</p>
-                      <h2 className="mt-2 text-2xl font-bold text-slate-950">Formulário PDI</h2>
-                      <p className="mt-2 text-sm text-slate-600">Consulte os modelos por disciplina e as aplicações PDI abertas para cada escola.</p>
-                    </div>
-                    <Link to="/pdi/formulario"><Button>Gerenciar formulário</Button></Link>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-sm font-semibold text-teal-700">PDI por disciplina</p>
-                      <h2 className="mt-2 text-2xl font-bold text-slate-950">Formulário PDI</h2>
-                      <p className="mt-2 text-sm text-slate-600">Acesse "Meus PDIs" para preencher ou consultar as fichas das disciplinas que você leciona, sem precisar escolher uma escola antes.</p>
-                    </div>
-                    <Link to="/pdi/meus-pdis"><Button>Meus PDIs</Button></Link>
-                  </>
-                )}
+          <Card>
+            <div className="flex h-full flex-col justify-between gap-6">
+              <div>
+                <p className="text-sm font-semibold text-teal-700">{isGestor ? 'Gestão de modelos e aplicações' : 'PDI por disciplina'}</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-950">Formulário PDI</h2>
+                <p className="mt-2 text-sm text-slate-600">{isGestor ? 'Crie modelos por disciplina, gerencie suas perguntas e abra aplicações PDI para cada escola.' : 'Acesse "Meus PDIs" para preencher ou consultar as fichas das disciplinas que você leciona, sem precisar escolher uma escola antes.'}</p>
               </div>
-            </Card>
-          )}
+              {isGestor ? <Link to="/pdi/formulario"><Button>Gerenciar formulário</Button></Link> : <Link to="/pdi/meus-pdis"><Button>Meus PDIs</Button></Link>}
+            </div>
+          </Card>
 
           <Card>
             <div className="flex h-full flex-col justify-between gap-6">
