@@ -15,7 +15,6 @@ import { GestaoEscolas } from './pages/GestaoEscolas';
 import { GestaoPessoas } from './pages/GestaoPessoas';
 import { GestaoTurmas } from './pages/GestaoTurmas';
 import { PdiHomePage } from './pages/PdiHomePage';
-import { PdiConfiguracoesPage } from './pages/PdiConfiguracoesPage';
 import { MeusPdisPage } from './pages/MeusPdisPage';
 import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
@@ -48,7 +47,6 @@ const AppRoutes = () => <Routes>
   <Route path="/primeiro-acesso" element={<PrimeiroAcessoRoute><PrimeiroAcessoPage /></PrimeiroAcessoRoute>} />
   <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
   <Route path="/pdi" element={<ProtectedRoute><PdiHomePage /></ProtectedRoute>} />
-  <Route path="/pdi/configuracoes" element={<ProtectedRoute><PdiConfiguracoesPage /></ProtectedRoute>} />
   <Route path="/pdi/formulario" element={<ProtectedRoute><FormularioPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/meus-pdis" element={<ProtectedRoute><MeusPdisPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos" element={<ProtectedRoute><PdiPage /></ProtectedRoute>} />
