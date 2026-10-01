@@ -10,12 +10,14 @@ const formatarVinculo = (vinculo: {
   id: number; turmaId: number; auxiliarId: number;
   status: string; dataInicio: Date; dataFim: Date | null;
   turma: { nome: string; escolaId: number };
+  auxiliar: { nome: string };
 }) => ({
   id: vinculo.id,
   turmaId: vinculo.turmaId,
   turmaNome: vinculo.turma.nome,
   escolaId: vinculo.turma.escolaId,
   auxiliarId: vinculo.auxiliarId,
+  auxiliarNome: vinculo.auxiliar.nome,
   status: vinculo.status,
   dataInicio: vinculo.dataInicio,
   dataFim: vinculo.dataFim,
@@ -29,9 +31,18 @@ async function exigirEscolaNoEscopo(actor: Actor, escolaId: number) {
   }
 }
 
+// Leitura também permitida ao Gestor (mesma razão de professorTurmaDisciplina.ts: ele já vê e
+// gerencia Aluno PDI da própria escola, então saber qual Auxiliar está vinculado à turma é
+// informação pedagógica do mesmo nível — sem conceder poder de criar/encerrar vínculo).
+function exigirLeituraVinculo(actor: Actor) {
+  if (actor.perfil !== 'SECRETARIA' && actor.perfil !== 'DIRETORA' && actor.perfil !== 'GESTOR') {
+    throw new ForbiddenError('Você não tem permissão para consultar vínculos de Auxiliar.');
+  }
+}
+
 auxiliarTurmaRouter.get('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretariaOuDiretora(actor);
+  exigirLeituraVinculo(actor);
   const permitidas = await escolasPermitidas(actor);
   const { auxiliarId, turmaId } = req.query;
 
@@ -41,7 +52,7 @@ auxiliarTurmaRouter.get('/', async (req, res) => {
       ...(turmaId ? { turmaId: Number(turmaId) } : {}),
       ...(permitidas ? { turma: { escolaId: { in: permitidas } } } : {}),
     },
-    include: { turma: true },
+    include: { turma: true, auxiliar: true },
     orderBy: { dataInicio: 'desc' },
   });
 
@@ -84,7 +95,7 @@ auxiliarTurmaRouter.post('/', async (req, res) => {
   const atual = await prisma.auxiliarTurma.findFirst({ where: { turmaId, status: 'ATIVO' } });
 
   if (atual && atual.auxiliarId === auxiliarId) {
-    return res.json(formatarVinculo({ ...atual, turma }));
+    return res.json(formatarVinculo({ ...atual, turma, auxiliar }));
   }
 
   const novo = await prisma.$transaction(async (tx) => {
@@ -94,7 +105,7 @@ auxiliarTurmaRouter.post('/', async (req, res) => {
     return tx.auxiliarTurma.create({ data: { turmaId, auxiliarId, status: 'ATIVO', dataInicio: new Date() } });
   });
 
-  res.status(201).json(formatarVinculo({ ...novo, turma }));
+  res.status(201).json(formatarVinculo({ ...novo, turma, auxiliar }));
 });
 
 auxiliarTurmaRouter.post('/:id/encerrar', async (req, res) => {
@@ -102,11 +113,11 @@ auxiliarTurmaRouter.post('/:id/encerrar', async (req, res) => {
   exigirSecretariaOuDiretora(actor);
   const id = Number(req.params.id);
 
-  const vinculo = await prisma.auxiliarTurma.findUnique({ where: { id }, include: { turma: true } });
+  const vinculo = await prisma.auxiliarTurma.findUnique({ where: { id }, include: { turma: true, auxiliar: true } });
   if (!vinculo) throw new NotFoundError('Vínculo não encontrado.');
   await exigirEscolaNoEscopo(actor, vinculo.turma.escolaId);
   if (vinculo.status !== 'ATIVO') throw new ValidationError('Este vínculo já está encerrado.');
 
   const atualizado = await prisma.auxiliarTurma.update({ where: { id }, data: { status: 'ENCERRADO', dataFim: new Date() } });
-  res.json(formatarVinculo({ ...atualizado, turma: vinculo.turma }));
+  res.json(formatarVinculo({ ...atualizado, turma: vinculo.turma, auxiliar: vinculo.auxiliar }));
 });

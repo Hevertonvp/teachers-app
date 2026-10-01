@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { BackButton, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
+import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { inputClass, turmaName } from '../utils/display';
-import { filterByEscola, professoresDaTurma } from '../utils/escolas';
+import { filterByEscola } from '../utils/escolas';
 import { parentescoOptions } from '../utils/pdi';
 import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico, canViewPdiAlunos } from '../utils/roles';
 import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
@@ -20,34 +21,13 @@ const blankAluno = (turmaId, escolaId) => ({
   responsavelTelefone: '',
 });
 
-// Bloco somente leitura "Professores da turma": derivado direto de turmaProfessores (ainda mock —
-// vínculo Professor↔Turma↔Disciplina real existe no backend, mas esta tela não foi migrada para
-// consumi-lo agora; ver seção 19 do pedido: professores do aluno nunca são salvos, só derivados).
-const ProfessoresDaTurmaPreview = ({ turmaProfessores, professores, disciplinas, turmaId }) => {
-  const vinculos = turmaId ? professoresDaTurma(turmaProfessores, professores, disciplinas, Number(turmaId)) : [];
-  return (
-    <div className="md:col-span-2">
-      <p className="mb-1.5 text-sm font-semibold text-slate-700">Professores(as) da turma</p>
-      {vinculos.length === 0
-        ? <p className="text-sm text-slate-500">Selecione uma turma para ver os professores vinculados.</p>
-        : (
-          <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-            {vinculos.map(vinculo => (
-              <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professor?.nome || 'Professor(a) não encontrado(a)'} — {vinculo.disciplina?.nome || 'Disciplina não encontrada'}</li>
-            ))}
-          </ul>
-        )}
-    </div>
-  );
-};
-
 export const PdiPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
     pdiAlunosReais, pdiAlunosReaisLoading, pdiAlunosReaisError, loadPdiAlunosReais,
     createPdiAlunoReal, updatePdiAlunoReal, arquivarPdiAluno, reativarPdiAluno,
-    professores, turmas, turmaProfessores, disciplinas, escolas,
+    turmas, escolas,
   } = useData();
   const { activeEscolaId, userEscolas, isExplicitBatchSelection } = useEscola();
 
@@ -240,7 +220,7 @@ export const PdiPage = () => {
                   <option value="" disabled>{form.escolaId ? 'Selecione a turma' : 'Selecione a escola primeiro'}</option>
                   {turmas.filter(item => item.status === 'ativa' && item.escolaId === Number(form.escolaId)).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}
                 </select></FormField>
-                <ProfessoresDaTurmaPreview turmaProfessores={turmaProfessores} professores={professores} disciplinas={disciplinas} turmaId={form.turmaId} />
+                <ProfessoresDaTurmaPreview turmaId={form.turmaId} />
                 <div className="md:col-span-2 grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-2">
                   <p className="text-sm font-semibold text-slate-700 md:col-span-2">Responsável legal</p>
                   <FormField label="Nome do responsável"><input className={inputClass} value={form.responsavelNome} onChange={event => setForm(prev => ({ ...prev, responsavelNome: event.target.value }))} required /></FormField>

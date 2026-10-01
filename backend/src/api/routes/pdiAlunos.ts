@@ -6,12 +6,26 @@ import { escolasPermitidas, type Actor } from './pessoas.js';
 
 export const pdiAlunosRouter = Router();
 
-// Leitura: Secretaria (rede toda), Gestor e Diretora (só as próprias escolas, via
-// escolasPermitidas). Escrita: só Secretaria e Gestor — Diretora tem apenas consulta nesta etapa
-// (não foi definida edição pra ela). Professor/Auxiliar não acessam este router ainda — o acesso
-// deles será derivado por ProfessorTurmaDisciplina/AuxiliarTurma num próximo bloco.
+// Leitura da LISTAGEM (GET /): Secretaria (rede toda), Gestor e Diretora (só as próprias escolas,
+// via escolasPermitidas) — escopo por ESCOLA, que faz sentido pra quem administra/supervisiona a
+// escola inteira. Auxiliar NUNCA usa este endpoint: o escopo dele é por TURMA (AuxiliarTurma), não
+// por escola — misturar os dois aqui daria a ele visão de turmas que não são suas só por
+// compartilharem a escola. Auxiliar tem sua própria listagem em GET /meus-alunos e leitura
+// individual em GET /:id (ver exigirLeituraIndividual/buscarAlunoNoEscopo abaixo). Professor não
+// acessa nenhum dos dois: ele nunca precisa consultar Aluno PDI diretamente, só através do fluxo
+// de Ficha PDI (que resolve aluno internamente via Prisma).
 function exigirLeitura(actor: Actor) {
   if (!['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(actor.perfil)) {
+    throw new ForbiddenError('Você não tem permissão para consultar Alunos PDI.');
+  }
+}
+
+// Leitura INDIVIDUAL (GET /:id) — mesmo grupo de exigirLeitura, mais Auxiliar e Professor, cujo
+// escopo mais estreito (a própria turma) é aplicado dentro de buscarAlunoNoEscopo, nunca aqui.
+// Professor entrou aqui na tarefa de Anamnese real (seção 33/34 do pedido): a página de Anamnese
+// precisa buscar os dados básicos do aluno antes de mostrar a consulta.
+function exigirLeituraIndividual(actor: Actor) {
+  if (!['SECRETARIA', 'GESTOR', 'DIRETORA', 'AUXILIAR', 'PROFESSOR'].includes(actor.perfil)) {
     throw new ForbiddenError('Você não tem permissão para consultar Alunos PDI.');
   }
 }
@@ -80,6 +94,26 @@ pdiAlunosRouter.get('/', async (req, res) => {
 async function buscarAlunoNoEscopo(actor: Actor, id: number) {
   const aluno = await prisma.alunoPdi.findUnique({ where: { id }, include: { turma: { include: { escola: true } } } });
   if (!aluno) throw new NotFoundError('Aluno não encontrado.');
+
+  // Auxiliar tem escopo mais estreito que os demais perfis daqui: precisa de VinculoEscolar ATIVO
+  // com a escola E de AuxiliarTurma ATIVO com a turma ATUAL do aluno — não basta a escola (ver
+  // exigirLeitura acima). Nunca usa escolasPermitidas, que só enxerga o nível de escola.
+  if (actor.perfil === 'AUXILIAR') {
+    const vinculoEscolar = await prisma.vinculoEscolar.findFirst({ where: { pessoaId: actor.id, escolaId: aluno.turma.escolaId, status: 'ATIVO' } });
+    const vinculoTurma = vinculoEscolar && await prisma.auxiliarTurma.findFirst({ where: { auxiliarId: actor.id, turmaId: aluno.turmaId, status: 'ATIVO' } });
+    if (!vinculoTurma) throw new ForbiddenError('Você não tem acesso a este aluno.');
+    return aluno;
+  }
+
+  // Professor: mesma regra usada em Anamnese (qualquer vínculo ATIVO na turma atual do aluno, em
+  // qualquer disciplina — Anamnese é do aluno, não da disciplina, ver domain/anamnese.ts).
+  if (actor.perfil === 'PROFESSOR') {
+    const vinculoEscolar = await prisma.vinculoEscolar.findFirst({ where: { pessoaId: actor.id, escolaId: aluno.turma.escolaId, status: 'ATIVO' } });
+    const algumPtd = vinculoEscolar && await prisma.professorTurmaDisciplina.count({ where: { turmaId: aluno.turmaId, professorId: actor.id, status: 'ATIVO' } });
+    if (!algumPtd) throw new ForbiddenError('Você não tem acesso a este aluno.');
+    return aluno;
+  }
+
   const permitidas = await escolasPermitidas(actor);
   if (permitidas && !permitidas.includes(aluno.turma.escolaId)) {
     throw new ForbiddenError('Você não tem acesso a este aluno.');
@@ -87,9 +121,38 @@ async function buscarAlunoNoEscopo(actor: Actor, id: number) {
   return aluno;
 }
 
+// Listagem unificada do Auxiliar (seções 14-17 do pedido): VinculoEscolar ATIVO → AuxiliarTurma
+// ATIVO → Turma ATIVA → AlunoPdi ATIVO — nunca AuxiliarAluno (não existe) nem o mock
+// pdiAuxiliaresVinculos. Precisa vir ANTES de GET /:id na definição das rotas, senão o Express
+// tentaria casar "meus-alunos" como se fosse um :id.
+pdiAlunosRouter.get('/meus-alunos', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  if (actor.perfil !== 'AUXILIAR') {
+    throw new ForbiddenError('Este endpoint é exclusivo do Auxiliar de Aprendizagem.');
+  }
+
+  const vinculosEscolares = await prisma.vinculoEscolar.findMany({ where: { pessoaId: actor.id, status: 'ATIVO' }, select: { escolaId: true } });
+  const escolaIds = vinculosEscolares.map((v) => v.escolaId);
+  if (escolaIds.length === 0) return res.json([]);
+
+  const auxiliarTurmas = await prisma.auxiliarTurma.findMany({
+    where: { auxiliarId: actor.id, status: 'ATIVO', turma: { escolaId: { in: escolaIds }, status: 'ATIVA' } },
+    select: { turmaId: true },
+  });
+  if (auxiliarTurmas.length === 0) return res.json([]);
+
+  const alunos = await prisma.alunoPdi.findMany({
+    where: { turmaId: { in: auxiliarTurmas.map((t) => t.turmaId) }, status: 'ATIVO' },
+    include: { turma: { include: { escola: true } } },
+    orderBy: { nome: 'asc' },
+  });
+
+  res.json(alunos.map(formatarAluno));
+});
+
 pdiAlunosRouter.get('/:id', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirLeitura(actor);
+  exigirLeituraIndividual(actor);
   const aluno = await buscarAlunoNoEscopo(actor, Number(req.params.id));
   res.json(formatarAluno(aluno));
 });

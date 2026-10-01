@@ -1,37 +1,18 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card, EmptyState, ProgressRing, StatCard, StatusBadge } from '../components/Common';
+import { Button, Card, EmptyState, StatCard } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
-import { disciplinaName, turmaName } from '../utils/display';
 import { turmasDoProfessor } from '../utils/escolas';
-import { pdiSummary } from '../utils/pdi';
-import { CURRENT_DATE, deadlineText, formDefinitions, formStatusLabel, isFormAvailableForTeacher, teacherFillingStatus } from '../utils/formAvailability';
-import { fichasDoProfessor, statusFicha } from '../utils/pdiFichas';
 import { MainLayout } from '../layouts/Layouts';
-
-const today = new Date('2026-08-31T12:00:00');
-
-const daysUntil = (date) => Math.ceil((new Date(`${date}T12:00:00`) - today) / (1000 * 60 * 60 * 24));
-
-const percentageComplete = (items) => {
-  if (!items.length) return 0;
-  return Math.round((items.filter(item => item.status === 'concluido' || item.status === 'concluído').length / items.length) * 100);
-};
-
-const notificationMeta = (item) => {
-  const days = daysUntil(item.prazo);
-  if (item.status === 'em_atraso' || days < 0) {
-    return { label: `${Math.abs(days)} dias em atraso`, tone: 'red', status: 'em_atraso' };
-  }
-  return { label: `vence em ${days} dias`, tone: 'amber', status: item.status };
-};
 
 export const DashboardProfessor = () => {
   const { user } = useAuth();
-  const { formularios, pdis, correcoes, turmas, turmaProfessores, disciplinas, proximosEventos, pdiAlunos, pdiMetas, pdiAcompanhamentos, pdiRespostas, pdiAplicacoes, pdiFichaHistorico, pdiFichaRespostas, formPeriods, noticias } = useData();
+  const { turmas, turmaProfessores, meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
   const { userEscolas } = useEscola();
-  const ultimaNoticia = [...noticias].sort((a, b) => new Date(b.data) - new Date(a.data))[0];
+
+  useEffect(() => { loadMeusPdisReais(); }, [loadMeusPdisReais]);
 
   if (userEscolas.length === 0) {
     return (
@@ -43,57 +24,15 @@ export const DashboardProfessor = () => {
 
   // Professor vê tudo que é seu em todas as suas escolas, sempre junto — nunca preso ao
   // seletor de escola do topo (removido para este perfil; ver feedback salvo em memória).
-  const meusFormularios = formularios.filter(item => item.professorId === user?.id);
-  const meusPdis = pdis.filter(item => item.professorId === user?.id);
-  const minhasCorrecoes = correcoes.filter(item => item.professorId === user?.id);
   const minhasTurmas = turmasDoProfessor(turmas, turmaProfessores, user?.id);
-  const meusAlunosPdi = pdiAlunos.filter(aluno => aluno.professorId === user?.id);
-  const resumoPdiProfessor = pdiSummary(meusAlunosPdi, pdiMetas, pdiRespostas.filter(resposta => Number.isFinite(Number(resposta.resposta))));
-  // Resumo do PDI por disciplina (fichas), independente do acompanhamento pedagógico acima
-  // (pdis/pdiMetas/pdiAcompanhamentos — sistema à parte, não alterado). Ver "Meus PDIs".
-  const fichasPdiProfessor = fichasDoProfessor(user.id, { turmaProfessores, pdiAlunos, pdiAplicacoes, disciplinas, turmas })
-    .map(ficha => statusFicha({ aplicacao: ficha, historico: pdiFichaHistorico, respostas: pdiFichaRespostas, currentDate: CURRENT_DATE }));
+  // Resumo real do PDI por disciplina (Fichas) — fonte: GET /api/pdi-fichas/meus-pdis, a mesma
+  // usada por "Meus PDIs" (nunca recalculado aqui com regra própria).
   const resumoFichasPdi = {
-    pendentes: fichasPdiProfessor.filter(status => status === 'pendente').length,
-    emAndamento: fichasPdiProfessor.filter(status => status === 'em_andamento').length,
-    concluidas: fichasPdiProfessor.filter(status => status === 'concluido').length,
-    naoPreenchidas: fichasPdiProfessor.filter(status => status === 'nao_preenchido').length,
+    naoIniciados: meusPdisReais.filter(item => item.statusVisual === 'nao_iniciado').length,
+    emAndamento: meusPdisReais.filter(item => item.statusVisual === 'em_andamento').length,
+    concluidos: meusPdisReais.filter(item => item.statusVisual === 'concluido').length,
+    prazoEncerrado: meusPdisReais.filter(item => item.statusVisual === 'prazo_encerrado').length,
   };
-  const recordsByForm = {
-    formulario_um_terco: meusFormularios,
-    pdi: meusPdis,
-    correcoes_simulados: minhasCorrecoes,
-  };
-  // Vigências de TODAS as escolas do professor juntas — cada linha já é (formId, escolaId), por
-  // isso a checagem de "vigente" abaixo é por par, não por tipo de formulário sozinho (duas
-  // escolas podem ter vigências diferentes para o mesmo formulário).
-  const meusFormPeriods = formPeriods.filter(period => userEscolas.some(escola => escola.id === period.escolaId));
-  const periodosVigentes = meusFormPeriods.filter(period => isFormAvailableForTeacher(period));
-  const vigentePorEscola = new Set(periodosVigentes.map(period => `${period.id}-${period.escolaId}`));
-
-  const notificacoes = [
-    ...meusFormularios.filter(item => vigentePorEscola.has(`formulario_um_terco-${item.escolaId}`)).map(item => ({ ...item, tipo: 'Formulário 1/3', titulo: item.conteudo, prazo: item.prazo, rota: '/formulario-um-terco' })),
-    ...meusPdis.filter(item => vigentePorEscola.has(`pdi-${item.escolaId}`)).map(item => ({ ...item, tipo: 'PDI', titulo: `${pdiAlunos.find(aluno => aluno.id === item.alunoId)?.nome || 'Aluno'} - ${item.indicador}`, prazo: item.prazo, rota: '/pdi/alunos' })),
-    ...minhasCorrecoes.filter(item => vigentePorEscola.has(`correcoes_simulados-${item.escolaId}`)).map(item => ({ ...item, tipo: 'Correção de simulado', titulo: item.simulado, prazo: item.prazoCorrecao, rota: '/correcoes-simulados' })),
-  ]
-    .filter(item => item.status === 'em_atraso' || (item.status !== 'concluido' && daysUntil(item.prazo) <= 7))
-    .sort((a, b) => daysUntil(a.prazo) - daysUntil(b.prazo));
-
-  const eventosDashboard = proximosEventos.slice(0, 3);
-  // Um card por (escola, formulário) vigente — a escola de cada card fica explícita, já que o
-  // professor pode ter o mesmo formulário aberto em mais de uma escola ao mesmo tempo.
-  const formulariosVigentes = periodosVigentes.map(period => {
-    const registrosDaEscola = (recordsByForm[period.id] || []).filter(record => record.escolaId === period.escolaId);
-    return {
-      ...period,
-      key: `${period.id}-${period.escolaId}`,
-      form: formDefinitions[period.id],
-      escola: userEscolas.find(escola => escola.id === period.escolaId),
-      fillingStatus: teacherFillingStatus(registrosDaEscola, user?.id),
-      progress: percentageComplete(registrosDaEscola),
-    };
-  });
-  const prazoMaisProximo = [...formulariosVigentes].sort((a, b) => new Date(a.endDate) - new Date(b.endDate))[0];
 
   return (
     <MainLayout>
@@ -103,205 +42,58 @@ export const DashboardProfessor = () => {
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Minha rotina pedagógica</p>
               <h1 className="mt-2 text-3xl font-bold text-slate-950">Bem-vindo, {user?.nome}</h1>
-              <p className="mt-2 max-w-2xl text-slate-600">Acompanhe suas entregas, pendências, turmas e próximos eventos da rede.</p>
+              <p className="mt-2 max-w-2xl text-slate-600">Esta primeira entrega disponibiliza só o módulo PDI — os demais indicadores serão liberados nas próximas etapas.</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard label="Minhas turmas" value={minhasTurmas.length} description="turmas vinculadas" />
-              <StatCard label="Pendências" value={notificacoes.length} description="atenção necessária" />
-              <StatCard label="Registros" value={meusFormularios.length + meusPdis.length + minhasCorrecoes.length} description="instrumentos ativos" />
             </div>
           </div>
         </section>
 
-        <section className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:grid-cols-2">
-          <Link to="/eventos" className="relative block border-b border-slate-200 bg-stone-800 p-3 text-white transition hover:bg-slate-900 lg:border-b-0 lg:border-r lg:border-slate-800">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.22),transparent_38%)]" />
-            <div className="relative flex min-h-24 flex-col justify-between gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-serif text-[11px] font-bold uppercase tracking-[0.14em] text-teal-200">Próximos eventos</p>
-                <span className="rounded-full bg-teal-300 px-2.5 py-0.5 text-[11px] font-bold text-slate-950">{eventosDashboard[0]?.data}</span>
-              </div>
-              <div>
-                <h2 className="font-serif text-base font-bold leading-tight">{eventosDashboard[0]?.titulo}</h2>
-                <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-300">{eventosDashboard[0]?.descricao}</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link to="/noticias" className="block bg-cyan-50 p-3 text-slate-950 transition hover:bg-cyan-100/70">
-            <div className="flex min-h-24 flex-col justify-between gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-serif text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-800">Notícias</p>
-                {ultimaNoticia && <span className="text-[11px] font-bold uppercase tracking-wide text-cyan-800">{ultimaNoticia.categoria}</span>}
-              </div>
-              <div>
-                <h2 className="font-serif text-base font-bold leading-tight">{ultimaNoticia?.titulo || 'Nenhuma notícia publicada'}</h2>
-                <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-700">{ultimaNoticia?.resumo || 'Acompanhe aqui as novidades da rede municipal de ensino.'}</p>
-              </div>
-            </div>
-          </Link>
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card><ProgressRing value={percentageComplete(meusFormularios)} label="Formulário 1/3" /></Card>
-          <Card><ProgressRing value={percentageComplete(meusPdis)} label="PDI" /></Card>
-          <Card><ProgressRing value={percentageComplete(minhasCorrecoes)} label="Correções" /></Card>
-        </section>
-
         <section>
           <Card>
-            <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-xl font-bold text-slate-950">Meus formulários</h2>
-                <p className="mt-1 text-sm text-slate-600">Mostrando somente formulários atualmente vigentes para preenchimento.</p>
-              </div>
-              <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
-                {formulariosVigentes.length} {formulariosVigentes.length === 1 ? 'formulário vigente' : 'formulários vigentes'}
-              </div>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-bold text-slate-950">Formulário PDI</h2>
+              <Link to="/pdi/meus-pdis"><Button size="sm" variant="outline">Meus PDIs</Button></Link>
             </div>
-
-            {prazoMaisProximo && (
-              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <strong>Prazo mais próximo:</strong> {prazoMaisProximo.form.title} · {deadlineText(prazoMaisProximo.endDate)}
+            <p className="mb-3 text-xs text-slate-500">Fichas das disciplinas que você leciona, em todas as suas escolas e turmas.</p>
+            {meusPdisReaisLoading ? (
+              <p className="text-sm text-slate-500">Carregando...</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Não iniciados</p><p className="text-2xl font-bold text-slate-900">{resumoFichasPdi.naoIniciados}</p></div>
+                <div className="rounded-lg bg-blue-50 p-3"><p className="text-blue-700">Em preenchimento</p><p className="text-2xl font-bold text-blue-800">{resumoFichasPdi.emAndamento}</p></div>
+                <div className="rounded-lg bg-emerald-50 p-3"><p className="text-emerald-700">Concluídos</p><p className="text-2xl font-bold text-emerald-800">{resumoFichasPdi.concluidos}</p></div>
+                <div className="rounded-lg bg-amber-50 p-3"><p className="text-amber-700">Prazo encerrado</p><p className="text-2xl font-bold text-amber-800">{resumoFichasPdi.prazoEncerrado}</p></div>
               </div>
-            )}
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {formulariosVigentes.map(item => (
-                <Card key={item.key} className="border-emerald-200 bg-emerald-50/60">
-                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">{item.form.title}</p>
-                  <h3 className="mt-1 text-lg font-bold text-slate-950">{item.form.subtitle}</h3>
-                  {item.escola && <p className="mt-0.5 text-xs font-semibold text-slate-500">{item.escola.nome}</p>}
-                  <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-800">{formStatusLabel('active')}</span>
-                    <span className="rounded-full bg-white px-3 py-1 font-semibold text-slate-700">{item.fillingStatus}</span>
-                  </div>
-                  <p className="mt-3 text-sm font-semibold text-slate-700">{deadlineText(item.endDate)}</p>
-                  <div className="mt-4">
-                    <div className="mb-1 flex justify-between text-xs font-semibold text-slate-600"><span>Preenchimento</span><span>{item.progress}%</span></div>
-                    <div className="h-2 rounded-full bg-white"><div className="h-2 rounded-full bg-teal-700" style={{ width: `${item.progress}%` }} /></div>
-                  </div>
-                  <Link to={item.form.route}><Button className="mt-4 w-full" variant="primary">{item.fillingStatus === 'Não iniciado' ? 'Preencher' : 'Continuar preenchimento'}</Button></Link>
-                </Card>
-              ))}
-            </div>
-            {formulariosVigentes.length === 0 && (
-              <Card className="border-dashed bg-slate-50 text-center">
-                <p className="font-semibold text-slate-800">Nenhum formulário disponível no momento</p>
-                <p className="mt-1 text-sm text-slate-500">Os formulários aparecerão aqui quando estiverem dentro do período de preenchimento definido pela gestão.</p>
-              </Card>
             )}
           </Card>
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <Card>
-              <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-950">Atividades pendentes</h2>
-                  <p className="mt-1 text-sm text-slate-600">Notificações de atividades em atraso ou vencendo nos próximos dias.</p>
+          <Card>
+            <h2 className="text-xl font-bold text-slate-950">Atalhos</h2>
+            <div className="mt-4 grid gap-3">
+              <Link to="/pdi"><Button className="w-full" variant="primary">Acessar PDI</Button></Link>
+            </div>
+          </Card>
+
+          <Card>
+            <h2 className="text-xl font-bold text-slate-950">Minhas turmas</h2>
+            <div className="mt-4 space-y-3">
+              {minhasTurmas.map(turma => (
+                <div key={turma.id} className="rounded-xl border border-slate-200 p-4">
+                  <p className="font-semibold text-slate-900">{turma.nome}</p>
+                  <p className="mt-1 text-sm text-slate-600">{turma.ciclo}</p>
                 </div>
-                <Link to="/pendencias"><Button variant="outline">Ver pendências</Button></Link>
-              </div>
+              ))}
+            </div>
+          </Card>
 
-              <div className="space-y-3">
-                {notificacoes.slice(0, 5).map(item => {
-                  const meta = notificationMeta(item);
-                  return (
-                    <Link key={`${item.tipo}-${item.id}`} to={item.rota} className="block rounded-xl border border-slate-200 p-4 transition hover:border-teal-200 hover:bg-teal-50/30">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-bold text-slate-900">{item.titulo}</h3>
-                            <StatusBadge status={meta.status} />
-                          </div>
-                          <p className="mt-1 text-sm text-slate-600">{item.tipo} • {turmaName(turmas, item.turmaId)}</p>
-                          {item.disciplinaId && <p className="mt-1 text-xs text-slate-500">{disciplinaName(disciplinas, item.disciplinaId)}</p>}
-                        </div>
-                        <div className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold ${meta.tone === 'red' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{meta.label}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </Card>
-
-            <Card>
-              <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-950">Próximos eventos</h2>
-                  <p className="mt-1 text-sm text-slate-600">Agenda pedagógica compartilhada pela gestão.</p>
-                </div>
-                <Link to="/eventos"><Button variant="outline">Ver agenda</Button></Link>
-              </div>
-              <div className="space-y-3">
-                {eventosDashboard.map(evento => (
-                  <div key={evento.id} className="rounded-xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-bold text-slate-900">{evento.titulo}</h3>
-                          <Badge variant="blue">{evento.tipo}</Badge>
-                        </div>
-                        <p className="mt-1 text-sm text-slate-600">{evento.descricao}</p>
-                      </div>
-                      <p className="shrink-0 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">{evento.data}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card>
-              <h2 className="text-xl font-bold text-slate-950">Atalhos</h2>
-              <div className="mt-4 grid gap-3">
-                <Link to="/formulario-um-terco"><Button className="w-full" variant="primary">Acessar Formulário 1/3</Button></Link>
-                <Link to="/pdi"><Button className="w-full" variant="outline">Acessar PDI</Button></Link>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-slate-950">Acompanhamento PDI</h2>
-                <Link to="/pdi/alunos"><Button size="sm" variant="outline">Ver alunos</Button></Link>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Alunos</p><p className="text-2xl font-bold text-slate-900">{resumoPdiProfessor.totalAlunos}</p></div>
-                <div className="rounded-lg bg-emerald-50 p-3"><p className="text-emerald-700">Evolução</p><p className="text-2xl font-bold text-emerald-800">{resumoPdiProfessor.alunosEvolucao}</p></div>
-                <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Estáveis</p><p className="text-2xl font-bold text-slate-900">{resumoPdiProfessor.alunosEstaveis}</p></div>
-                <div className="rounded-lg bg-red-50 p-3"><p className="text-red-700">Atenção</p><p className="text-2xl font-bold text-red-800">{resumoPdiProfessor.alunosAtencao}</p></div>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-slate-950">Formulário PDI</h2>
-                <Link to="/pdi/meus-pdis"><Button size="sm" variant="outline">Meus PDIs</Button></Link>
-              </div>
-              <p className="mb-3 text-xs text-slate-500">Fichas das disciplinas que você leciona, em todas as suas escolas e turmas.</p>
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                <div className="rounded-lg bg-amber-50 p-3"><p className="text-amber-700">Pendentes</p><p className="text-2xl font-bold text-amber-800">{resumoFichasPdi.pendentes}</p></div>
-                <div className="rounded-lg bg-blue-50 p-3"><p className="text-blue-700">Em preenchimento</p><p className="text-2xl font-bold text-blue-800">{resumoFichasPdi.emAndamento}</p></div>
-                <div className="rounded-lg bg-emerald-50 p-3"><p className="text-emerald-700">Concluídos</p><p className="text-2xl font-bold text-emerald-800">{resumoFichasPdi.concluidas}</p></div>
-                <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Não preenchidos</p><p className="text-2xl font-bold text-slate-900">{resumoFichasPdi.naoPreenchidas}</p></div>
-              </div>
-            </Card>
-
-            <Card>
-              <h2 className="text-xl font-bold text-slate-950">Minhas turmas</h2>
-              <div className="mt-4 space-y-3">
-                {minhasTurmas.map(turma => (
-                  <div key={turma.id} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold text-slate-900">{turma.nome}</p>
-                    <p className="mt-1 text-sm text-slate-600">{turma.ciclo}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
+          <Card className="border-dashed bg-slate-50 text-center">
+            <p className="font-semibold text-slate-800">Em construção</p>
+            <p className="mt-1 text-sm text-slate-500">Formulário 1/3, Correções de simulados, pendências, eventos e notícias serão liberados nas próximas entregas.</p>
+          </Card>
         </section>
       </div>
     </MainLayout>

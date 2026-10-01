@@ -6,10 +6,17 @@ import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
 import { CURRENT_DATE, formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
-import { canManagePedagogico, isSecretaria } from '../utils/roles';
+import { canViewAplicacoesPdi, isSecretaria } from '../utils/roles';
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
-import { aplicacaoConflitanteNaEscola, statusVigenciaAplicacao } from '../utils/pdiFichas';
 import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
+
+const SOLICITADO_POR_OPTIONS = [
+  { value: 'secretaria', label: 'Secretaria' },
+  { value: 'gestor', label: 'Gestor' },
+  { value: 'diretora', label: 'Diretora' },
+  { value: 'professor', label: 'Professor' },
+  { value: 'auxiliar', label: 'Auxiliar' },
+];
 
 // Tipos de resposta disponíveis na edição de itens do modelo. Diferente do antigo
 // `perguntaTipoOptions` (utils/pdi.js), inclui 'numero' e 'orientacao' porque, aqui, TODO
@@ -41,6 +48,10 @@ const calcularReordenacao = (perguntasOrdenadas, perguntaId, direction) => {
 // uma aplicação já existente, então usa `escolaId` único (ver editar vigência abaixo).
 const blankAplicacao = () => ({ escolaIds: [], todasEscolas: false, dataInicio: CURRENT_DATE, dataFim: CURRENT_DATE });
 
+// Reabertura sempre começa sugerindo o dia seguinte ao fim original — o backend exige
+// estritamente depois disso, nunca dentro da vigência normal (ver domain/pdiAplicacoes.ts).
+const blankReabertura = (aplicacao) => ({ dataInicio: aplicacao.dataFim, dataFim: aplicacao.dataFim, solicitadoPorTipo: 'secretaria', motivo: '' });
+
 const tabButtonClass = (active) => `rounded-lg px-4 py-2 text-sm font-semibold transition ${active ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
 
 const GRUPOS_APLICACAO = [
@@ -53,17 +64,20 @@ export const FormularioPdiPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
-    disciplinasReais, escolas, pdiAplicacoes,
+    disciplinasReais, escolas,
     pdiModelosReais, pdiModelosReaisLoading, pdiModelosReaisError, loadPdiModelosReais,
     createPdiModeloReal, inativarPdiModelo, reativarPdiModeloReal,
     createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal,
-    createPdiAplicacao, updatePdiAplicacao, deletePdiAplicacao, deleteAllPdiAplicacoes,
+    pdiAplicacoesReais, pdiAplicacoesReaisLoading, pdiAplicacoesReaisError, loadPdiAplicacoesReais,
+    createPdiAplicacaoReal, updatePdiAplicacaoReal, listarReaberturasPdiAplicacao, criarReaberturaPdiAplicacao,
   } = useData();
 
   const souSecretaria = isSecretaria(user);
-  // Gestor também cria/edita Aplicações (não mudou nesta tarefa), mas Modelo PDI é exclusivo da
-  // Secretaria (seção 8/25 do pedido) — ela nem vê a aba. O backend também recusa (403) qualquer
-  // tentativa de gerenciar Modelo/Pergunta fora da Secretaria, então isso não é só cosmético.
+  // Gerenciar (criar/editar/reabrir) Aplicações é exclusivo da Secretaria — Gestor e Diretora só
+  // consultam, dentro do próprio escopo de escola (correção explícita pedida nesta tarefa: Gestor
+  // administrava Aplicações mock antes, e isso deixou de ser permitido). Modelo PDI continua
+  // exclusivo da Secretaria, que nem vê a aba. O backend recusa (403) qualquer tentativa de
+  // gerenciar Modelo/Aplicação/Reabertura fora do permitido, então isso não é só cosmético.
   const [tab, setTab] = useState(souSecretaria ? 'modelos' : 'aplicacoes');
   // null = grade de modelos; com valor = editor ("construtor de formulário") do modelo aberto.
   const [modeloEditandoId, setModeloEditandoId] = useState(null);
@@ -76,30 +90,81 @@ export const FormularioPdiPage = () => {
   const [aplicacaoForm, setAplicacaoForm] = useState(null);
   const [editingAplicacao, setEditingAplicacao] = useState(null);
   const [aplicacaoError, setAplicacaoError] = useState('');
-  const [deletingAplicacao, setDeletingAplicacao] = useState(null);
-  const [confirmandoExcluirTodasAplicacoes, setConfirmandoExcluirTodasAplicacoes] = useState(false);
+  const [salvandoAplicacao, setSalvandoAplicacao] = useState(false);
+  const [reaberturaForm, setReaberturaForm] = useState(null);
+  const [reaberturaError, setReaberturaError] = useState('');
+  const [salvandoReabertura, setSalvandoReabertura] = useState(false);
+  const [historicoReaberturas, setHistoricoReaberturas] = useState({});
+  const [aplicacaoExpandida, setAplicacaoExpandida] = useState(null);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Carregado sempre que a tela abre (Secretaria ou Gestor) — Aplicações precisa da lista real
-  // pra fazer snapshot dos modelos ativos, mesmo que quem esteja olhando não gerencie Modelo.
-  useEffect(() => { loadPdiModelosReais(); }, [loadPdiModelosReais]);
+  // Modelos só é carregado para quem administra (Secretaria) — o backend recusa leitura de
+  // Modelos pra qualquer outro perfil desde esta tarefa (a criação de Aplicação passou a
+  // resolver o snapshot no próprio backend, sem o frontend precisar ler Modelos pra isso).
+  useEffect(() => { if (souSecretaria) loadPdiModelosReais(); }, [souSecretaria, loadPdiModelosReais]);
+  // Aplicações é carregado para todo mundo com acesso a esta tela (Secretaria/Gestor/Diretora).
+  useEffect(() => { loadPdiAplicacoesReais(); }, [loadPdiAplicacoesReais]);
 
-  if (!canManagePedagogico(user)) {
+  if (!canViewAplicacoesPdi(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas);
+  const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas).filter(escola => escola.status === 'ativa');
   const modelosAtivos = pdiModelosReais.filter(modelo => modelo.status === 'ativa');
   const disciplinasComModeloAtivo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
   const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !disciplinasComModeloAtivo.has(disciplina.id));
   const modeloSelecionado = pdiModelosReais.find(modelo => modelo.id === modeloEditandoId) || null;
   const perguntasDoModelo = modeloSelecionado ? [...(modeloSelecionado.perguntas || [])].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
-  const aplicacoesComStatus = [...pdiAplicacoes]
+  // `status` já vem calculado pelo backend com os mesmos 3 valores que formStatusLabel/
+  // formStatusClasses esperam ('scheduled'/'active'/'expired') — nunca recalculado aqui.
+  const aplicacoesComStatus = [...pdiAplicacoesReais]
     .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio))
-    .map(aplicacao => ({ aplicacao, status: statusVigenciaAplicacao(aplicacao) }));
+    .map(aplicacao => ({ aplicacao, status: aplicacao.status }));
 
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '' });
   const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); };
+  const abrirReabertura = (aplicacao) => { setReaberturaError(''); setReaberturaForm({ aplicacaoId: aplicacao.id, ...blankReabertura(aplicacao) }); };
+
+  const toggleHistoricoReaberturas = async (aplicacaoId) => {
+    if (aplicacaoExpandida === aplicacaoId) {
+      setAplicacaoExpandida(null);
+      return;
+    }
+    setAplicacaoExpandida(aplicacaoId);
+    if (historicoReaberturas[aplicacaoId]) return;
+    setCarregandoHistorico(true);
+    const resultado = await listarReaberturasPdiAplicacao(aplicacaoId);
+    setCarregandoHistorico(false);
+    if (resultado.ok) {
+      setHistoricoReaberturas(prev => ({ ...prev, [aplicacaoId]: resultado.reaberturas }));
+    } else {
+      setMessage(resultado.error);
+    }
+  };
+
+  const salvarReabertura = async (event) => {
+    event.preventDefault();
+    setReaberturaError('');
+    if (reaberturaForm.dataFim < reaberturaForm.dataInicio) {
+      setReaberturaError('A data de encerramento não pode ser anterior à data de início.');
+      return;
+    }
+    setSalvandoReabertura(true);
+    const resultado = await criarReaberturaPdiAplicacao(reaberturaForm.aplicacaoId, reaberturaForm);
+    setSalvandoReabertura(false);
+    if (!resultado.ok) {
+      setReaberturaError(resultado.error);
+      return;
+    }
+    setHistoricoReaberturas(prev => ({
+      ...prev,
+      [reaberturaForm.aplicacaoId]: [...(prev[reaberturaForm.aplicacaoId] || []), resultado.reabertura].sort((a, b) => a.dataInicio.localeCompare(b.dataInicio)),
+    }));
+    setAplicacaoExpandida(reaberturaForm.aplicacaoId);
+    setReaberturaForm(null);
+    setMessage('Reabertura registrada com sucesso.');
+  };
 
   const criarModelo = async (event) => {
     event.preventDefault();
@@ -170,7 +235,7 @@ export const FormularioPdiPage = () => {
     setPerguntaForm(null);
   };
 
-  const salvarAplicacao = (event) => {
+  const salvarAplicacao = async (event) => {
     event.preventDefault();
     setAplicacaoError('');
     if (aplicacaoForm.dataFim < aplicacaoForm.dataInicio) {
@@ -179,15 +244,14 @@ export const FormularioPdiPage = () => {
     }
 
     if (editingAplicacao) {
-      const resultado = updatePdiAplicacao(editingAplicacao.id, { dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim });
-      // Sobreposição de vigência na mesma escola: não salva, mantém o modal aberto com os dados
-      // preenchidos e mostra o erro ali mesmo (ver src/utils/pdiFichas.js). A regra em si vem de
-      // updatePdiAplicacao; aqui só buscamos a vigência conflitante para deixar a mensagem clara.
+      setSalvandoAplicacao(true);
+      const resultado = await updatePdiAplicacaoReal(editingAplicacao.id, { nome: editingAplicacao.nome, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim });
+      setSalvandoAplicacao(false);
+      // Sobreposição de vigência na mesma escola, escola inexistente etc.: o backend já valida
+      // tudo isso e devolve uma mensagem pronta (ver POST/PUT /api/pdi-aplicacoes) — não
+      // duplicamos a checagem aqui.
       if (!resultado.ok) {
-        const conflito = aplicacaoConflitanteNaEscola(pdiAplicacoes, { escolaId: editingAplicacao.escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim, ignorarId: editingAplicacao.id });
-        setAplicacaoError(conflito
-          ? `Já existe uma aplicação PDI para esta escola de ${formatFullDate(conflito.dataInicio)} a ${formatFullDate(conflito.dataFim)}. Escolha um período sem sobreposição.`
-          : resultado.error);
+        setAplicacaoError(resultado.error);
         return;
       }
       setMessage('Vigência da aplicação atualizada com sucesso.');
@@ -197,33 +261,34 @@ export const FormularioPdiPage = () => {
     }
 
     // Criação: uma ou mais escolas de uma vez, incluindo "todas as escolas". A disciplina não é
-    // escolhida aqui — a aplicação sempre usa todos os modelos ativos no momento da criação.
+    // escolhida aqui — o backend sempre usa todos os modelos ativos no momento da criação (seção
+    // 3 do pedido de Aplicações/Reaberturas). Cada escola é uma chamada independente: uma escola
+    // com conflito de período não impede a criação nas demais.
     const escolaIdsSelecionadas = aplicacaoForm.todasEscolas ? escolasAplicaveis.map(escola => escola.id) : aplicacaoForm.escolaIds;
     if (escolaIdsSelecionadas.length === 0) {
       setAplicacaoError('Escolha ao menos uma escola.');
       return;
     }
-    if (modelosAtivos.length === 0) {
-      setAplicacaoError('Cadastre ao menos um modelo PDI ativo antes de criar uma aplicação.');
-      return;
-    }
-    // Valida a sobreposição em TODAS as escolas selecionadas antes de criar qualquer uma —
-    // tudo ou nada, para nunca deixar a seleção pela metade.
-    const conflitos = escolaIdsSelecionadas
-      .map(escolaId => ({ escolaId, conflito: aplicacaoConflitanteNaEscola(pdiAplicacoes, { escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim }) }))
-      .filter(item => item.conflito);
-    if (conflitos.length > 0) {
-      const detalhes = conflitos.map(({ escolaId, conflito }) => {
-        const nomeEscola = escolas.find(item => item.id === escolaId)?.nome || `Escola #${escolaId}`;
-        return `${nomeEscola} (${formatFullDate(conflito.dataInicio)} a ${formatFullDate(conflito.dataFim)})`;
-      });
-      setAplicacaoError(`Já existe uma aplicação PDI sobreposta para: ${detalhes.join('; ')}. Ajuste o período ou remova essas escolas da seleção.`);
-      return;
-    }
 
-    const modeloIds = modelosAtivos.map(modelo => modelo.id);
-    escolaIdsSelecionadas.forEach(escolaId => createPdiAplicacao({ escolaId, modeloIds, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim }));
-    setMessage(`Aplicação PDI criada com sucesso para ${escolaIdsSelecionadas.length} ${escolaIdsSelecionadas.length === 1 ? 'escola' : 'escolas'}.`);
+    setSalvandoAplicacao(true);
+    const resultados = [];
+    for (const escolaId of escolaIdsSelecionadas) {
+      // eslint-disable-next-line no-await-in-loop
+      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim });
+      resultados.push({ escolaId, ...resultado });
+    }
+    setSalvandoAplicacao(false);
+
+    const sucesso = resultados.filter(item => item.ok);
+    const falha = resultados.filter(item => !item.ok);
+    if (falha.length > 0) {
+      const detalhes = falha.map(item => `${escolas.find(escola => escola.id === item.escolaId)?.nome || `Escola #${item.escolaId}`}: ${item.error}`);
+      setAplicacaoError(sucesso.length > 0
+        ? `Criada para ${sucesso.length} ${sucesso.length === 1 ? 'escola' : 'escolas'}, mas falhou para: ${detalhes.join('; ')}`
+        : detalhes.join('; '));
+      if (sucesso.length === 0) return;
+    }
+    if (falha.length === 0) setMessage(`Aplicação PDI criada com sucesso para ${sucesso.length} ${sucesso.length === 1 ? 'escola' : 'escolas'}.`);
     setAplicacaoForm(null);
     setEditingAplicacao(null);
   };
@@ -238,7 +303,10 @@ export const FormularioPdiPage = () => {
               <strong className="font-semibold text-slate-800">Modelos</strong> definem o que é perguntado em cada disciplina. <strong className="font-semibold text-slate-800">Aplicações</strong> definem quando e em qual escola os professores preenchem esses formulários.
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
+          <div className="flex shrink-0 gap-2">
+            {souSecretaria && <Button variant="outline" onClick={() => navigate('/pdi/anamnese-modelo')}>Modelo de Anamnese</Button>}
+            <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
+          </div>
         </div>
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
@@ -368,19 +436,27 @@ export const FormularioPdiPage = () => {
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Aplicações PDI</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Vigência por escola</h2>
-                <p className="mt-1 text-sm text-slate-600">Em quais escolas existe ou existiu período de preenchimento de PDI.</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {souSecretaria ? 'Em quais escolas existe ou existiu período de preenchimento de PDI.' : 'Consulta das aplicações PDI das suas escolas.'}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>
-                <ActionMenu items={[{ label: 'Excluir todas as aplicações', variant: 'danger', disabled: pdiAplicacoes.length === 0, onClick: () => setConfirmandoExcluirTodasAplicacoes(true) }]} />
-              </div>
+              {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
             </div>
-            {modelosAtivos.length === 0 && <p className="mt-2 text-xs text-slate-500">Cadastre ao menos um modelo PDI ativo na aba Modelos antes de criar uma aplicação.</p>}
+            {souSecretaria && modelosAtivos.length === 0 && <p className="mt-2 text-xs text-slate-500">Cadastre ao menos um modelo PDI ativo na aba Modelos antes de criar uma aplicação.</p>}
 
-            {pdiAplicacoes.length === 0 ? (
+            {pdiAplicacoesReaisError && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                <span>Não foi possível carregar as aplicações: {pdiAplicacoesReaisError}</span>
+                <Button size="sm" variant="outline" onClick={loadPdiAplicacoesReais}>Tentar novamente</Button>
+              </div>
+            )}
+
+            {pdiAplicacoesReaisLoading ? (
+              <p className="mt-4 text-center text-slate-500">Carregando aplicações...</p>
+            ) : pdiAplicacoesReais.length === 0 ? (
               <div className="mt-4">
-                <EmptyState title="Nenhuma aplicação PDI criada" description="Abra uma aplicação para disponibilizar os formulários aos professores de uma escola.">
-                  <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>
+                <EmptyState title="Nenhuma aplicação PDI criada" description={souSecretaria ? 'Abra uma aplicação para disponibilizar os formulários aos professores de uma escola.' : 'Nenhuma aplicação PDI foi criada para suas escolas ainda.'}>
+                  {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
                 </EmptyState>
               </div>
             ) : (
@@ -393,28 +469,54 @@ export const FormularioPdiPage = () => {
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{grupo.titulo}</p>
                       <div className={`mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 ${grupo.status === 'expired' ? 'opacity-75' : ''}`}>
                         {itens.map(({ aplicacao, status }) => (
-                          <div key={aplicacao.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-semibold text-slate-900">{escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
-                                <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
+                          <div key={aplicacao.id} className="flex flex-col gap-3 p-4">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-slate-900">{aplicacao.escolaNome || escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
+                                  <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
+                                </div>
+                                <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {aplicacao.modelos.length === 0
+                                    ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
+                                    // Mostra o nome do modelo já snapshotado, nunca re-consulta disciplina por id: o
+                                    // snapshot é imutável e independente do Modelo/Disciplina vivos mudarem depois.
+                                    : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.nome}</Badge>)}
+                                </div>
                               </div>
-                              <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
-                              {aplicacao.criadaEm && <p className="mt-0.5 text-xs text-slate-400">Criado em {formatFullDate(aplicacao.criadaEm.slice(0, 10))}</p>}
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                {aplicacao.modelos.length === 0
-                                  ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
-                                  // Mostra o nome do modelo já snapshotado, nunca re-consulta disciplina por id: o
-                                  // snapshot pode ter sido feito antes ou depois da migração de Modelos PDI pro
-                                  // Neon, e os dois momentos usam espaços de id de disciplina DIFERENTES (mock vs.
-                                  // real) — o nome do modelo é a única informação sempre correta independente disso.
-                                  : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.nome}</Badge>)}
+                              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                <Button size="sm" variant="outline" onClick={() => toggleHistoricoReaberturas(aplicacao.id)}>
+                                  {aplicacaoExpandida === aplicacao.id ? 'Ocultar reaberturas' : 'Histórico de reaberturas'}
+                                </Button>
+                                {souSecretaria && (
+                                  <>
+                                    <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
+                                    <Button size="sm" onClick={() => abrirReabertura(aplicacao)}>Reabrir</Button>
+                                  </>
+                                )}
                               </div>
                             </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                              <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ escolaId: aplicacao.escolaId, dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
-                              <ActionMenu items={[{ label: 'Excluir', variant: 'danger', onClick: () => setDeletingAplicacao(aplicacao) }]} />
-                            </div>
+
+                            {aplicacaoExpandida === aplicacao.id && (
+                              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                {carregandoHistorico && !historicoReaberturas[aplicacao.id] ? (
+                                  <p className="text-sm text-slate-500">Carregando histórico...</p>
+                                ) : (historicoReaberturas[aplicacao.id] || []).length === 0 ? (
+                                  <p className="text-sm text-slate-500">Nenhuma reabertura registrada para esta aplicação.</p>
+                                ) : (
+                                  <ul className="space-y-2">
+                                    {historicoReaberturas[aplicacao.id].map(reabertura => (
+                                      <li key={reabertura.id} className="text-sm text-slate-700">
+                                        <span className="font-semibold">{formatFullDate(reabertura.dataInicio)} a {formatFullDate(reabertura.dataFim)}</span>
+                                        {' — solicitado por '}{SOLICITADO_POR_OPTIONS.find(option => option.value === reabertura.solicitadoPorTipo)?.label || reabertura.solicitadoPorTipo}
+                                        {reabertura.motivo && <span className="text-slate-500"> · {reabertura.motivo}</span>}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -550,7 +652,33 @@ export const FormularioPdiPage = () => {
                 <FormField label="Início"><input className={inputClass} type="date" value={aplicacaoForm.dataInicio} onChange={event => setAplicacaoForm(prev => ({ ...prev, dataInicio: event.target.value }))} required /></FormField>
                 <FormField label="Encerramento"><input className={inputClass} type="date" value={aplicacaoForm.dataFim} onChange={event => setAplicacaoForm(prev => ({ ...prev, dataFim: event.target.value }))} required /></FormField>
               </div>
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => { setAplicacaoForm(null); setEditingAplicacao(null); setAplicacaoError(''); }}>Cancelar</Button><Button type="submit">Salvar</Button></div>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="secondary" onClick={() => { setAplicacaoForm(null); setEditingAplicacao(null); setAplicacaoError(''); }} disabled={salvandoAplicacao}>Cancelar</Button>
+                <Button type="submit" disabled={salvandoAplicacao}>{salvandoAplicacao ? 'Salvando...' : 'Salvar'}</Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+
+        {reaberturaForm && (
+          <Modal title="Reabrir aplicação PDI" onClose={() => { setReaberturaForm(null); setReaberturaError(''); }}>
+            <form onSubmit={salvarReabertura} className="space-y-4">
+              {reaberturaError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{reaberturaError}</div>}
+              <p className="text-sm text-slate-600">A vigência original da aplicação nunca é alterada — a reabertura cria um novo período extra, separado, sempre depois do fim original.</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField label="Início"><input className={inputClass} type="date" value={reaberturaForm.dataInicio} onChange={event => setReaberturaForm(prev => ({ ...prev, dataInicio: event.target.value }))} required /></FormField>
+                <FormField label="Encerramento"><input className={inputClass} type="date" value={reaberturaForm.dataFim} onChange={event => setReaberturaForm(prev => ({ ...prev, dataFim: event.target.value }))} required /></FormField>
+              </div>
+              <FormField label="Solicitado por">
+                <select className={inputClass} value={reaberturaForm.solicitadoPorTipo} onChange={event => setReaberturaForm(prev => ({ ...prev, solicitadoPorTipo: event.target.value }))}>
+                  {SOLICITADO_POR_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Motivo (opcional)"><textarea className={inputClass} rows="3" value={reaberturaForm.motivo} onChange={event => setReaberturaForm(prev => ({ ...prev, motivo: event.target.value }))} /></FormField>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="secondary" onClick={() => { setReaberturaForm(null); setReaberturaError(''); }} disabled={salvandoReabertura}>Cancelar</Button>
+                <Button type="submit" disabled={salvandoReabertura}>{salvandoReabertura ? 'Salvando...' : 'Reabrir'}</Button>
+              </div>
             </form>
           </Modal>
         )}
@@ -589,24 +717,6 @@ export const FormularioPdiPage = () => {
           />
         )}
 
-        {deletingAplicacao && (
-          <ConfirmDialog
-            title="Excluir aplicação"
-            message="Deseja excluir esta aplicação PDI? As fichas e respostas associadas a ela deixarão de aparecer para os professores."
-            onCancel={() => setDeletingAplicacao(null)}
-            onConfirm={() => { deletePdiAplicacao(deletingAplicacao.id); setDeletingAplicacao(null); setMessage('Aplicação excluída com sucesso.'); }}
-          />
-        )}
-
-        {confirmandoExcluirTodasAplicacoes && (
-          <ConfirmDialog
-            title="Excluir todas as aplicações"
-            message={`Deseja excluir TODAS as ${pdiAplicacoes.length} aplicações PDI, de todas as escolas? As fichas e respostas associadas a elas deixarão de aparecer para os professores. Esta ação não pode ser desfeita.`}
-            confirmLabel="Excluir todas"
-            onCancel={() => setConfirmandoExcluirTodasAplicacoes(false)}
-            onConfirm={() => { deleteAllPdiAplicacoes(); setConfirmandoExcluirTodasAplicacoes(false); setMessage('Todas as aplicações PDI foram excluídas com sucesso.'); }}
-          />
-        )}
       </div>
     </MainLayout>
   );

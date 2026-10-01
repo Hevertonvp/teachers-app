@@ -94,7 +94,9 @@ export const AuthProvider = ({ children }) => {
     loadEscolas();
     loadTurmas();
     loadDisciplinasReais();
-    loadPdiAlunosReais();
+    // GET /api/pdi-alunos é exclusivo de Secretaria/Gestor/Diretora (ver exigirLeitura em
+    // pdiAlunos.ts) — Professor e Auxiliar sempre recebiam 403 aqui à toa.
+    if (['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(pessoa.perfil)) loadPdiAlunosReais();
     return { ok: true };
   };
 

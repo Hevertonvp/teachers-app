@@ -95,6 +95,9 @@ model Escola {
   modulos          EscolaModulo[]
   turmas           Turma[]
   vinculosEscolares VinculoEscolar[]
+  aplicacoesPdi    AplicacaoPdi[]
+  fichasPdi        FichaPdi[]
+  anamneses        Anamnese[]
 
   @@map("escolas")
 }
@@ -119,6 +122,8 @@ model Disciplina {
 
   vinculosProfessor ProfessorTurmaDisciplina[]
   modelosPdi        ModeloPdi[]
+  aplicacaoModelosPdi AplicacaoModeloPdi[]
+  fichasPdi         FichaPdi[]
 
   @@map("disciplinas")
 }
@@ -161,6 +166,8 @@ model Turma {
   alunos             AlunoPdi[]
   vinculosProfessor  ProfessorTurmaDisciplina[]
   vinculosAuxiliar   AuxiliarTurma[]
+  fichasPdi          FichaPdi[]
+  anamneses          Anamnese[]
 
   // Cobre o filtro mais comum da listagem (GET /api/turmas?escolaId=...&anoLetivo=...&status=...)
   // — Postgres também usa o prefixo desse índice (só escolaId, ou escolaId+anoLetivo) sozinho.
@@ -205,6 +212,7 @@ model Pessoa {
   vinculosComoProfessor  ProfessorTurmaDisciplina[] @relation("ProfessorVinculo")
   vinculosComoAuxiliar   AuxiliarTurma[]            @relation("AuxiliarVinculo")
   eventos                PessoaEvento[]             @relation("PessoaEventoPessoa")
+  fichasComoResponsavel  FichaPdi[]                 @relation("FichaProfessorResponsavel")
 
   @@map("pessoas")
 }
@@ -306,9 +314,15 @@ model AlunoPdi {
   turmaId Int
   turma   Turma  @relation(fields: [turmaId], references: [id], onDelete: Restrict)
 
-  responsavelNome        String @db.VarChar(200)
-  responsavelParentesco  String @db.VarChar(50)
-  responsavelTelefone    String @db.VarChar(30)
+  // Adicionados na tarefa de Anamnese real: são dado cadastral do aluno (nunca mudam por conta
+  // de uma nova versão de Anamnese), não pertenciam ao AlunoPdi real até aqui porque nenhuma
+  // tela precisava deles — o mock já os tinha soltos no aluno. Ambos opcionais: alunos já
+  // cadastrados não têm valor retroativo.
+  dataNascimento                 DateTime? @db.Date
+  responsavelNome                String    @db.VarChar(200)
+  responsavelParentesco          String    @db.VarChar(50)
+  responsavelTelefone            String    @db.VarChar(30)
+  responsavelTelefoneSecundario  String?   @db.VarChar(30)
 
   status StatusAluno @default(ATIVO)
 
@@ -317,6 +331,9 @@ model AlunoPdi {
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1)
+
+  fichasPdi  FichaPdi[]
+  anamneses  Anamnese[]
 
   @@index([turmaId])
   @@map("alunos_pdi")
@@ -341,6 +358,7 @@ model ModeloPdi {
   version   Int       @default(1)
 
   perguntas PerguntaPdi[]
+  snapshots AplicacaoModeloPdi[]
 
   @@index([disciplinaId, status])
   @@map("modelos_pdi")
@@ -390,6 +408,376 @@ model PerguntaPdi {
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1)
 
+  snapshots AplicacaoPerguntaPdi[]
+
   @@index([modeloId, ordem])
   @@map("perguntas_pdi")
+}
+
+// Aplicação PDI pertence a UMA escola (nunca a uma disciplina) — define o período em que os
+// professores preenchem os formulários. Sem `status` de propósito: não existe cancelamento/
+// exclusão administrativa nesta etapa (o mock também nunca teve status explícito — vigência é
+// sempre derivada de dataInicio/dataFim, ver domain/pdiAplicacoes.ts). `nome` é opcional — a UI
+// atual nunca pediu isso à Secretaria, quem identifica a aplicação é escola+período.
+model AplicacaoPdi {
+  id         Int      @id @default(autoincrement())
+  escolaId   Int
+  escola     Escola   @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  nome       String?  @db.VarChar(200)
+  dataInicio DateTime @db.Date
+  dataFim    DateTime @db.Date
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  modelos     AplicacaoModeloPdi[]
+  reaberturas ReaberturaPdi[]
+  fichas      FichaPdi[]
+
+  @@index([escolaId, dataInicio, dataFim])
+  @@map("aplicacoes_pdi")
+}
+
+// Snapshot IMUTÁVEL de um ModeloPdi ativo no momento da criação da Aplicação — nunca mais lido
+// nem atualizado a partir do ModeloPdi vivo depois disso (ver seção 3/4/9 do pedido). Mantém FK
+// pro modelo/disciplina originais só para rastreabilidade (nenhum dos dois é hard-deletado no
+// sistema, então a FK nunca fica órfã) — quem importa pra exibição histórica é sempre
+// `nome`/`disciplinaNome`, capturados aqui, nunca uma nova consulta ao registro vivo.
+model AplicacaoModeloPdi {
+  id          Int          @id @default(autoincrement())
+  aplicacaoId Int
+  aplicacao   AplicacaoPdi @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
+
+  modeloIdOriginal Int
+  modeloOriginal   ModeloPdi @relation(fields: [modeloIdOriginal], references: [id], onDelete: Restrict)
+  nome             String    @db.VarChar(200)
+
+  disciplinaId   Int
+  disciplina     Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  disciplinaNome String     @db.VarChar(100)
+
+  perguntas AplicacaoPerguntaPdi[]
+  fichas    FichaPdi[]
+
+  @@index([aplicacaoId])
+  @@map("aplicacao_modelos_pdi")
+}
+
+// Snapshot IMUTÁVEL de cada PerguntaPdi ATIVA do modelo no momento da criação — mesmos campos do
+// PerguntaPdi vivo, copiados (nunca referenciados por FK como fonte de leitura futura).
+model AplicacaoPerguntaPdi {
+  id                Int                @id @default(autoincrement())
+  aplicacaoModeloId Int
+  aplicacaoModelo   AplicacaoModeloPdi @relation(fields: [aplicacaoModeloId], references: [id], onDelete: Restrict)
+
+  perguntaIdOriginal Int
+  perguntaOriginal   PerguntaPdi @relation(fields: [perguntaIdOriginal], references: [id], onDelete: Restrict)
+
+  secao        String            @db.VarChar(100)
+  subsecao     String?           @db.VarChar(100)
+  codigo       String?           @db.VarChar(20)
+  texto        String            @db.Text
+  indicador    String?           @db.VarChar(100)
+  origem       OrigemPerguntaPdi
+  tipoResposta TipoRespostaPdi
+  opcoes       Json?
+  complementar Json?
+  ordem        Int
+
+  respostas RespostaPdi[]
+
+  @@index([aplicacaoModeloId])
+  @@map("aplicacao_perguntas_pdi")
+}
+
+// Reabertura real e histórica de uma Aplicação já encerrada — NUNCA edita dataInicio/dataFim
+// originais da Aplicação (ver seção 19 do pedido: a vigência original continua exibida como
+// estava). Só a Secretaria cria (ver rota); `solicitadoPorTipo` é só um registro informativo de
+// quem pediu por fora do sistema — reaproveita PerfilPessoa em vez de inventar outro enum igual.
+model ReaberturaPdi {
+  id          Int          @id @default(autoincrement())
+  aplicacaoId Int
+  aplicacao   AplicacaoPdi @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
+
+  dataInicio        DateTime     @db.Date
+  dataFim           DateTime     @db.Date
+  solicitadoPorTipo PerfilPessoa
+  motivo            String?      @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  createdBy String?  @db.VarChar(200)
+
+  @@index([aplicacaoId])
+  @@map("reaberturas_pdi")
+}
+
+enum StatusFichaPdi {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+// Ficha PDI concreta: Aplicação + Aluno + Disciplina — identidade única, nunca duplicada (índice
+// único abaixo). Criada SOB DEMANDA na primeira abertura real (nunca em lote na criação da
+// Aplicação — ver domain/pdiFichas.ts e api/routes/pdiFichas.ts). As perguntas NUNCA são copiadas
+// para cá: vêm sempre de `AplicacaoModeloPdi`/`AplicacaoPerguntaPdi` (o conteúdo já está
+// congelado lá). O que ESTA entidade congela é o CONTEXTO OPERACIONAL do aluno/professor no
+// momento em que a ficha nasceu — algo que o snapshot da Aplicação não cobre, porque Aluno/Turma/
+// Escola/ProfessorTurmaDisciplina são todos vivos e podem mudar depois (ex.: aluno muda de turma,
+// professor é substituído — a ficha antiga continua mostrando o contexto de quando nasceu).
+// Mantém FKs reais para Turma/Escola/Disciplina/Professor (nenhum é hard-deletado) só para
+// rastreabilidade; quem importa pra exibição histórica são sempre os campos `*Snapshot`.
+model FichaPdi {
+  id Int @id @default(autoincrement())
+
+  aplicacaoId       Int
+  aplicacao         AplicacaoPdi       @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
+  aplicacaoModeloId Int
+  aplicacaoModelo   AplicacaoModeloPdi @relation(fields: [aplicacaoModeloId], references: [id], onDelete: Restrict)
+  alunoId           Int
+  aluno             AlunoPdi           @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  disciplinaId      Int
+  disciplina        Disciplina         @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+
+  // Professor RESPONSÁVEL pela turma+disciplina no momento da criação — um fato pedagógico,
+  // resolvido via ProfessorTurmaDisciplina ATIVO. Nunca confundir com quem executou a ação
+  // (createdBy/updatedBy abaixo): um Gestor pode criar/preencher a ficha de um Professor.
+  professorResponsavelId Int
+  professorResponsavel   Pessoa @relation("FichaProfessorResponsavel", fields: [professorResponsavelId], references: [id], onDelete: Restrict)
+
+  // --- Contexto histórico congelado na criação — NUNCA recalculado depois (ver seção 6/7/8 do
+  // pedido de Fichas PDI). Turma/Escola mantêm FK real (traceability), mas o nome exibido é
+  // sempre o *Snapshot, mesmo que o nome atual da turma/escola/professor tenha mudado desde então.
+  alunoNomeSnapshot           String   @db.VarChar(200)
+  turmaId                     Int
+  turma                       Turma    @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  turmaNomeSnapshot           String   @db.VarChar(60)
+  escolaId                    Int
+  escola                      Escola   @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  escolaNomeSnapshot          String   @db.VarChar(200)
+  disciplinaNomeSnapshot      String   @db.VarChar(100)
+  professorNomeSnapshot       String   @db.VarChar(200)
+  aplicacaoDataInicioSnapshot DateTime @db.Date
+  aplicacaoDataFimSnapshot    DateTime @db.Date
+
+  // Status muda só por ação explícita (ver domain/pdiFichas.ts): nenhuma resposta = PENDENTE;
+  // alguma resposta salva = EM_ANDAMENTO; ação explícita de concluir = CONCLUIDA. Nunca volta
+  // atrás sozinho (editar respostas depois de concluída não reverte o status).
+  status StatusFichaPdi @default(PENDENTE)
+
+  createdAt    DateTime  @default(now())
+  createdBy    String?   @db.VarChar(200)
+  updatedAt    DateTime? @updatedAt
+  updatedBy    String?   @db.VarChar(200)
+  concluidaEm  DateTime?
+  concluidaPor String?   @db.VarChar(200)
+  version      Int       @default(1)
+
+  respostas RespostaPdi[]
+
+  @@unique([aplicacaoId, alunoId, disciplinaId])
+  @@index([alunoId])
+  @@index([professorResponsavelId])
+  @@map("fichas_pdi")
+}
+
+// Resposta de UMA pergunta de UMA Ficha — no máximo uma por (fichaId, aplicacaoPerguntaId), ver
+// índice único abaixo. `valor` é Json de propósito (nunca uma coluna por tipo de pergunta):
+// formato depende de `aplicacaoPergunta.tipoResposta` — {resposta, complementarTexto?} cobre
+// texto/número/seleção/marcação igual ao mock. Perguntas informativas (tipoResposta ORIENTACAO)
+// nunca geram linha aqui. Diferente de FichaPdi, respostas SÃO mutáveis livremente enquanto a
+// Ficha estiver editável — não há contexto histórico para congelar numa resposta em si.
+model RespostaPdi {
+  id                  Int                  @id @default(autoincrement())
+  fichaId             Int
+  ficha               FichaPdi             @relation(fields: [fichaId], references: [id], onDelete: Restrict)
+  aplicacaoPerguntaId Int
+  aplicacaoPergunta   AplicacaoPerguntaPdi @relation(fields: [aplicacaoPerguntaId], references: [id], onDelete: Restrict)
+
+  valor Json
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@unique([fichaId, aplicacaoPerguntaId])
+  @@index([fichaId])
+  @@map("respostas_pdi")
+}
+
+// --- Anamnese -------------------------------------------------------------------------------
+// Entidades PRÓPRIAS, deliberadamente separadas de ModeloPdi/PerguntaPdi/FichaPdi/RespostaPdi —
+// Anamnese e PDI por disciplina têm ciclos de vida diferentes (uma Anamnese é do aluno inteiro,
+// versionada ao longo do tempo; não tem vigência/Aplicação/Reabertura). Ver domain/anamnese.ts.
+
+enum TipoRespostaAnamnese {
+  TEXTO
+  SELECAO
+  MARCACAO
+  NUMERO
+  ORIENTACAO
+  SELECAO_MULTIPLA
+}
+
+enum StatusAnamnese {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+enum PossuiLaudo {
+  SIM
+  NAO
+  EM_INVESTIGACAO
+}
+
+// Corpo CONFIGURÁVEL da Anamnese (aspectos comportamentais/psicomotores/cognitivos, comunicação,
+// escrita, leitura) — só a Secretaria administra. No máximo UM ATIVO por vez (índice único
+// parcial no Postgres sobre a própria coluna `status`, ver migration.sql — como não há dimensão
+// de partição aqui, diferente de ModeloPdi/disciplina, todas as linhas que satisfazem o filtro
+// têm o mesmo valor 'ATIVA', então a unicidade da coluna já garante no máximo uma linha).
+// Versão só é criada quando a versão ATUAL já tem alguma Anamnese vinculada (seção 5/6 do
+// pedido) — editar uma versão ainda não usada por ninguém é uma alteração in-place, sem gerar
+// versão nova (mesma lógica de ModeloPdi/PerguntaPdi nunca terem sido usados ainda).
+model ModeloAnamnese {
+  id     Int            @id @default(autoincrement())
+  nome   String         @db.VarChar(200)
+  versao Int
+  status StatusRegistro @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  perguntas  PerguntaAnamnese[]
+  anamneses  Anamnese[]
+
+  @@map("modelos_anamnese")
+}
+
+// Mesma filosofia de PerguntaPdi (seção/subseção/tipo/opções/ordem/status), com um tipo a mais
+// (SELECAO_MULTIPLA, seção 8/24 do pedido) e um campo a mais (`explicacao`, o texto de tooltip
+// que várias perguntas de aspecto psicomotor/cognitivo têm no formulário original — preservado
+// fielmente, nunca reescrito). `complementar` segue o mesmo formato {gatilho, label} de
+// PerguntaPdi; para a observação SEMPRE disponível dos aspectos (não condicional a uma resposta
+// específica, diferente do PDI), o gatilho usa o valor especial `"sempre"` — ver domain/anamnese.ts.
+model PerguntaAnamnese {
+  id               Int            @id @default(autoincrement())
+  modeloAnamneseId Int
+  modeloAnamnese   ModeloAnamnese @relation(fields: [modeloAnamneseId], references: [id], onDelete: Restrict)
+
+  secao        String               @db.VarChar(100)
+  subsecao     String?              @db.VarChar(100)
+  texto        String               @db.Text
+  explicacao   String?              @db.Text
+  tipoResposta TipoRespostaAnamnese
+  opcoes       Json?
+  complementar Json?
+  ordem        Int
+  status       StatusRegistro       @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  respostas RespostaAnamnese[]
+
+  @@index([modeloAnamneseId, ordem])
+  @@map("perguntas_anamnese")
+}
+
+// Uma versão preenchida da Anamnese de UM aluno. Várias por aluno ao longo do tempo (histórico
+// imutável); a ATUAL é sempre a de maior `numeroVersao` — não existe flag separada, pra não abrir
+// espaço pra dessincronia. `modeloAnamneseId` aponta pra versão do Modelo em uso NAQUELE
+// MOMENTO — como ModeloAnamnese/PerguntaAnamnese já usados nunca são editados in-place (seção 5),
+// isso sozinho já garante histórico resistente a mudanças futuras do Modelo, sem precisar
+// duplicar fisicamente as perguntas pra cada Anamnese (seção 21 do pedido).
+model Anamnese {
+  id               Int            @id @default(autoincrement())
+  alunoId          Int
+  aluno            AlunoPdi       @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  modeloAnamneseId Int
+  modeloAnamnese   ModeloAnamnese @relation(fields: [modeloAnamneseId], references: [id], onDelete: Restrict)
+  numeroVersao     Int
+
+  status StatusAnamnese @default(PENDENTE)
+
+  // --- Parte estrutural/fixa (seções 1/3/4/29/30/31 do pedido) — nunca vira PerguntaAnamnese.
+  anoEscolaridade String?      @db.VarChar(50)
+  possuiLaudo     PossuiLaudo?
+  cid             String?      @db.VarChar(50)
+
+  responsaveisPdi Json // [{ cargo, nome }]
+
+  acompanhadoForaDaEscola      Boolean?
+  especialidadesAcompanhamento Json? // string[] (chaves de ESPECIALIDADES_ACOMPANHAMENTO)
+  especialidadeOutroTexto      String? @db.VarChar(200)
+
+  usoContinuoMedicamento      Boolean?
+  medicamentoQual             String?  @db.VarChar(200)
+  medicamentoPrescritoPor     String?  @db.VarChar(200)
+  medicamentoQuando           String?  @db.VarChar(200)
+  medicamentoParaQue          String?  @db.VarChar(200)
+  medicamentoEfeitosColaterais Boolean?
+  medicamentoEfeitosQuais     String?  @db.Text
+
+  comoGostaDeSeDivertir String? @db.Text
+  idadeInicioEscola     String? @db.VarChar(50)
+  ondeComecou           String? @db.VarChar(200)
+  percursoEscolar       String? @db.Text
+  frequentaSalaRecursos Boolean?
+  frequenciaAtendimento String? @db.VarChar(200)
+
+  // Contexto histórico congelado na criação desta VERSÃO — mesmo raciocínio de FichaPdi.
+  // Snapshot, nunca fonte de autorização (seção 28 do pedido).
+  alunoNomeSnapshot  String @db.VarChar(200)
+  turmaId            Int
+  turma              Turma  @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  turmaNomeSnapshot  String @db.VarChar(60)
+  escolaId           Int
+  escola             Escola @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  escolaNomeSnapshot String @db.VarChar(200)
+
+  createdAt    DateTime  @default(now())
+  createdBy    String?   @db.VarChar(200)
+  updatedAt    DateTime? @updatedAt
+  updatedBy    String?   @db.VarChar(200)
+  concluidaEm  DateTime?
+  concluidaPor String?   @db.VarChar(200)
+
+  respostas RespostaAnamnese[]
+
+  @@unique([alunoId, numeroVersao])
+  @@index([alunoId])
+  @@map("anamneses")
+}
+
+// Resposta de UMA pergunta configurável de UMA Anamnese — no máximo uma por (anamneseId,
+// perguntaAnamneseId). `valor` é Json (nunca coluna por tipo): {resposta, complementarTexto?}
+// para TEXTO/SELECAO/MARCACAO/NUMERO, {respostas: string[], complementarTexto?} para
+// SELECAO_MULTIPLA (seção 24 do pedido — nunca string separada por vírgula). Perguntas
+// ORIENTACAO nunca geram linha aqui.
+model RespostaAnamnese {
+  id                 Int              @id @default(autoincrement())
+  anamneseId         Int
+  anamnese           Anamnese         @relation(fields: [anamneseId], references: [id], onDelete: Restrict)
+  perguntaAnamneseId Int
+  perguntaAnamnese   PerguntaAnamnese @relation(fields: [perguntaAnamneseId], references: [id], onDelete: Restrict)
+
+  valor Json
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@unique([anamneseId, perguntaAnamneseId])
+  @@index([anamneseId])
+  @@map("respostas_anamnese")
 }

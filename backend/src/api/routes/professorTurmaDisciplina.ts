@@ -10,6 +10,7 @@ const formatarVinculo = (vinculo: {
   id: number; turmaId: number; professorId: number; disciplinaId: number;
   status: string; dataInicio: Date; dataFim: Date | null;
   turma: { nome: string; escolaId: number };
+  professor: { nome: string };
   disciplina: { nome: string };
 }) => ({
   id: vinculo.id,
@@ -17,12 +18,23 @@ const formatarVinculo = (vinculo: {
   turmaNome: vinculo.turma.nome,
   escolaId: vinculo.turma.escolaId,
   professorId: vinculo.professorId,
+  professorNome: vinculo.professor.nome,
   disciplinaId: vinculo.disciplinaId,
   disciplinaNome: vinculo.disciplina.nome,
   status: vinculo.status,
   dataInicio: vinculo.dataInicio,
   dataFim: vinculo.dataFim,
 });
+
+// Leitura (listar) é permitida também à Gestão pedagógica (Gestor): ela já enxerga e cria Aluno
+// PDI, turmas e aplicações da própria escola — saber quem leciona o quê na turma é informação
+// pedagógica do mesmo nível, sem conceder nenhum poder de criar/encerrar vínculo (isso continua
+// exclusivo de Secretaria/Diretora, que são quem gerencia professores — ver pessoas.ts).
+function exigirLeituraVinculo(actor: Actor) {
+  if (actor.perfil !== 'SECRETARIA' && actor.perfil !== 'DIRETORA' && actor.perfil !== 'GESTOR') {
+    throw new ForbiddenError('Você não tem permissão para consultar vínculos pedagógicos.');
+  }
+}
 
 // Verifica se a escola da turma está dentro do escopo de quem pergunta — mesma regra usada em
 // pessoas.ts para professores, aqui aplicada à escola DA TURMA (nunca confiar em nada vindo do
@@ -36,7 +48,7 @@ async function exigirEscolaNoEscopo(actor: Actor, escolaId: number) {
 
 professorTurmaDisciplinaRouter.get('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretariaOuDiretora(actor);
+  exigirLeituraVinculo(actor);
   const permitidas = await escolasPermitidas(actor);
   const { professorId, turmaId } = req.query;
 
@@ -46,7 +58,7 @@ professorTurmaDisciplinaRouter.get('/', async (req, res) => {
       ...(turmaId ? { turmaId: Number(turmaId) } : {}),
       ...(permitidas ? { turma: { escolaId: { in: permitidas } } } : {}),
     },
-    include: { turma: true, disciplina: true },
+    include: { turma: true, disciplina: true, professor: true },
     orderBy: { dataInicio: 'desc' },
   });
 
@@ -95,7 +107,7 @@ professorTurmaDisciplinaRouter.post('/', async (req, res) => {
 
   if (atual && atual.professorId === professorId) {
     // Já é este professor — idempotente, não cria segundo vínculo nem mexe em dataInicio.
-    return res.json(formatarVinculo({ ...atual, turma, disciplina }));
+    return res.json(formatarVinculo({ ...atual, turma, disciplina, professor }));
   }
 
   const novo = await prisma.$transaction(async (tx) => {
@@ -107,7 +119,7 @@ professorTurmaDisciplinaRouter.post('/', async (req, res) => {
     });
   });
 
-  res.status(201).json(formatarVinculo({ ...novo, turma, disciplina }));
+  res.status(201).json(formatarVinculo({ ...novo, turma, disciplina, professor }));
 });
 
 professorTurmaDisciplinaRouter.post('/:id/encerrar', async (req, res) => {
@@ -115,11 +127,11 @@ professorTurmaDisciplinaRouter.post('/:id/encerrar', async (req, res) => {
   exigirSecretariaOuDiretora(actor);
   const id = Number(req.params.id);
 
-  const vinculo = await prisma.professorTurmaDisciplina.findUnique({ where: { id }, include: { turma: true, disciplina: true } });
+  const vinculo = await prisma.professorTurmaDisciplina.findUnique({ where: { id }, include: { turma: true, disciplina: true, professor: true } });
   if (!vinculo) throw new NotFoundError('Vínculo não encontrado.');
   await exigirEscolaNoEscopo(actor, vinculo.turma.escolaId);
   if (vinculo.status !== 'ATIVO') throw new ValidationError('Este vínculo já está encerrado.');
 
   const atualizado = await prisma.professorTurmaDisciplina.update({ where: { id }, data: { status: 'ENCERRADO', dataFim: new Date() } });
-  res.json(formatarVinculo({ ...atualizado, turma: vinculo.turma, disciplina: vinculo.disciplina }));
+  res.json(formatarVinculo({ ...atualizado, turma: vinculo.turma, disciplina: vinculo.disciplina, professor: vinculo.professor }));
 });

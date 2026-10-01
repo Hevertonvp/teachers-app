@@ -2,12 +2,22 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiFetch, getAuthToken } from '../services/api';
 import { listarDisciplinas } from '../services/disciplinas';
 import { criarTurma as criarTurmaApi, editarTurma, inativarTurmaApi, listarTurmas, reativarTurmaApi } from '../services/turmas';
-import { arquivarPdiAlunoReal, criarPdiAlunoReal, editarPdiAlunoReal, listarPdiAlunos, reativarPdiAlunoReal } from '../services/pdiAlunos';
+import { arquivarPdiAlunoReal, criarPdiAlunoReal, editarPdiAlunoReal, listarMeusAlunosAuxiliarReais, listarPdiAlunos, obterPdiAluno, reativarPdiAlunoReal } from '../services/pdiAlunos';
 import {
   criarPdiModeloPerguntaReal, criarPdiModeloReal, editarPdiModeloPerguntaReal, inativarPdiModeloReal,
   inativarPdiPerguntaReal, listarPdiModelosReais, reativarPdiModeloReal, reativarPdiPerguntaReal,
   reordenarPdiModeloPerguntasReais,
 } from '../services/pdiModelos';
+import {
+  criarPdiAplicacaoReal, criarReaberturaPdiReal, editarPdiAplicacaoReal, listarPdiAplicacoesReais,
+  listarReaberturasPdiReais, obterSnapshotPdiAplicacaoReal,
+} from '../services/pdiAplicacoes';
+import { concluirFichaReal, listarFichasPdiReais, listarMeusPdisReais, obterFichaReal, obterOuCriarFichaReal, salvarRespostasFichaReal } from '../services/pdiFichas';
+import {
+  concluirAnamneseReal, criarAnamnesePerguntaReal, editarAnamnesePerguntaReal, iniciarAnamneseReal,
+  inativarAnamnesePerguntaReal, listarAnamneseModelosReais, obterAnamneseModeloReal, obterAnamneseReal,
+  obterHistoricoAnamneseReal, reativarAnamnesePerguntaReal, reordenarAnamnesePerguntasReais, salvarAnamneseReal,
+} from '../services/anamnese';
 import {
   auxiliares as auxiliaresIniciais,
   correcoesSimulados as correcoesIniciais,
@@ -31,39 +41,15 @@ import {
   pdiAlunos as pdiAlunosIniciais,
   pdiAuxiliaresVinculos as pdiAuxiliaresVinculosIniciais,
   pdiAvaliacoesIniciais,
-  pdiHistoricoPreenchimento as pdiHistoricoPreenchimentoIniciais,
   pdiMetasDesenvolvimento,
   pdiPerguntasFormulario,
   pdiRespostasAcompanhamento,
 } from '../data/pdiData';
-import { buildPerguntasModelo, pdiModelosIniciais } from '../data/pdiModelos';
-import { getEscolaIdsAplicaveis, RECURSOS } from '../utils/aplicabilidade';
-import { existeSobreposicaoNaEscola, MENSAGEM_SOBREPOSICAO_APLICACAO } from '../utils/pdiFichas';
 import { pdiSummary } from '../utils/pdi';
 import { canSendMessage } from '../utils/mensagens';
 import { CURRENT_DATE } from '../utils/formAvailability';
 
 const DataContext = createContext();
-
-// Aplicação PDI de teste vigente na CURRENT_DATE, para TODAS as escolas compatíveis com o módulo
-// (ver ESCOLAS_COMPATIVEIS em utils/aplicabilidade.js) e TODOS os modelos ativos (uma por
-// disciplina, ver pdiModelosIniciais) — permite validar de imediato o direcionamento de fichas
-// por perfil (professor/gestor/diretora/auxiliar), sem precisar passar pela tela da Secretaria
-// antes. Mesmo formato que createPdiAplicacao produz (snapshot dos modelos ativos no momento da
-// criação).
-const pdiAplicacoesIniciais = getEscolaIdsAplicaveis(RECURSOS.PDI).map(escolaId => ({
-  id: escolaId,
-  escolaId,
-  dataInicio: '2026-09-01',
-  dataFim: '2026-09-30',
-  criadaEm: '2026-09-01T08:00:00.000Z',
-  modelos: pdiModelosIniciais.filter(modelo => modelo.status === 'ativa').map(modelo => ({
-    modeloId: modelo.id,
-    disciplinaId: modelo.disciplinaId,
-    nome: modelo.nome,
-    perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
-  })),
-}));
 
 const completedStatuses = ['concluido', 'concluído'];
 const pendingStatuses = ['pendente', 'em_andamento', 'em_atraso'];
@@ -94,21 +80,8 @@ export const DataProvider = ({ children }) => {
   const [pdiAcompanhamentos, setPdiAcompanhamentos] = useState(pdiAcompanhamentosIniciais);
   const [pdiPerguntas, setPdiPerguntas] = useState(pdiPerguntasFormulario);
   const [pdiRespostas, setPdiRespostas] = useState(pdiRespostasAcompanhamento);
-  // PDI por disciplina (modelos/aplicações/fichas) — estrutura nova, paralela e independente da
-  // antiga (pdiPerguntas/pdiRespostas acima, que ficam congeladas alimentando só a Análise de
-  // Desenvolvimento e o gráfico legado em PdiAlunoPerfil.jsx). Ver src/data/pdiModelos.js e
-  // src/utils/pdiFichas.js para o desenho completo.
-  const [pdiModelos, setPdiModelos] = useState(pdiModelosIniciais);
-  const [pdiAplicacoes, setPdiAplicacoes] = useState(pdiAplicacoesIniciais);
-  const [pdiFichaRespostas, setPdiFichaRespostas] = useState([]);
-  const [pdiFichaHistorico, setPdiFichaHistorico] = useState([]);
-  const [pdiAnamneses, setPdiAnamneses] = useState([]);
-  const [pdiAuxiliaresVinculos, setPdiAuxiliaresVinculos] = useState(pdiAuxiliaresVinculosIniciais);
-  const [pdiHistoricoPreenchimento, setPdiHistoricoPreenchimento] = useState(pdiHistoricoPreenchimentoIniciais);
+  const [pdiAuxiliaresVinculos] = useState(pdiAuxiliaresVinculosIniciais);
   const [trimestrePeriods, setTrimestrePeriods] = useState(trimestrePeriodsIniciais);
-  // Configuração da Secretaria: se true (padrão atual), todo modelo PDI novo já nasce com a base
-  // de perguntas padrão (ver buildPerguntasModelo). Desligada, o modelo nasce sem perguntas.
-  const [pdiPreencherPerguntasPadrao, setPdiPreencherPerguntasPadrao] = useState(true);
   const [formPeriods, setFormPeriods] = useState(formulariosPrazos);
   // Escolas é o piloto de integração real com o backend (Node/Express/Prisma/Neon) — todas as
   // outras coleções deste contexto continuam mockadas. Ver README do backend e o resumo da
@@ -152,6 +125,13 @@ export const DataProvider = ({ children }) => {
   const [pdiModelosReais, setPdiModelosReais] = useState([]);
   const [pdiModelosReaisLoading, setPdiModelosReaisLoading] = useState(true);
   const [pdiModelosReaisError, setPdiModelosReaisError] = useState(null);
+  // Aplicação/Reabertura PDI real — mesmo padrão de pdiModelosReais (carregado só por
+  // FormularioPdiPage.jsx, nunca automaticamente no login). O mock `pdiAplicacoes` (abaixo)
+  // continua intacto: PdiAlunoPerfil/DashboardProfessor/FormularioPdiProfessor/MeusPdisPage/
+  // PdiHomePage ainda dependem dele (Fichas/Meus PDIs, próximo bloco).
+  const [pdiAplicacoesReais, setPdiAplicacoesReais] = useState([]);
+  const [pdiAplicacoesReaisLoading, setPdiAplicacoesReaisLoading] = useState(true);
+  const [pdiAplicacoesReaisError, setPdiAplicacoesReaisError] = useState(null);
   const [professores, setProfessores] = useState(professoresIniciais);
   const [gestores, setGestores] = useState(gestoresIniciais);
   const [diretores, setDiretores] = useState(diretoresIniciais);
@@ -320,74 +300,6 @@ export const DataProvider = ({ children }) => {
 
   // --- PDI por disciplina: modelos -----------------------------------------------------------
   // Toda pergunta é igualmente editável/removível, inclusive as que vieram prontas no modelo —
-  // `origem` é só informação organizacional (ver seção 6/33 do pedido), nunca proteção.
-  const nextPerguntaId = (modelos) => Math.max(0, ...modelos.flatMap(modelo => modelo.perguntas.map(pergunta => Number(pergunta.id)))) + 1;
-
-  // Todo modelo novo nasce com a base padrão comum (perguntas 1-9, Computação/BNCC, qualitativas
-  // 10-13) — ver buildPerguntasModelo em pdiModelos.js. Nenhuma habilidade específica de
-  // disciplina é inventada aqui; a Secretaria adiciona o bloco próprio da matéria depois, à mão,
-  // como qualquer outra pergunta. A base é só o ponto de partida — tudo continua editável/
-  // excluível normalmente, e cada modelo recebe objetos novos (nunca reaproveita referência de
-  // outro modelo).
-  const createPdiModelo = (payload) => {
-    let created;
-    setPdiModelos(prev => {
-      created = { id: nextId(prev), nome: payload.nome, disciplinaId: Number(payload.disciplinaId), status: 'ativa', perguntas: pdiPreencherPerguntasPadrao ? buildPerguntasModelo() : [] };
-      return [...prev, created];
-    });
-    return created;
-  };
-
-  const updatePdiModelo = (id, payload) => {
-    setPdiModelos(prev => prev.map(modelo => (modelo.id === Number(id) ? { ...modelo, ...payload } : modelo)));
-  };
-
-  // Excluir o modelo não afeta aplicações já criadas — elas guardam uma cópia (snapshot) das
-  // perguntas no momento em que foram abertas, independente do modelo continuar existindo.
-  const deletePdiModelo = (id) => {
-    setPdiModelos(prev => prev.filter(modelo => modelo.id !== Number(id)));
-  };
-
-  const createPdiModeloPergunta = (modeloId, payload) => {
-    setPdiModelos(prev => {
-      const novoId = nextPerguntaId(prev);
-      return prev.map(modelo => (modelo.id === Number(modeloId)
-        ? { ...modelo, perguntas: [...modelo.perguntas, { origem: 'personalizada', status: 'ativa', ...payload, id: novoId, ordem: modelo.perguntas.length + 1 }] }
-        : modelo));
-    });
-  };
-
-  const updatePdiModeloPergunta = (modeloId, perguntaId, payload) => {
-    setPdiModelos(prev => prev.map(modelo => (modelo.id === Number(modeloId)
-      ? { ...modelo, perguntas: modelo.perguntas.map(pergunta => (pergunta.id === Number(perguntaId) ? { ...pergunta, ...payload } : pergunta)) }
-      : modelo)));
-  };
-
-  const deletePdiModeloPergunta = (modeloId, perguntaId) => {
-    setPdiModelos(prev => prev.map(modelo => (modelo.id === Number(modeloId)
-      ? { ...modelo, perguntas: modelo.perguntas.filter(pergunta => pergunta.id !== Number(perguntaId)) }
-      : modelo)));
-  };
-
-  const reorderPdiModeloPergunta = (modeloId, perguntaId, direction) => {
-    setPdiModelos(prev => prev.map(modelo => {
-      if (modelo.id !== Number(modeloId)) return modelo;
-      const ordenadas = [...modelo.perguntas].sort((left, right) => Number(left.ordem) - Number(right.ordem));
-      const index = ordenadas.findIndex(item => item.id === Number(perguntaId));
-      const sibling = ordenadas[index + direction];
-      if (!sibling) return modelo;
-      const atual = ordenadas[index];
-      return {
-        ...modelo,
-        perguntas: modelo.perguntas.map(item => {
-          if (item.id === atual.id) return { ...item, ordem: sibling.ordem };
-          if (item.id === sibling.id) return { ...item, ordem: atual.ordem };
-          return item;
-        }),
-      };
-    }));
-  };
-
   // --- Modelo/Pergunta PDI real (piloto igual Turmas/Escolas/AlunoPdi) -----------------------
   const loadPdiModelosReais = useCallback(async () => {
     setPdiModelosReaisLoading(true);
@@ -469,157 +381,233 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // --- PDI por disciplina: aplicações (vigência por escola) -----------------------------------
-  // Vigências são independentes entre escolas; dentro da MESMA escola, duas aplicações nunca
-  // podem ter períodos sobrepostos (ver src/utils/pdiFichas.js). Isso não é "uma aplicação por
-  // trimestre" — várias aplicações podem coexistir na mesma escola, desde que não se sobreponham.
-  const createPdiAplicacao = (payload) => {
-    if (payload.dataInicio > payload.dataFim) {
-      return { ok: false, error: 'A data de início não pode ser depois da data de encerramento.' };
+  // --- Aplicação/Reabertura PDI real (piloto igual Modelo/Pergunta PDI) ----------------------
+  const loadPdiAplicacoesReais = useCallback(async () => {
+    setPdiAplicacoesReaisLoading(true);
+    setPdiAplicacoesReaisError(null);
+    try {
+      setPdiAplicacoesReais(await listarPdiAplicacoesReais());
+    } catch (error) {
+      setPdiAplicacoesReaisError(error.message);
+    } finally {
+      setPdiAplicacoesReaisLoading(false);
     }
-    // Só os modelos ATIVOS e escolhidos em `payload.modeloIds` entram nesta aplicação — sem
-    // seleção nenhuma (ou nenhum deles mais ativo), não há o que colocar na aplicação. A partir
-    // da migração de Modelos PDI para o Neon, a fonte é sempre `pdiModelosReais` — nunca mais o
-    // mock `pdiModelos` (que ficou congelado com os 10 modelos originais).
-    const modelosSelecionados = pdiModelosReais.filter(modelo => modelo.status === 'ativa' && payload.modeloIds?.includes(modelo.id));
-    if (modelosSelecionados.length === 0) {
-      return { ok: false, error: 'Selecione ao menos um modelo PDI ativo para esta aplicação.' };
+  }, []);
+
+  const createPdiAplicacaoReal = async (payload) => {
+    try {
+      const aplicacao = await criarPdiAplicacaoReal(payload);
+      setPdiAplicacoesReais(prev => [aplicacao, ...prev]);
+      return { ok: true, aplicacao };
+    } catch (error) {
+      return { ok: false, error: error.message };
     }
-    if (existeSobreposicaoNaEscola(pdiAplicacoes, { escolaId: payload.escolaId, dataInicio: payload.dataInicio, dataFim: payload.dataFim })) {
-      return { ok: false, error: MENSAGEM_SOBREPOSICAO_APLICACAO };
+  };
+
+  const updatePdiAplicacaoReal = async (id, payload) => {
+    try {
+      const aplicacao = await editarPdiAplicacaoReal(id, payload);
+      setPdiAplicacoesReais(prev => prev.map(item => (item.id === Number(id) ? aplicacao : item)));
+      return { ok: true, aplicacao };
+    } catch (error) {
+      return { ok: false, error: error.message };
     }
-    let created;
-    setPdiAplicacoes(prev => {
-      // Snapshot simples: cópia das perguntas de cada modelo selecionado no momento da criação —
-      // mudanças futuras no modelo não afetam esta aplicação (ver seção 6/7 do pedido).
-      created = {
-        id: nextId(prev),
-        escolaId: Number(payload.escolaId),
-        dataInicio: payload.dataInicio,
-        dataFim: payload.dataFim,
-        criadaEm: new Date().toISOString(),
-        modelos: modelosSelecionados.map(modelo => ({
-          modeloId: modelo.id,
-          disciplinaId: modelo.disciplinaId,
-          nome: modelo.nome,
-          perguntas: modelo.perguntas.map(pergunta => ({ ...pergunta })),
-        })),
-      };
-      return [...prev, created];
-    });
-    return { ok: true, aplicacao: created };
   };
 
-  const updatePdiAplicacao = (id, payload) => {
-    const atual = pdiAplicacoes.find(aplicacao => aplicacao.id === Number(id));
-    if (!atual) return { ok: false, error: 'Aplicação não encontrada.' };
-    const dataInicio = payload.dataInicio ?? atual.dataInicio;
-    const dataFim = payload.dataFim ?? atual.dataFim;
-    if (dataInicio > dataFim) {
-      return { ok: false, error: 'A data de início não pode ser depois da data de encerramento.' };
+  // Snapshot completo (com perguntas) não é mantido em estado global — é consultado sob demanda
+  // pela tela, só quando a Secretaria realmente abre os detalhes de uma aplicação específica.
+  const obterSnapshotPdiAplicacao = async (id) => {
+    try {
+      return { ok: true, modelos: await obterSnapshotPdiAplicacaoReal(id) };
+    } catch (error) {
+      return { ok: false, error: error.message };
     }
-    // A aplicação editada nunca conflita com ela mesma (`ignorarId`).
-    if (existeSobreposicaoNaEscola(pdiAplicacoes, { escolaId: atual.escolaId, dataInicio, dataFim, ignorarId: atual.id })) {
-      return { ok: false, error: MENSAGEM_SOBREPOSICAO_APLICACAO };
+  };
+
+  const listarReaberturasPdiAplicacao = async (aplicacaoId) => {
+    try {
+      return { ok: true, reaberturas: await listarReaberturasPdiReais(aplicacaoId) };
+    } catch (error) {
+      return { ok: false, error: error.message };
     }
-    setPdiAplicacoes(prev => prev.map(aplicacao => (aplicacao.id === Number(id) ? { ...aplicacao, ...payload } : aplicacao)));
-    return { ok: true };
   };
 
-  const deletePdiAplicacao = (id) => {
-    setPdiAplicacoes(prev => prev.filter(aplicacao => aplicacao.id !== Number(id)));
+  const criarReaberturaPdiAplicacao = async (aplicacaoId, payload) => {
+    try {
+      return { ok: true, reabertura: await criarReaberturaPdiReal(aplicacaoId, payload) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Exclui todas as aplicações PDI de uma vez (todas as escolas) — usado pelo botão "Excluir
-  // todas as aplicações" na Secretaria, sempre com confirmação antes na tela.
-  const deleteAllPdiAplicacoes = () => {
-    setPdiAplicacoes([]);
+  // --- Ficha/Resposta PDI real (criação sob demanda — ver FormularioPdiProfessor.jsx) --------
+  // Sem estado de lista global aqui de propósito: cada tela lida com UMA ficha por vez (a
+  // identidade aplicação+aluno+disciplina já vem da própria URL/parâmetros).
+  const obterOuCriarFichaPdi = async (payload) => {
+    try {
+      return { ok: true, ...(await obterOuCriarFichaReal(payload)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // --- PDI por disciplina: respostas e histórico da ficha --------------------------------------
-  // Identidade da resposta: aplicacaoId + disciplinaId + alunoId + perguntaId — nunca colide
-  // entre aplicações diferentes (mesmo aluno, mesma disciplina, vigências sobrepostas) nem entre
-  // disciplinas diferentes do mesmo aluno na mesma aplicação (ver seção 7/8/22 do pedido).
-  const salvarRespostaFicha = (payload) => {
-    setPdiFichaRespostas(prev => {
-      const existente = prev.find(item => (
-        item.aplicacaoId === Number(payload.aplicacaoId)
-        && item.disciplinaId === Number(payload.disciplinaId)
-        && item.alunoId === Number(payload.alunoId)
-        && item.perguntaId === payload.perguntaId
-      ));
-      if (existente) return prev.map(item => (item.id === existente.id ? { ...item, ...payload } : item));
-      return [...prev, { id: nextId(prev), ...payload }];
-    });
+  const obterFichaPdi = async (aplicacaoId, alunoId, disciplinaId) => {
+    try {
+      return { ok: true, ...(await obterFichaReal(aplicacaoId, alunoId, disciplinaId)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Um evento por ENVIO da ficha (não por pergunta). professorId no payload de
-  // salvarRespostaFicha guarda a autoria de cada resposta; aqui é só quem executou a ação.
-  const registrarPreenchimentoFicha = (aplicacaoId, disciplinaId, alunoId, autor, acao) => {
-    setPdiFichaHistorico(prev => [...prev, {
-      id: nextId(prev),
-      aplicacaoId: Number(aplicacaoId),
-      disciplinaId: Number(disciplinaId),
-      alunoId: Number(alunoId),
-      usuarioTipo: autor.tipo,
-      usuarioId: autor.id,
-      dataHora: new Date().toISOString(),
-      acao,
-    }]);
+  const salvarRespostasFichaPdi = async (fichaId, respostas) => {
+    try {
+      return { ok: true, ...(await salvarRespostasFichaReal(fichaId, respostas)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Uma anamnese por aluno (1:1). Cria na primeira vez que é salva; nas seguintes, atualiza
-  // o registro existente. Não gera nenhum valor automaticamente — só grava o que foi preenchido.
-  const savePdiAnamnese = (alunoId, payload) => {
-    setPdiAnamneses(prev => {
-      const existente = prev.find(item => item.alunoId === Number(alunoId));
-      if (existente) return prev.map(item => item.alunoId === Number(alunoId) ? { ...item, ...payload } : item);
-      return [...prev, { id: nextId(prev), ...payload, alunoId: Number(alunoId) }];
-    });
+  const concluirFichaPdi = async (fichaId) => {
+    try {
+      return { ok: true, ...(await concluirFichaReal(fichaId)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Um evento por ENVIO do Formulário PDI (não por pergunta) — quem preencheu/editou e quando.
-  // professorId é sempre o professor responsável do aluno (aluno.professorId), mesmo quando
-  // quem preencheu foi a Supervisora: garante que ela edita o MESMO registro do professor,
-  // nunca um paralelo (ver src/utils/pdiHistorico.js).
-  const registrarPreenchimentoPdi = (alunoId, professorId, trimestre, autor, acao) => {
-    setPdiHistoricoPreenchimento(prev => [...prev, {
-      id: nextId(prev),
-      alunoId: Number(alunoId),
-      professorId: Number(professorId),
-      trimestre,
-      usuarioTipo: autor.tipo,
-      usuarioId: autor.id,
-      dataHora: new Date().toISOString(),
-      acao,
-    }]);
+  // Consulta de Fichas já existentes (nunca cria) — usada pelo perfil do aluno (Diretora/Auxiliar/
+  // Gestor/Secretaria) pra montar o resumo de PDI por disciplina sem passar por obter-ou-criar.
+  const listarFichasPdi = async (filtros) => {
+    try {
+      return { ok: true, fichas: await listarFichasPdiReais(filtros) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Vincula um Auxiliar de Aprendizagem a uma TURMA (não mais a um aluno individual) — os
-  // alunos PDI acompanhados são sempre derivados dos alunos daquela turma (ver
-  // src/utils/auxiliares.js). Se já existir um vínculo ativo para essa turma, encerra-o
-  // (dataFim = novo dataInicio, status 'encerrado') em vez de sobrescrever — histórico nunca é
-  // apagado, e isso já garante no máximo um vínculo ativo por turma.
-  const vincularAuxiliar = (turmaId, auxiliarId, dataInicio) => {
-    setPdiAuxiliaresVinculos(prev => {
-      const encerrados = prev.map(item => (
-        item.turmaId === Number(turmaId) && item.status === 'ativo'
-          ? { ...item, dataFim: dataInicio, status: 'encerrado' }
-          : item
-      ));
-      return [...encerrados, { id: nextId(encerrados), turmaId: Number(turmaId), auxiliarId: Number(auxiliarId), dataInicio, dataFim: null, status: 'ativo' }];
-    });
+  // Meus PDIs (Professor) — lista TODAS as combinações operacionalmente disponíveis, com ou sem
+  // Ficha ainda criada (ver GET /api/pdi-fichas/meus-pdis). Carregado só sob demanda pela própria
+  // tela, mesmo padrão de pdiAplicacoesReais/pdiModelosReais.
+  const [meusPdisReais, setMeusPdisReais] = useState([]);
+  const [meusPdisReaisLoading, setMeusPdisReaisLoading] = useState(true);
+  const [meusPdisReaisError, setMeusPdisReaisError] = useState(null);
+  const loadMeusPdisReais = useCallback(async () => {
+    setMeusPdisReaisLoading(true);
+    setMeusPdisReaisError(null);
+    try {
+      setMeusPdisReais(await listarMeusPdisReais());
+    } catch (error) {
+      setMeusPdisReaisError(error.message);
+    } finally {
+      setMeusPdisReaisLoading(false);
+    }
+  }, []);
+
+  // --- Anamnese real (entidades próprias, ver domain/anamnese.ts no backend) -----------------
+  // Modelo/Pergunta: mesmo padrão de pdiModelosReais (carregado só sob demanda pela tela de
+  // administração da Secretaria).
+  const [anamneseModelosReais, setAnamneseModelosReais] = useState([]);
+  const [anamneseModelosReaisLoading, setAnamneseModelosReaisLoading] = useState(true);
+  const [anamneseModelosReaisError, setAnamneseModelosReaisError] = useState(null);
+  const loadAnamneseModelosReais = useCallback(async () => {
+    setAnamneseModelosReaisLoading(true);
+    setAnamneseModelosReaisError(null);
+    try {
+      setAnamneseModelosReais(await listarAnamneseModelosReais());
+    } catch (error) {
+      setAnamneseModelosReaisError(error.message);
+    } finally {
+      setAnamneseModelosReaisLoading(false);
+    }
+  }, []);
+
+  // Busca sempre o Modelo ATIVO (primeira posição, já que a listagem vem ordenada por versão
+  // desc) com as perguntas completas — usado pela tela de administração ao abrir o construtor.
+  const obterAnamneseModeloAtivo = async () => {
+    try {
+      const modelos = await listarAnamneseModelosReais();
+      const ativo = modelos.find((m) => m.status === 'ativa');
+      if (!ativo) return { ok: false, error: 'Nenhum Modelo de Anamnese ativo encontrado.' };
+      return { ok: true, modelo: await obterAnamneseModeloReal(ativo.id) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
-  // Encerra o vínculo ativo da turma sem criar substituto — os alunos PDI dela ficam
-  // temporariamente sem Auxiliar.
-  const encerrarAuxiliar = (turmaId, dataFim) => {
-    setPdiAuxiliaresVinculos(prev => prev.map(item => (
-      item.turmaId === Number(turmaId) && item.status === 'ativo'
-        ? { ...item, dataFim, status: 'encerrado' }
-        : item
-    )));
+  const criarAnamnesePergunta = async (payload) => {
+    try {
+      return { ok: true, pergunta: await criarAnamnesePerguntaReal(payload) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
+
+  const editarAnamnesePergunta = async (perguntaId, payload) => {
+    try {
+      return { ok: true, pergunta: await editarAnamnesePerguntaReal(perguntaId, payload) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const mudarStatusAnamnesePergunta = async (id, ativar) => {
+    try {
+      return { ok: true, pergunta: await (ativar ? reativarAnamnesePerguntaReal(id) : inativarAnamnesePerguntaReal(id)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const reordenarAnamnesePerguntas = async (ordens) => {
+    try {
+      return { ok: true, perguntas: await reordenarAnamnesePerguntasReais(ordens) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  // Anamnese do aluno (histórico + versão atual) — sem estado de lista global, cada perfil de
+  // aluno lida com UM histórico por vez (mesmo padrão de Ficha PDI).
+  const obterHistoricoAnamnese = async (alunoId) => {
+    try {
+      return { ok: true, ...(await obterHistoricoAnamneseReal(alunoId)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const obterAnamnese = async (id) => {
+    try {
+      return { ok: true, ...(await obterAnamneseReal(id)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const iniciarAnamnese = async (alunoId) => {
+    try {
+      return { ok: true, ...(await iniciarAnamneseReal(alunoId)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const salvarAnamnese = async (id, payload) => {
+    try {
+      return { ok: true, ...(await salvarAnamneseReal(id, payload)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const concluirAnamnese = async (id) => {
+    try {
+      return { ok: true, ...(await concluirAnamneseReal(id)) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
 
   // --- Gestão de Turmas (piloto de integração real com o backend, igual Escolas) -----------
   // Turma nunca é excluída fisicamente: tem `status` ('ativa'/'inativa'), preservando o registro
@@ -746,6 +734,34 @@ export const DataProvider = ({ children }) => {
       return { ok: false, error: error.message };
     }
   };
+
+  // Busca um único Aluno PDI real por id, sem depender da listagem geral (que o Auxiliar não pode
+  // chamar — ver GET /api/pdi-alunos exigirLeitura). Usado por AuxiliarAlunoPerfilPage.jsx.
+  const obterPdiAlunoReal = async (id) => {
+    try {
+      return { ok: true, aluno: await obterPdiAluno(id) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  // Meus Alunos (Auxiliar) — VinculoEscolar ATIVO → AuxiliarTurma ATIVO → Turma ATIVA → AlunoPdi
+  // ATIVO, unificado entre escolas (ver GET /api/pdi-alunos/meus-alunos). Carregado só sob demanda
+  // pela própria tela do Auxiliar.
+  const [meusAlunosAuxiliarReais, setMeusAlunosAuxiliarReais] = useState([]);
+  const [meusAlunosAuxiliarReaisLoading, setMeusAlunosAuxiliarReaisLoading] = useState(true);
+  const [meusAlunosAuxiliarReaisError, setMeusAlunosAuxiliarReaisError] = useState(null);
+  const loadMeusAlunosAuxiliarReais = useCallback(async () => {
+    setMeusAlunosAuxiliarReaisLoading(true);
+    setMeusAlunosAuxiliarReaisError(null);
+    try {
+      setMeusAlunosAuxiliarReais(await listarMeusAlunosAuxiliarReais());
+    } catch (error) {
+      setMeusAlunosAuxiliarReaisError(error.message);
+    } finally {
+      setMeusAlunosAuxiliarReaisLoading(false);
+    }
+  }, []);
 
   // Vincula um professor a uma disciplina numa turma. No máximo um vínculo ATIVO por
   // (turmaId, disciplinaId) — se já existir outro professor ativo ali, ele é encerrado
@@ -876,7 +892,14 @@ export const DataProvider = ({ children }) => {
       loadEscolas();
       loadTurmas();
       loadDisciplinasReais();
-      loadPdiAlunosReais();
+      // GET /api/pdi-alunos é exclusivo de Secretaria/Gestor/Diretora (ver exigirLeitura em
+      // pdiAlunos.ts) — Professor e Auxiliar sempre recebiam 403 aqui à toa. DataContext não tem
+      // acesso ao AuthContext (é o contrário), por isso lê o perfil direto do localStorage, igual
+      // getStoredUser() em AuthContext.jsx.
+      let tipo = null;
+      try { tipo = JSON.parse(localStorage.getItem('user'))?.tipo; } catch { /* ignora */ }
+      if (['secretaria', 'gestor', 'diretora'].includes(tipo)) loadPdiAlunosReais();
+      else setPdiAlunosReaisLoading(false);
     } else {
       setEscolasLoading(false);
       setTurmasLoading(false);
@@ -964,6 +987,11 @@ export const DataProvider = ({ children }) => {
     updatePdiAlunoReal,
     arquivarPdiAluno,
     reativarPdiAluno,
+    obterPdiAlunoReal,
+    meusAlunosAuxiliarReais,
+    meusAlunosAuxiliarReaisLoading,
+    meusAlunosAuxiliarReaisError,
+    loadMeusAlunosAuxiliarReais,
     pdiModelosReais,
     pdiModelosReaisLoading,
     pdiModelosReaisError,
@@ -976,6 +1004,39 @@ export const DataProvider = ({ children }) => {
     inativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, false),
     reativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, true),
     reorderPdiModeloPerguntaReal,
+    pdiAplicacoesReais,
+    pdiAplicacoesReaisLoading,
+    pdiAplicacoesReaisError,
+    loadPdiAplicacoesReais,
+    createPdiAplicacaoReal,
+    updatePdiAplicacaoReal,
+    obterSnapshotPdiAplicacao,
+    listarReaberturasPdiAplicacao,
+    criarReaberturaPdiAplicacao,
+    obterOuCriarFichaPdi,
+    obterFichaPdi,
+    salvarRespostasFichaPdi,
+    concluirFichaPdi,
+    listarFichasPdi,
+    meusPdisReais,
+    meusPdisReaisLoading,
+    meusPdisReaisError,
+    loadMeusPdisReais,
+    anamneseModelosReais,
+    anamneseModelosReaisLoading,
+    anamneseModelosReaisError,
+    loadAnamneseModelosReais,
+    obterAnamneseModeloAtivo,
+    criarAnamnesePergunta,
+    editarAnamnesePergunta,
+    inativarAnamnesePergunta: (id) => mudarStatusAnamnesePergunta(id, false),
+    reativarAnamnesePergunta: (id) => mudarStatusAnamnesePergunta(id, true),
+    reordenarAnamnesePerguntas,
+    obterHistoricoAnamnese,
+    obterAnamnese,
+    iniciarAnamnese,
+    salvarAnamnese,
+    concluirAnamnese,
     escolas,
     escolasLoading,
     escolasError,
@@ -993,23 +1054,11 @@ export const DataProvider = ({ children }) => {
     pdiAcompanhamentos,
     pdiPerguntas,
     pdiRespostas,
-    pdiModelos,
-    pdiAplicacoes,
-    pdiFichaRespostas,
-    pdiFichaHistorico,
-    pdiAnamneses,
-    savePdiAnamnese,
     pdiAuxiliaresVinculos,
-    vincularAuxiliar,
-    encerrarAuxiliar,
     vincularProfessorTurma,
     encerrarVinculoProfessorTurma,
-    pdiHistoricoPreenchimento,
-    registrarPreenchimentoPdi,
     trimestrePeriods,
     updateTrimestrePeriod,
-    pdiPreencherPerguntasPadrao,
-    setPdiPreencherPerguntasPadrao,
     pendencias,
     indicadores,
     atividadesRecentes,
@@ -1046,19 +1095,6 @@ export const DataProvider = ({ children }) => {
     createPdiPergunta,
     updatePdiPergunta,
     deletePdiPergunta,
-    createPdiModelo,
-    updatePdiModelo,
-    deletePdiModelo,
-    createPdiModeloPergunta,
-    updatePdiModeloPergunta,
-    deletePdiModeloPergunta,
-    reorderPdiModeloPergunta,
-    createPdiAplicacao,
-    updatePdiAplicacao,
-    deletePdiAplicacao,
-    deleteAllPdiAplicacoes,
-    salvarRespostaFicha,
-    registrarPreenchimentoFicha,
     createPdiResposta: createItem(setPdiRespostas),
     updatePdiResposta: updateItem(setPdiRespostas),
     deletePdiResposta: deleteItem(setPdiRespostas),

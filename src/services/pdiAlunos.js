@@ -19,6 +19,7 @@ const paraPayloadApi = (payload) => ({
 });
 
 export const listarPdiAlunos = async () => (await apiFetch('/api/pdi-alunos')).map(normalizeAluno);
+export const listarMeusAlunosAuxiliarReais = async () => (await apiFetch('/api/pdi-alunos/meus-alunos')).map(normalizeAluno);
 export const obterPdiAluno = async (id) => normalizeAluno(await apiFetch(`/api/pdi-alunos/${id}`));
 export const criarPdiAlunoReal = async (payload) => normalizeAluno(await apiFetch('/api/pdi-alunos', { method: 'POST', body: paraPayloadApi(payload) }));
 export const editarPdiAlunoReal = async (id, payload) => normalizeAluno(await apiFetch(`/api/pdi-alunos/${id}`, { method: 'PUT', body: paraPayloadApi(payload) }));

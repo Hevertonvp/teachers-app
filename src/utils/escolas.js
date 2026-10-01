@@ -64,18 +64,6 @@ export const turmasDoProfessor = (turmas, turmaProfessores, professorId) => {
   return turmas.filter(turma => turmaIds.has(turma.id));
 };
 
-// Professores (+ disciplina) vinculados ATIVAMENTE a uma turma, direto de `turmaProfessores` —
-// mesma fonte única usada por `turmasDoProfessor`, sem cadastro manual paralelo. Usado para
-// derivar automaticamente "professores do aluno" a partir da turma (cadastro de aluno e Anamnese).
-export const professoresDaTurma = (turmaProfessores, professores, disciplinas, turmaId) => turmaProfessores
-  .filter(vinculo => vinculo.turmaId === turmaId && vinculo.status === 'ativo')
-  .map(vinculo => ({
-    professorId: vinculo.professorId,
-    professor: professores.find(item => item.id === vinculo.professorId),
-    disciplinaId: vinculo.disciplinaId,
-    disciplina: disciplinas.find(item => item.id === vinculo.disciplinaId),
-  }));
-
 export const diretoresDaEscola = (diretores, vinculosEscolares, escolaId, user) => {
   if (escolaId === null) return isSecretaria(user) ? diretores : [];
   const ids = vinculosEscolares.filter(v => v.usuarioTipo === 'diretora' && v.escolaId === escolaId && v.status === 'ativo').map(v => v.usuarioId);

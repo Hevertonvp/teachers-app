@@ -34,6 +34,13 @@ export const canManagePedagogico = (user) => PEDAGOGICO_MANAGE_ROLES.includes(us
 // canManagePedagogico, que continua sendo só Gestor/Secretaria.
 export const canViewPdiAlunos = (user) => canManagePedagogico(user) || isDiretora(user);
 
+// Consultar (nunca criar/editar/reabrir) a área real de Aplicações PDI — Gestor perde a gestão
+// que tinha sobre Aplicações mock (correção explícita pedida na migração de Aplicações/
+// Reaberturas PDI para o backend: só a Secretaria administra) e Diretora ganha acesso de
+// leitura, escopado às próprias escolas (backend aplica a mesma restrição; aqui é só o gate de
+// UI). Modelo PDI continua exclusivo da Secretaria — ver isSecretaria direto em FormularioPdiPage.
+export const canViewAplicacoesPdi = (user) => isSecretaria(user) || isGestor(user) || isDiretora(user);
+
 // Preencher (não gerenciar) os instrumentos pedagógicos — papel do Professor.
 export const canFillPedagogico = (user) => isProfessor(user);
 

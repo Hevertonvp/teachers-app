@@ -18,12 +18,13 @@ function exigirSecretaria(actor: Actor) {
   }
 }
 
-// LEITURA (GET) é a única exceção: Gestor também pode listar, porque a criação de Aplicação PDI
-// (ainda mock, gerenciável por Secretaria E Gestor — não mudou nesta tarefa) precisa saber quais
-// modelos estão ativos e suas perguntas para fazer o snapshot. Isso não é "administrar" o modelo
-// (nunca escreve nada aqui) — só consulta uma informação de que ela já precisava antes.
+// LEITURA (GET) também é exclusiva da Secretaria. A exceção que existia aqui para o Gestor (ele
+// precisava ler quais modelos estavam ativos para montar o snapshot de uma Aplicação no
+// frontend) deixou de fazer sentido: a criação de Aplicação PDI agora é um endpoint real do
+// backend (POST /api/pdi-aplicacoes) que lê os Modelos diretamente via Prisma, sem depender mais
+// desta rota — correção explícita pedida na tarefa de Aplicações/Reaberturas PDI (seção 1).
 function exigirLeituraModelos(actor: Actor) {
-  if (actor.perfil !== 'SECRETARIA' && actor.perfil !== 'GESTOR') {
+  if (actor.perfil !== 'SECRETARIA') {
     throw new ForbiddenError('Você não tem permissão para consultar Modelos PDI.');
   }
 }
@@ -66,9 +67,9 @@ pdiModelosRouter.get('/', async (req, res) => {
   exigirLeituraModelos(actor);
   const { disciplinaId, status } = req.query;
 
-  // Inclui perguntas sempre (não só no GET /:id) — o fluxo de Aplicações (ainda mock) precisa
-  // fazer snapshot das perguntas de todos os modelos ativos de uma vez ao criar uma aplicação;
-  // volume é pequeno (dezenas de perguntas por modelo), sem necessidade de endpoint separado.
+  // Inclui perguntas sempre (não só no GET /:id) — usado pela tela de gestão de Modelos da
+  // Secretaria, que sempre precisa ver as perguntas de cada modelo na mesma listagem; volume é
+  // pequeno (dezenas de perguntas por modelo), sem necessidade de endpoint separado.
   const modelos = await prisma.modeloPdi.findMany({
     where: {
       ...(disciplinaId ? { disciplinaId: Number(disciplinaId) } : {}),

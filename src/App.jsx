@@ -4,7 +4,6 @@ import { DataProvider } from './context/DataContext';
 import { EscolaProvider } from './context/EscolaContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { isAuxiliar, isDiretora, isGestor, isProfessor, isSecretaria } from './utils/roles';
-import { FormAvailabilityGate } from './components/FormAvailabilityGate';
 import { ProtectedRoute, PrimeiroAcessoRoute } from './routes/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { PrimeiroAcessoPage } from './pages/PrimeiroAcessoPage';
@@ -12,34 +11,21 @@ import { DashboardProfessor } from './pages/DashboardProfessor';
 import { DashboardGestor } from './pages/DashboardGestor';
 import { DashboardSecretaria } from './pages/DashboardSecretaria';
 import { DashboardDiretora } from './pages/DashboardDiretora';
-import { ListaPlanejamentos } from './pages/ListaPlanejamentos';
-import { ListaPlanejamentosGestor } from './pages/ListaPlanejamentosGestor';
-import { NovoPlanejamento } from './pages/NovoPlanejamento';
-import { VisualizarPlanejamento } from './pages/VisualizarPlanejamento';
-import { CalendarioPedagogico } from './pages/CalendarioPedagogico';
-import { ListaProfessores } from './pages/ListaProfessores';
 import { GestaoEscolas } from './pages/GestaoEscolas';
 import { GestaoPessoas } from './pages/GestaoPessoas';
 import { GestaoTurmas } from './pages/GestaoTurmas';
-import { AcompanhamentoEscolar } from './pages/AcompanhamentoEscolar';
-import { CriarFormularioUmTerco, FormularioUmTerco } from './pages/FormularioUmTerco';
 import { PdiHomePage } from './pages/PdiHomePage';
 import { MeusPdisPage } from './pages/MeusPdisPage';
 import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
 import { PdiPage } from './pages/PdiPage';
 import { PdiAlunoPerfil } from './pages/PdiAlunoPerfil';
-import { AcompanhamentoPdiPage } from './pages/AcompanhamentoPdiPage';
 import { AnamnesePage } from './pages/AnamnesePage';
+import { AnamneseModeloPage } from './pages/AnamneseModeloPage';
 import { MeusAlunosAuxiliarPage } from './pages/MeusAlunosAuxiliarPage';
 import { AuxiliarAlunoPerfilPage } from './pages/AuxiliarAlunoPerfilPage';
-import { CorrecoesSimulados } from './pages/CorrecoesSimulados';
-import { Pendencias } from './pages/Pendencias';
 import { PerfilPage } from './pages/PerfilPage';
-import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
-import { EventosPage } from './pages/EventosPage';
-import { NoticiasPage } from './pages/NoticiasPage';
-import { MensagensPage } from './pages/MensagensPage';
+import { EmConstrucaoPage } from './pages/EmConstrucaoPage';
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -52,40 +38,48 @@ const DashboardRouter = () => {
   return <Navigate to="/login" />;
 };
 
+// Nesta primeira entrega, só o PDI por disciplina (e a infraestrutura da qual ele depende —
+// Escolas/Turmas/Pessoas/vínculos) está liberado. Toda rota fora desse escopo continua existindo
+// (os links do menu continuam visíveis para todos os perfis), mas aponta para EmConstrucaoPage —
+// nunca renderiza a tela/mock antiga por trás dela.
 const AppRoutes = () => <Routes>
   <Route path="/login" element={<LoginPage />} />
   <Route path="/primeiro-acesso" element={<PrimeiroAcessoRoute><PrimeiroAcessoPage /></PrimeiroAcessoRoute>} />
   <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
-  <Route path="/formulario-um-terco" element={<ProtectedRoute><FormAvailabilityGate formId="formulario_um_terco"><FormularioUmTerco /></FormAvailabilityGate></ProtectedRoute>} />
-  <Route path="/formulario-um-terco/criar" element={<ProtectedRoute><CriarFormularioUmTerco /></ProtectedRoute>} />
   <Route path="/pdi" element={<ProtectedRoute><PdiHomePage /></ProtectedRoute>} />
   <Route path="/pdi/formulario" element={<ProtectedRoute><FormularioPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/meus-pdis" element={<ProtectedRoute><MeusPdisPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos" element={<ProtectedRoute><PdiPage /></ProtectedRoute>} />
-  <Route path="/pdi/acompanhamento" element={<ProtectedRoute><AcompanhamentoPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id" element={<ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute>} />
   <Route path="/pdi/fichas/:aplicacaoId/:disciplinaId/:alunoId" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id/anamnese" element={<ProtectedRoute><AnamnesePage /></ProtectedRoute>} />
+  <Route path="/pdi/anamnese-modelo" element={<ProtectedRoute><AnamneseModeloPage /></ProtectedRoute>} />
   <Route path="/meus-alunos" element={<ProtectedRoute><MeusAlunosAuxiliarPage /></ProtectedRoute>} />
   <Route path="/meus-alunos/:id" element={<ProtectedRoute><AuxiliarAlunoPerfilPage /></ProtectedRoute>} />
-  <Route path="/correcoes-simulados" element={<ProtectedRoute><FormAvailabilityGate formId="correcoes_simulados"><CorrecoesSimulados /></FormAvailabilityGate></ProtectedRoute>} />
-  <Route path="/pendencias" element={<ProtectedRoute><Pendencias /></ProtectedRoute>} />
-  <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
-  <Route path="/noticias" element={<ProtectedRoute><NoticiasPage /></ProtectedRoute>} />
-  <Route path="/mensagens" element={<ProtectedRoute><MensagensPage /></ProtectedRoute>} />
-  <Route path="/planejamentos" element={<ProtectedRoute><ListaPlanejamentos /></ProtectedRoute>} />
-  <Route path="/planejamentos-gestor" element={<ProtectedRoute><ListaPlanejamentosGestor /></ProtectedRoute>} />
-  <Route path="/novo-planejamento" element={<ProtectedRoute><NovoPlanejamento /></ProtectedRoute>} />
-  <Route path="/planejamento/:id" element={<ProtectedRoute><VisualizarPlanejamento /></ProtectedRoute>} />
-  <Route path="/calendario" element={<ProtectedRoute><CalendarioPedagogico /></ProtectedRoute>} />
-  <Route path="/gestao-professores" element={<ProtectedRoute><ListaProfessores /></ProtectedRoute>} />
   <Route path="/escolas" element={<ProtectedRoute><GestaoEscolas /></ProtectedRoute>} />
   <Route path="/turmas" element={<ProtectedRoute><GestaoTurmas /></ProtectedRoute>} />
   <Route path="/pessoas" element={<ProtectedRoute><GestaoPessoas /></ProtectedRoute>} />
-  <Route path="/acompanhamento-escolar" element={<ProtectedRoute><AcompanhamentoEscolar /></ProtectedRoute>} />
-  <Route path="/notificacoes-atraso" element={<ProtectedRoute><Pendencias /></ProtectedRoute>} />
   <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
-  <Route path="/configuracoes" element={<ProtectedRoute><ConfiguracoesPage /></ProtectedRoute>} />
+
+  {/* Fora do escopo desta entrega (só PDI) — "em construção" para todos os perfis. */}
+  <Route path="/formulario-um-terco" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/formulario-um-terco/criar" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/pdi/acompanhamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/correcoes-simulados" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/pendencias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/eventos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/noticias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/mensagens" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/planejamentos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/planejamentos-gestor" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/novo-planejamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/planejamento/:id" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/calendario" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/gestao-professores" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/acompanhamento-escolar" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/notificacoes-atraso" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/configuracoes" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+
   <Route path="/" element={<Navigate to="/dashboard" replace />} />
   <Route path="*" element={<Navigate to="/dashboard" replace />} />
 </Routes>;
