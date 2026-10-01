@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { isProfessor } from '../utils/roles';
 import { EscolaSelector } from './EscolaSelector';
+import { Logo } from './Logo';
 import { ProfessorName } from './ProfessorName';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,7 +40,7 @@ export const Header = ({ onMenuClick }) => {
           >
             ☰
           </button>
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">GP</div>
+          <Logo size={40} className="shrink-0" />
           <div className="hidden min-w-0 flex-1 sm:block">
             <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
             <p className="truncate text-xs text-slate-500">Rede Municipal de Ensino</p>
