@@ -51,15 +51,20 @@ const formatarPergunta = (pergunta: {
 
 const formatarModelo = (modelo: {
   id: number; nome: string; disciplinaId: number; status: string;
+  createdAt: Date; updatedAt: Date | null;
   disciplina: { nome: string };
   perguntas?: Parameters<typeof formatarPergunta>[0][];
+  usadoEmAplicacao?: boolean;
 }) => ({
   id: modelo.id,
   nome: modelo.nome,
   disciplinaId: modelo.disciplinaId,
   disciplinaNome: modelo.disciplina.nome,
   status: modelo.status,
+  createdAt: modelo.createdAt,
+  updatedAt: modelo.updatedAt,
   ...(modelo.perguntas ? { perguntas: modelo.perguntas.map(formatarPergunta).sort((a, b) => a.ordem - b.ordem) } : {}),
+  ...(modelo.usadoEmAplicacao !== undefined ? { usadoEmAplicacao: modelo.usadoEmAplicacao } : {}),
 });
 
 pdiModelosRouter.get('/', async (req, res) => {
@@ -79,7 +84,12 @@ pdiModelosRouter.get('/', async (req, res) => {
     orderBy: { nome: 'asc' },
   });
 
-  res.json(modelos.map((m) => formatarModelo(m)));
+  // Usado em alguma Aplicação (snapshot existe) — só informativo, para a tela de Histórico
+  // distinguir o que pode ser apagado fisicamente do que só pode ser arquivado (ver DELETE /:id).
+  const usos = await prisma.aplicacaoModeloPdi.groupBy({ by: ['modeloIdOriginal'], _count: true });
+  const usados = new Set(usos.map((u) => u.modeloIdOriginal));
+
+  res.json(modelos.map((m) => formatarModelo({ ...m, usadoEmAplicacao: usados.has(m.id) })));
 });
 
 pdiModelosRouter.get('/:id', async (req, res) => {
@@ -174,6 +184,33 @@ pdiModelosRouter.post('/:id/reativar', async (req, res) => {
 
   const atualizado = await prisma.modeloPdi.update({ where: { id }, data: { status: 'ATIVA', updatedBy: String(actor.id) } });
   res.json(formatarModelo({ ...atualizado, disciplina: atual.disciplina }));
+});
+
+// "Excluir" na UI — o comportamento real depende de uso histórico, decidido aqui no backend
+// (nunca confiar no frontend): nunca usado em nenhuma Aplicação (nenhum snapshot em
+// AplicacaoModeloPdi) → apaga fisicamente o Modelo e suas Perguntas; já usado → vira o mesmo
+// efeito de INATIVA de sempre (nunca apaga, histórico preservado), só que exposto como "Excluir"
+// porque o objetivo prático da Secretaria é tirar da área de trabalho, não reativar depois.
+pdiModelosRouter.delete('/:id', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const id = Number(req.params.id);
+  const atual = await buscarModelo(id);
+
+  const usos = await prisma.aplicacaoModeloPdi.count({ where: { modeloIdOriginal: id } });
+
+  if (usos === 0) {
+    await prisma.$transaction([
+      prisma.perguntaPdi.deleteMany({ where: { modeloId: id } }),
+      prisma.modeloPdi.delete({ where: { id } }),
+    ]);
+    return res.json({ removidoFisicamente: true, arquivado: false });
+  }
+
+  if (atual.status === 'ATIVA') {
+    await prisma.modeloPdi.update({ where: { id }, data: { status: 'INATIVA', updatedBy: String(actor.id) } });
+  }
+  res.json({ removidoFisicamente: false, arquivado: true });
 });
 
 const dadosPerguntaSchema = z.object({

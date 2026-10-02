@@ -4,7 +4,7 @@ import { listarDisciplinas } from '../services/disciplinas';
 import { criarTurma as criarTurmaApi, editarTurma, inativarTurmaApi, listarTurmas, reativarTurmaApi } from '../services/turmas';
 import { arquivarPdiAlunoReal, criarPdiAlunoReal, editarPdiAlunoReal, listarMeusAlunosAuxiliarReais, listarPdiAlunos, obterPdiAluno, reativarPdiAlunoReal } from '../services/pdiAlunos';
 import {
-  criarPdiModeloPerguntaReal, criarPdiModeloReal, editarPdiModeloPerguntaReal, inativarPdiModeloReal,
+  criarPdiModeloPerguntaReal, criarPdiModeloReal, editarPdiModeloPerguntaReal, excluirPdiModeloReal, inativarPdiModeloReal,
   inativarPdiPerguntaReal, listarPdiModelosReais, reativarPdiModeloReal, reativarPdiPerguntaReal,
   reordenarPdiModeloPerguntasReais,
 } from '../services/pdiModelos';
@@ -334,6 +334,22 @@ export const DataProvider = ({ children }) => {
   };
   const inativarPdiModelo = (id) => mudarStatusPdiModeloReal(id, false);
   const reativarPdiModeloReaisFn = (id) => mudarStatusPdiModeloReal(id, true);
+
+  // "Excluir" na UI: o backend decide se apaga fisicamente (nunca usado) ou arquiva (já usado em
+  // Aplicação) — nunca confiamos nisso no frontend, só refletimos o resultado que veio pronto.
+  const excluirPdiModelo = async (id) => {
+    try {
+      const resultado = await excluirPdiModeloReal(id);
+      if (resultado.removidoFisicamente) {
+        setPdiModelosReais(prev => prev.filter(item => item.id !== Number(id)));
+      } else {
+        setPdiModelosReais(prev => prev.map(item => (item.id === Number(id) ? { ...item, status: 'inativa' } : item)));
+      }
+      return { ok: true, ...resultado };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
 
   const atualizarPerguntaNoModelo = (modeloId, pergunta) => {
     setPdiModelosReais(prev => prev.map(modelo => (modelo.id === Number(modeloId)
@@ -1007,6 +1023,7 @@ export const DataProvider = ({ children }) => {
     createPdiModeloReal,
     inativarPdiModelo,
     reativarPdiModeloReal: reativarPdiModeloReaisFn,
+    excluirPdiModelo,
     createPdiModeloPerguntaReal: createPdiModeloPerguntaRealFn,
     updatePdiModeloPerguntaReal: updatePdiModeloPerguntaRealFn,
     inativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, false),

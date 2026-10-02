@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
-import { statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
+import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
 import { escolasPermitidas } from './pessoas.js';
 
 export const pdiAplicacoesRouter = Router();
@@ -32,6 +32,7 @@ const formatarAplicacao = (aplicacao: {
   id: number; escolaId: number; nome: string | null; dataInicio: Date; dataFim: Date;
   escola?: { nome: string };
   modelos?: { modeloIdOriginal: number; nome: string; disciplinaId: number; disciplinaNome: string }[];
+  reaberturas?: { dataInicio: Date; dataFim: Date }[];
 }) => ({
   id: aplicacao.id,
   escolaId: aplicacao.escolaId,
@@ -45,6 +46,15 @@ const formatarAplicacao = (aplicacao: {
   // GET /:id/snapshot, carregado à parte quando realmente precisar (seção 34 do pedido).
   ...(aplicacao.modelos ? {
     modelos: aplicacao.modelos.map((m) => ({ modeloId: m.modeloIdOriginal, nome: m.nome, disciplinaId: m.disciplinaId, disciplinaNome: m.disciplinaNome })),
+  } : {}),
+  // Calculado na hora a partir de ReaberturaPdi — nunca um status persistido novo (a tela principal
+  // de Aplicações usa isto pra saber se uma Aplicação ENCERRADA deve voltar a aparecer na visão
+  // operacional por ter uma janela de reabertura ativa agora; ver FormularioPdiPage.jsx).
+  ...(aplicacao.reaberturas ? {
+    reaberturaAtivaAgora: aplicacao.reaberturas.some((r) => {
+      const hoje = hojeComoData();
+      return hoje >= r.dataInicio && hoje <= r.dataFim;
+    }),
   } : {}),
 });
 
@@ -110,7 +120,11 @@ pdiAplicacoesRouter.get('/', async (req, res) => {
 
   const aplicacoes = await prisma.aplicacaoPdi.findMany({
     where,
-    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } } },
+    include: {
+      escola: true,
+      modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } },
+      reaberturas: { select: { dataInicio: true, dataFim: true } },
+    },
     orderBy: { dataInicio: 'desc' },
   });
   res.json(aplicacoes.map(formatarAplicacao));

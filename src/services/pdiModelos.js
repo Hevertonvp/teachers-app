@@ -44,6 +44,7 @@ export const obterPdiModeloReal = async (id) => normalizeModelo(await apiFetch(`
 export const criarPdiModeloReal = async (payload) => normalizeModelo(await apiFetch('/api/pdi-modelos', { method: 'POST', body: payload }));
 export const inativarPdiModeloReal = async (id) => normalizeModelo(await apiFetch(`/api/pdi-modelos/${id}/inativar`, { method: 'POST' }));
 export const reativarPdiModeloReal = async (id) => normalizeModelo(await apiFetch(`/api/pdi-modelos/${id}/reativar`, { method: 'POST' }));
+export const excluirPdiModeloReal = async (id) => apiFetch(`/api/pdi-modelos/${id}`, { method: 'DELETE' });
 
 export const criarPdiModeloPerguntaReal = async (modeloId, payload) => normalizePergunta(await apiFetch(`/api/pdi-modelos/${modeloId}/perguntas`, { method: 'POST', body: paraPayloadPergunta(payload) }));
 export const editarPdiModeloPerguntaReal = async (perguntaId, payload) => normalizePergunta(await apiFetch(`/api/pdi-perguntas/${perguntaId}`, { method: 'PUT', body: paraPayloadPergunta(payload) }));

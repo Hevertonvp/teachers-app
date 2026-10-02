@@ -54,11 +54,18 @@ const blankReabertura = (aplicacao) => ({ dataInicio: aplicacao.dataFim, dataFim
 
 const tabButtonClass = (active) => `rounded-lg px-4 py-2 text-sm font-semibold transition ${active ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
 
-const GRUPOS_APLICACAO = [
-  { status: 'active', titulo: 'Vigentes' },
+// Grupos da visão OPERACIONAL (tela principal) — nunca inclui Encerradas normais, que ficam só no
+// histórico (ver "Ver aplicações encerradas" abaixo). Uma Encerrada com Reabertura ativa agora
+// aparece aqui, sob "Reabertas" — o campo `status` dela continua 'expired' (vigência original),
+// só muda de onde ela é exibida; nenhum status novo é persistido (ver reaberturaAtivaAgora no
+// backend, calculado na hora a partir de ReaberturaPdi).
+const GRUPOS_APLICACAO_OPERACIONAIS = [
   { status: 'scheduled', titulo: 'Agendadas' },
-  { status: 'expired', titulo: 'Encerradas' },
+  { status: 'active', titulo: 'Vigentes' },
+  { status: 'expired', titulo: 'Reabertas' },
 ];
+
+const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
 export const FormularioPdiPage = () => {
   const { user } = useAuth();
@@ -67,7 +74,7 @@ export const FormularioPdiPage = () => {
     disciplinasReais, escolas,
     pdiModelosReais, pdiModelosReaisLoading, pdiModelosReaisError, loadPdiModelosReais,
     createPdiModeloReal, inativarPdiModelo, reativarPdiModeloReal,
-    createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal,
+    createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal, excluirPdiModelo,
     pdiAplicacoesReais, pdiAplicacoesReaisLoading, pdiAplicacoesReaisError, loadPdiAplicacoesReais,
     createPdiAplicacaoReal, updatePdiAplicacaoReal, listarReaberturasPdiAplicacao, criarReaberturaPdiAplicacao,
   } = useData();
@@ -87,6 +94,9 @@ export const FormularioPdiPage = () => {
   const [salvandoPergunta, setSalvandoPergunta] = useState(false);
   const [inativandoPergunta, setInativandoPergunta] = useState(null);
   const [mudandoStatusModelo, setMudandoStatusModelo] = useState(null);
+  const [excluindoModelo, setExcluindoModelo] = useState(null);
+  const [mostrarHistoricoModelos, setMostrarHistoricoModelos] = useState(false);
+  const [mostrarAplicacoesEncerradas, setMostrarAplicacoesEncerradas] = useState(false);
   const [aplicacaoForm, setAplicacaoForm] = useState(null);
   const [editingAplicacao, setEditingAplicacao] = useState(null);
   const [aplicacaoError, setAplicacaoError] = useState('');
@@ -112,15 +122,21 @@ export const FormularioPdiPage = () => {
 
   const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas).filter(escola => escola.status === 'ativa');
   const modelosAtivos = pdiModelosReais.filter(modelo => modelo.status === 'ativa');
+  // Histórico de Modelos (INATIVA) — nunca aparece na tela principal, só sob demanda (seção 4/16).
+  const modelosInativos = pdiModelosReais.filter(modelo => modelo.status === 'inativa');
   const disciplinasComModeloAtivo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
   const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !disciplinasComModeloAtivo.has(disciplina.id));
   const modeloSelecionado = pdiModelosReais.find(modelo => modelo.id === modeloEditandoId) || null;
   const perguntasDoModelo = modeloSelecionado ? [...(modeloSelecionado.perguntas || [])].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
   // `status` já vem calculado pelo backend com os mesmos 3 valores que formStatusLabel/
   // formStatusClasses esperam ('scheduled'/'active'/'expired') — nunca recalculado aqui.
+  // `operacional` decide só ONDE o item aparece (tela principal vs histórico de encerradas) — uma
+  // Encerrada com Reabertura ativa agora continua 'expired' no badge, só muda de seção.
   const aplicacoesComStatus = [...pdiAplicacoesReais]
     .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio))
-    .map(aplicacao => ({ aplicacao, status: aplicacao.status }));
+    .map(aplicacao => ({ aplicacao, status: aplicacao.status, operacional: aplicacao.status !== 'expired' || !!aplicacao.reaberturaAtivaAgora }));
+  const aplicacoesOperacionais = aplicacoesComStatus.filter(item => item.operacional);
+  const aplicacoesEncerradas = [...aplicacoesComStatus.filter(item => !item.operacional)].reverse();
 
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '' });
   const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); };
@@ -293,6 +309,63 @@ export const FormularioPdiPage = () => {
     setEditingAplicacao(null);
   };
 
+  // Linha de UMA Aplicação — reaproveitada tanto na visão operacional (Agendadas/Vigentes/
+  // Reabertas) quanto no Histórico de encerradas: as ações (Reabrir, Editar vigência, Histórico de
+  // reaberturas) continuam as mesmas nos dois lugares, "Reabrir" inclusive só faz sentido
+  // justamente sobre uma Aplicação já encerrada.
+  const renderAplicacaoItem = ({ aplicacao, status }) => (
+    <div key={aplicacao.id} className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-slate-900">{aplicacao.escolaNome || escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
+            <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
+            {aplicacao.reaberturaAtivaAgora && <Badge variant="blue">Reabertura ativa agora</Badge>}
+          </div>
+          <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {aplicacao.modelos.length === 0
+              ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
+              // Mostra o nome do modelo já snapshotado, nunca re-consulta disciplina por id: o
+              // snapshot é imutável e independente do Modelo/Disciplina vivos mudarem depois.
+              : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.nome}</Badge>)}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => toggleHistoricoReaberturas(aplicacao.id)}>
+            {aplicacaoExpandida === aplicacao.id ? 'Ocultar reaberturas' : 'Histórico de reaberturas'}
+          </Button>
+          {souSecretaria && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
+              <Button size="sm" onClick={() => abrirReabertura(aplicacao)}>Reabrir</Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {aplicacaoExpandida === aplicacao.id && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          {carregandoHistorico && !historicoReaberturas[aplicacao.id] ? (
+            <p className="text-sm text-slate-500">Carregando histórico...</p>
+          ) : (historicoReaberturas[aplicacao.id] || []).length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhuma reabertura registrada para esta aplicação.</p>
+          ) : (
+            <ul className="space-y-2">
+              {historicoReaberturas[aplicacao.id].map(reabertura => (
+                <li key={reabertura.id} className="text-sm text-slate-700">
+                  <span className="font-semibold">{formatFullDate(reabertura.dataInicio)} a {formatFullDate(reabertura.dataFim)}</span>
+                  {' — solicitado por '}{SOLICITADO_POR_OPTIONS.find(option => option.value === reabertura.solicitadoPorTipo)?.label || reabertura.solicitadoPorTipo}
+                  {reabertura.motivo && <span className="text-slate-500"> · {reabertura.motivo}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -342,7 +415,7 @@ export const FormularioPdiPage = () => {
                     <Button size="sm" onClick={() => setPerguntaForm(blankPergunta(perguntasDoModelo.length + 1))}>+ Adicionar item</Button>
                     <ActionMenu items={[
                       modeloSelecionado.status === 'ativa'
-                        ? { label: 'Inativar modelo', variant: 'danger', onClick: () => setMudandoStatusModelo({ modelo: modeloSelecionado, ativar: false }) }
+                        ? { label: 'Excluir modelo', variant: 'danger', onClick: () => setExcluindoModelo(modeloSelecionado) }
                         : { label: 'Reativar modelo', onClick: () => setMudandoStatusModelo({ modelo: modeloSelecionado, ativar: true }) },
                     ]} />
                   </div>
@@ -386,7 +459,14 @@ export const FormularioPdiPage = () => {
                     <h2 className="mt-1 text-xl font-bold text-slate-950">Formulários por disciplina</h2>
                     <p className="mt-1 text-sm text-slate-600">Configurado poucas vezes — normalmente só quando uma disciplina nova entra no PDI.</p>
                   </div>
-                  {pdiModelosReais.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    {modelosInativos.length > 0 && (
+                      <Button size="sm" variant="outline" onClick={() => setMostrarHistoricoModelos(prev => !prev)}>
+                        {mostrarHistoricoModelos ? 'Ocultar histórico' : `Ver histórico de modelos (${modelosInativos.length})`}
+                      </Button>
+                    )}
+                    {pdiModelosReais.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
+                  </div>
                 </div>
                 {disciplinasDisponiveis.length === 0 && pdiModelosReais.length > 0 && <p className="mt-2 text-xs text-slate-500">Todas as disciplinas cadastradas já possuem um modelo PDI ativo.</p>}
 
@@ -396,32 +476,54 @@ export const FormularioPdiPage = () => {
                       <Button size="sm" onClick={abrirNovoModelo}>+ Novo modelo</Button>
                     </EmptyState>
                   </div>
+                ) : modelosAtivos.length === 0 ? (
+                  <div className="mt-4">
+                    <EmptyState title="Nenhum modelo ativo no momento" description="Todos os modelos foram excluídos ou estão arquivados no histórico." />
+                  </div>
                 ) : (
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {pdiModelosReais.map(modelo => {
+                    {modelosAtivos.map(modelo => {
                       return (
                         <div key={modelo.id} className="flex flex-col justify-between rounded-xl border border-slate-200 p-4 transition hover:border-teal-300 hover:shadow-sm">
                           <div>
                             <div className="flex items-start justify-between gap-2">
                               <p className="text-sm font-bold uppercase tracking-wide text-slate-900">{modelo.disciplinaNome || 'Disciplina não encontrada'}</p>
                               <ActionMenu items={[
-                                modelo.status === 'ativa'
-                                  ? { label: 'Inativar modelo', variant: 'danger', onClick: () => setMudandoStatusModelo({ modelo, ativar: false }) }
-                                  : { label: 'Reativar modelo', onClick: () => setMudandoStatusModelo({ modelo, ativar: true }) },
+                                { label: 'Excluir modelo', variant: 'danger', onClick: () => setExcluindoModelo(modelo) },
                               ]} />
                             </div>
                             <p className="mt-0.5 text-sm text-slate-500">{modelo.nome}</p>
                             <p className="mt-3 text-sm text-slate-600">{modelo.perguntas.length} {modelo.perguntas.length === 1 ? 'item' : 'itens'}</p>
-                            {modelo.status === 'ativa' && (
-                              <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" /> Modelo ativo
-                              </p>
-                            )}
+                            <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" /> Modelo ativo
+                            </p>
                           </div>
                           <Button size="sm" variant="outline" className="mt-4 w-full" onClick={() => setModeloEditandoId(modelo.id)}>Editar modelo</Button>
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {mostrarHistoricoModelos && modelosInativos.length > 0 && (
+                  <div className="mt-6 border-t border-slate-200 pt-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Histórico de modelos</p>
+                    <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200">
+                      {modelosInativos.map(modelo => (
+                        <div key={modelo.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900">{modelo.disciplinaNome || 'Disciplina não encontrada'} — {modelo.nome}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Criado em {formatDateTime(modelo.createdAt)} · Última atualização: {formatDateTime(modelo.updatedAt)} · {modelo.usadoEmAplicacao ? 'Já usado em alguma Aplicação' : 'Nunca usado em nenhuma Aplicação'}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setModeloEditandoId(modelo.id)}>Ver</Button>
+                            <Button size="sm" onClick={() => setMudandoStatusModelo({ modelo, ativar: true })}>Reativar</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
@@ -437,10 +539,17 @@ export const FormularioPdiPage = () => {
                 <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Aplicações PDI</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Vigência por escola</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  {souSecretaria ? 'Em quais escolas existe ou existiu período de preenchimento de PDI.' : 'Consulta das aplicações PDI das suas escolas.'}
+                  {souSecretaria ? 'Agendadas e vigentes no momento — encerradas ficam no histórico, para não acumular na tela principal.' : 'Consulta das aplicações PDI das suas escolas.'}
                 </p>
               </div>
-              {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
+              <div className="flex shrink-0 flex-wrap gap-2">
+                {aplicacoesEncerradas.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setMostrarAplicacoesEncerradas(prev => !prev)}>
+                    {mostrarAplicacoesEncerradas ? 'Ocultar encerradas' : `Ver aplicações encerradas (${aplicacoesEncerradas.length})`}
+                  </Button>
+                )}
+                {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
+              </div>
             </div>
             {souSecretaria && modelosAtivos.length === 0 && <p className="mt-2 text-xs text-slate-500">Cadastre ao menos um modelo PDI ativo na aba Modelos antes de criar uma aplicação.</p>}
 
@@ -459,70 +568,35 @@ export const FormularioPdiPage = () => {
                   {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
                 </EmptyState>
               </div>
+            ) : aplicacoesOperacionais.length === 0 ? (
+              <div className="mt-4">
+                <EmptyState title="Nenhuma aplicação agendada ou vigente no momento" description={`Todas as ${aplicacoesEncerradas.length} aplicações existentes estão encerradas — consulte-as no histórico.`}>
+                  {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
+                </EmptyState>
+              </div>
             ) : (
               <div className="mt-4 space-y-6">
-                {GRUPOS_APLICACAO.map(grupo => {
-                  const itens = aplicacoesComStatus.filter(item => item.status === grupo.status);
+                {GRUPOS_APLICACAO_OPERACIONAIS.map(grupo => {
+                  const itens = aplicacoesOperacionais.filter(item => item.status === grupo.status);
                   if (itens.length === 0) return null;
                   return (
                     <div key={grupo.status}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{grupo.titulo}</p>
-                      <div className={`mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 ${grupo.status === 'expired' ? 'opacity-75' : ''}`}>
-                        {itens.map(({ aplicacao, status }) => (
-                          <div key={aplicacao.id} className="flex flex-col gap-3 p-4">
-                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className="font-semibold text-slate-900">{aplicacao.escolaNome || escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
-                                  <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
-                                </div>
-                                <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  {aplicacao.modelos.length === 0
-                                    ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
-                                    // Mostra o nome do modelo já snapshotado, nunca re-consulta disciplina por id: o
-                                    // snapshot é imutável e independente do Modelo/Disciplina vivos mudarem depois.
-                                    : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.nome}</Badge>)}
-                                </div>
-                              </div>
-                              <div className="flex shrink-0 flex-wrap items-center gap-2">
-                                <Button size="sm" variant="outline" onClick={() => toggleHistoricoReaberturas(aplicacao.id)}>
-                                  {aplicacaoExpandida === aplicacao.id ? 'Ocultar reaberturas' : 'Histórico de reaberturas'}
-                                </Button>
-                                {souSecretaria && (
-                                  <>
-                                    <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
-                                    <Button size="sm" onClick={() => abrirReabertura(aplicacao)}>Reabrir</Button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {aplicacaoExpandida === aplicacao.id && (
-                              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                                {carregandoHistorico && !historicoReaberturas[aplicacao.id] ? (
-                                  <p className="text-sm text-slate-500">Carregando histórico...</p>
-                                ) : (historicoReaberturas[aplicacao.id] || []).length === 0 ? (
-                                  <p className="text-sm text-slate-500">Nenhuma reabertura registrada para esta aplicação.</p>
-                                ) : (
-                                  <ul className="space-y-2">
-                                    {historicoReaberturas[aplicacao.id].map(reabertura => (
-                                      <li key={reabertura.id} className="text-sm text-slate-700">
-                                        <span className="font-semibold">{formatFullDate(reabertura.dataInicio)} a {formatFullDate(reabertura.dataFim)}</span>
-                                        {' — solicitado por '}{SOLICITADO_POR_OPTIONS.find(option => option.value === reabertura.solicitadoPorTipo)?.label || reabertura.solicitadoPorTipo}
-                                        {reabertura.motivo && <span className="text-slate-500"> · {reabertura.motivo}</span>}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                      <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200">
+                        {itens.map(renderAplicacaoItem)}
                       </div>
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {mostrarAplicacoesEncerradas && aplicacoesEncerradas.length > 0 && (
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Histórico de aplicações encerradas</p>
+                <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 opacity-75">
+                  {aplicacoesEncerradas.map(renderAplicacaoItem)}
+                </div>
               </div>
             )}
           </Card>
@@ -713,6 +787,24 @@ export const FormularioPdiPage = () => {
               setMudandoStatusModelo(null);
               const resultado = ativar ? await reativarPdiModeloReal(modelo.id) : await inativarPdiModelo(modelo.id);
               setMessage(resultado.ok ? `Modelo PDI ${ativar ? 'reativado' : 'inativado'} com sucesso.` : resultado.error);
+            }}
+          />
+        )}
+
+        {excluindoModelo && (
+          <ConfirmDialog
+            title="Excluir modelo PDI"
+            message={`Tem certeza que deseja excluir o modelo "${excluindoModelo.nome}"? Se ele nunca foi usado em nenhuma Aplicação, será removido definitivamente, junto com suas perguntas. Se já foi usado, ele some da tela principal e fica arquivado no Histórico de modelos — nenhuma Aplicação ou Ficha já criada é afetada.`}
+            confirmLabel="Excluir"
+            onCancel={() => setExcluindoModelo(null)}
+            onConfirm={async () => {
+              const modelo = excluindoModelo;
+              setExcluindoModelo(null);
+              if (modeloEditandoId === modelo.id) setModeloEditandoId(null);
+              const resultado = await excluirPdiModelo(modelo.id);
+              setMessage(resultado.ok
+                ? (resultado.removidoFisicamente ? 'Modelo excluído definitivamente — nunca havia sido usado em nenhuma Aplicação.' : 'Modelo removido da tela principal e arquivado no Histórico (já havia sido usado em alguma Aplicação).')
+                : resultado.error);
             }}
           />
         )}
