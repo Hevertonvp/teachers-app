@@ -27,6 +27,7 @@ import { MeusAlunosAuxiliarPage } from './pages/MeusAlunosAuxiliarPage';
 import { AuxiliarAlunoPerfilPage } from './pages/AuxiliarAlunoPerfilPage';
 import { PerfilPage } from './pages/PerfilPage';
 import { EmConstrucaoPage } from './pages/EmConstrucaoPage';
+import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -80,7 +81,7 @@ const AppRoutes = () => <Routes>
   <Route path="/gestao-professores" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/acompanhamento-escolar" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/notificacoes-atraso" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
-  <Route path="/configuracoes" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/configuracoes" element={<ProtectedRoute><ConfiguracoesPage /></ProtectedRoute>} />
 
   <Route path="/" element={<Navigate to="/dashboard" replace />} />
   <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -123,7 +123,11 @@ export const FormularioPdiPage = () => {
   const escolasAplicaveis = getEscolasAplicaveis(RECURSOS.PDI, escolas).filter(escola => escola.status === 'ativa');
   const modelosAtivos = pdiModelosReais.filter(modelo => modelo.status === 'ativa');
   // Histórico de Modelos (INATIVA) — nunca aparece na tela principal, só sob demanda (seção 4/16).
-  const modelosInativos = pdiModelosReais.filter(modelo => modelo.status === 'inativa');
+  // Nunca é limpo (é o próprio propósito do histórico) — por isso sem contador no botão (poderia
+  // chegar a centenas com o tempo) e sempre ordenado pela desativação mais recente primeiro.
+  const modelosInativos = pdiModelosReais
+    .filter(modelo => modelo.status === 'inativa')
+    .sort((a, b) => new Date(b.updatedAt ?? b.createdAt) - new Date(a.updatedAt ?? a.createdAt));
   const disciplinasComModeloAtivo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
   const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !disciplinasComModeloAtivo.has(disciplina.id));
   const modeloSelecionado = pdiModelosReais.find(modelo => modelo.id === modeloEditandoId) || null;
@@ -377,7 +381,6 @@ export const FormularioPdiPage = () => {
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
-            {souSecretaria && <Button variant="outline" onClick={() => navigate('/pdi/anamnese-modelo')}>Modelo de Anamnese</Button>}
             <Button variant="outline" onClick={() => navigate('/pdi')}>Concluir</Button>
           </div>
         </div>
@@ -462,7 +465,7 @@ export const FormularioPdiPage = () => {
                   <div className="flex shrink-0 flex-wrap gap-2">
                     {modelosInativos.length > 0 && (
                       <Button size="sm" variant="outline" onClick={() => setMostrarHistoricoModelos(prev => !prev)}>
-                        {mostrarHistoricoModelos ? 'Ocultar histórico' : `Ver histórico de modelos (${modelosInativos.length})`}
+                        {mostrarHistoricoModelos ? 'Ocultar histórico' : 'Ver histórico de modelos'}
                       </Button>
                     )}
                     {pdiModelosReais.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
