@@ -481,6 +481,106 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
   );
 };
 
+// Passo 2 do cadastro de professor: em vez de deixar turma/disciplina como ação solta e opcional
+// (causa raiz do cadastro "incompleto" — Pessoa + VinculoEscolar criados, zero
+// ProfessorTurmaDisciplina), o fluxo agora passa por cada escola selecionada, uma de cada vez,
+// pedindo turma(s)/disciplina(s) ali mesmo. A escola do passo já vem fixa (não é um campo
+// selecionável) — por construção é impossível escolher turma de uma escola diferente da do passo
+// atual. "Concluir depois" fecha sem forçar nada: o professor e os VinculoEscolar já foram
+// criados antes de abrir este wizard, então fechar cedo só adia o resto pro botão "Turmas e
+// disciplinas" de sempre, nunca perde o que já foi cadastrado.
+const VinculosWizardCriacaoProfessor = ({ professor, escolas, disciplinasReais, turmas, onFinish }) => {
+  const [indice, setIndice] = useState(0);
+  const [vinculosAdicionados, setVinculosAdicionados] = useState([]);
+  const [novoVinculo, setNovoVinculo] = useState({ turmaId: '', disciplinaId: disciplinasReais[0]?.id ?? '' });
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  const escolaAtual = escolas[indice];
+  const turmasDaEscola = turmas.filter(turma => turma.status === 'ativa' && turma.escolaId === escolaAtual.id);
+
+  useEffect(() => {
+    setNovoVinculo({ turmaId: turmasDaEscola[0]?.id ?? '', disciplinaId: disciplinasReais[0]?.id ?? '' });
+    setVinculosAdicionados([]);
+    setErro('');
+  }, [indice]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const adicionar = async (event) => {
+    event.preventDefault();
+    if (!novoVinculo.turmaId) return;
+    setSalvando(true);
+    setErro('');
+    try {
+      const criado = await criarVinculoProfessorTurmaDisciplina({ turmaId: Number(novoVinculo.turmaId), professorId: professor.id, disciplinaId: Number(novoVinculo.disciplinaId) });
+      setVinculosAdicionados(prev => [...prev, criado]);
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const remover = async (vinculo) => {
+    try {
+      await encerrarVinculoProfessorTurmaDisciplina(vinculo.id);
+      setVinculosAdicionados(prev => prev.filter(item => item.id !== vinculo.id));
+    } catch (error) {
+      setErro(error.message);
+    }
+  };
+
+  const ultimaEscola = indice === escolas.length - 1;
+
+  return (
+    <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onFinish}>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Escola {indice + 1} de {escolas.length}</p>
+          <p className="text-sm font-bold text-slate-900">{escolaAtual.nome}</p>
+        </div>
+
+        {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
+
+        {vinculosAdicionados.length > 0 && (
+          <div className="space-y-2">
+            {vinculosAdicionados.map(vinculo => (
+              <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+                <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
+                <Button size="sm" variant="outline" onClick={() => remover(vinculo)}>Remover</Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {turmasDaEscola.length === 0 ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Esta escola não tem turmas ativas cadastradas — pule e cadastre a turma antes de voltar aqui.</p>
+        ) : (
+          <form onSubmit={adicionar} className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-end">
+            <div className="flex-1"><FormField label="Turma">
+              <select className={inputClass} value={novoVinculo.turmaId} onChange={event => setNovoVinculo(prev => ({ ...prev, turmaId: event.target.value }))}>
+                {turmasDaEscola.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+              </select>
+            </FormField></div>
+            <div className="flex-1"><FormField label="Disciplina">
+              <select className={inputClass} value={novoVinculo.disciplinaId} onChange={event => setNovoVinculo(prev => ({ ...prev, disciplinaId: event.target.value }))}>
+                {disciplinasReais.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
+              </select>
+            </FormField></div>
+            <Button type="submit" size="sm" disabled={salvando}>{salvando ? 'Adicionando...' : '+ Adicionar'}</Button>
+          </form>
+        )}
+
+        <div className="flex justify-between gap-3 border-t border-slate-200 pt-4">
+          <Button type="button" variant="secondary" onClick={onFinish}>Concluir depois</Button>
+          <Button type="button" onClick={() => (ultimaEscola ? onFinish() : setIndice(prev => prev + 1))}>
+            {ultimaEscola ? 'Concluir cadastro' : 'Próxima escola →'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 // --- Professores (conta real, backend) ------------------------------------------------------
 // Único ponto do app onde uma nova PESSOA real (com login/JWT de verdade) é criada — Secretaria
 // em qualquer escola, Diretora só nas suas (checado de novo no backend, nunca só aqui). Ver
@@ -538,6 +638,7 @@ const ProfessoresReaisManager = ({ user }) => {
   const [form, setForm] = useState(null);
   const [formError, setFormError] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [wizardVinculos, setWizardVinculos] = useState(null);
   const [resultadoCriacao, setResultadoCriacao] = useState(null);
   const [resetando, setResetando] = useState(null);
   const [mudandoStatus, setMudandoStatus] = useState(null);
@@ -574,6 +675,9 @@ const ProfessoresReaisManager = ({ user }) => {
     }));
   };
 
+  // Cria a Pessoa + VinculoEscolar(es) e, em seguida, abre o wizard de turmas/disciplinas (uma
+  // escola por vez) em vez de ir direto pra senha temporária — a criação em si não muda, só o que
+  // acontece logo depois dela.
   const salvarCadastro = async (event) => {
     event.preventDefault();
     setFormError('');
@@ -587,14 +691,23 @@ const ProfessoresReaisManager = ({ user }) => {
         method: 'POST',
         body: { nome: form.nome || undefined, email: form.email, escolaIds: form.escolaIds },
       });
+      // form.escolaIds nunca é vazio aqui (validado acima), então escolasSelecionadas sempre tem
+      // ao menos uma escola pro wizard percorrer.
+      const escolasSelecionadas = minhasEscolas.filter(escola => form.escolaIds.includes(escola.id));
       fecharCadastro();
-      setResultadoCriacao(resultado);
       await carregar();
+      setWizardVinculos({ professor: resultado.pessoa, escolas: escolasSelecionadas, senha: resultado });
     } catch (error) {
       setFormError(error.message);
     } finally {
       setSalvando(false);
     }
+  };
+
+  const finalizarWizardVinculos = () => {
+    const { senha } = wizardVinculos;
+    setWizardVinculos(null);
+    setResultadoCriacao(senha);
   };
 
   const confirmarResetarSenha = async () => {
@@ -696,10 +809,20 @@ const ProfessoresReaisManager = ({ user }) => {
             </FormField>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
-              <Button type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
+              <Button type="submit" disabled={salvando}>{salvando ? 'Criando...' : 'Próximo →'}</Button>
             </div>
           </form>
         </Modal>
+      )}
+
+      {wizardVinculos && (
+        <VinculosWizardCriacaoProfessor
+          professor={wizardVinculos.professor}
+          escolas={wizardVinculos.escolas}
+          disciplinasReais={disciplinasReais}
+          turmas={turmas}
+          onFinish={finalizarWizardVinculos}
+        />
       )}
 
       {resultadoCriacao && (
