@@ -312,7 +312,17 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
   const [vinculos, setVinculos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
-  const [novoVinculo, setNovoVinculo] = useState({ turmaId: turmasDoProfessor[0]?.id ?? '', disciplinaId: disciplinasReais[0]?.id ?? '' });
+  // Escola escolhida primeiro, pra filtrar a lista de turmas — essencial quando o professor tem
+  // vínculo com mais de uma escola: turmas de nomes iguais ("6M1" etc.) existem em quase todas,
+  // então uma lista única misturando tudo (sem indicar a escola) deixava fácil vincular na turma
+  // errada sem perceber.
+  const escolaInicial = professor.escolas[0]?.id ?? '';
+  const [novoVinculo, setNovoVinculo] = useState({
+    escolaId: escolaInicial,
+    turmaId: turmasDoProfessor.find(turma => turma.escolaId === escolaInicial)?.id ?? '',
+    disciplinaId: disciplinasReais[0]?.id ?? '',
+  });
+  const turmasDaEscolaSelecionada = turmasDoProfessor.filter(turma => turma.escolaId === Number(novoVinculo.escolaId));
   const [ocupantesDaTurma, setOcupantesDaTurma] = useState([]);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
@@ -409,10 +419,24 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
           <form onSubmit={vincular} className="space-y-3 border-t border-slate-200 pt-4">
             <p className="text-sm font-semibold text-slate-700">Vincular a uma turma/disciplina</p>
             {erroForm && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erroForm}</div>}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <FormField label="Escola">
+                <select
+                  className={inputClass}
+                  value={novoVinculo.escolaId}
+                  onChange={event => {
+                    const escolaId = Number(event.target.value);
+                    const primeiraTurma = turmasDoProfessor.find(turma => turma.escolaId === escolaId);
+                    setNovoVinculo(prev => ({ ...prev, escolaId, turmaId: primeiraTurma?.id ?? '' }));
+                  }}
+                >
+                  {professor.escolas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                </select>
+              </FormField>
               <FormField label="Turma">
                 <select className={inputClass} value={novoVinculo.turmaId} onChange={event => setNovoVinculo(prev => ({ ...prev, turmaId: event.target.value }))}>
-                  {turmasDoProfessor.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+                  <option value="" disabled>{turmasDaEscolaSelecionada.length === 0 ? 'Nenhuma turma nesta escola' : 'Selecione'}</option>
+                  {turmasDaEscolaSelecionada.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
                 </select>
               </FormField>
               <FormField label="Disciplina">
@@ -426,7 +450,7 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
                 Atualmente, outro professor (#{conflitoComOutro.professorId}) leciona esta disciplina nesta turma — vincular aqui encerra o vínculo dele automaticamente.
               </p>
             )}
-            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando || !novoVinculo.turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
           </form>
         )}
 
@@ -743,7 +767,11 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
   const [vinculos, setVinculos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
-  const [turmaId, setTurmaId] = useState(turmasPermitidas[0]?.id ?? '');
+  // Mesmo cuidado de VinculosPedagogicosProfessorModal: escola escolhida primeiro, pra evitar
+  // vincular na turma "6M1" errada quando o Auxiliar tem mais de uma escola.
+  const [escolaId, setEscolaId] = useState(auxiliar.escolas[0]?.id ?? '');
+  const turmasDaEscolaSelecionada = turmasPermitidas.filter(turma => turma.escolaId === Number(escolaId));
+  const [turmaId, setTurmaId] = useState(turmasDaEscolaSelecionada[0]?.id ?? '');
   const [ocupanteDaTurma, setOcupanteDaTurma] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
@@ -837,17 +865,34 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
           <form onSubmit={vincular} className="space-y-3 border-t border-slate-200 pt-4">
             <p className="text-sm font-semibold text-slate-700">Vincular a uma turma</p>
             {erroForm && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erroForm}</div>}
-            <FormField label="Turma">
-              <select className={inputClass} value={turmaId} onChange={event => setTurmaId(event.target.value)}>
-                {turmasPermitidas.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
-              </select>
-            </FormField>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormField label="Escola">
+                <select
+                  className={inputClass}
+                  value={escolaId}
+                  onChange={event => {
+                    const novoEscolaId = Number(event.target.value);
+                    const primeiraTurma = turmasPermitidas.find(turma => turma.escolaId === novoEscolaId);
+                    setEscolaId(novoEscolaId);
+                    setTurmaId(primeiraTurma?.id ?? '');
+                  }}
+                >
+                  {auxiliar.escolas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Turma">
+                <select className={inputClass} value={turmaId} onChange={event => setTurmaId(event.target.value)}>
+                  <option value="" disabled>{turmasDaEscolaSelecionada.length === 0 ? 'Nenhuma turma nesta escola' : 'Selecione'}</option>
+                  {turmasDaEscolaSelecionada.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+                </select>
+              </FormField>
+            </div>
             {conflitoComOutro && (
               <p className="text-xs font-semibold text-amber-700">
                 Esta turma já tem um Auxiliar ativo — vincular aqui encerra o vínculo dele automaticamente.
               </p>
             )}
-            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando || !turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
           </form>
         )}
 
