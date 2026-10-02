@@ -328,7 +328,11 @@ export const AnamnesePage = () => {
 
               {souSecretaria && (
                 <div className="flex flex-wrap justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={criarNovaVersao} disabled={iniciando}>{iniciando ? 'Criando...' : 'Criar nova versão'}</Button>
+                  {/* Só faz sentido depois de concluída — o backend agora é idempotente e devolve a
+                      mesma versão em vez de criar outra enquanto ela não estiver concluída. */}
+                  {detalheAtual.anamnese.status === 'concluida' && (
+                    <Button type="button" variant="outline" onClick={criarNovaVersao} disabled={iniciando}>{iniciando ? 'Criando...' : 'Criar nova versão'}</Button>
+                  )}
                   {podeEditar && <Button type="button" onClick={concluir} disabled={concluindo || detalheAtual.anamnese.status === 'concluida'}>{detalheAtual.anamnese.status === 'concluida' ? 'Concluída' : concluindo ? 'Concluindo...' : 'Concluir Anamnese'}</Button>}
                 </div>
               )}

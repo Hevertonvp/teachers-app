@@ -200,16 +200,25 @@ const iniciarSchema = z.object({ alunoId: z.number().int() });
 // mesma operação por trás de "Iniciar Anamnese" e "Criar nova versão", só o rótulo na tela muda
 // conforme já existir ou não uma versão anterior). Sempre usa o Modelo ATIVO no momento; nunca
 // depende dele mudar depois (seção 21 — o vínculo com a versão imutável já é o suficiente).
+//
+// Idempotente: se já existe uma versão atual e ela NÃO está CONCLUIDA, devolve essa mesma versão
+// em vez de criar outra — "Criar nova versão" só faz sentido depois que a atual foi concluída,
+// senão duas chamadas (duplo clique, ou "Iniciar" seguido de "Criar nova versão" sobre uma versão
+// ainda em branco) empilhavam versões vazias indefinidamente.
 anamnesesRouter.post('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   if (actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria administra a Anamnese.');
   const { alunoId } = iniciarSchema.parse(req.body);
   const aluno = await buscarAluno(alunoId);
 
+  const ultima = await prisma.anamnese.findFirst({ where: { alunoId }, orderBy: { numeroVersao: 'desc' } });
+  if (ultima && ultima.status !== 'CONCLUIDA') {
+    return res.json(await montarDetalhe(ultima));
+  }
+
   const modeloAtivo = await prisma.modeloAnamnese.findFirst({ where: { status: 'ATIVA' } });
   if (!modeloAtivo) throw new ValidationError('Não existe nenhum Modelo de Anamnese ativo. Configure o modelo antes de iniciar uma Anamnese.');
 
-  const ultima = await prisma.anamnese.findFirst({ where: { alunoId }, orderBy: { numeroVersao: 'desc' } });
   const proximaVersao = (ultima?.numeroVersao ?? 0) + 1;
 
   const criada = await prisma.anamnese.create({
