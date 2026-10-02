@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal, OrderButtons } from '../components/Common';
+import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel } from '../components/PerguntaPdiFormModal';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
@@ -8,7 +9,6 @@ import { inputClass } from '../utils/display';
 import { CURRENT_DATE, formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
 import { canViewAplicacoesPdi, isSecretaria } from '../utils/roles';
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
-import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
 
 const SOLICITADO_POR_OPTIONS = [
   { value: 'secretaria', label: 'Secretaria' },
@@ -17,21 +17,6 @@ const SOLICITADO_POR_OPTIONS = [
   { value: 'professor', label: 'Professor' },
   { value: 'auxiliar', label: 'Auxiliar' },
 ];
-
-// Tipos de resposta disponíveis na edição de itens do modelo. Diferente do antigo
-// `perguntaTipoOptions` (utils/pdi.js), inclui 'numero' e 'orientacao' porque, aqui, TODO
-// item do modelo é editável — não há mais um conjunto restrito só para personalizadas.
-const TIPO_RESPOSTA_OPTIONS = [
-  { value: 'texto', label: 'Texto' },
-  { value: 'selecao', label: 'Seleção' },
-  { value: 'marcacao', label: 'Marcação' },
-  { value: 'numero', label: 'Número' },
-  { value: 'orientacao', label: 'Informativa (sem resposta)' },
-];
-
-const tipoLabel = (value) => TIPO_RESPOSTA_OPTIONS.find(option => option.value === value)?.label || value;
-
-const blankPergunta = (ordem) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, ordem, status: 'ativa' });
 
 // Troca a `ordem` entre a pergunta e a vizinha (-1 sobe, +1 desce) — a API real espera o par
 // completo {id, ordem} de tudo que muda, aplicado em transação (ver reordenarPdiModeloPerguntasReais).
@@ -142,7 +127,7 @@ export const FormularioPdiPage = () => {
   const aplicacoesOperacionais = aplicacoesComStatus.filter(item => item.operacional);
   const aplicacoesEncerradas = [...aplicacoesComStatus.filter(item => !item.operacional)].reverse();
 
-  const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '' });
+  const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '', carregarPerguntasPadrao: true });
   const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); };
   const abrirReabertura = (aplicacao) => { setReaberturaError(''); setReaberturaForm({ aplicacaoId: aplicacao.id, ...blankReabertura(aplicacao) }); };
 
@@ -194,7 +179,7 @@ export const FormularioPdiPage = () => {
     }
     const disciplina = disciplinasReais.find(item => item.id === Number(novoModeloForm.disciplinaId));
     setSalvandoModelo(true);
-    const resultado = await createPdiModeloReal({ nome: novoModeloForm.nome?.trim() || `PDI - ${disciplina?.nome}`, disciplinaId: Number(novoModeloForm.disciplinaId) });
+    const resultado = await createPdiModeloReal({ nome: novoModeloForm.nome?.trim() || `PDI - ${disciplina?.nome}`, disciplinaId: Number(novoModeloForm.disciplinaId), carregarPerguntasPadrao: novoModeloForm.carregarPerguntasPadrao });
     setSalvandoModelo(false);
     if (!resultado.ok) {
       setMessage(resultado.error);
@@ -204,24 +189,6 @@ export const FormularioPdiPage = () => {
     setModeloEditandoId(resultado.modelo.id);
     setNovoModeloForm(null);
     setMessage('Modelo PDI criado com sucesso.');
-  };
-
-  const changeTipoResposta = (tipoResposta) => {
-    setPerguntaForm(prev => ({
-      ...prev,
-      tipoResposta,
-      opcoes: tipoResposta === 'selecao' ? (prev.opcoes?.length ? prev.opcoes : ['', '']) : [],
-      complementar: (tipoResposta === 'texto' || tipoResposta === 'numero' || tipoResposta === 'orientacao') ? null : prev.complementar,
-    }));
-  };
-
-  const toggleComplementar = (habilitado) => {
-    setPerguntaForm(prev => ({
-      ...prev,
-      complementar: habilitado
-        ? { gatilho: prev.tipoResposta === 'marcacao' ? true : (prev.opcoes.find(opcao => opcao.trim()) || ''), label: prev.complementar?.label || '' }
-        : null,
-    }));
   };
 
   const salvarPergunta = async (event) => {
@@ -415,7 +382,7 @@ export const FormularioPdiPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={modeloSelecionado.status === 'ativa' ? 'green' : 'gray'}>{modeloSelecionado.status === 'ativa' ? 'Ativo' : 'Inativo'}</Badge>
-                    <Button size="sm" onClick={() => setPerguntaForm(blankPergunta(perguntasDoModelo.length + 1))}>+ Adicionar item</Button>
+                    <Button size="sm" onClick={() => setPerguntaForm(blankPerguntaPdi())}>+ Adicionar item</Button>
                     <ActionMenu items={[
                       modeloSelecionado.status === 'ativa'
                         ? { label: 'Excluir modelo', variant: 'danger', onClick: () => setExcluindoModelo(modeloSelecionado) }
@@ -431,7 +398,7 @@ export const FormularioPdiPage = () => {
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-900">{pergunta.codigo ? `${pergunta.codigo} — ${pergunta.pergunta}` : pergunta.pergunta}</p>
                         <p className="mt-1 truncate text-xs text-slate-500">
-                          {tipoLabel(pergunta.tipoResposta)}
+                          {tipoRespostaLabel(pergunta.tipoResposta)}
                           {pergunta.tipoResposta === 'selecao' && pergunta.opcoes?.length > 0 && ` • ${pergunta.opcoes.length} opções`}
                           {pergunta.secao && ` · ${pergunta.secao}${pergunta.subsecao ? ` › ${pergunta.subsecao}` : ''}`}
                           {pergunta.status !== 'ativa' && ' · Inativa'}
@@ -615,72 +582,29 @@ export const FormularioPdiPage = () => {
                 </select>
               </FormField>
               <FormField label="Nome do modelo (opcional)"><input className={inputClass} value={novoModeloForm.nome} onChange={event => setNovoModeloForm(prev => ({ ...prev, nome: event.target.value }))} placeholder="Ex.: PDI - Matemática" /></FormField>
-              <p className="text-xs text-slate-500">O modelo já nasce com o conjunto padrão de itens e abre direto para edição.</p>
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <input type="checkbox" checked={novoModeloForm.carregarPerguntasPadrao} onChange={event => setNovoModeloForm(prev => ({ ...prev, carregarPerguntasPadrao: event.target.checked }))} />
+                Carregar perguntas padrão
+              </label>
+              <p className="text-xs text-slate-500">
+                {novoModeloForm.carregarPerguntasPadrao
+                  ? 'O modelo já nasce com o conjunto padrão de itens (gerenciado em Configurações) e abre direto para edição.'
+                  : 'O modelo nasce vazio — você adiciona os itens manualmente depois de criar.'}
+              </p>
               <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)} disabled={salvandoModelo}>Cancelar</Button><Button type="submit" disabled={salvandoModelo}>{salvandoModelo ? 'Criando...' : 'Criar modelo'}</Button></div>
             </form>
           </Modal>
         )}
 
         {perguntaForm && (
-          <Modal title={perguntaForm.id ? 'Editar item' : 'Adicionar item'} onClose={() => setPerguntaForm(null)}>
-            <form onSubmit={salvarPergunta} className="space-y-4">
-              <FormField label="Tipo">
-                <select className={inputClass} value={perguntaForm.tipoResposta} onChange={event => changeTipoResposta(event.target.value)}>
-                  {TIPO_RESPOSTA_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </FormField>
-
-              <FormField label={perguntaForm.tipoResposta === 'orientacao' ? 'Conteúdo / orientação' : 'Pergunta / texto'}>
-                <textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={perguntaForm.pergunta} onChange={event => setPerguntaForm(prev => ({ ...prev, pergunta: event.target.value }))} onBlur={() => setPerguntaForm(prev => ({ ...prev, pergunta: aplicarAutoCorrecao(prev.pergunta) }))} required />
-              </FormField>
-
-              {perguntaForm.tipoResposta === 'selecao' && (
-                <FormField label="Opções">
-                  <div className="space-y-2">
-                    {perguntaForm.opcoes.map((opcao, index) => (
-                      <div key={index} className="flex gap-2">
-                        <input
-                          className={inputClass}
-                          value={opcao}
-                          onChange={event => setPerguntaForm(prev => ({ ...prev, opcoes: prev.opcoes.map((item, itemIndex) => (itemIndex === index ? event.target.value : item)) }))}
-                          placeholder={`Opção ${index + 1}`}
-                          required
-                        />
-                        <Button type="button" variant="outline" size="sm" disabled={perguntaForm.opcoes.length <= 2} onClick={() => setPerguntaForm(prev => ({ ...prev, opcoes: prev.opcoes.filter((_, itemIndex) => itemIndex !== index) }))}>Remover</Button>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => setPerguntaForm(prev => ({ ...prev, opcoes: [...prev.opcoes, ''] }))}>+ Adicionar opção</Button>
-                  </div>
-                </FormField>
-              )}
-
-              {(perguntaForm.tipoResposta === 'selecao' || perguntaForm.tipoResposta === 'marcacao') && (
-                <div className="rounded-lg border border-slate-200 p-4">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    <input type="checkbox" checked={!!perguntaForm.complementar} onChange={event => toggleComplementar(event.target.checked)} />
-                    Habilitar campo complementar de texto
-                  </label>
-                  {perguntaForm.complementar && (
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      {perguntaForm.tipoResposta === 'selecao' && (
-                        <FormField label="Quando a resposta for">
-                          <select className={inputClass} value={perguntaForm.complementar.gatilho} onChange={event => setPerguntaForm(prev => ({ ...prev, complementar: { ...prev.complementar, gatilho: event.target.value } }))}>
-                            {perguntaForm.opcoes.filter(Boolean).map(opcao => <option key={opcao} value={opcao}>{opcao}</option>)}
-                          </select>
-                        </FormField>
-                      )}
-                      {perguntaForm.tipoResposta === 'marcacao' && <p className="text-sm text-slate-600 md:col-span-1">Exibido quando a marcação estiver marcada.</p>}
-                      <FormField label="Texto exibido (ex.: Como?)"><input className={inputClass} value={perguntaForm.complementar.label} onChange={event => setPerguntaForm(prev => ({ ...prev, complementar: { ...prev.complementar, label: event.target.value } }))} required /></FormField>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <FormField label="Seção (agrupamento no formulário)"><input className={inputClass} value={perguntaForm.secao || ''} onChange={event => setPerguntaForm(prev => ({ ...prev, secao: event.target.value }))} placeholder="Ex.: Registro pedagógico" /></FormField>
-
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setPerguntaForm(null)} disabled={salvandoPergunta}>Cancelar</Button><Button type="submit" disabled={salvandoPergunta}>{salvandoPergunta ? 'Salvando...' : 'Salvar'}</Button></div>
-            </form>
-          </Modal>
+          <PerguntaPdiFormModal
+            title={perguntaForm.id ? 'Editar item' : 'Adicionar item'}
+            value={perguntaForm}
+            onChange={setPerguntaForm}
+            onSubmit={salvarPergunta}
+            onClose={() => setPerguntaForm(null)}
+            saving={salvandoPergunta}
+          />
         )}
 
         {aplicacaoForm && (

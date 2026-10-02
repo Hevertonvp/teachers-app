@@ -9,6 +9,10 @@ import {
   reordenarPdiModeloPerguntasReais,
 } from '../services/pdiModelos';
 import {
+  criarPdiPerguntaPadraoReal, editarPdiPerguntaPadraoReal, excluirPdiPerguntaPadraoReal, inativarPdiPerguntaPadraoReal,
+  listarPdiPerguntasPadraoReais, reativarPdiPerguntaPadraoReal, reordenarPdiPerguntasPadraoReais,
+} from '../services/pdiPerguntasPadrao';
+import {
   criarPdiAplicacaoReal, criarReaberturaPdiReal, editarPdiAplicacaoReal, listarPdiAplicacoesReais,
   listarReaberturasPdiReais, obterSnapshotPdiAplicacaoReal,
 } from '../services/pdiAplicacoes';
@@ -125,6 +129,11 @@ export const DataProvider = ({ children }) => {
   const [pdiModelosReais, setPdiModelosReais] = useState([]);
   const [pdiModelosReaisLoading, setPdiModelosReaisLoading] = useState(true);
   const [pdiModelosReaisError, setPdiModelosReaisError] = useState(null);
+  // Template GLOBAL de perguntas padrão (gerenciado em Configurações, ver ConfiguracoesPage.jsx) —
+  // mesmo padrão de carregamento sob demanda de pdiModelosReais.
+  const [pdiPerguntasPadraoReais, setPdiPerguntasPadraoReais] = useState([]);
+  const [pdiPerguntasPadraoReaisLoading, setPdiPerguntasPadraoReaisLoading] = useState(true);
+  const [pdiPerguntasPadraoReaisError, setPdiPerguntasPadraoReaisError] = useState(null);
   // Aplicação/Reabertura PDI real — mesmo padrão de pdiModelosReais (carregado só por
   // FormularioPdiPage.jsx, nunca automaticamente no login). O mock `pdiAplicacoes` (abaixo)
   // continua intacto: PdiAlunoPerfil/DashboardProfessor/FormularioPdiProfessor/MeusPdisPage/
@@ -391,6 +400,69 @@ export const DataProvider = ({ children }) => {
     try {
       const perguntas = await reordenarPdiModeloPerguntasReais(modeloId, ordens);
       setPdiModelosReais(prev => prev.map(modelo => (modelo.id === Number(modeloId) ? { ...modelo, perguntas } : modelo)));
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  // --- Template GLOBAL de perguntas padrão (Configurações) -----------------------------------
+  const loadPdiPerguntasPadraoReais = useCallback(async () => {
+    setPdiPerguntasPadraoReaisLoading(true);
+    setPdiPerguntasPadraoReaisError(null);
+    try {
+      setPdiPerguntasPadraoReais(await listarPdiPerguntasPadraoReais());
+    } catch (error) {
+      setPdiPerguntasPadraoReaisError(error.message);
+    } finally {
+      setPdiPerguntasPadraoReaisLoading(false);
+    }
+  }, []);
+
+  const criarPdiPerguntaPadrao = async (payload) => {
+    try {
+      const pergunta = await criarPdiPerguntaPadraoReal(payload);
+      setPdiPerguntasPadraoReais(prev => [...prev, pergunta]);
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const editarPdiPerguntaPadrao = async (id, payload) => {
+    try {
+      const pergunta = await editarPdiPerguntaPadraoReal(id, payload);
+      setPdiPerguntasPadraoReais(prev => prev.map(item => (item.id === Number(id) ? pergunta : item)));
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const mudarStatusPdiPerguntaPadrao = async (id, ativar) => {
+    try {
+      const pergunta = await (ativar ? reativarPdiPerguntaPadraoReal(id) : inativarPdiPerguntaPadraoReal(id));
+      setPdiPerguntasPadraoReais(prev => prev.map(item => (item.id === Number(id) ? pergunta : item)));
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const excluirPdiPerguntaPadrao = async (id) => {
+    try {
+      await excluirPdiPerguntaPadraoReal(id);
+      setPdiPerguntasPadraoReais(prev => prev.filter(item => item.id !== Number(id)));
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const reordenarPdiPerguntasPadrao = async (ordens) => {
+    try {
+      const perguntas = await reordenarPdiPerguntasPadraoReais(ordens);
+      setPdiPerguntasPadraoReais(perguntas);
       return { ok: true };
     } catch (error) {
       return { ok: false, error: error.message };
@@ -1028,6 +1100,16 @@ export const DataProvider = ({ children }) => {
     updatePdiModeloPerguntaReal: updatePdiModeloPerguntaRealFn,
     inativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, false),
     reativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, true),
+    pdiPerguntasPadraoReais,
+    pdiPerguntasPadraoReaisLoading,
+    pdiPerguntasPadraoReaisError,
+    loadPdiPerguntasPadraoReais,
+    criarPdiPerguntaPadrao,
+    editarPdiPerguntaPadrao,
+    inativarPdiPerguntaPadrao: (id) => mudarStatusPdiPerguntaPadrao(id, false),
+    reativarPdiPerguntaPadrao: (id) => mudarStatusPdiPerguntaPadrao(id, true),
+    excluirPdiPerguntaPadrao,
+    reordenarPdiPerguntasPadrao,
     reorderPdiModeloPerguntaReal,
     pdiAplicacoesReais,
     pdiAplicacoesReaisLoading,

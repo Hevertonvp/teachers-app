@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
-import { perguntasPadrao } from '../../domain/perguntasPdiPadrao.js';
 
 export const pdiModelosRouter = Router();
 export const pdiPerguntasRouter = Router();
@@ -106,12 +105,17 @@ pdiModelosRouter.get('/:id', async (req, res) => {
 const criarModeloSchema = z.object({
   nome: z.string().trim().min(1, 'Nome é obrigatório.'),
   disciplinaId: z.number().int(),
+  // Default true: preserva o comportamento de sempre (nenhuma tela existente que já chama este
+  // endpoint precisa mudar). Secretaria pode desmarcar e começar o modelo vazio.
+  carregarPerguntasPadrao: z.boolean().default(true),
 });
 
-// Cria o modelo e, na MESMA transação, as perguntas padrão (seção 17 do pedido) — nunca deixa o
-// modelo "pela metade" se a criação das perguntas falhar. A unicidade de "um ATIVO por
+// Cria o modelo e, na MESMA transação, as perguntas padrão (se `carregarPerguntasPadrao`) — nunca
+// deixa o modelo "pela metade" se a criação das perguntas falhar. A unicidade de "um ATIVO por
 // disciplina" é garantida pelo índice único parcial no Postgres (ver schema.prisma); checamos
-// antes aqui só para devolver uma mensagem clara em vez de um erro genérico de constraint.
+// antes aqui só para devolver uma mensagem clara em vez de um erro genérico de constraint. Fonte
+// das perguntas padrão é a tabela PerguntaPdiPadrao (editável pela Secretaria em Configurações),
+// nunca mais um array fixo no código — ver pdiPerguntasPadrao.ts.
 pdiModelosRouter.post('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
@@ -123,27 +127,33 @@ pdiModelosRouter.post('/', async (req, res) => {
   const existente = await prisma.modeloPdi.findFirst({ where: { disciplinaId: dados.disciplinaId, status: 'ATIVA' } });
   if (existente) throw new ConflictError('Já existe um modelo PDI ativo para esta disciplina.');
 
+  const perguntasPadrao = dados.carregarPerguntasPadrao
+    ? await prisma.perguntaPdiPadrao.findMany({ where: { status: 'ATIVA' }, orderBy: { ordem: 'asc' } })
+    : [];
+
   const criado = await prisma.$transaction(async (tx) => {
     const modelo = await tx.modeloPdi.create({
       data: { nome: dados.nome, disciplinaId: dados.disciplinaId, status: 'ATIVA', createdBy: String(actor.id) },
     });
-    await tx.perguntaPdi.createMany({
-      data: perguntasPadrao().map((pergunta, index) => ({
-        modeloId: modelo.id,
-        secao: pergunta.secao,
-        subsecao: pergunta.subsecao ?? null,
-        codigo: pergunta.codigo ?? null,
-        texto: pergunta.texto,
-        indicador: pergunta.indicador ?? null,
-        origem: pergunta.origem,
-        tipoResposta: pergunta.tipoResposta,
-        opcoes: pergunta.opcoes ?? [],
-        complementar: pergunta.complementar ?? undefined,
-        ordem: index + 1,
-        status: 'ATIVA',
-        createdBy: String(actor.id),
-      })),
-    });
+    if (perguntasPadrao.length > 0) {
+      await tx.perguntaPdi.createMany({
+        data: perguntasPadrao.map((pergunta, index) => ({
+          modeloId: modelo.id,
+          secao: pergunta.secao,
+          subsecao: pergunta.subsecao,
+          codigo: pergunta.codigo,
+          texto: pergunta.texto,
+          indicador: pergunta.indicador,
+          origem: pergunta.origem,
+          tipoResposta: pergunta.tipoResposta,
+          opcoes: pergunta.opcoes ?? [],
+          complementar: pergunta.complementar ?? undefined,
+          ordem: index + 1,
+          status: 'ATIVA',
+          createdBy: String(actor.id),
+        })),
+      });
+    }
     return modelo;
   });
 

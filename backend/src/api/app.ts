@@ -14,6 +14,7 @@ import { auxiliarTurmaRouter } from './routes/auxiliarTurma.js';
 import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
 import { pdiAlunosRouter } from './routes/pdiAlunos.js';
 import { pdiModelosRouter, pdiPerguntasRouter } from './routes/pdiModelos.js';
+import { pdiPerguntasPadraoRouter } from './routes/pdiPerguntasPadrao.js';
 import { pdiAplicacoesRouter } from './routes/pdiAplicacoes.js';
 import { pdiFichasRouter } from './routes/pdiFichas.js';
 import { anamneseModelosRouter, anamnesePerguntasRouter } from './routes/anamneseModelos.js';
@@ -55,6 +56,7 @@ export function createApp() {
   app.use('/api/pdi-alunos', pdiAlunosRouter);
   app.use('/api/pdi-modelos', pdiModelosRouter);
   app.use('/api/pdi-perguntas', pdiPerguntasRouter);
+  app.use('/api/pdi-perguntas-padrao', pdiPerguntasPadraoRouter);
   app.use('/api/pdi-aplicacoes', pdiAplicacoesRouter);
   app.use('/api/pdi-fichas', pdiFichasRouter);
   app.use('/api/anamnese-modelos', anamneseModelosRouter);

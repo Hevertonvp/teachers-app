@@ -414,6 +414,34 @@ model PerguntaPdi {
   @@map("perguntas_pdi")
 }
 
+// Template GLOBAL de perguntas padrão — fonte usada (opcionalmente) ao criar um ModeloPdi novo,
+// em qualquer disciplina (nunca específico de uma). Editável livremente pela Secretaria (CRUD
+// completo, incluindo hard delete: diferente de PerguntaPdi, nada no sistema referencia esta
+// tabela por FK — ela só é LIDA e COPIADA para dentro do ModeloPdi no momento da criação, nunca
+// mais depois — então não existe snapshot/histórico a proteger aqui).
+model PerguntaPdiPadrao {
+  id           Int               @id @default(autoincrement())
+  secao        String            @db.VarChar(100)
+  subsecao     String?           @db.VarChar(100)
+  codigo       String?           @db.VarChar(20)
+  texto        String            @db.Text
+  indicador    String?           @db.VarChar(100)
+  origem       OrigemPerguntaPdi
+  tipoResposta TipoRespostaPdi
+  opcoes       Json?
+  complementar Json?
+  ordem        Int
+  status       StatusRegistro    @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@index([ordem])
+  @@map("perguntas_pdi_padrao")
+}
+
 // Aplicação PDI pertence a UMA escola (nunca a uma disciplina) — define o período em que os
 // professores preenchem os formulários. Sem `status` de propósito: não existe cancelamento/
 // exclusão administrativa nesta etapa (o mock também nunca teve status explícito — vigência é
