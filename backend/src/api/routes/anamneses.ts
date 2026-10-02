@@ -183,6 +183,47 @@ anamnesesRouter.get('/aluno/:alunoId', async (req, res) => {
   });
 });
 
+// Alunos de UMA escola cuja Anamnese ainda não está concluída (nunca iniciada OU última versão
+// PENDENTE/EM_ANDAMENTO) — usado pelo card "Anamnese" da Home do PDI. Precisa vir ANTES de
+// GET /:id na definição das rotas, senão "pendentes" seria tratado como um :id. Só Secretaria
+// administra Anamnese (mesmo recorte das outras rotas de escrita/gestão aqui).
+anamnesesRouter.get('/pendentes', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  if (actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria administra a Anamnese.');
+  const { escolaId } = req.query;
+  if (!escolaId) throw new ValidationError('Informe escolaId.');
+  const escolaIdNum = Number(escolaId);
+
+  const alunos = await prisma.alunoPdi.findMany({
+    where: { status: 'ATIVO', turma: { escolaId: escolaIdNum } },
+    include: { turma: true },
+    orderBy: { nome: 'asc' },
+  });
+
+  const anamneses = await prisma.anamnese.findMany({
+    where: { alunoId: { in: alunos.map((a) => a.id) } },
+    orderBy: { numeroVersao: 'desc' },
+  });
+  const ultimaPorAluno = new Map<number, (typeof anamneses)[number]>();
+  for (const a of anamneses) {
+    if (!ultimaPorAluno.has(a.alunoId)) ultimaPorAluno.set(a.alunoId, a);
+  }
+
+  const pendentes = alunos.filter((aluno) => {
+    const ultima = ultimaPorAluno.get(aluno.id);
+    return !ultima || ultima.status !== 'CONCLUIDA';
+  });
+
+  res.json(pendentes.map((aluno) => ({
+    id: aluno.id,
+    nome: aluno.nome,
+    turmaId: aluno.turmaId,
+    turmaNome: aluno.turma.nome,
+    escolaId: aluno.turma.escolaId,
+    statusAnamnese: ultimaPorAluno.get(aluno.id)?.status ?? null,
+  })));
+});
+
 anamnesesRouter.get('/:id', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   const id = Number(req.params.id);

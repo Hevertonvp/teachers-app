@@ -65,6 +65,11 @@ export const obterHistoricoAnamneseReal = async (alunoId) => {
 
 export const obterAnamneseReal = async (id) => normalizeDetalhe(await apiFetch(`/api/anamneses/${id}`));
 
+export const listarAnamnesesPendentesReal = async (escolaId) => (await apiFetch(`/api/anamneses/pendentes?escolaId=${escolaId}`)).map((aluno) => ({
+  ...aluno,
+  statusAnamnese: aluno.statusAnamnese ? (STATUS_ANAMNESE_FROM_API[aluno.statusAnamnese] ?? aluno.statusAnamnese) : null,
+}));
+
 export const iniciarAnamneseReal = async (alunoId) => normalizeDetalhe(await apiFetch('/api/anamneses', {
   method: 'POST',
   body: { alunoId: Number(alunoId) },

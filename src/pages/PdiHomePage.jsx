@@ -6,7 +6,7 @@ import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { MainLayout } from '../layouts/Layouts';
 import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
-import { canManagePedagogico, isProfessor as isProfessorRole } from '../utils/roles';
+import { canManagePedagogico, isProfessor as isProfessorRole, isSecretaria } from '../utils/roles';
 import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 
 export const PdiHomePage = () => {
@@ -15,6 +15,7 @@ export const PdiHomePage = () => {
   const { activeEscolaId } = useEscola();
   const isGestor = canManagePedagogico(user);
   const isProfessorUser = isProfessorRole(user);
+  const souSecretaria = isSecretaria(user);
   const pdiAplicavel = activeEscolaId !== null && isEscolaAplicavel(RECURSOS.PDI, activeEscolaId);
 
   useEffect(() => { if (isGestor) loadPdiAplicacoesReais(); }, [isGestor, loadPdiAplicacoesReais]);
@@ -56,6 +57,21 @@ export const PdiHomePage = () => {
             </div>
           </Card>
 
+          {souSecretaria && (
+            <Card>
+              <div className="flex h-full flex-col justify-between gap-6">
+                <div>
+                  <p className="text-sm font-semibold text-teal-700">Perfil inicial do aluno</p>
+                  <h2 className="mt-2 text-2xl font-bold text-slate-950">Anamnese</h2>
+                  <p className="mt-2 text-sm text-slate-600">Configure as perguntas do modelo de Anamnese ou veja quais alunos da escola selecionada ainda não concluíram a deles.</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/pdi/anamnese-modelo"><Button variant="outline">Configurar modelo</Button></Link>
+                  <Link to="/pdi/anamnese/pendentes"><Button>Preencher anamnese</Button></Link>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
 
         {isGestor && aplicacoesDaEscola.length > 0 && <Card>

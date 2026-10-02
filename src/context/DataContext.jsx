@@ -15,7 +15,7 @@ import {
 import { concluirFichaReal, listarFichasPdiReais, listarMeusPdisReais, obterFichaReal, obterOuCriarFichaReal, salvarRespostasFichaReal } from '../services/pdiFichas';
 import {
   concluirAnamneseReal, criarAnamnesePerguntaReal, editarAnamnesePerguntaReal, iniciarAnamneseReal,
-  inativarAnamnesePerguntaReal, listarAnamneseModelosReais, obterAnamneseModeloReal, obterAnamneseReal,
+  inativarAnamnesePerguntaReal, listarAnamneseModelosReais, listarAnamnesesPendentesReal, obterAnamneseModeloReal, obterAnamneseReal,
   obterHistoricoAnamneseReal, reativarAnamnesePerguntaReal, reordenarAnamnesePerguntasReais, salvarAnamneseReal,
 } from '../services/anamnese';
 import {
@@ -584,6 +584,14 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const listarAnamnesesPendentes = async (escolaId) => {
+    try {
+      return { ok: true, alunos: await listarAnamnesesPendentesReal(escolaId) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   const iniciarAnamnese = async (alunoId) => {
     try {
       return { ok: true, ...(await iniciarAnamneseReal(alunoId)) };
@@ -1034,6 +1042,7 @@ export const DataProvider = ({ children }) => {
     reordenarAnamnesePerguntas,
     obterHistoricoAnamnese,
     obterAnamnese,
+    listarAnamnesesPendentes,
     iniciarAnamnese,
     salvarAnamnese,
     concluirAnamnese,
