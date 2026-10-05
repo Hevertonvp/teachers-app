@@ -20,6 +20,7 @@ import { pdiFichasRouter } from './routes/pdiFichas.js';
 import { anamneseModelosRouter, anamnesePerguntasRouter } from './routes/anamneseModelos.js';
 import { anamnesesRouter } from './routes/anamneses.js';
 import { mensagensRouter } from './routes/mensagens.js';
+import { notificacoesRouter } from './routes/notificacoes.js';
 
 export function createApp() {
   const app = express();
@@ -64,6 +65,7 @@ export function createApp() {
   app.use('/api/anamnese-perguntas', anamnesePerguntasRouter);
   app.use('/api/anamneses', anamnesesRouter);
   app.use('/api/mensagens', mensagensRouter);
+  app.use('/api/notificacoes', notificacoesRouter);
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 

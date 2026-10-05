@@ -216,6 +216,8 @@ model Pessoa {
   fichasComoResponsavel  FichaPdi[]                 @relation("FichaProfessorResponsavel")
   participacoesConversa  ParticipanteConversa[]
   mensagensEnviadas      Mensagem[]                 @relation("MensagemRemetente")
+  notificacoes           Notificacao[]
+  assinaturasPush        AssinaturaPush[]
 
   @@map("pessoas")
 }
@@ -890,4 +892,75 @@ model Mensagem {
 
   @@index([conversaId, createdAt])
   @@map("mensagens")
+}
+
+// --- Notificações / Web Push ------------------------------------------------------------------
+// Entidade PRÓPRIA, deliberadamente separada de Mensagem: notificação é o registro interno/
+// persistido de um evento do sistema (nova mensagem, prazo de PDI); Push é só um canal de entrega
+// best-effort dela. Nunca o inverso — nenhuma rota cria Mensagem a partir de Notificacao nem
+// reaproveita a tabela de Mensagem como histórico de notificação.
+
+enum TipoNotificacao {
+  NOVA_MENSAGEM
+  PDI_PRAZO_PROFESSOR
+  PDI_PRAZO_GESTOR
+}
+
+// Uma Notificação pertence sempre a UM destinatário (nunca em massa/genérica). `chaveIdempotencia`
+// é opcional (só eventos que precisam de dedupe automático a usam, hoje só os de prazo de PDI —
+// ver jobs/pdiPrazoJob.ts) e, quando presente, única: tentar criar a mesma chave de novo é
+// ignorado silenciosamente (P2002), nunca duplica. `metadata` guarda o contexto mínimo do evento
+// de origem (ex.: { conversaId } ou { aplicacaoId, marco }) só para depuração/rastreabilidade —
+// nunca é lido para decidir autorização (igual Mensagem/Ficha PDI: autorização é sempre recalculada
+// ao vivo a partir do estado atual, nunca de um campo congelado aqui).
+model Notificacao {
+  id             Int             @id @default(autoincrement())
+  destinatarioId Int
+  destinatario   Pessoa          @relation(fields: [destinatarioId], references: [id], onDelete: Restrict)
+  tipo           TipoNotificacao
+  titulo         String          @db.VarChar(200)
+  corpo          String          @db.Text
+
+  // Caminho interno do frontend (ex.: "/mensagens?conversa=123", "/pdi/meus-pdis") para onde um
+  // clique na notificação deve levar. Nulo = notificação sem destino clicável.
+  linkContexto String? @db.VarChar(200)
+  metadata     Json?
+
+  chaveIdempotencia String? @unique @db.VarChar(200)
+
+  lidaEm    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([destinatarioId, lidaEm])
+  @@index([destinatarioId, createdAt])
+  @@map("notificacoes")
+}
+
+enum StatusAssinaturaPush {
+  ATIVA
+  INATIVA
+}
+
+// Uma Pessoa pode ter várias assinaturas (celular, notebook, outro navegador) — nunca um único
+// token por Pessoa. `endpoint` é único GLOBALMENTE (não composto com pessoaId): é a identidade
+// real da assinatura Web Push naquele navegador/dispositivo. Reassinar o mesmo navegador sob outra
+// conta faz upsert por endpoint (reatribui pessoaId), nunca cria uma segunda linha apontando pro
+// mesmo dispositivo — evita Push vazar pra conta anterior de um dispositivo compartilhado/
+// reutilizado. Inativada (nunca apagada) quando o navegador reporta subscription expirada/inválida
+// (404/410 do serviço de push) — ver lib/webPush.ts.
+model AssinaturaPush {
+  id        Int                  @id @default(autoincrement())
+  pessoaId  Int
+  pessoa    Pessoa               @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  endpoint  String               @unique @db.Text
+  p256dh    String               @db.Text
+  auth      String               @db.Text
+  userAgent String?              @db.VarChar(300)
+  status    StatusAssinaturaPush @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([pessoaId, status])
+  @@map("assinaturas_push")
 }

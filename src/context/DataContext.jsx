@@ -50,6 +50,7 @@ import {
 } from '../data/pdiData';
 import { pdiSummary } from '../utils/pdi';
 import { contarNaoLidasReal } from '../services/mensagens';
+import { contarNotificacoesNaoLidasReal } from '../services/notificacoes';
 import { CURRENT_DATE } from '../utils/formAvailability';
 
 const DataContext = createContext();
@@ -153,6 +154,19 @@ export const DataProvider = ({ children }) => {
     try {
       const { total } = await contarNaoLidasReal();
       setMensagensNaoLidas(total);
+    } catch {
+      // Badge não é crítico — falha silenciosa aqui não deve quebrar o resto do app.
+    }
+  }, []);
+
+  // Central de Notificações — mesmo padrão de mensagensNaoLidas acima: só o contador global vive
+  // aqui (a lista em si é buscada sob demanda pelo sino em Header.jsx), recarregado no login, em
+  // "window focus" e quando o service worker avisa que chegou Push (sem polling — ver sw.js).
+  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
+  const loadNotificacoesNaoLidas = useCallback(async () => {
+    try {
+      const { total } = await contarNotificacoesNaoLidasReal();
+      setNotificacoesNaoLidas(total);
     } catch {
       // Badge não é crítico — falha silenciosa aqui não deve quebrar o resto do app.
     }
@@ -1162,6 +1176,8 @@ export const DataProvider = ({ children }) => {
     resumoPdi,
     mensagensNaoLidas,
     loadMensagensNaoLidas,
+    notificacoesNaoLidas,
+    loadNotificacoesNaoLidas,
     createFormulario: createItem(setFormularios),
     updateFormulario: updateItem(setFormularios),
     deleteFormulario: deleteItem(setFormularios),

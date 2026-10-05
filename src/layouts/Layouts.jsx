@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { InstallBanner } from '../components/InstallBanner';
 import { useAuth } from '../context/AuthContext';
 import { useEscola } from '../context/EscolaContext';
 import { isSecretaria } from '../utils/roles';
@@ -20,6 +21,7 @@ export const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-100">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
+      <InstallBanner />
       <div className="flex">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <main className="min-w-0 flex-1 p-4 pt-6 md:ml-64 md:p-8">

@@ -94,10 +94,11 @@ const NavIcon = ({ id, className = 'h-4.5 w-4.5' }) => (
 
 export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user } = useAuth();
-  const { mensagensNaoLidas, loadMensagensNaoLidas } = useData();
+  const { mensagensNaoLidas, loadMensagensNaoLidas, loadNotificacoesNaoLidas } = useData();
   const location = useLocation();
 
   useEffect(() => { if (user) loadMensagensNaoLidas(); }, [user, loadMensagensNaoLidas]);
+  useEffect(() => { if (user) loadNotificacoesNaoLidas(); }, [user, loadNotificacoesNaoLidas]);
 
   const menuProfessor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },

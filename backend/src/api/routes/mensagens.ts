@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { exigeVinculoEscolarProprio, podeConversar, podeEnviarEmMassa, type PerfilMensagem } from '../../domain/mensagens.js';
+import { textoNovaMensagem } from '../../domain/notificacoes.js';
+import { criarNotificacao } from '../../lib/notificacoes.js';
 
 export const mensagensRouter = Router();
 
@@ -168,6 +170,25 @@ mensagensRouter.post('/conversas', async (req, res) => {
     return resultado;
   });
 
+  // Notificação interna (+ Push best-effort) para CADA destinatário individualmente — mesmo em
+  // lote, cada um recebe a sua própria, ninguém sabe dos outros (seção 20 do pedido). Nunca para
+  // quem enviou (seção 19). Roda depois da transação principal já ter sido confirmada: uma falha
+  // aqui (criarNotificacao nunca lança) não pode desfazer nem atrasar o envio da Mensagem em si.
+  const remetente = await prisma.pessoa.findUnique({ where: { id: actor.id }, select: { nome: true } });
+  const { titulo, corpo } = textoNovaMensagem(remetente?.nome ?? 'alguém');
+  await Promise.all(
+    criadas.map((c) =>
+      criarNotificacao(prisma, {
+        destinatarioId: c.destinatarioId,
+        tipo: 'NOVA_MENSAGEM',
+        titulo,
+        corpo,
+        linkContexto: `/mensagens?conversa=${c.conversaId}`,
+        metadata: { conversaId: c.conversaId },
+      }),
+    ),
+  );
+
   res.status(201).json({ loteId, conversas: criadas });
 });
 
@@ -259,6 +280,21 @@ mensagensRouter.post('/conversas/:id/respostas', async (req, res) => {
     }
     return criada;
   });
+
+  // Resposta em thread também é "nova mensagem" (seção 19 do pedido) — notifica só o OUTRO
+  // participante, nunca quem acabou de responder.
+  if (outro) {
+    const remetente = await prisma.pessoa.findUnique({ where: { id: actor.id }, select: { nome: true } });
+    const { titulo, corpo } = textoNovaMensagem(remetente?.nome ?? 'alguém');
+    await criarNotificacao(prisma, {
+      destinatarioId: outro.pessoaId,
+      tipo: 'NOVA_MENSAGEM',
+      titulo,
+      corpo,
+      linkContexto: `/mensagens?conversa=${conversaId}`,
+      metadata: { conversaId },
+    });
+  }
 
   res.status(201).json(formatarMensagem(mensagem));
 });

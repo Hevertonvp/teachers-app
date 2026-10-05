@@ -1,9 +1,13 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { useTheme } from '../context/ThemeContext';
 import { isProfessor } from '../utils/roles';
 import { EscolaSelector } from './EscolaSelector';
 import { Logo } from './Logo';
 import { ProfessorName } from './ProfessorName';
+import { NotificacoesBell } from './NotificacoesBell';
+import { InstalarAppModal } from './InstalarAppModal';
 import { useNavigate } from 'react-router-dom';
 
 // Rótulo exibido do tipo de conta logada — nomes de cargo valem para os dois gêneros.
@@ -18,12 +22,34 @@ const TIPO_LABEL = {
 export const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { loadNotificacoesNaoLidas } = useData();
   const navigate = useNavigate();
+  const [instalarAberto, setInstalarAberto] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // Atualiza o badge da Central sem polling/WebSocket (seção 39/40 do pedido): ao voltar o foco
+  // pra aba, e quando o service worker avisa que um Push acabou de chegar (ver sw.js).
+  useEffect(() => {
+    if (!user) return undefined;
+    const aoFocar = () => loadNotificacoesNaoLidas();
+    const aoReceberMensagemDoSW = (event) => {
+      if (event.data?.type === 'nova-notificacao') loadNotificacoesNaoLidas();
+      if (event.data?.type === 'navegar-notificacao' && event.data.url) {
+        const hash = new URL(event.data.url).hash.slice(1);
+        if (hash) navigate(hash);
+      }
+    };
+    window.addEventListener('focus', aoFocar);
+    navigator.serviceWorker?.addEventListener('message', aoReceberMensagemDoSW);
+    return () => {
+      window.removeEventListener('focus', aoFocar);
+      navigator.serviceWorker?.removeEventListener('message', aoReceberMensagemDoSW);
+    };
+  }, [user, loadNotificacoesNaoLidas, navigate]);
 
   return (
     <header
@@ -49,6 +75,19 @@ export const Header = ({ onMenuClick }) => {
         
         <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <EscolaSelector />
+          <NotificacoesBell />
+          <button
+            type="button"
+            onClick={() => setInstalarAberto(true)}
+            aria-label="Instalar aplicativo"
+            title="Instalar aplicativo"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-slate-600 transition hover:bg-slate-100"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+              <path d="M10 2a1 1 0 011 1v8.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V3a1 1 0 011-1z" />
+              <path d="M4 15a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
+            </svg>
+          </button>
           <button
             type="button"
             onClick={toggleTheme}
@@ -85,6 +124,7 @@ export const Header = ({ onMenuClick }) => {
           </button>
         </div>
       </div>
+      {instalarAberto && <InstalarAppModal onClose={() => setInstalarAberto(false)} />}
     </header>
   );
 };

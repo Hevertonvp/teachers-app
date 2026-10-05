@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -38,6 +39,7 @@ const BotaoAnexo = () => {
 export const MensagensPage = () => {
   const { user } = useAuth();
   const { loadMensagensNaoLidas } = useData();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [tab, setTab] = useState('entrada');
   const [conversas, setConversas] = useState([]);
@@ -90,6 +92,17 @@ export const MensagensPage = () => {
       setSelectedId(null);
     }
   };
+
+  // Clique numa notificação de "nova mensagem" leva direto pra conversa (seção 12 do pedido) —
+  // link vem como /mensagens?conversa=ID. Limpa o parâmetro depois de abrir pra não reabrir ao
+  // navegar de volta pra esta página.
+  useEffect(() => {
+    const conversaId = searchParams.get('conversa');
+    if (!conversaId) return;
+    abrirConversa(Number(conversaId));
+    setSearchParams((prev) => { prev.delete('conversa'); return prev; }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const enviarResposta = async (event) => {
     event.preventDefault();
