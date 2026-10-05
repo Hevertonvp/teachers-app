@@ -25,7 +25,7 @@ export const InstalarAppModal = ({ onClose }) => {
 
   return (
     <Modal title="Instalar aplicativo" onClose={onClose}>
-      <div className="space-y-6">
+      <div className="space-y-6 break-words">
         <section>
           <h3 className="text-sm font-bold text-slate-900">Instalar na tela inicial</h3>
           {instalado ? (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ProfessorName } from './ProfessorName';
 
@@ -131,19 +132,30 @@ export const Modal = ({ title, children, onClose }) => {
     return () => document.removeEventListener('keydown', aoPressionarTecla);
   }, [onClose]);
 
-  return (
+  // O OVERLAY inteiro rola (não um max-height mágico no cartão — vh/dvh/% de altura se mostraram
+  // pouco confiáveis em navegador mobile/headless, deixando o cartão maior que a tela com o topo
+  // empurrado pra fora, inalcançável). O cabeçalho fica `sticky top-0` DENTRO do cartão: rolando o
+  // overlay, ele gruda no topo da área visível — o botão × nunca fica inacessível.
+  //
+  // createPortal pro <body>: um Modal aberto de dentro do <header> (que usa backdrop-blur) ficava
+  // com o `position: fixed` relativo ao PRÓPRIO header (backdrop-filter cria novo containing block
+  // pra elementos fixed, igual filter/transform) em vez da tela inteira — o modal nascia espremido
+  // dentro dos ~64px de altura do header, com o × praticamente inalcançável. Renderizar direto no
+  // body contorna esse problema (e qualquer outro ancestral com transform/filter no futuro).
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4"
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="rounded-lg px-3 py-1 text-slate-500 hover:bg-slate-100" aria-label="Fechar">×</button>
+      <div className="mx-auto my-8 w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-slate-200 bg-white px-6 py-4">
+          <h2 className="break-words text-lg font-bold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="shrink-0 rounded-lg px-3 py-1 text-slate-500 hover:bg-slate-100" aria-label="Fechar">×</button>
         </div>
         <div className="p-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
