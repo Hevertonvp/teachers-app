@@ -93,6 +93,7 @@ export const FormularioPdiPage = () => {
   const [aplicacaoExpandida, setAplicacaoExpandida] = useState(null);
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [message, setMessage] = useState('');
+  const [buscaEscolaAplicacao, setBuscaEscolaAplicacao] = useState('');
 
   // Modelos só é carregado para quem administra (Secretaria) — o backend recusa leitura de
   // Modelos pra qualquer outro perfil desde esta tarefa (a criação de Aplicação passou a
@@ -128,7 +129,7 @@ export const FormularioPdiPage = () => {
   const aplicacoesEncerradas = [...aplicacoesComStatus.filter(item => !item.operacional)].reverse();
 
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '', carregarPerguntasPadrao: true });
-  const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); };
+  const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); setBuscaEscolaAplicacao(''); };
   const abrirReabertura = (aplicacao) => { setReaberturaError(''); setReaberturaForm({ aplicacaoId: aplicacao.id, ...blankReabertura(aplicacao) }); };
 
   const toggleHistoricoReaberturas = async (aplicacaoId) => {
@@ -515,7 +516,7 @@ export const FormularioPdiPage = () => {
               <div className="flex shrink-0 flex-wrap gap-2">
                 {aplicacoesEncerradas.length > 0 && (
                   <Button size="sm" variant="outline" onClick={() => setMostrarAplicacoesEncerradas(prev => !prev)}>
-                    {mostrarAplicacoesEncerradas ? 'Ocultar encerradas' : `Ver aplicações encerradas (${aplicacoesEncerradas.length})`}
+                    {mostrarAplicacoesEncerradas ? 'Ocultar encerradas' : 'Ver aplicações encerradas'}
                   </Button>
                 )}
                 {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
@@ -630,8 +631,12 @@ export const FormularioPdiPage = () => {
                       Todas as escolas ({escolasAplicaveis.length})
                     </label>
                     {!aplicacaoForm.todasEscolas && (
-                      <div className="grid max-h-48 gap-1.5 overflow-y-auto border-t border-slate-100 pt-2 sm:grid-cols-2">
-                        {escolasAplicaveis.map(escola => (
+                      <div className="border-t border-slate-100 pt-2">
+                        {escolasAplicaveis.length > 6 && (
+                          <input className={`${inputClass} mb-2`} value={buscaEscolaAplicacao} onChange={event => setBuscaEscolaAplicacao(event.target.value)} placeholder="Buscar escola..." />
+                        )}
+                        <div className="grid max-h-48 gap-1.5 overflow-y-auto sm:grid-cols-2">
+                        {escolasAplicaveis.filter(escola => escola.nome.toLowerCase().includes(buscaEscolaAplicacao.toLowerCase())).map(escola => (
                           <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
                             <input
                               type="checkbox"
@@ -644,6 +649,7 @@ export const FormularioPdiPage = () => {
                             {escola.nome}
                           </label>
                         ))}
+                        </div>
                       </div>
                     )}
                   </div>

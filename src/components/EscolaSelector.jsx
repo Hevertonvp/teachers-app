@@ -7,12 +7,14 @@ export const EscolaSelector = () => {
   const { user } = useAuth();
   const { userEscolas, activeEscolaId, setActiveEscolaId, setExplicitBatchSelection } = useEscola();
   const [open, setOpen] = useState(false);
+  const [busca, setBusca] = useState('');
   const containerRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setOpen(false);
+        setBusca('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -28,11 +30,15 @@ export const EscolaSelector = () => {
 
   const options = isSecretaria(user) ? [{ id: null, nome: 'Todas as escolas' }, ...userEscolas] : userEscolas;
   const selected = options.find(option => option.id === activeEscolaId) ?? options[0];
+  // Busca só filtra a exibição — "Todas as escolas" sempre aparece, mesmo com texto digitado,
+  // pra não esconder a opção agregada atrás de um filtro de nome.
+  const optionsFiltradas = options.filter(option => option.id === null || option.nome.toLowerCase().includes(busca.toLowerCase()));
 
   const select = (id) => {
     setActiveEscolaId(id);
     setExplicitBatchSelection(id === null);
     setOpen(false);
+    setBusca('');
   };
 
   return (
@@ -61,7 +67,18 @@ export const EscolaSelector = () => {
           open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
         }`}
       >
-        {options.map(option => (
+        {options.length > 6 && (
+          <input
+            type="text"
+            value={busca}
+            onChange={event => setBusca(event.target.value)}
+            placeholder="Buscar escola..."
+            className="mb-1.5 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+            onClick={event => event.stopPropagation()}
+          />
+        )}
+        {optionsFiltradas.length === 0 && <p className="px-3 py-2 text-sm text-slate-500">Nenhuma escola encontrada.</p>}
+        {optionsFiltradas.map(option => (
           <button
             key={option.id ?? 'todas'}
             type="button"

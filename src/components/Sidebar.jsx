@@ -1,8 +1,8 @@
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { isAuxiliar, isDiretora, isProfessor, isSecretaria } from '../utils/roles';
-import { identityKey } from '../utils/mensagens';
 
 // Ícones de linha simples (sem biblioteca externa) para o menu lateral — mesmo padrão de svg
 // inline já usado em EscolaSelector/Header (viewBox 24, stroke currentColor). Um id por item de
@@ -94,9 +94,10 @@ const NavIcon = ({ id, className = 'h-4.5 w-4.5' }) => (
 
 export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user } = useAuth();
-  const { mensagens } = useData();
+  const { mensagensNaoLidas, loadMensagensNaoLidas } = useData();
   const location = useLocation();
-  const unreadCount = mensagens.filter(message => identityKey(message.destinatarioTipo, message.destinatarioId) === identityKey(user?.tipo, user?.id) && !message.lidaEm).length;
+
+  useEffect(() => { if (user) loadMensagensNaoLidas(); }, [user, loadMensagensNaoLidas]);
 
   const menuProfessor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
@@ -143,6 +144,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   // administrativos de outros perfis.
   const menuAuxiliar = [
     { name: 'Meus alunos', path: '/meus-alunos', icon: 'pessoas' },
+    { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
   ];
 
   const menu = isProfessor(user) ? menuProfessor
@@ -150,7 +152,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     : isDiretora(user) ? menuDiretora
     : isAuxiliar(user) ? menuAuxiliar
     : menuGestor;
-  const menuWithUnread = menu.map(item => item.path === '/mensagens' ? { ...item, badge: unreadCount } : item);
+  const menuWithUnread = menu.map(item => item.path === '/mensagens' ? { ...item, badge: mensagensNaoLidas } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'perfil' }, { name: 'Configurações', path: '/configuracoes', icon: 'configuracoes' }];
 
   const renderLink = (item) => {

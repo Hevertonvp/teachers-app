@@ -1041,16 +1041,3 @@ export const notificacoesAtraso = [
   { id: 3, professorId: 6, formulario: 'PDI', diasAtraso: 1, prazo: '2026-08-10', descricao: 'Acompanhamento individual precisa ser atualizado.' },
 ];
 
-// remetenteTipo+remetenteId / destinatarioTipo+destinatarioId são uma FK polimórfica (tipo+id
-// em vez de uma referência única) — funciona no mock, mas um banco relacional não valida isso
-// nativamente. Futuramente, com a separação usuario.id / perfil.id já existente em
-// AuthContext.jsx (ver `usuarioId`), remetente/destinatário devem passar a referenciar
-// usuarios.id diretamente, uma FK só, em vez de depender do par tipo+id.
-export const mensagensIniciais = [
-  { id: 1, remetenteTipo: 'secretaria', remetenteId: 1, destinatarioTipo: 'diretora', destinatarioId: 1, escolaId: 1, assunto: 'Reunião de alinhamento', corpo: 'Precisamos alinhar o calendário pedagógico da escola.', enviadaEm: '2026-09-15T09:00:00.000Z', lidaEm: null, respondendoA: null },
-  { id: 2, remetenteTipo: 'diretora', remetenteId: 1, destinatarioTipo: 'secretaria', destinatarioId: 1, escolaId: 1, assunto: 'Confirmação de reunião', corpo: 'Confirmo a participação da escola no alinhamento.', enviadaEm: '2026-09-15T10:30:00.000Z', lidaEm: '2026-09-15T11:00:00.000Z', respondendoA: 1 },
-  { id: 3, remetenteTipo: 'diretora', remetenteId: 1, destinatarioTipo: 'gestor', destinatarioId: 1, escolaId: 1, assunto: 'Acompanhamento semanal', corpo: 'Envie o resumo agregado da semana até sexta-feira.', enviadaEm: '2026-09-15T13:00:00.000Z', lidaEm: null, respondendoA: null },
-  { id: 4, remetenteTipo: 'gestor', remetenteId: 1, destinatarioTipo: 'diretora', destinatarioId: 1, escolaId: 1, assunto: 'Resumo semanal', corpo: 'O acompanhamento da escola está dentro do prazo previsto.', enviadaEm: '2026-09-15T14:00:00.000Z', lidaEm: null, respondendoA: 3 },
-  { id: 5, remetenteTipo: 'gestor', remetenteId: 1, destinatarioTipo: 'professor', destinatarioId: 5, escolaId: 1, assunto: 'Prazo do formulário', corpo: 'Lembrete sobre o prazo do Formulário 1/3 desta escola.', enviadaEm: '2026-09-16T08:00:00.000Z', lidaEm: null, respondendoA: null },
-  { id: 6, remetenteTipo: 'professor', remetenteId: 5, destinatarioTipo: 'gestor', destinatarioId: 1, escolaId: 1, assunto: 'Dúvida sobre o prazo', corpo: 'Gostaria de confirmar o período disponível para envio.', enviadaEm: '2026-09-16T08:30:00.000Z', lidaEm: null, respondendoA: null },
-];

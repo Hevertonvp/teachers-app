@@ -28,6 +28,7 @@ import { AuxiliarAlunoPerfilPage } from './pages/AuxiliarAlunoPerfilPage';
 import { PerfilPage } from './pages/PerfilPage';
 import { EmConstrucaoPage } from './pages/EmConstrucaoPage';
 import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
+import { MensagensPage } from './pages/MensagensPage';
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -72,7 +73,7 @@ const AppRoutes = () => <Routes>
   <Route path="/pendencias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/eventos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/noticias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
-  <Route path="/mensagens" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/mensagens" element={<ProtectedRoute><MensagensPage /></ProtectedRoute>} />
   <Route path="/planejamentos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/planejamentos-gestor" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/novo-planejamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />

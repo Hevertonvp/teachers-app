@@ -66,6 +66,7 @@ export const GestaoEscolas = () => {
   const [inativandoEscola, setInativandoEscola] = useState(null);
   const [reativandoEscola, setReativandoEscola] = useState(null);
   const [message, setMessage] = useState('');
+  const [busca, setBusca] = useState('');
 
   if (!canManageEscolas(user)) return <Navigate to="/dashboard" replace />;
 
@@ -150,7 +151,10 @@ export const GestaoEscolas = () => {
             </EmptyState>
           )
         ) : (
-          <DataTable columns={columns} rows={escolas} />
+          <>
+            <Card><FormField label="Buscar escola"><input className={inputClass} value={busca} onChange={event => setBusca(event.target.value)} placeholder="Digite o nome da escola" /></FormField></Card>
+            <DataTable columns={columns} rows={escolas.filter(escola => escola.nome.toLowerCase().includes(busca.toLowerCase()))} emptyMessage="Nenhuma escola encontrada com esse nome" />
+          </>
         )}
       </div>
 

@@ -1,152 +1,186 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { useEscola } from '../context/EscolaContext';
+import {
+  listarConversasReais, listarDestinatariosReais, obterConversaReal,
+  criarConversaReal, responderConversaReal, ocultarConversaReal,
+} from '../services/mensagens';
 import { MainLayout } from '../layouts/Layouts';
-import { getAllowedRecipients, identityKey, personName } from '../utils/mensagens';
 
 const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100';
-const emptyForm = { recipientKey: '', escolaId: '', assunto: '', corpo: '', respondendoA: null };
+const emptyCompose = { escolaId: '', destinatarioIds: [], assunto: '', conteudo: '' };
 
-const formatDate = (date) => new Intl.DateTimeFormat('pt-BR', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-}).format(new Date(date));
+const formatDate = (date) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(date));
 
-const messageExcerpt = (body) => body.length > 110 ? `${body.slice(0, 110)}...` : body;
+// Botão de anexo — infraestrutura de upload fica pra depois (seção 17 do pedido): só avisa.
+const BotaoAnexo = () => {
+  const [aviso, setAviso] = useState(false);
+  return (
+    <div className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setAviso(true)}
+        title="Anexar arquivo"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-500 transition hover:bg-slate-50"
+      >
+        📎
+      </button>
+      {aviso && (
+        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg" onMouseLeave={() => setAviso(false)}>
+          Anexos ainda não estão disponíveis.
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const MensagensPage = () => {
   const { user } = useAuth();
-  const { escolas, gestores, diretores, professores, secretarias, vinculosEscolares, mensagens, criarMensagem, marcarMensagemComoLida } = useData();
-  const { activeEscolaId } = useEscola();
-  const location = useLocation();
+  const { loadMensagensNaoLidas } = useData();
+
   const [tab, setTab] = useState('entrada');
-  const [selected, setSelected] = useState(null);
+  const [conversas, setConversas] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const [mensagem, setMensagem] = useState('');
+
+  const [selectedId, setSelectedId] = useState(null);
+  const [thread, setThread] = useState(null);
+  const [respostaTexto, setRespostaTexto] = useState('');
+  const [enviandoResposta, setEnviandoResposta] = useState(false);
+
   const [composeOpen, setComposeOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm);
-  const [sendToAll, setSendToAll] = useState(false);
-  const [error, setError] = useState('');
+  const [form, setForm] = useState(emptyCompose);
+  const [escolasDisponiveis, setEscolasDisponiveis] = useState([]);
+  const [destinatarios, setDestinatarios] = useState([]);
+  const [enviando, setEnviando] = useState(false);
+  const [composeError, setComposeError] = useState('');
 
-  const peopleData = { gestores, diretores, professores, secretarias, vinculosEscolares };
-  const identity = identityKey(user?.tipo, user?.id);
-  const recipients = useMemo(() => getAllowedRecipients(user, peopleData), [user, gestores, diretores, professores, secretarias, vinculosEscolares]);
-  const diretoraRecipients = useMemo(() => recipients.filter(recipient => recipient.tipo === 'diretora'), [recipients]);
-  const incoming = mensagens.filter(message => identityKey(message.destinatarioTipo, message.destinatarioId) === identity);
-  const sent = mensagens.filter(message => identityKey(message.remetenteTipo, message.remetenteId) === identity);
-  const unread = incoming.filter(message => !message.lidaEm);
-  const visibleMessages = tab === 'enviadas' ? sent : tab === 'naoLidas' ? unread : incoming;
-
-  // Com uma escola selecionada (Secretaria ou Gestor com múltiplas escolas): por padrão a
-  // mensagem vai para a diretoria daquela escola, em vez do primeiro destinatário da lista.
-  const diretorDaEscolaAtiva = activeEscolaId !== null
-    ? recipients.find(recipient => recipient.tipo === 'diretora' && recipient.escolaIds.includes(activeEscolaId))
-    : null;
-
-  const openNewMessage = () => {
-    setError('');
-    const defaultRecipient = diretorDaEscolaAtiva || recipients[0];
-    setForm({ ...emptyForm, recipientKey: defaultRecipient?.key || '', escolaId: diretorDaEscolaAtiva ? activeEscolaId : defaultRecipient?.escolaIds[0] || '' });
-    // "Todas as escolas" selecionada no cabeçalho já sugere intenção de envio em massa.
-    setSendToAll(activeEscolaId === null && diretoraRecipients.length > 1);
-    setComposeOpen(true);
-  };
-
-  // Atalho vindo do dashboard (link "Enviar mensagem à diretoria") já abre o formulário direto.
-  // Precisa ficar antes do "if (!user) return" abaixo — hooks não podem ser chamados condicionalmente.
-  useEffect(() => {
-    if (location.state?.openCompose) {
-      openNewMessage();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  const recipientByKey = (key) => recipients.find(recipient => recipient.key === key);
-
-  const openMessage = (message) => {
-    if (identityKey(message.destinatarioTipo, message.destinatarioId) === identity && !message.lidaEm) {
-      marcarMensagemComoLida(message.id, user);
-    }
-    setSelected(message);
-  };
-
-  const startReply = () => {
-    const recipientKey = identityKey(selected.remetenteTipo, selected.remetenteId);
-    const recipient = recipientByKey(recipientKey);
-    if (!recipient) return;
-    setError('');
-    setForm({
-      recipientKey,
-      escolaId: selected.escolaId || recipient.escolaIds[0] || '',
-      assunto: selected.assunto.startsWith('Re:') ? selected.assunto : `Re: ${selected.assunto}`,
-      corpo: '',
-      respondendoA: selected.id,
-    });
-    setSendToAll(false);
-    setSelected(null);
-    setComposeOpen(true);
-  };
-
-  const handleRecipientChange = (event) => {
-    const recipient = recipientByKey(event.target.value);
-    setForm(prev => ({ ...prev, recipientKey: event.target.value, escolaId: recipient?.escolaIds[0] || '' }));
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    if (sendToAll) {
-      if (!diretoraRecipients.length) {
-        setError('Nenhuma diretoria disponível para envio.');
-        return;
-      }
-      try {
-        diretoraRecipients.forEach(recipient => {
-          criarMensagem({
-            destinatarioTipo: recipient.tipo,
-            destinatarioId: recipient.id,
-            escolaId: recipient.escolaIds[0] ?? null,
-            assunto: form.assunto.trim(),
-            corpo: form.corpo.trim(),
-            respondendoA: null,
-          }, user);
-        });
-        setForm(emptyForm);
-        setSendToAll(false);
-        setComposeOpen(false);
-        setTab('enviadas');
-        setError('');
-      } catch (submissionError) {
-        setError(submissionError.message);
-      }
-      return;
-    }
-
-    const recipient = recipientByKey(form.recipientKey);
-    if (!recipient) {
-      setError('Selecione um destinatário válido.');
-      return;
-    }
+  const carregarConversas = async () => {
+    setCarregando(true);
+    setErro('');
     try {
-      criarMensagem({
-        destinatarioTipo: recipient.tipo,
-        destinatarioId: recipient.id,
-        escolaId: form.escolaId === '' ? null : Number(form.escolaId),
-        assunto: form.assunto.trim(),
-        corpo: form.corpo.trim(),
-        respondendoA: form.respondendoA,
-      }, user);
-      setForm(emptyForm);
-      setComposeOpen(false);
-      setTab('enviadas');
-      setError('');
-    } catch (submissionError) {
-      setError(submissionError.message);
+      setConversas(await listarConversasReais());
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
     }
   };
+
+  useEffect(() => { carregarConversas(); }, []);
+
+  const incoming = conversas.filter(c => !c.iniciadaPorMim);
+  const sent = conversas.filter(c => c.iniciadaPorMim);
+  const unread = conversas.filter(c => c.naoLidas > 0);
+  const visibleConversas = tab === 'enviadas' ? sent : tab === 'naoLidas' ? unread : incoming;
+
+  const abrirConversa = async (id) => {
+    setSelectedId(id);
+    setThread(null);
+    setRespostaTexto('');
+    try {
+      const detalhe = await obterConversaReal(id);
+      setThread(detalhe);
+      await carregarConversas();
+      await loadMensagensNaoLidas();
+    } catch (error) {
+      setMensagem(error.message);
+      setSelectedId(null);
+    }
+  };
+
+  const enviarResposta = async (event) => {
+    event.preventDefault();
+    if (!respostaTexto.trim()) return;
+    setEnviandoResposta(true);
+    try {
+      await responderConversaReal(selectedId, respostaTexto.trim());
+      setRespostaTexto('');
+      setThread(await obterConversaReal(selectedId));
+      await carregarConversas();
+    } catch (error) {
+      setMensagem(error.message);
+    } finally {
+      setEnviandoResposta(false);
+    }
+  };
+
+  const excluirParaMim = async () => {
+    try {
+      await ocultarConversaReal(selectedId);
+      setSelectedId(null);
+      setThread(null);
+      await carregarConversas();
+      setMensagem('Conversa removida da sua caixa. Ela continua existindo para a outra pessoa.');
+    } catch (error) {
+      setMensagem(error.message);
+    }
+  };
+
+  // --- Composição ------------------------------------------------------------------------
+  const abrirCompose = async () => {
+    setComposeError('');
+    setForm(emptyCompose);
+    setDestinatarios([]);
+    try {
+      const resultado = await listarDestinatariosReais();
+      setEscolasDisponiveis(resultado.escolas || []);
+      setDestinatarios(resultado.destinatarios || []);
+      if ((resultado.escolas || []).length <= 1 && (resultado.destinatarios || []).length > 0) {
+        setForm(prev => ({ ...prev, escolaId: resultado.escolas[0]?.id ?? '' }));
+      }
+    } catch (error) {
+      setComposeError(error.message);
+    }
+    setComposeOpen(true);
+  };
+
+  const escolherEscola = async (escolaId) => {
+    setForm(prev => ({ ...prev, escolaId, destinatarioIds: [] }));
+    try {
+      const resultado = await listarDestinatariosReais(escolaId);
+      setDestinatarios(resultado.destinatarios || []);
+    } catch (error) {
+      setComposeError(error.message);
+    }
+  };
+
+  const podeEnviarEmMassa = user?.tipo === 'secretaria' || user?.tipo === 'diretora' || user?.tipo === 'gestor';
+
+  const toggleDestinatario = (destinatario) => {
+    setForm(prev => {
+      const chave = `${destinatario.pessoaId}:${destinatario.escolaId}`;
+      const jaSelecionado = prev.destinatarioIds.some(d => `${d.pessoaId}:${d.escolaId}` === chave);
+      if (jaSelecionado) return { ...prev, destinatarioIds: prev.destinatarioIds.filter(d => `${d.pessoaId}:${d.escolaId}` !== chave) };
+      if (!podeEnviarEmMassa) return { ...prev, destinatarioIds: [{ pessoaId: destinatario.pessoaId, escolaId: destinatario.escolaId }] };
+      return { ...prev, destinatarioIds: [...prev.destinatarioIds, { pessoaId: destinatario.pessoaId, escolaId: destinatario.escolaId }] };
+    });
+  };
+
+  const enviarNovaConversa = async (event) => {
+    event.preventDefault();
+    setComposeError('');
+    if (form.destinatarioIds.length === 0) {
+      setComposeError('Selecione ao menos um destinatário.');
+      return;
+    }
+    setEnviando(true);
+    try {
+      const resultado = await criarConversaReal({ destinatarios: form.destinatarioIds, assunto: form.assunto.trim(), conteudo: form.conteudo.trim() });
+      setComposeOpen(false);
+      setMensagem(resultado.conversas.length > 1 ? `Mensagem enviada para ${resultado.conversas.length} pessoas.` : 'Mensagem enviada com sucesso.');
+      setTab('enviadas');
+      await carregarConversas();
+    } catch (error) {
+      setComposeError(error.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const escolaEscolhidaNome = escolasDisponiveis.find(e => e.id === Number(form.escolaId))?.nome;
 
   return (
     <MainLayout>
@@ -157,8 +191,16 @@ export const MensagensPage = () => {
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Mensagens</h1>
             <p className="mt-2 text-slate-600">Caixa de entrada para comunicações formais da equipe.</p>
           </div>
-          <Button onClick={openNewMessage} disabled={!recipients.length}>Nova mensagem</Button>
+          <Button onClick={abrirCompose}>Nova mensagem</Button>
         </div>
+
+        {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
+        {erro && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+            <span>Não foi possível carregar: {erro}</span>
+            <Button size="sm" variant="outline" onClick={carregarConversas}>Tentar novamente</Button>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           {[['entrada', 'Caixa de entrada', incoming.length], ['enviadas', 'Enviadas', sent.length], ['naoLidas', 'Não lidas', unread.length]].map(([key, label, count]) => (
@@ -166,91 +208,113 @@ export const MensagensPage = () => {
               {label} <span className="ml-1 opacity-70">{count}</span>
             </button>
           ))}
-          <Badge variant={unread.length ? 'red' : 'green'}>{unread.length} não lida(s)</Badge>
         </div>
 
-        {visibleMessages.length ? (
+        {carregando ? (
+          <Card><p className="text-center text-slate-500">Carregando...</p></Card>
+        ) : visibleConversas.length ? (
           <div className="space-y-3">
-            {visibleMessages.map(message => {
-              const isIncoming = identityKey(message.destinatarioTipo, message.destinatarioId) === identity;
-              const counterpart = isIncoming
-                ? personName(message.remetenteTipo, message.remetenteId, peopleData)
-                : personName(message.destinatarioTipo, message.destinatarioId, peopleData);
-              const escola = escolas.find(item => item.id === message.escolaId);
-              return (
-                <button key={message.id} type="button" onClick={() => openMessage(message)} className={`block w-full rounded-xl border p-4 text-left transition hover:border-teal-300 hover:bg-teal-50/30 ${!message.lidaEm && isIncoming ? 'border-teal-300 bg-teal-50/40' : 'border-slate-200 bg-white'}`}>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {!message.lidaEm && isIncoming && <span className="h-2.5 w-2.5 rounded-full bg-teal-600" aria-label="Não lida" />}
-                        <p className="font-bold text-slate-900">{message.assunto}</p>
-                        <Badge variant={isIncoming ? 'blue' : 'gray'}>{isIncoming ? 'Recebida' : 'Enviada'}</Badge>
-                      </div>
-                      <p className="mt-1 text-sm font-semibold text-slate-700">{isIncoming ? 'De' : 'Para'}: {counterpart}</p>
-                      <p className="mt-1 text-sm text-slate-600">{messageExcerpt(message.corpo)}</p>
-                      {escola && <p className="mt-2 text-xs font-semibold text-slate-500">{escola.nome}</p>}
+            {visibleConversas.map(conversa => (
+              <button key={conversa.id} type="button" onClick={() => abrirConversa(conversa.id)} className={`block w-full rounded-xl border p-4 text-left transition hover:border-teal-300 hover:bg-teal-50/30 ${conversa.naoLidas > 0 ? 'border-teal-300 bg-teal-50/40' : 'border-slate-200 bg-white'}`}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {conversa.naoLidas > 0 && <span className="h-2.5 w-2.5 rounded-full bg-teal-600" aria-label="Não lida" />}
+                      <p className="font-bold text-slate-900">{conversa.assunto}</p>
+                      {conversa.naoLidas > 0 && <Badge variant="blue">{conversa.naoLidas} não lida{conversa.naoLidas > 1 ? 's' : ''}</Badge>}
                     </div>
-                    <time className="shrink-0 text-xs text-slate-500">{formatDate(message.enviadaEm)}</time>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">{conversa.iniciadaPorMim ? 'Para' : 'De'}: {conversa.outraPessoa?.nome} <span className="font-normal text-slate-500">· {conversa.outraPessoa?.perfil}</span></p>
+                    <p className="mt-1 text-sm text-slate-600">{conversa.ultimaMensagemTrecho}</p>
+                    <p className="mt-2 text-xs font-semibold text-slate-500">{conversa.escolaNome}{conversa.loteId ? ' · envio em massa' : ''}</p>
                   </div>
-                </button>
-              );
-            })}
+                  <time className="shrink-0 text-xs text-slate-500">{formatDate(conversa.ultimaMensagemEm)}</time>
+                </div>
+              </button>
+            ))}
           </div>
         ) : <EmptyState title="Nenhuma mensagem" description="Sua caixa de entrada não possui mensagens neste filtro." />}
       </div>
 
-      {selected && (
-        <Modal title={selected.assunto} onClose={() => setSelected(null)}>
-          <div className="space-y-5">
-            <div className="grid gap-3 text-sm sm:grid-cols-2">
-              <div><p className="text-slate-500">Remetente</p><p className="font-semibold text-slate-900">{personName(selected.remetenteTipo, selected.remetenteId, peopleData)}</p></div>
-              <div><p className="text-slate-500">Destinatário</p><p className="font-semibold text-slate-900">{personName(selected.destinatarioTipo, selected.destinatarioId, peopleData)}</p></div>
-              <div><p className="text-slate-500">Data</p><p className="font-semibold text-slate-900">{formatDate(selected.enviadaEm)}</p></div>
-              {selected.escolaId && <div><p className="text-slate-500">Escola</p><p className="font-semibold text-slate-900">{escolas.find(item => item.id === selected.escolaId)?.nome}</p></div>}
+      {selectedId && (
+        <Modal title={thread?.assunto || 'Conversa'} onClose={() => { setSelectedId(null); setThread(null); }}>
+          {!thread ? (
+            <p className="text-center text-sm text-slate-500">Carregando...</p>
+          ) : (
+            <div className="space-y-5">
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <div><p className="text-slate-500">Com</p><p className="font-semibold text-slate-900">{thread.outraPessoa?.nome} <span className="font-normal text-slate-500">({thread.outraPessoa?.perfil})</span></p></div>
+                <div><p className="text-slate-500">Escola</p><p className="font-semibold text-slate-900">{thread.escolaNome}</p></div>
+              </div>
+
+              <div className="max-h-96 space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
+                {thread.mensagens.map(msg => (
+                  <div key={msg.id} className={`max-w-[85%] rounded-xl p-3 text-sm ${msg.remetenteId === thread.outraPessoa?.id ? 'bg-white' : 'ml-auto bg-teal-100'}`}>
+                    <p className="mb-1 text-xs font-semibold text-slate-500">{msg.remetenteNome} · {formatDate(msg.createdAt)}</p>
+                    <p className="whitespace-pre-wrap text-slate-800">{msg.conteudo}</p>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={enviarResposta} className="space-y-2">
+                <textarea className={inputClass} rows="3" placeholder="Responder..." value={respostaTexto} onChange={event => setRespostaTexto(event.target.value)} />
+                <div className="flex items-center justify-between gap-3">
+                  <BotaoAnexo />
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={excluirParaMim}>Excluir para mim</Button>
+                    <Button type="submit" disabled={enviandoResposta || !respostaTexto.trim()}>{enviandoResposta ? 'Enviando...' : 'Responder'}</Button>
+                  </div>
+                </div>
+              </form>
             </div>
-            <div className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">{selected.corpo}</div>
-            {identityKey(selected.destinatarioTipo, selected.destinatarioId) === identity && recipientByKey(identityKey(selected.remetenteTipo, selected.remetenteId)) && <div className="flex justify-end"><Button onClick={startReply}>Responder</Button></div>}
-          </div>
+          )}
         </Modal>
       )}
 
       {composeOpen && (
-        <Modal title={form.respondendoA ? 'Responder mensagem' : 'Nova mensagem'} onClose={() => setComposeOpen(false)}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</div>}
-            {!form.respondendoA && diretoraRecipients.length > 1 && (
-              <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
-                <input type="checkbox" checked={sendToAll} onChange={event => setSendToAll(event.target.checked)} />
-                Enviar para todas as escolas ({diretoraRecipients.length} diretorias)
-              </label>
+        <Modal title="Nova mensagem" onClose={() => setComposeOpen(false)}>
+          <form onSubmit={enviarNovaConversa} className="space-y-4">
+            {composeError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{composeError}</div>}
+
+            {escolasDisponiveis.length > 1 && (
+              <FormField label="Escola">
+                <select className={inputClass} value={form.escolaId} onChange={event => escolherEscola(Number(event.target.value))} required>
+                  <option value="" disabled>Selecione a escola</option>
+                  {escolasDisponiveis.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                </select>
+              </FormField>
             )}
-            {sendToAll ? (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                <p className="font-semibold text-slate-800">Destinatários desta mensagem:</p>
-                <ul className="mt-1.5 list-disc space-y-0.5 pl-5">
-                  {diretoraRecipients.map(recipient => (
-                    <li key={recipient.key}>{recipient.nome} — {escolas.find(escola => escola.id === recipient.escolaIds[0])?.nome || 'Escola não informada'}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <>
-                <FormField label="Destinatário">
-                  <select className={inputClass} value={form.recipientKey} onChange={handleRecipientChange} required>
-                    <option value="">Selecione</option>
-                    {recipients.map(recipient => <option key={recipient.key} value={recipient.key}>{recipient.nome}{recipient.cargo ? ` · ${recipient.cargo}` : ''}</option>)}
-                  </select>
-                </FormField>
-                {recipientByKey(form.recipientKey)?.escolaIds.length > 0 && <FormField label="Escola relacionada">
-                  <select className={inputClass} value={form.escolaId} onChange={event => setForm(prev => ({ ...prev, escolaId: event.target.value }))} required>
-                    {recipientByKey(form.recipientKey).escolaIds.map(escolaId => <option key={escolaId} value={escolaId}>{escolas.find(escola => escola.id === escolaId)?.nome}</option>)}
-                  </select>
-                </FormField>}
-              </>
+
+            {(escolasDisponiveis.length <= 1 || form.escolaId) && (
+              <FormField label={podeEnviarEmMassa ? 'Destinatários (pode selecionar vários)' : 'Destinatário'}>
+                {destinatarios.length === 0 ? (
+                  <p className="text-sm text-slate-500">Nenhum destinatário disponível{escolaEscolhidaNome ? ` em ${escolaEscolhidaNome}` : ''}.</p>
+                ) : (
+                  <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-slate-300 p-3">
+                    {destinatarios.map(destinatario => {
+                      const chave = `${destinatario.pessoaId}:${destinatario.escolaId}`;
+                      const marcado = form.destinatarioIds.some(d => `${d.pessoaId}:${d.escolaId}` === chave);
+                      return (
+                        <label key={chave} className="flex items-center gap-2 text-sm text-slate-700">
+                          <input type={podeEnviarEmMassa ? 'checkbox' : 'radio'} name="destinatario" checked={marcado} onChange={() => toggleDestinatario(destinatario)} />
+                          {destinatario.nome} <span className="text-xs text-slate-400">· {destinatario.perfil}{destinatario.escolaNome ? ` · ${destinatario.escolaNome}` : ''}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </FormField>
             )}
+
             <FormField label="Assunto"><input className={inputClass} value={form.assunto} onChange={event => setForm(prev => ({ ...prev, assunto: event.target.value }))} required /></FormField>
-            <FormField label="Mensagem"><textarea className={inputClass} rows="7" value={form.corpo} onChange={event => setForm(prev => ({ ...prev, corpo: event.target.value }))} required /></FormField>
-            <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setComposeOpen(false)}>Cancelar</Button><Button type="submit">{sendToAll ? `Enviar para ${diretoraRecipients.length} escolas` : 'Enviar mensagem'}</Button></div>
+            <FormField label="Mensagem"><textarea className={inputClass} rows="6" value={form.conteudo} onChange={event => setForm(prev => ({ ...prev, conteudo: event.target.value }))} required /></FormField>
+
+            <div className="flex items-center justify-between gap-3">
+              <BotaoAnexo />
+              <div className="flex gap-3">
+                <Button type="button" variant="secondary" onClick={() => setComposeOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={enviando}>{enviando ? 'Enviando...' : (form.destinatarioIds.length > 1 ? `Enviar para ${form.destinatarioIds.length} pessoas` : 'Enviar mensagem')}</Button>
+              </div>
+            </div>
           </form>
         </Modal>
       )}

@@ -27,6 +27,7 @@ const statusOptions = [
 const StatusBadgePessoa = ({ status }) => <Badge variant={status === 'ativo' ? 'green' : 'gray'}>{status === 'ativo' ? 'Ativo' : 'Inativo'}</Badge>;
 
 const VinculosPessoaModal = ({ pessoa, usuarioTipo, escolas, vinculosEscolares, createVinculoEscolar, desvincularEscola, onClose }) => {
+  const [busca, setBusca] = useState('');
   const isVinculado = (escolaId) => vinculosEscolares.some(vinculo => vinculo.usuarioTipo === usuarioTipo && vinculo.usuarioId === pessoa.id && vinculo.escolaId === escolaId && vinculo.status === 'ativo');
 
   const toggle = (escolaId) => {
@@ -35,10 +36,14 @@ const VinculosPessoaModal = ({ pessoa, usuarioTipo, escolas, vinculosEscolares, 
     else createVinculoEscolar({ escolaId, usuarioTipo, usuarioId: pessoa.id, status: 'ativo' });
   };
 
+  const escolasFiltradas = escolas.filter(escola => escola.nome.toLowerCase().includes(busca.toLowerCase()));
+
   return (
     <Modal title={`Vínculos - ${pessoa.nome}`} onClose={onClose}>
+      <input className={`${inputClass} mb-3`} value={busca} onChange={event => setBusca(event.target.value)} placeholder="Buscar escola..." />
       <div className="grid gap-2 sm:grid-cols-2">
-        {escolas.map(escola => (
+        {escolasFiltradas.length === 0 && <p className="text-sm text-slate-500 sm:col-span-2">Nenhuma escola encontrada.</p>}
+        {escolasFiltradas.map(escola => (
           <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={isVinculado(escola.id)} onChange={() => toggle(escola.id)} />
             {escola.nome}{escola.status !== 'ativa' ? ' (inativa)' : ''}
@@ -172,6 +177,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
   const [escolaId, setEscolaId] = useState('');
+  const [buscaEscola, setBuscaEscola] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
   const [erroForm, setErroForm] = useState('');
@@ -192,10 +198,19 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
 
   const escolaIdsAtivos = new Set(vinculos.filter(v => v.status === 'ATIVO').map(v => v.escolaId));
   const escolasDisponiveis = minhasEscolas.filter(escola => !escolaIdsAtivos.has(escola.id));
+  const escolasFiltradas = escolasDisponiveis.filter(escola => escola.nome.toLowerCase().includes(buscaEscola.toLowerCase()));
 
   useEffect(() => {
     if (!escolaId && escolasDisponiveis.length > 0) setEscolaId(escolasDisponiveis[0].id);
   }, [escolasDisponiveis.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Se a busca esconder a escola selecionada, troca pra primeira que ainda aparece — nunca deixa
+  // o select mostrando uma opção fora do filtro atual.
+  useEffect(() => {
+    if (escolaId && !escolasFiltradas.some(escola => escola.id === Number(escolaId))) {
+      setEscolaId(escolasFiltradas[0]?.id ?? '');
+    }
+  }, [buscaEscola]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const vinculosOrdenados = [...vinculos].sort((a, b) => {
     if (a.status !== b.status) return a.status === 'ATIVO' ? -1 : 1;
@@ -287,12 +302,19 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
           <form onSubmit={vincular} className="space-y-3 border-t border-slate-200 pt-4">
             <p className="text-sm font-semibold text-slate-700">Vincular a uma escola</p>
             {erroForm && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erroForm}</div>}
+            {escolasDisponiveis.length > 6 && (
+              <input className={inputClass} value={buscaEscola} onChange={event => setBuscaEscola(event.target.value)} placeholder="Buscar escola..." />
+            )}
             <FormField label="Escola">
-              <select className={inputClass} value={escolaId} onChange={event => setEscolaId(event.target.value)}>
-                {escolasDisponiveis.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
-              </select>
+              {escolasFiltradas.length === 0 ? (
+                <p className="text-sm text-slate-500">Nenhuma escola encontrada.</p>
+              ) : (
+                <select className={inputClass} value={escolaId} onChange={event => setEscolaId(event.target.value)}>
+                  {escolasFiltradas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                </select>
+              )}
             </FormField>
-            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando || escolasFiltradas.length === 0}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
           </form>
         )}
 
@@ -636,6 +658,7 @@ const ProfessoresReaisManager = ({ user }) => {
   const [erro, setErro] = useState(null);
 
   const [form, setForm] = useState(null);
+  const [buscaEscolaCadastro, setBuscaEscolaCadastro] = useState('');
   const [formError, setFormError] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [wizardVinculos, setWizardVinculos] = useState(null);
@@ -665,7 +688,7 @@ const ProfessoresReaisManager = ({ user }) => {
 
   useEffect(() => { carregar(); }, []);
 
-  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [] }); };
+  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [] }); setBuscaEscolaCadastro(''); };
   const fecharCadastro = () => { setForm(null); setFormError(''); };
 
   const toggleEscola = (escolaId) => {
@@ -798,8 +821,11 @@ const ProfessoresReaisManager = ({ user }) => {
               <p className="mt-1 text-xs text-slate-500">Se já existir uma conta com esse e-mail, o nome informado é ignorado — o professor só será vinculado à(s) escola(s) selecionada(s).</p>
             </FormField>
             <FormField label="Escolas de vínculo">
+              {minhasEscolas.length > 6 && (
+                <input className={`${inputClass} mb-2`} value={buscaEscolaCadastro} onChange={event => setBuscaEscolaCadastro(event.target.value)} placeholder="Buscar escola..." />
+              )}
               <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
-                {minhasEscolas.map(escola => (
+                {minhasEscolas.filter(escola => escola.nome.toLowerCase().includes(buscaEscolaCadastro.toLowerCase())).map(escola => (
                   <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
                     <input type="checkbox" checked={form.escolaIds.includes(escola.id)} onChange={() => toggleEscola(escola.id)} />
                     {escola.nome}

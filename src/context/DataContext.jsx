@@ -31,7 +31,6 @@ import {
   diretores as diretoresIniciais,
   formulariosUmTerco as formulariosIniciais,
   gestores as gestoresIniciais,
-  mensagensIniciais,
   noticiasRede as noticiasIniciais,
   pdis as pdisIniciais,
   professores as professoresIniciais,
@@ -50,7 +49,7 @@ import {
   pdiRespostasAcompanhamento,
 } from '../data/pdiData';
 import { pdiSummary } from '../utils/pdi';
-import { canSendMessage } from '../utils/mensagens';
+import { contarNaoLidasReal } from '../services/mensagens';
 import { CURRENT_DATE } from '../utils/formAvailability';
 
 const DataContext = createContext();
@@ -146,7 +145,18 @@ export const DataProvider = ({ children }) => {
   const [diretores, setDiretores] = useState(diretoresIniciais);
   // Sem CRUD de Auxiliares nesta etapa (só o vínculo com aluno é gerenciável) — lista fixa.
   const [auxiliares] = useState(auxiliaresIniciais);
-  const [mensagens, setMensagens] = useState(mensagensIniciais);
+  // Mensagens real (Neon) — a lista de conversas em si não vive aqui (cada tela busca sob
+  // demanda, igual Anamnese/Fichas PDI); só o contador de não lidas é global, pro badge da
+  // Sidebar, carregado no login e atualizado depois de ações relevantes (enviar/ler).
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
+  const loadMensagensNaoLidas = useCallback(async () => {
+    try {
+      const { total } = await contarNaoLidasReal();
+      setMensagensNaoLidas(total);
+    } catch {
+      // Badge não é crítico — falha silenciosa aqui não deve quebrar o resto do app.
+    }
+  }, []);
 
   const createItem = (setter) => (payload) => {
     let created;
@@ -934,28 +944,6 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const criarMensagem = (payload, remetente) => {
-    const messageData = { gestores, diretores, professores, secretarias: secretariasIniciais, vinculosEscolares };
-    if (!canSendMessage(remetente, payload, messageData)) {
-      throw new Error('Destinatário não permitido para este perfil ou escola.');
-    }
-    let created;
-    setMensagens(prev => {
-      created = { ...payload, id: nextId(prev), remetenteTipo: remetente.tipo, remetenteId: remetente.id, enviadaEm: new Date().toISOString(), lidaEm: null };
-      return [created, ...prev];
-    });
-    return created;
-  };
-
-  const marcarMensagemComoLida = (id, leitor) => {
-    setMensagens(prev => prev.map(mensagem => (
-      mensagem.id === Number(id)
-      && mensagem.destinatarioTipo === leitor.tipo
-      && mensagem.destinatarioId === leitor.id
-        ? { ...mensagem, lidaEm: mensagem.lidaEm || new Date().toISOString() }
-        : mensagem
-    )));
-  };
 
   // Desvincular preserva o registro como histórico (status: 'removido'), em vez de removê-lo.
   const desvincularEscola = (id) => {
@@ -1172,7 +1160,8 @@ export const DataProvider = ({ children }) => {
     atividadesRecentes,
     proximosEventos,
     resumoPdi,
-    mensagens,
+    mensagensNaoLidas,
+    loadMensagensNaoLidas,
     createFormulario: createItem(setFormularios),
     updateFormulario: updateItem(setFormularios),
     deleteFormulario: deleteItem(setFormularios),
@@ -1223,8 +1212,6 @@ export const DataProvider = ({ children }) => {
     updateGestor: updateItem(setGestores),
     createDiretor: createItem(setDiretores),
     updateDiretor: updateItem(setDiretores),
-    criarMensagem,
-    marcarMensagemComoLida,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

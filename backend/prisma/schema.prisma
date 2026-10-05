@@ -98,6 +98,7 @@ model Escola {
   aplicacoesPdi    AplicacaoPdi[]
   fichasPdi        FichaPdi[]
   anamneses        Anamnese[]
+  conversasMensagem ConversaMensagem[]
 
   @@map("escolas")
 }
@@ -213,6 +214,8 @@ model Pessoa {
   vinculosComoAuxiliar   AuxiliarTurma[]            @relation("AuxiliarVinculo")
   eventos                PessoaEvento[]             @relation("PessoaEventoPessoa")
   fichasComoResponsavel  FichaPdi[]                 @relation("FichaProfessorResponsavel")
+  participacoesConversa  ParticipanteConversa[]
+  mensagensEnviadas      Mensagem[]                 @relation("MensagemRemetente")
 
   @@map("pessoas")
 }
@@ -808,4 +811,83 @@ model RespostaAnamnese {
   @@unique([anamneseId, perguntaAnamneseId])
   @@index([anamneseId])
   @@map("respostas_anamnese")
+}
+
+// --- Mensagens --------------------------------------------------------------------------------
+// Comunicação interna entre perfis, restrita pela hierarquia (Secretaria↔Diretora; Diretora↔
+// Gestor/Professor/Auxiliar da mesma escola; Gestor↔Professor/Auxiliar da mesma escola — ver
+// domain/mensagens.ts para a matriz completa). Toda Conversa é SEMPRE privada entre exatamente 2
+// Pessoas, mesmo quando nasce de um envio em massa: um envio pra 20 Professores cria 20
+// ConversaMensagem independentes (uma por destinatário), nunca uma conversa com 21 participantes
+// — `loteId` só agrupa pra quem enviou saber que vieram da mesma ação, nunca vira grupo.
+
+// Conversa/thread — sempre amarrada a UMA escola de contexto (mesmo Secretaria↔Diretora, que usa
+// a escola do vínculo da Diretora). Nunca apagada fisicamente.
+model ConversaMensagem {
+  id       Int    @id @default(autoincrement())
+  escolaId Int
+  escola   Escola @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  assunto  String @db.VarChar(200)
+
+  // Agrupa as N conversas nascidas do mesmo envio em massa (só informativo pro remetente ver
+  // "enviei pra 20 pessoas" e calcular "7 de 20 leram" — nunca concede acesso cruzado entre elas).
+  loteId String? @db.VarChar(40)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  // Atualizado a cada Mensagem nova (inclusive respostas) — usado só pra ordenar "mais recentes
+  // primeiro" na caixa de entrada, nunca como fonte de autorização.
+  updatedAt DateTime? @updatedAt
+
+  participantes ParticipanteConversa[]
+  mensagens     Mensagem[]
+
+  @@index([escolaId])
+  @@index([loteId])
+  @@map("conversas_mensagem")
+}
+
+// Sempre exatamente 2 linhas por Conversa — nunca grupo. Guarda só o estado de ocultação
+// individual ("Excluir para mim" = seção 15 do pedido). NUNCA é fonte de autorização por si só:
+// quem pode acessar/responder uma Conversa é recalculado a cada requisição a partir do
+// VinculoEscolar/perfil ATUAIS dos dois lados (ver exigirAcessoConversa em mensagens.ts) — a
+// mesma filosofia já usada em Ficha PDI (relação histórica nunca concede acesso).
+model ParticipanteConversa {
+  id         Int              @id @default(autoincrement())
+  conversaId Int
+  conversa   ConversaMensagem @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  pessoaId   Int
+  pessoa     Pessoa           @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+
+  // null = visível. "Excluir para mim" preenche; uma Mensagem nova nessa Conversa limpa de volta
+  // pra null automaticamente pro destinatário (seção 45 do pedido: atividade nova faz reaparecer).
+  ocultaEm DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([conversaId, pessoaId])
+  @@index([pessoaId])
+  @@map("participantes_conversa")
+}
+
+// Uma mensagem dentro de uma thread. `lidaEm` fica aqui mesmo (não numa tabela separada por
+// destinatário) porque toda Conversa tem exatamente 2 participantes — o destinatário de qualquer
+// Mensagem é sempre, sem ambiguidade, "o outro participante" (quem não é o remetente). Nunca
+// editada depois de criada (seção 27 do pedido); nunca apagada fisicamente.
+model Mensagem {
+  id          Int              @id @default(autoincrement())
+  conversaId  Int
+  conversa    ConversaMensagem @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  remetenteId Int
+  remetente   Pessoa           @relation("MensagemRemetente", fields: [remetenteId], references: [id], onDelete: Restrict)
+
+  conteudo String @db.Text
+
+  // Preenchido quando o OUTRO participante (nunca o próprio remetente) lê esta mensagem.
+  lidaEm DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversaId, createdAt])
+  @@map("mensagens")
 }

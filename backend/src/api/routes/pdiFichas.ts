@@ -192,42 +192,58 @@ const obterOuCriarSchema = z.object({
   disciplinaId: z.number().int(),
 });
 
+// P2002 do Postgres/Prisma, mas só quando é mesmo a constraint única de identidade da Ficha
+// (aplicacaoId+alunoId+disciplinaId) — nunca trata um P2002 de outra entidade/constraint como
+// "corrida de criação de Ficha" (ver catch abaixo, que depende disto pra não mascarar erro real).
+function ehConflitoDeIdentidadeDaFicha(err: Prisma.PrismaClientKnownRequestError): boolean {
+  const meta = err.meta as { target?: string[] | string; modelName?: string } | undefined;
+  if (meta?.modelName && meta.modelName !== 'FichaPdi') return false;
+  const campos = ['aplicacaoId', 'alunoId', 'disciplinaId'];
+  const target = meta?.target;
+  if (Array.isArray(target)) return campos.every((c) => target.includes(c));
+  if (typeof target === 'string') return campos.every((c) => target.includes(c));
+  return false;
+}
+
 // Criação SOB DEMANDA, idempotente e segura contra concorrência (seções 3-6 do pedido): resolve
-// todo o contexto + tenta criar dentro da MESMA transação; se outra requisição venceu a corrida
-// (unique constraint), captura o P2002 e devolve a Ficha vencedora, sem jamais atualizar nenhum
-// campo histórico dela. Nunca usa `upsert` aqui de propósito — o branch de update de um upsert
-// poderia, por engano futuro, sobrescrever o contexto congelado.
+// todo o contexto + tenta criar dentro de uma transação. Se outra requisição venceu a corrida
+// (unique constraint), o Postgres aborta a transação inteira (qualquer comando novo dentro dela
+// falharia com 25P02 — "current transaction is aborted") — por isso a recuperação do P2002 NUNCA
+// pode rodar dentro da mesma `tx`: precisa ser uma operação nova, fora dela, com o Prisma normal.
+// Nunca usa `upsert` aqui de propósito — o branch de update de um upsert poderia, por engano
+// futuro, sobrescrever o contexto congelado.
 pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   const { aplicacaoId, alunoId, disciplinaId } = obterOuCriarSchema.parse(req.body);
+  const chave = { aplicacaoId_alunoId_disciplinaId: { aplicacaoId, alunoId, disciplinaId } };
 
-  const ficha = await prisma.$transaction(async (tx) => {
-    const contexto = await resolverContexto(tx, aplicacaoId, alunoId, disciplinaId);
+  let ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>;
+  try {
+    ficha = await prisma.$transaction(async (tx) => {
+      const contexto = await resolverContexto(tx, aplicacaoId, alunoId, disciplinaId);
 
-    const chave = { aplicacaoId_alunoId_disciplinaId: { aplicacaoId, alunoId, disciplinaId } };
-    const existente = await tx.fichaPdi.findUnique({ where: chave });
-    if (existente) {
-      // Mesmo já existindo, a autorização é obrigatória aqui também — nunca pular esta checagem
-      // só porque a Ficha já existe, senão qualquer ator autenticado poderia "abrir" a Ficha de
-      // outra escola/turma pedindo por uma combinação que já foi criada por outra pessoa.
+      const existente = await tx.fichaPdi.findUnique({ where: chave });
+      if (existente) {
+        // Mesmo já existindo, a autorização é obrigatória aqui também — nunca pular esta checagem
+        // só porque a Ficha já existe, senão qualquer ator autenticado poderia "abrir" a Ficha de
+        // outra escola/turma pedindo por uma combinação que já foi criada por outra pessoa.
+        await exigirAcessoOperacional(tx, actor, contexto, { exigirEscrita: true });
+        return existente;
+      }
+
+      // A partir daqui é sempre uma CRIAÇÃO nova — só agora o Professor responsável é obrigatório
+      // (seção 11) e o aluno precisa estar ATIVO (uma Ficha nova nunca nasce para aluno arquivado;
+      // Fichas já existentes continuam legíveis normalmente).
+      if (!contexto.ptd) {
+        throw new ValidationError('Não existe Professor responsável ativo para esta turma e disciplina. Configure o vínculo antes de abrir esta Ficha PDI.');
+      }
+      if (contexto.aluno.status !== 'ATIVO') {
+        throw new ValidationError('Não é possível abrir uma nova Ficha PDI para um aluno arquivado.');
+      }
+
       await exigirAcessoOperacional(tx, actor, contexto, { exigirEscrita: true });
-      return existente;
-    }
 
-    // A partir daqui é sempre uma CRIAÇÃO nova — só agora o Professor responsável é obrigatório
-    // (seção 11) e o aluno precisa estar ATIVO (uma Ficha nova nunca nasce para aluno arquivado;
-    // Fichas já existentes continuam legíveis normalmente).
-    if (!contexto.ptd) {
-      throw new ValidationError('Não existe Professor responsável ativo para esta turma e disciplina. Configure o vínculo antes de abrir esta Ficha PDI.');
-    }
-    if (contexto.aluno.status !== 'ATIVO') {
-      throw new ValidationError('Não é possível abrir uma nova Ficha PDI para um aluno arquivado.');
-    }
-
-    await exigirAcessoOperacional(tx, actor, contexto, { exigirEscrita: true });
-
-    try {
-      return await tx.fichaPdi.create({
+      return tx.fichaPdi.create({
         data: {
           aplicacaoId,
           aplicacaoModeloId: contexto.aplicacaoModelo.id,
@@ -247,15 +263,23 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
           createdBy: String(actor.id),
         },
       });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        // Outra requisição criou primeiro (corrida Professor/Gestor) — devolve a mesma Ficha,
-        // sem recalcular nada do contexto que acabamos de resolver.
-        return tx.fichaPdi.findUniqueOrThrow({ where: chave });
-      }
-      throw err;
+    }, { timeout: 15000 });
+  } catch (err) {
+    if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002' || !ehConflitoDeIdentidadeDaFicha(err)) {
+      throw err; // erro real (autorização, validação, outra constraint) — nunca mascarar.
     }
-  }, { timeout: 15000 });
+
+    // Outra requisição criou primeiro (corrida Professor/Gestor/duplo clique) — busca a Ficha
+    // vencedora com uma operação NOVA, fora da transação abortada. Só trata como sucesso se ela
+    // realmente existir; e reaplica a mesma checagem de autorização que a requisição perdedora já
+    // tinha passado antes de tentar criar, nunca pulando essa etapa.
+    const existente = await prisma.fichaPdi.findUnique({ where: chave });
+    if (!existente) throw err; // estado inconsistente de verdade — não mascarar.
+
+    const contexto = await resolverContexto(prisma, aplicacaoId, alunoId, disciplinaId);
+    await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
+    ficha = existente;
+  }
 
   res.json(await montarRespostaCompleta(ficha));
 });
