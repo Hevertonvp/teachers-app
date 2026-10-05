@@ -63,7 +63,7 @@ export const EscolaSelector = () => {
 
       <div
         role="listbox"
-        className={`absolute right-0 z-50 mt-2 max-h-[70vh] w-64 origin-top-right overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg transition duration-150 ease-out ${
+        className={`absolute left-0 z-50 mt-2 max-h-[70vh] w-64 origin-top-left overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg transition duration-150 ease-out ${
           open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
         }`}
       >

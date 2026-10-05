@@ -37,21 +37,23 @@ export function usePushNotifications() {
 
   // Só pede a permissão nativa QUANDO o usuário clica em "Ativar notificações" — nunca no
   // carregamento da página (seção 14 do pedido).
+  // Devolve true/false (sucesso ou não) pra quem chamou decidir o que fazer na UI — por exemplo,
+  // fechar o modal automaticamente só quando a ativação realmente deu certo.
   const ativar = useCallback(async () => {
     setErro(null);
-    if (!suportado()) return;
+    if (!suportado()) return false;
 
     try {
       const permissao = await Notification.requestPermission();
       if (permissao !== 'granted') {
         setEstado(permissao === 'denied' ? 'bloqueada' : 'disponivel');
-        return;
+        return false;
       }
 
       const { chavePublica } = await obterChavePublicaPushReal();
       if (!chavePublica) {
         setErro('Push não está configurado no servidor no momento.');
-        return;
+        return false;
       }
 
       const registration = await navigator.serviceWorker.ready;
@@ -63,9 +65,11 @@ export function usePushNotifications() {
       const json = subscription.toJSON();
       await assinarPushReal({ endpoint: json.endpoint, keys: json.keys, userAgent: navigator.userAgent });
       setEstado('ativada');
+      return true;
     } catch (err) {
       console.error('[push] falha ao ativar', err);
       setErro('Não foi possível ativar as notificações neste dispositivo.');
+      return false;
     }
   }, []);
 

@@ -67,14 +67,25 @@ export const Header = ({ onMenuClick }) => {
             ☰
           </button>
           <Logo size={40} className="shrink-0" />
-          <div className="hidden min-w-0 flex-1 sm:block">
+          <div className="hidden sm:block">
             <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
             <p className="truncate text-xs text-slate-500">Rede Municipal de Ensino</p>
           </div>
-        </div>
-        
-        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <EscolaSelector />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`group relative h-7 w-12 shrink-0 rounded-full border p-1 shadow-sm transition sm:h-9 sm:w-16 ${isDark ? 'border-slate-700 bg-slate-800 hover:bg-slate-700' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'}`}
+            aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo noturno'}
+            title={isDark ? 'Modo claro' : 'Modo noturno'}
+          >
+            <span className={`grid h-5 w-5 place-items-center rounded-full text-sm shadow transition-transform duration-500 sm:h-7 sm:w-7 ${isDark ? 'translate-x-5 bg-cyan-200 text-slate-950 sm:translate-x-7' : 'translate-x-0 bg-white text-slate-800'}`}>
+              {isDark ? '☾' : '☼'}
+            </span>
+          </button>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <NotificacoesBell />
           <button
             type="button"
@@ -87,17 +98,6 @@ export const Header = ({ onMenuClick }) => {
               <path d="M10 2a1 1 0 011 1v8.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V3a1 1 0 011-1z" />
               <path d="M4 15a1 1 0 011 1v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a1 1 0 011-1z" />
             </svg>
-          </button>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={`group relative h-7 w-12 shrink-0 rounded-full border p-1 shadow-sm transition sm:h-9 sm:w-16 ${isDark ? 'border-slate-700 bg-slate-800 hover:bg-slate-700' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'}`}
-            aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo noturno'}
-            title={isDark ? 'Modo claro' : 'Modo noturno'}
-          >
-            <span className={`grid h-5 w-5 place-items-center rounded-full text-sm shadow transition-transform duration-500 sm:h-7 sm:w-7 ${isDark ? 'translate-x-5 bg-cyan-200 text-slate-950 sm:translate-x-7' : 'translate-x-0 bg-white text-slate-800'}`}>
-              {isDark ? '☾' : '☼'}
-            </span>
           </button>
           <div className="hidden text-right sm:block">
             {isProfessor(user) ? (

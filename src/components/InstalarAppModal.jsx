@@ -16,6 +16,13 @@ export const InstalarAppModal = ({ onClose }) => {
   const { podeInstalarComPrompt, instalado, ehIOS, promptInstall } = useInstallPrompt();
   const { estado, erro, ativar, desativar } = usePushNotifications();
 
+  // Fecha sozinho só quando a ativação realmente deu certo — se falhar (ou o usuário negar a
+  // permissão nativa), o modal continua aberto mostrando o motivo.
+  const handleAtivar = async () => {
+    const sucesso = await ativar();
+    if (sucesso) onClose();
+  };
+
   return (
     <Modal title="Instalar aplicativo" onClose={onClose}>
       <div className="space-y-6">
@@ -53,10 +60,14 @@ export const InstalarAppModal = ({ onClose }) => {
             {estado === 'ativada' ? (
               <Button variant="secondary" onClick={desativar}>Desativar notificações</Button>
             ) : estado === 'disponivel' ? (
-              <Button onClick={ativar}>Ativar notificações</Button>
+              <Button onClick={handleAtivar}>Ativar notificações</Button>
             ) : null}
           </div>
         </section>
+
+        <div className="flex justify-end border-t border-slate-200 pt-4">
+          <Button variant="secondary" onClick={onClose}>Fechar</Button>
+        </div>
       </div>
     </Modal>
   );
