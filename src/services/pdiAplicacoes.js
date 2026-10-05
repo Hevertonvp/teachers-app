@@ -34,7 +34,15 @@ export const obterSnapshotPdiAplicacaoReal = async (id) => apiFetch(`/api/pdi-ap
 
 export const criarPdiAplicacaoReal = async (payload) => normalizeAplicacao(await apiFetch('/api/pdi-aplicacoes', {
   method: 'POST',
-  body: { escolaId: Number(payload.escolaId), nome: payload.nome || null, dataInicio: payload.dataInicio, dataFim: payload.dataFim },
+  body: {
+    escolaId: Number(payload.escolaId),
+    nome: payload.nome || null,
+    dataInicio: payload.dataInicio,
+    dataFim: payload.dataFim,
+    // Omitido = backend usa todos os modelos ativos (compatibilidade); passar [] seria rejeitado
+    // lá (precisa de ao menos 1), então só mandamos o campo quando há de fato uma seleção.
+    ...(payload.modeloIds ? { modeloIds: payload.modeloIds.map(Number) } : {}),
+  },
 }));
 
 export const editarPdiAplicacaoReal = async (id, payload) => normalizeAplicacao(await apiFetch(`/api/pdi-aplicacoes/${id}`, {

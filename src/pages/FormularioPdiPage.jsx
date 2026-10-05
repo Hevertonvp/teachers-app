@@ -32,11 +32,12 @@ const calcularReordenacao = (perguntasOrdenadas, perguntaId, direction) => {
 // passado em relação à data real do servidor; ver utils/formAvailability.js).
 const hojeISO = () => new Date().toISOString().slice(0, 10);
 
-// Criação: uma ou mais escolas de uma vez (`escolaIds` + `todasEscolas`). A Secretaria não
-// escolhe modelos/disciplinas aqui — a aplicação é da escola, e usa automaticamente todos os
-// modelos ativos no momento da criação (ver salvarAplicacao). Edição continua sendo sempre de
-// uma aplicação já existente, então usa `escolaId` único (ver editar vigência abaixo).
-const blankAplicacao = () => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO() });
+// Criação: uma ou mais escolas de uma vez (`escolaIds` + `todasEscolas`). A seleção de disciplinas
+// (`modeloIds`) começa com TODOS os modelos ativos marcados — preserva o comportamento antigo por
+// padrão, a Secretaria só precisa desmarcar quem não quer incluir. Edição continua sendo sempre de
+// uma aplicação já existente, então usa `escolaId` único e nunca mexe em modeloIds (seção 16 do
+// pedido original: edição nunca toca no snapshot).
+const blankAplicacao = (modeloIdsAtivos = []) => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO(), modeloIds: modeloIdsAtivos });
 
 // Reabertura sempre começa sugerindo o dia seguinte ao fim original — o backend exige
 // estritamente depois disso, nunca dentro da vigência normal (ver domain/pdiAplicacoes.ts).
@@ -134,7 +135,7 @@ export const FormularioPdiPage = () => {
   const aplicacoesEncerradas = [...aplicacoesComStatus.filter(item => !item.operacional)].reverse();
 
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '', carregarPerguntasPadrao: true });
-  const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao()); setBuscaEscolaAplicacao(''); };
+  const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao(modelosAtivos.map(modelo => modelo.id))); setBuscaEscolaAplicacao(''); };
   const abrirReabertura = (aplicacao) => { setReaberturaError(''); setReaberturaForm({ aplicacaoId: aplicacao.id, ...blankReabertura(aplicacao) }); };
 
   const toggleHistoricoReaberturas = async (aplicacaoId) => {
@@ -253,13 +254,16 @@ export const FormularioPdiPage = () => {
       return;
     }
 
-    // Criação: uma ou mais escolas de uma vez, incluindo "todas as escolas". A disciplina não é
-    // escolhida aqui — o backend sempre usa todos os modelos ativos no momento da criação (seção
-    // 3 do pedido de Aplicações/Reaberturas). Cada escola é uma chamada independente: uma escola
-    // com conflito de período não impede a criação nas demais.
+    // Criação: uma ou mais escolas de uma vez, incluindo "todas as escolas" — a MESMA seleção de
+    // disciplinas (modeloIds) vale para todas elas nesta ação. Cada escola é uma chamada
+    // independente: uma escola com conflito de período não impede a criação nas demais.
     const escolaIdsSelecionadas = aplicacaoForm.todasEscolas ? escolasAplicaveis.map(escola => escola.id) : aplicacaoForm.escolaIds;
     if (escolaIdsSelecionadas.length === 0) {
       setAplicacaoError('Escolha ao menos uma escola.');
+      return;
+    }
+    if (aplicacaoForm.modeloIds.length === 0) {
+      setAplicacaoError('Escolha ao menos uma disciplina.');
       return;
     }
 
@@ -267,7 +271,7 @@ export const FormularioPdiPage = () => {
     const resultados = [];
     for (const escolaId of escolaIdsSelecionadas) {
       // eslint-disable-next-line no-await-in-loop
-      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim });
+      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim, modeloIds: aplicacaoForm.modeloIds });
       resultados.push({ escolaId, ...resultado });
     }
     setSalvandoAplicacao(false);
@@ -658,6 +662,29 @@ export const FormularioPdiPage = () => {
                       </div>
                     )}
                   </div>
+                </FormField>
+              )}
+              {!editingAplicacao && (
+                <FormField label="Disciplinas (modelos ativos)">
+                  {modelosAtivos.length === 0 ? (
+                    <p className="text-sm text-slate-500">Nenhum Modelo PDI ativo no momento — cadastre um na aba "Modelos" antes de criar a Aplicação.</p>
+                  ) : (
+                    <div className="space-y-1.5 rounded-lg border border-slate-200 p-3">
+                      {modelosAtivos.map(modelo => (
+                        <label key={modelo.id} className="flex items-center gap-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={aplicacaoForm.modeloIds.includes(modelo.id)}
+                            onChange={() => setAplicacaoForm(prev => ({
+                              ...prev,
+                              modeloIds: prev.modeloIds.includes(modelo.id) ? prev.modeloIds.filter(id => id !== modelo.id) : [...prev.modeloIds, modelo.id],
+                            }))}
+                          />
+                          {modelo.disciplinaNome} <span className="text-xs text-slate-400">({modelo.nome})</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </FormField>
               )}
               <div className="grid gap-4 md:grid-cols-2">
