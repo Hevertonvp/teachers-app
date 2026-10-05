@@ -78,7 +78,7 @@ export async function executarVerificacaoPrazosPdi(prisma: PrismaClient, opts: {
   const hojeISO = dataCivilSP(agora);
 
   const aplicacoes = await prisma.aplicacaoPdi.findMany({
-    where: { escola: { status: 'ATIVA' } },
+    where: { status: 'ATIVA', escola: { status: 'ATIVA' } }, // removida (INATIVA) nunca gera aviso de prazo
     include: { escola: { select: { id: true, nome: true } }, modelos: { select: { disciplinaId: true } } },
   });
 

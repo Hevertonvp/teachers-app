@@ -448,17 +448,21 @@ model PerguntaPdiPadrao {
 }
 
 // Aplicação PDI pertence a UMA escola (nunca a uma disciplina) — define o período em que os
-// professores preenchem os formulários. Sem `status` de propósito: não existe cancelamento/
-// exclusão administrativa nesta etapa (o mock também nunca teve status explícito — vigência é
-// sempre derivada de dataInicio/dataFim, ver domain/pdiAplicacoes.ts). `nome` é opcional — a UI
-// atual nunca pediu isso à Secretaria, quem identifica a aplicação é escola+período.
+// professores preenchem os formulários. `nome` é opcional — a UI atual nunca pediu isso à
+// Secretaria, quem identifica a aplicação é escola+período. Vigência continua sempre derivada de
+// dataInicio/dataFim (nunca de `status`, ver domain/pdiAplicacoes.ts) — `status` aqui é só pra
+// remoção administrativa (ver DELETE /api/pdi-aplicacoes/:id): nunca nunca preenchida é apagada de
+// verdade; já preenchida (alguma RespostaPdi existe) vira INATIVA — sai da circulação operacional
+// (não entra mais em Meus PDIs, indicadores nem no job de prazo), mas o histórico de Fichas/
+// Respostas continua intacto e consultável.
 model AplicacaoPdi {
-  id         Int      @id @default(autoincrement())
+  id         Int            @id @default(autoincrement())
   escolaId   Int
-  escola     Escola   @relation(fields: [escolaId], references: [id], onDelete: Restrict)
-  nome       String?  @db.VarChar(200)
-  dataInicio DateTime @db.Date
-  dataFim    DateTime @db.Date
+  escola     Escola         @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  nome       String?        @db.VarChar(200)
+  dataInicio DateTime       @db.Date
+  dataFim    DateTime       @db.Date
+  status     StatusRegistro @default(ATIVA)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)

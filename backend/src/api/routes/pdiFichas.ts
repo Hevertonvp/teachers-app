@@ -91,13 +91,16 @@ async function exigirAcessoOperacional(client: Cliente, actor: Actor, contexto: 
   throw new ForbiddenError('Você não tem permissão para acessar Fichas PDI.');
 }
 
-async function exigirEditavelAgora(client: Cliente, ficha: { escolaId: number; aplicacaoId: number }, aplicacao: { dataInicio: Date; dataFim: Date }) {
+async function exigirEditavelAgora(client: Cliente, ficha: { escolaId: number; aplicacaoId: number }, aplicacao: { dataInicio: Date; dataFim: Date; status: string }) {
   const [escola, reaberturas] = await Promise.all([
     client.escola.findUniqueOrThrow({ where: { id: ficha.escolaId } }),
     client.reaberturaPdi.findMany({ where: { aplicacaoId: ficha.aplicacaoId }, select: { dataInicio: true, dataFim: true } }),
   ]);
-  if (!fichaEditavelAgora(escola.status === 'ATIVA', isAplicacaoEditavelAgora(aplicacao, reaberturas))) {
-    throw new ValidationError('Esta Ficha PDI não está editável no momento (fora da vigência e sem reabertura ativa).');
+  // Aplicação removida (INATIVA — ver DELETE /api/pdi-aplicacoes/:id) nunca é editável, mesmo
+  // dentro da vigência original ou com reabertura ativa: saiu de circulação de propósito.
+  const editavel = aplicacao.status === 'ATIVA' && fichaEditavelAgora(escola.status === 'ATIVA', isAplicacaoEditavelAgora(aplicacao, reaberturas));
+  if (!editavel) {
+    throw new ValidationError('Esta Ficha PDI não está editável no momento (fora da vigência, sem reabertura ativa, ou a Aplicação foi removida).');
   }
 }
 
@@ -182,7 +185,7 @@ async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof prisma.fi
     ficha: formatarFicha(ficha),
     perguntas: perguntas.map(formatarPerguntaSnapshot),
     respostas: respostas.map(formatarResposta),
-    editavelAgora: fichaEditavelAgora(escola.status === 'ATIVA', isAplicacaoEditavelAgora(aplicacao, reaberturas)),
+    editavelAgora: aplicacao.status === 'ATIVA' && fichaEditavelAgora(escola.status === 'ATIVA', isAplicacaoEditavelAgora(aplicacao, reaberturas)),
   };
 }
 
@@ -311,7 +314,7 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
   const [alunos, aplicacoes] = await Promise.all([
     prisma.alunoPdi.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' } }),
     prisma.aplicacaoPdi.findMany({
-      where: { escolaId: { in: escolaIdsDasTurmas } },
+      where: { escolaId: { in: escolaIdsDasTurmas }, status: 'ATIVA' }, // removida (INATIVA) nunca aparece em Meus PDIs
       include: { modelos: { select: { disciplinaId: true, disciplinaNome: true } } },
     }),
   ]);
@@ -378,7 +381,7 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
       fichaId: ficha?.id ?? null,
       statusFicha: ficha?.status ?? null,
       editavelAgora,
-      statusVisual: statusVisualItem((ficha?.status as 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA') ?? null, editavelAgora),
+      statusVisual: statusVisualItem((ficha?.status as 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA') ?? null, editavelAgora, statusVigencia(aplicacao)),
     };
   });
 

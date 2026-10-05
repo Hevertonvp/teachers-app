@@ -29,7 +29,7 @@ function exigirLeituraAplicacoes(actor: Actor) {
 }
 
 const formatarAplicacao = (aplicacao: {
-  id: number; escolaId: number; nome: string | null; dataInicio: Date; dataFim: Date;
+  id: number; escolaId: number; nome: string | null; dataInicio: Date; dataFim: Date; status: string;
   escola?: { nome: string };
   modelos?: { modeloIdOriginal: number; nome: string; disciplinaId: number; disciplinaNome: string }[];
   reaberturas?: { dataInicio: Date; dataFim: Date }[];
@@ -40,7 +40,12 @@ const formatarAplicacao = (aplicacao: {
   nome: aplicacao.nome,
   dataInicio: aplicacao.dataInicio,
   dataFim: aplicacao.dataFim,
+  // `status` (abaixo) é a VIGÊNCIA calculada (scheduled/active/expired, nunca persistida — ver
+  // domain/pdiAplicacoes.ts). `statusRegistro` é o campo persistido novo (seção de remoção): só
+  // 'ativa'/'inativa', nada a ver com vigência — uma Aplicação pode estar "active" por data e
+  // ainda assim 'inativa' por ter sido removida administrativamente (DELETE /:id).
   status: statusVigencia(aplicacao),
+  statusRegistro: aplicacao.status === 'INATIVA' ? 'inativa' : 'ativa',
   // Versão leve (sem perguntas) do snapshot — só o suficiente para a UI mostrar quais
   // disciplinas esta Aplicação cobre (badges). O snapshot completo com perguntas mora em
   // GET /:id/snapshot, carregado à parte quando realmente precisar (seção 34 do pedido).
@@ -157,7 +162,7 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
   // 1) Todas as Aplicações de todas as escolas em scope, de uma vez — e a "ativa agora" de cada
   // escola, calculada em memória (statusVigencia é puro, sem I/O).
   const todasAplicacoes = await prisma.aplicacaoPdi.findMany({
-    where: { escolaId: { in: escolaIds } },
+    where: { escolaId: { in: escolaIds }, status: 'ATIVA' }, // removida (INATIVA) nunca conta como "ativa agora"
     include: { modelos: { select: { disciplinaId: true } } },
   });
   const aplicacaoAtivaPorEscola = new Map<number, (typeof todasAplicacoes)[number]>();
@@ -418,6 +423,7 @@ pdiAplicacoesRouter.put('/:id', async (req, res) => {
   const id = Number(req.params.id);
   const atual = await prisma.aplicacaoPdi.findUnique({ where: { id } });
   if (!atual) throw new NotFoundError('Aplicação não encontrada.');
+  if (atual.status === 'INATIVA') throw new ValidationError('Esta Aplicação foi removida e não pode mais ser editada.');
 
   const dados = editarAplicacaoSchema.parse(req.body);
   validarPeriodo(dados.dataInicio, dados.dataFim);
@@ -429,6 +435,45 @@ pdiAplicacoesRouter.put('/:id', async (req, res) => {
     include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } } },
   });
   res.json(formatarAplicacao(atualizada));
+});
+
+// Remover uma Aplicação: nunca preenchida (nenhuma RespostaPdi em nenhuma Ficha dela) some de
+// verdade — hard delete em cascata manual (FK é Restrict em todo o resto do schema de propósito,
+// então a ordem importa: RespostaPdi nunca existe aqui por definição, então começa em FichaPdi).
+// Já teve pelo menos 1 resposta salva: vira INATIVA (nunca apagada) — sai da circulação
+// operacional (Meus PDIs, indicadores, job de prazo), mas Fichas/Respostas continuam intactas e
+// consultáveis por quem tem acesso de leitura à Aplicação.
+pdiAplicacoesRouter.delete('/:id', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const id = Number(req.params.id);
+
+  const aplicacao = await prisma.aplicacaoPdi.findUnique({ where: { id } });
+  if (!aplicacao) throw new NotFoundError('Aplicação não encontrada.');
+  if (aplicacao.status === 'INATIVA') {
+    return res.json({ removida: true, modo: 'ja_estava_inativa', aplicacao: formatarAplicacao(aplicacao) });
+  }
+
+  const algumaResposta = await prisma.respostaPdi.findFirst({ where: { ficha: { aplicacaoId: id } } });
+
+  if (algumaResposta) {
+    const inativada = await prisma.aplicacaoPdi.update({
+      where: { id },
+      data: { status: 'INATIVA', updatedBy: String(actor.id) },
+      include: { escola: true },
+    });
+    return res.json({ removida: true, modo: 'inativada', aplicacao: formatarAplicacao(inativada) });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.fichaPdi.deleteMany({ where: { aplicacaoId: id } });
+    await tx.aplicacaoPerguntaPdi.deleteMany({ where: { aplicacaoModelo: { aplicacaoId: id } } });
+    await tx.aplicacaoModeloPdi.deleteMany({ where: { aplicacaoId: id } });
+    await tx.reaberturaPdi.deleteMany({ where: { aplicacaoId: id } });
+    await tx.aplicacaoPdi.delete({ where: { id } });
+  });
+
+  res.json({ removida: true, modo: 'excluida' });
 });
 
 pdiAplicacoesRouter.get('/:id/reaberturas', async (req, res) => {

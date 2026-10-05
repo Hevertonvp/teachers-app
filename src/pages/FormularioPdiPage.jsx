@@ -67,7 +67,7 @@ export const FormularioPdiPage = () => {
     createPdiModeloReal, inativarPdiModelo, reativarPdiModeloReal,
     createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal, excluirPdiModelo,
     pdiAplicacoesReais, pdiAplicacoesReaisLoading, pdiAplicacoesReaisError, loadPdiAplicacoesReais,
-    createPdiAplicacaoReal, updatePdiAplicacaoReal, listarReaberturasPdiAplicacao, criarReaberturaPdiAplicacao,
+    createPdiAplicacaoReal, updatePdiAplicacaoReal, removePdiAplicacaoReal, listarReaberturasPdiAplicacao, criarReaberturaPdiAplicacao,
   } = useData();
 
   const souSecretaria = isSecretaria(user);
@@ -90,6 +90,7 @@ export const FormularioPdiPage = () => {
   const [mostrarAplicacoesEncerradas, setMostrarAplicacoesEncerradas] = useState(false);
   const [aplicacaoForm, setAplicacaoForm] = useState(null);
   const [editingAplicacao, setEditingAplicacao] = useState(null);
+  const [removendoAplicacao, setRemovendoAplicacao] = useState(null);
   const [aplicacaoError, setAplicacaoError] = useState('');
   const [salvandoAplicacao, setSalvandoAplicacao] = useState(false);
   const [reaberturaForm, setReaberturaForm] = useState(null);
@@ -302,6 +303,7 @@ export const FormularioPdiPage = () => {
             <p className="font-semibold text-slate-900">{aplicacao.escolaNome || escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
             <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
             {aplicacao.reaberturaAtivaAgora && <Badge variant="blue">Reabertura ativa agora</Badge>}
+            {aplicacao.statusRegistro === 'inativa' && <Badge variant="gray">Removida</Badge>}
           </div>
           <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -316,10 +318,11 @@ export const FormularioPdiPage = () => {
           <Button size="sm" variant="outline" onClick={() => toggleHistoricoReaberturas(aplicacao.id)}>
             {aplicacaoExpandida === aplicacao.id ? 'Ocultar reaberturas' : 'Histórico de reaberturas'}
           </Button>
-          {souSecretaria && (
+          {souSecretaria && aplicacao.statusRegistro !== 'inativa' && (
             <>
               <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
               <Button size="sm" onClick={() => abrirReabertura(aplicacao)}>Reabrir</Button>
+              <Button size="sm" variant="danger" onClick={() => setRemovendoAplicacao(aplicacao)}>Remover</Button>
             </>
           )}
         </div>
@@ -781,6 +784,29 @@ export const FormularioPdiPage = () => {
               setMessage(resultado.ok
                 ? (resultado.removidoFisicamente ? 'Modelo excluído definitivamente — nunca havia sido usado em nenhuma Aplicação.' : 'Modelo removido da tela principal e arquivado no Histórico (já havia sido usado em alguma Aplicação).')
                 : resultado.error);
+            }}
+          />
+        )}
+
+        {removendoAplicacao && (
+          <ConfirmDialog
+            title="Remover aplicação PDI"
+            message={`Tem certeza que deseja remover esta aplicação (${removendoAplicacao.escolaNome || escolas.find(item => item.id === removendoAplicacao.escolaId)?.nome})? Se nenhum professor respondeu nada ainda, ela é excluída definitivamente. Se já houver alguma resposta salva, ela só sai de circulação (deixa de aparecer em Meus PDIs e nos indicadores) — as Fichas e Respostas já preenchidas continuam guardadas.`}
+            confirmLabel="Remover"
+            onCancel={() => setRemovendoAplicacao(null)}
+            onConfirm={async () => {
+              const aplicacao = removendoAplicacao;
+              setRemovendoAplicacao(null);
+              const resultado = await removePdiAplicacaoReal(aplicacao.id);
+              if (!resultado.ok) {
+                setMessage(resultado.error);
+                return;
+              }
+              setMessage(
+                resultado.modo === 'excluida'
+                  ? 'Aplicação excluída definitivamente — nunca havia resposta registrada.'
+                  : 'Aplicação removida de circulação (inativada) — já havia resposta registrada, o histórico foi preservado.',
+              );
             }}
           />
         )}

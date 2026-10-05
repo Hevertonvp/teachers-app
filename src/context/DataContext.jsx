@@ -14,7 +14,7 @@ import {
 } from '../services/pdiPerguntasPadrao';
 import {
   criarPdiAplicacaoReal, criarReaberturaPdiReal, editarPdiAplicacaoReal, listarPdiAplicacoesReais,
-  listarReaberturasPdiReais, obterSnapshotPdiAplicacaoReal,
+  listarReaberturasPdiReais, obterSnapshotPdiAplicacaoReal, removerPdiAplicacaoReal,
 } from '../services/pdiAplicacoes';
 import { concluirFichaReal, listarFichasPdiReais, listarMeusPdisReais, obterFichaReal, obterOuCriarFichaReal, salvarRespostasFichaReal } from '../services/pdiFichas';
 import {
@@ -521,6 +521,19 @@ export const DataProvider = ({ children }) => {
       const aplicacao = await editarPdiAplicacaoReal(id, payload);
       setPdiAplicacoesReais(prev => prev.map(item => (item.id === Number(id) ? aplicacao : item)));
       return { ok: true, aplicacao };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  // Nunca preenchida: backend apaga de verdade (modo 'excluida') — some da lista local. Já tinha
+  // resposta: vira INATIVA (modo 'inativada') — some da lista local igual (saiu de circulação),
+  // mas o registro continua existindo no banco pra quem consultar o histórico diretamente.
+  const removePdiAplicacaoReal = async (id) => {
+    try {
+      const resultado = await removerPdiAplicacaoReal(id);
+      setPdiAplicacoesReais(prev => prev.filter(item => item.id !== Number(id)));
+      return { ok: true, ...resultado };
     } catch (error) {
       return { ok: false, error: error.message };
     }
@@ -1119,6 +1132,7 @@ export const DataProvider = ({ children }) => {
     loadPdiAplicacoesReais,
     createPdiAplicacaoReal,
     updatePdiAplicacaoReal,
+    removePdiAplicacaoReal,
     obterSnapshotPdiAplicacao,
     listarReaberturasPdiAplicacao,
     criarReaberturaPdiAplicacao,

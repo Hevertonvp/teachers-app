@@ -8,8 +8,8 @@ import { inputClass } from '../utils/display';
 import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
 import { isProfessor } from '../utils/roles';
 
-const STATUS_VISUAL_LABEL = { nao_iniciado: 'Não iniciado', em_andamento: 'Em preenchimento', concluido: 'Concluído', prazo_encerrado: 'Prazo encerrado' };
-const STATUS_VISUAL_VARIANT = { nao_iniciado: 'gray', em_andamento: 'blue', concluido: 'green', prazo_encerrado: 'gray' };
+const STATUS_VISUAL_LABEL = { nao_iniciado: 'Não iniciado', agendado: 'Agendado', em_andamento: 'Em preenchimento', concluido: 'Concluído', prazo_encerrado: 'Prazo encerrado' };
+const STATUS_VISUAL_VARIANT = { nao_iniciado: 'gray', agendado: 'yellow', em_andamento: 'blue', concluido: 'green', prazo_encerrado: 'gray' };
 
 // Visão única do professor para o PDI por disciplina: tudo que pertence a ele, em qualquer
 // escola/turma/disciplina em que lecione, sem exigir seleção prévia de escola — cada linha já vem
@@ -81,7 +81,7 @@ export const MeusPdisPage = () => {
                 <FormField label="Escola"><select className={inputClass} value={filtroEscola} onChange={event => setFiltroEscola(event.target.value)}><option value="todas">Todas</option>{escolasDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}</select></FormField>
                 <FormField label="Disciplina"><select className={inputClass} value={filtroDisciplina} onChange={event => setFiltroDisciplina(event.target.value)}><option value="todas">Todas</option>{disciplinasDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}</select></FormField>
                 <FormField label="Turma"><select className={inputClass} value={filtroTurma} onChange={event => setFiltroTurma(event.target.value)}><option value="todas">Todas</option>{turmasDisponiveis.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}</select></FormField>
-                <FormField label="Status"><select className={inputClass} value={filtroStatus} onChange={event => setFiltroStatus(event.target.value)}><option value="todos">Todos</option><option value="nao_iniciado">Não iniciado</option><option value="em_andamento">Em preenchimento</option><option value="concluido">Concluído</option><option value="prazo_encerrado">Prazo encerrado</option></select></FormField>
+                <FormField label="Status"><select className={inputClass} value={filtroStatus} onChange={event => setFiltroStatus(event.target.value)}><option value="todos">Todos</option><option value="nao_iniciado">Não iniciado</option><option value="agendado">Agendado</option><option value="em_andamento">Em preenchimento</option><option value="concluido">Concluído</option><option value="prazo_encerrado">Prazo encerrado</option></select></FormField>
               </div>
             </Card>
 

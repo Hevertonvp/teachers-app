@@ -41,6 +41,7 @@ export const DashboardProfessor = () => {
   // usada por "Meus PDIs" (nunca recalculado aqui com regra própria).
   const resumoFichasPdi = {
     naoIniciados: meusPdisReais.filter(item => item.statusVisual === 'nao_iniciado').length,
+    agendados: meusPdisReais.filter(item => item.statusVisual === 'agendado').length,
     emAndamento: meusPdisReais.filter(item => item.statusVisual === 'em_andamento').length,
     concluidos: meusPdisReais.filter(item => item.statusVisual === 'concluido').length,
     prazoEncerrado: meusPdisReais.filter(item => item.statusVisual === 'prazo_encerrado').length,
@@ -72,8 +73,9 @@ export const DashboardProfessor = () => {
             {meusPdisReaisLoading ? (
               <p className="text-sm text-slate-500">Carregando...</p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
                 <div className="rounded-lg bg-slate-50 p-3"><p className="text-slate-500">Não iniciados</p><p className="text-2xl font-bold text-slate-900">{resumoFichasPdi.naoIniciados}</p></div>
+                <div className="rounded-lg bg-yellow-50 p-3"><p className="text-yellow-700">Agendados</p><p className="text-2xl font-bold text-yellow-800">{resumoFichasPdi.agendados}</p></div>
                 <div className="rounded-lg bg-blue-50 p-3"><p className="text-blue-700">Em preenchimento</p><p className="text-2xl font-bold text-blue-800">{resumoFichasPdi.emAndamento}</p></div>
                 <div className="rounded-lg bg-emerald-50 p-3"><p className="text-emerald-700">Concluídos</p><p className="text-2xl font-bold text-emerald-800">{resumoFichasPdi.concluidos}</p></div>
                 <div className="rounded-lg bg-amber-50 p-3"><p className="text-amber-700">Prazo encerrado</p><p className="text-2xl font-bold text-amber-800">{resumoFichasPdi.prazoEncerrado}</p></div>

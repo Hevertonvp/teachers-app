@@ -20,14 +20,23 @@ export function fichaEditavelAgora(
   return escolaAtiva && aplicacaoEditavelAgora;
 }
 
-export type StatusVisualPdi = 'nao_iniciado' | 'em_andamento' | 'concluido' | 'prazo_encerrado';
+export type StatusVisualPdi = 'nao_iniciado' | 'agendado' | 'em_andamento' | 'concluido' | 'prazo_encerrado';
 
 // Status visual único para listagens (Meus PDIs, perfil do aluno) — deriva de status da Ficha
-// (quando existe) + editabilidade atual, para o frontend nunca precisar recalcular a regra.
-// Combinação PENDENTE-ou-sem-Ficha com janela fechada vira "prazo_encerrado" (nunca apareceu
-// preenchida e não há mais como preencher); com janela aberta é "nao_iniciado".
-export function statusVisualItem(statusFicha: StatusFichaPdi | null, editavelAgora: boolean): StatusVisualPdi {
+// (quando existe) + editabilidade atual + vigência da Aplicação, para o frontend nunca precisar
+// recalcular a regra. PENDENTE-ou-sem-Ficha com janela fechada: se a Aplicação ainda nem começou
+// (vigência "scheduled"), é "agendado" — nunca "prazo_encerrado", que é só pra quando a janela JÁ
+// passou (vigência "expired") e não há reabertura ativa. Com janela aberta é "nao_iniciado". Bug
+// corrigido: antes não recebia a vigência e um formulário agendado pra começar no futuro aparecia
+// como "prazo encerrado" — mesmo rótulo de quando o prazo já tinha passado, o que é o oposto do
+// que aconteceu.
+export function statusVisualItem(
+  statusFicha: StatusFichaPdi | null,
+  editavelAgora: boolean,
+  statusVigenciaAplicacao: 'scheduled' | 'active' | 'expired',
+): StatusVisualPdi {
   if (statusFicha === 'CONCLUIDA') return 'concluido';
   if (statusFicha === 'EM_ANDAMENTO') return 'em_andamento';
-  return editavelAgora ? 'nao_iniciado' : 'prazo_encerrado';
+  if (editavelAgora) return 'nao_iniciado';
+  return statusVigenciaAplicacao === 'scheduled' ? 'agendado' : 'prazo_encerrado';
 }

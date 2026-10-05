@@ -50,6 +50,11 @@ export const editarPdiAplicacaoReal = async (id, payload) => normalizeAplicacao(
   body: { nome: payload.nome || null, dataInicio: payload.dataInicio, dataFim: payload.dataFim },
 }));
 
+// Nunca preenchida (zero RespostaPdi): o backend apaga de verdade (modo 'excluida'). Já tinha
+// alguma resposta salva: o backend inativa (modo 'inativada') — sai de circulação, mas o histórico
+// de Fichas/Respostas continua intacto. Já estava inativa: no-op (modo 'ja_estava_inativa').
+export const removerPdiAplicacaoReal = async (id) => apiFetch(`/api/pdi-aplicacoes/${id}`, { method: 'DELETE' });
+
 export const listarReaberturasPdiReais = async (aplicacaoId) => (await apiFetch(`/api/pdi-aplicacoes/${aplicacaoId}/reaberturas`)).map(normalizeReabertura);
 
 export const criarReaberturaPdiReal = async (aplicacaoId, payload) => normalizeReabertura(await apiFetch(`/api/pdi-aplicacoes/${aplicacaoId}/reaberturas`, {
