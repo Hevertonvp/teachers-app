@@ -27,7 +27,28 @@ export function createApp() {
 
   // CORS só para desenvolvimento local do frontend Vite — em produção, trocar por uma política
   // com a origem real (domínio do Vercel), nunca aberto irrestrito.
-  app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173' }));
+  //
+  // FRONTEND_ORIGIN aceita uma lista separada por vírgula (ex.: "https://localhost:5173,
+  // https://192.168.0.10:5173") — necessário desde que o dev server passou a servir HTTPS
+  // (vite.config.js/@vitejs/plugin-basic-ssl: testar PWA/Push num celular exige contexto seguro,
+  // e só https conta, mesmo acessando pelo IP da rede local). Fora de produção, também aceitamos
+  // por padrão qualquer origem https(s) na faixa de IP privada na porta do Vite, pra não precisar
+  // redescobrir e configurar o IP da máquina a cada vez que ele mudar (troca de rede, DHCP, etc.).
+  const origensConfiguradas = (process.env.FRONTEND_ORIGIN ?? 'https://localhost:5173,http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const origemLanDev = /^https?:\/\/(localhost|127\.0\.0\.1|(10|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+)(:\d+)?$/;
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin) return callback(null, true); // requisições sem Origin (ex.: curl, apps nativos)
+        if (origensConfiguradas.includes(origin)) return callback(null, true);
+        if (process.env.NODE_ENV !== 'production' && origemLanDev.test(origin)) return callback(null, true);
+        callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+      },
+    }),
+  );
   app.use(express.json());
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));

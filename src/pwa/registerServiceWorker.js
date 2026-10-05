@@ -3,8 +3,13 @@
 export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
+  // import.meta.env.BASE_URL (não "/" fixo): em produção o app é publicado no GitHub Pages sob um
+  // subcaminho (ex.: /teachers-app/), não na raiz do domínio — registrar em "/sw.js" buscaria o
+  // arquivo no lugar errado (404) e o service worker nunca ativaria.
+  const swUrl = `${import.meta.env.BASE_URL}sw.js`;
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
+    navigator.serviceWorker.register(swUrl).catch((err) => {
       console.error('[pwa] falha ao registrar o service worker', err);
     });
   });

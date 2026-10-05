@@ -4,13 +4,19 @@
 
 const STATIC_CACHE = 'gp-static-v1';
 
+// Caminho-base de onde este service worker foi servido — nunca "/" fixo: em produção o app é
+// publicado no GitHub Pages sob um subcaminho (ex.: https://usuario.github.io/teachers-app/), não
+// na raiz do domínio. self.location já reflete isso de verdade, então calculamos a partir dele em
+// vez de hardcodar — o mesmo cálculo funciona igual na raiz (dev local).
+const BASE = new URL('.', self.location).pathname;
+
 // Só ativos verdadeiramente estáveis (nunca o HTML/JS/CSS com hash de build do Vite — cacheá-los
 // aqui arriscaria servir um shell desatualizado apontando pra arquivos que não existem mais na
 // próxima build, seção 45/47 do pedido: nunca cache de dado autenticado nem de API).
-const CAMINHOS_ESTAVEIS = ['/manifest.webmanifest', '/favicon.svg'];
+const CAMINHOS_ESTAVEIS = [`${BASE}manifest.webmanifest`, `${BASE}favicon.svg`];
 
 function ehAssetEstavel(url) {
-  return CAMINHOS_ESTAVEIS.includes(url.pathname) || url.pathname.startsWith('/icons/');
+  return CAMINHOS_ESTAVEIS.includes(url.pathname) || url.pathname.startsWith(`${BASE}icons/`);
 }
 
 self.addEventListener('install', (event) => {
@@ -57,14 +63,17 @@ self.addEventListener('push', (event) => {
     payload = { title: 'Notificação', body: event.data.text() };
   }
 
+  // O backend já manda payload.url absoluto (origem + subcaminho real do app — ver
+  // FRONTEND_URL/criarNotificacao no backend); new URL(..., origin) aqui é só um fallback caso
+  // algum dia chegue relativo, nunca a fonte de verdade do subcaminho.
   const url = payload.url ? new URL(payload.url, self.location.origin).href : self.location.origin;
 
   event.waitUntil(
     (async () => {
       await self.registration.showNotification(payload.title || 'Notificação', {
         body: payload.body || '',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
+        icon: `${BASE}icons/icon-192.png`,
+        badge: `${BASE}icons/icon-192.png`,
         data: { url },
       });
 
