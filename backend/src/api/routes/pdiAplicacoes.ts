@@ -130,6 +130,112 @@ pdiAplicacoesRouter.get('/', async (req, res) => {
   res.json(aplicacoes.map(formatarAplicacao));
 });
 
+// --- GET /indicadores ------------------------------------------------------------------------
+// Indicadores REAIS de preenchimento de PDI, um por escola (dashboard da Secretaria/Gestor/
+// Diretora — nunca mock). Precisa vir ANTES de "GET /:id" no arquivo: senão o Express entende
+// "indicadores" como valor de :id. "Esperado" é recalculado AO VIVO a partir de
+// ProfessorTurmaDisciplina/AlunoPdi ATIVOS — mesma filosofia (e mesmo cálculo) já usada no job de
+// prazo de PDI (jobs/pdiPrazoJob.ts): uma Ficha nunca criada ainda conta como pendente, nunca é
+// omitida do total só por não ter linha no banco.
+//
+// Tudo em lote (4 queries no total, nunca por escola): a primeira versão fazia até 3 queries POR
+// escola — numa rede com ~35 escolas isso virou ~5-6s de resposta (cada round-trip até o Neon
+// custa uns 100-200ms daqui), ruim pra um widget de dashboard. Junta tudo, agrupa em memória.
+pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirLeituraAplicacoes(actor);
+  const permitidas = await escolasPermitidas(actor);
+
+  const escolas = await prisma.escola.findMany({
+    where: { status: 'ATIVA', ...(permitidas ? { id: { in: permitidas } } : {}) },
+    orderBy: { nome: 'asc' },
+    select: { id: true, nome: true },
+  });
+  if (escolas.length === 0) return res.json([]);
+  const escolaIds = escolas.map((e) => e.id);
+
+  // 1) Todas as Aplicações de todas as escolas em scope, de uma vez — e a "ativa agora" de cada
+  // escola, calculada em memória (statusVigencia é puro, sem I/O).
+  const todasAplicacoes = await prisma.aplicacaoPdi.findMany({
+    where: { escolaId: { in: escolaIds } },
+    include: { modelos: { select: { disciplinaId: true } } },
+  });
+  const aplicacaoAtivaPorEscola = new Map<number, (typeof todasAplicacoes)[number]>();
+  for (const aplicacao of todasAplicacoes) {
+    if (statusVigencia(aplicacao) === 'active') aplicacaoAtivaPorEscola.set(aplicacao.escolaId, aplicacao);
+  }
+  const escolasComAplicacaoAtiva = [...aplicacaoAtivaPorEscola.keys()];
+
+  if (escolasComAplicacaoAtiva.length === 0) {
+    return res.json(escolas.map((escola) => ({ escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: null, aplicacaoNome: null, totalEsperado: 0, concluidas: 0 })));
+  }
+
+  const aplicacaoIdsAtivas = [...aplicacaoAtivaPorEscola.values()].map((a) => a.id);
+
+  // 2) Todo ProfessorTurmaDisciplina ATIVO de turma ATIVA, só das escolas que têm Aplicação ativa
+  // agora (sem filtrar por disciplina aqui — disciplinas variam por escola, o filtro acontece em
+  // memória no passo 4) — e, em paralelo, todas as Fichas CONCLUIDA dessas Aplicações: nenhuma
+  // depende da outra, então não precisam esperar em sequência (cada round-trip até o Neon custa
+  // uns 100-500ms+ daqui; evitar encadear os independentes economiza isso de verdade).
+  const [ptds, fichasConcluidas] = await Promise.all([
+    prisma.professorTurmaDisciplina.findMany({
+      where: { status: 'ATIVO', turma: { escolaId: { in: escolasComAplicacaoAtiva }, status: 'ATIVA' } },
+      select: { turmaId: true, disciplinaId: true, turma: { select: { escolaId: true } } },
+    }),
+    prisma.fichaPdi.findMany({
+      where: { aplicacaoId: { in: aplicacaoIdsAtivas }, status: 'CONCLUIDA' },
+      select: { aplicacaoId: true, alunoId: true, disciplinaId: true },
+    }),
+  ]);
+  const turmaIds = [...new Set(ptds.map((p) => p.turmaId))];
+
+  // 3) Todo AlunoPdi ATIVO dessas turmas, de uma vez.
+  const alunos = turmaIds.length
+    ? await prisma.alunoPdi.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' }, select: { id: true, turmaId: true } })
+    : [];
+  const alunosPorTurma = new Map<number, number[]>();
+  for (const aluno of alunos) {
+    if (!alunosPorTurma.has(aluno.turmaId)) alunosPorTurma.set(aluno.turmaId, []);
+    alunosPorTurma.get(aluno.turmaId)!.push(aluno.id);
+  }
+
+  // 4) Candidatos (aluno×disciplina) por escola, em memória.
+  const candidatosPorEscola = new Map<number, Set<string>>();
+  for (const ptd of ptds) {
+    const escolaId = ptd.turma.escolaId;
+    const aplicacaoDaEscola = aplicacaoAtivaPorEscola.get(escolaId);
+    if (!aplicacaoDaEscola) continue;
+    const disciplinaIdsDaAplicacao = new Set(aplicacaoDaEscola.modelos.map((m) => m.disciplinaId));
+    if (!disciplinaIdsDaAplicacao.has(ptd.disciplinaId)) continue;
+    if (!candidatosPorEscola.has(escolaId)) candidatosPorEscola.set(escolaId, new Set());
+    const candidatos = candidatosPorEscola.get(escolaId)!;
+    for (const alunoId of alunosPorTurma.get(ptd.turmaId) ?? []) {
+      candidatos.add(`${alunoId}-${ptd.disciplinaId}`);
+    }
+  }
+
+  // 5) Agrupa as Fichas CONCLUIDA buscadas no passo 2 por Aplicação.
+  const concluidasPorAplicacao = new Map<number, Set<string>>();
+  for (const ficha of fichasConcluidas) {
+    if (!concluidasPorAplicacao.has(ficha.aplicacaoId)) concluidasPorAplicacao.set(ficha.aplicacaoId, new Set());
+    concluidasPorAplicacao.get(ficha.aplicacaoId)!.add(`${ficha.alunoId}-${ficha.disciplinaId}`);
+  }
+
+  const resultado = escolas.map((escola) => {
+    const ativa = aplicacaoAtivaPorEscola.get(escola.id);
+    if (!ativa) return { escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: null, aplicacaoNome: null, totalEsperado: 0, concluidas: 0 };
+
+    const candidatos = candidatosPorEscola.get(escola.id) ?? new Set<string>();
+    const concluidasDaAplicacao = concluidasPorAplicacao.get(ativa.id) ?? new Set<string>();
+    let concluidas = 0;
+    for (const chave of candidatos) if (concluidasDaAplicacao.has(chave)) concluidas++;
+
+    return { escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: ativa.id, aplicacaoNome: ativa.nome, totalEsperado: candidatos.size, concluidas };
+  });
+
+  res.json(resultado);
+});
+
 async function buscarAplicacaoNoEscopo(actor: Actor, id: number) {
   const aplicacao = await prisma.aplicacaoPdi.findUnique({
     where: { id },
@@ -165,6 +271,16 @@ pdiAplicacoesRouter.get('/:id/snapshot', async (req, res) => {
 
 function validarPeriodo(dataInicio: Date, dataFim: Date) {
   if (dataInicio > dataFim) throw new ValidationError('A data de início não pode ser depois da data de fim.');
+}
+
+// Só na CRIAÇÃO (nunca na edição — uma Aplicação já existente pode legitimamente ter começado no
+// passado só porque o tempo passou desde que foi criada; reeditar outro campo dela não pode
+// quebrar por causa disso). Vigência nova precisa começar hoje ou depois — não faz sentido abrir
+// um prazo de preenchimento que já nasce vencido.
+function exigirInicioNaoNoPassado(dataInicio: Date) {
+  if (dataInicio < hojeComoData()) {
+    throw new ValidationError('A data de início não pode ser no passado — a vigência precisa começar a partir de hoje.');
+  }
 }
 
 // Sobreposição é sempre dentro da MESMA escola (seção 13/14 do pedido — escolas diferentes com
@@ -204,6 +320,7 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
   exigirSecretaria(actor);
   const dados = criarAplicacaoSchema.parse(req.body);
   validarPeriodo(dados.dataInicio, dados.dataFim);
+  exigirInicioNaoNoPassado(dados.dataInicio);
   await exigirEscolaAtiva(dados.escolaId);
   await validarSemSobreposicao(dados.escolaId, dados);
 

@@ -26,6 +26,9 @@ const normalizeReabertura = (reabertura) => ({
 });
 
 export const listarPdiAplicacoesReais = async () => (await apiFetch('/api/pdi-aplicacoes')).map(normalizeAplicacao);
+// Indicadores REAIS de preenchimento (dashboard) — um item por escola, recalculado ao vivo no
+// backend (nunca mock). Sem aplicação ativa no momento, a escola ainda aparece com contagem zero.
+export const obterIndicadoresPdiReais = async () => apiFetch('/api/pdi-aplicacoes/indicadores');
 export const obterPdiAplicacaoReal = async (id) => normalizeAplicacao(await apiFetch(`/api/pdi-aplicacoes/${id}`));
 export const obterSnapshotPdiAplicacaoReal = async (id) => apiFetch(`/api/pdi-aplicacoes/${id}/snapshot`);
 

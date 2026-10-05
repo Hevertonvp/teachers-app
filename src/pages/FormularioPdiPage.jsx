@@ -6,7 +6,7 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
-import { CURRENT_DATE, formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
+import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
 import { canViewAplicacoesPdi, isSecretaria } from '../utils/roles';
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
 
@@ -27,11 +27,16 @@ const calcularReordenacao = (perguntasOrdenadas, perguntaId, direction) => {
   const atual = perguntasOrdenadas[index];
   return [{ id: atual.id, ordem: vizinha.ordem }, { id: vizinha.id, ordem: atual.ordem }];
 };
+// Data de hoje DE VERDADE (nunca CURRENT_DATE — essa constante é uma data simulada fixa da época
+// do mock, '2026-09-02', e usá-la aqui faria toda Aplicação PDI nova nascer com vigência no
+// passado em relação à data real do servidor; ver utils/formAvailability.js).
+const hojeISO = () => new Date().toISOString().slice(0, 10);
+
 // Criação: uma ou mais escolas de uma vez (`escolaIds` + `todasEscolas`). A Secretaria não
 // escolhe modelos/disciplinas aqui — a aplicação é da escola, e usa automaticamente todos os
 // modelos ativos no momento da criação (ver salvarAplicacao). Edição continua sendo sempre de
 // uma aplicação já existente, então usa `escolaId` único (ver editar vigência abaixo).
-const blankAplicacao = () => ({ escolaIds: [], todasEscolas: false, dataInicio: CURRENT_DATE, dataFim: CURRENT_DATE });
+const blankAplicacao = () => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO() });
 
 // Reabertura sempre começa sugerindo o dia seguinte ao fim original — o backend exige
 // estritamente depois disso, nunca dentro da vigência normal (ver domain/pdiAplicacoes.ts).
@@ -656,7 +661,18 @@ export const FormularioPdiPage = () => {
                 </FormField>
               )}
               <div className="grid gap-4 md:grid-cols-2">
-                <FormField label="Início"><input className={inputClass} type="date" value={aplicacaoForm.dataInicio} onChange={event => setAplicacaoForm(prev => ({ ...prev, dataInicio: event.target.value }))} required /></FormField>
+                <FormField label="Início">
+                  <input
+                    className={inputClass}
+                    type="date"
+                    value={aplicacaoForm.dataInicio}
+                    // min só na criação — editar uma aplicação já existente (possivelmente com
+                    // início no passado, legítimo com o tempo) não pode ficar travado por isso.
+                    min={editingAplicacao ? undefined : hojeISO()}
+                    onChange={event => setAplicacaoForm(prev => ({ ...prev, dataInicio: event.target.value }))}
+                    required
+                  />
+                </FormField>
                 <FormField label="Encerramento"><input className={inputClass} type="date" value={aplicacaoForm.dataFim} onChange={event => setAplicacaoForm(prev => ({ ...prev, dataFim: event.target.value }))} required /></FormField>
               </div>
               <div className="flex justify-end gap-3">

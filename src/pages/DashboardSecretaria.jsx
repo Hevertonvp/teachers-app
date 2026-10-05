@@ -1,11 +1,55 @@
-import { Badge, Card, DataTable, StatCard } from '../components/Common';
+import { useEffect, useState } from 'react';
+import { Badge, Button, Card, DataTable, StatCard } from '../components/Common';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { MainLayout } from '../layouts/Layouts';
+import { obterIndicadoresPdiReais } from '../services/pdiAplicacoes';
 
 export const DashboardSecretaria = () => {
-  const { escolas, turmas } = useData();
+  const { escolas, turmas, escolasLoading, escolasError, turmasLoading, loadEscolas } = useData();
   const { activeEscolaId, setActiveEscolaId } = useEscola();
+
+  // Indicadores REAIS de preenchimento de PDI (nunca mock) — um item por escola, carregado à
+  // parte (não é um recurso "global" do DataContext, só esta tela usa).
+  const [indicadores, setIndicadores] = useState([]);
+  const [indicadoresLoading, setIndicadoresLoading] = useState(true);
+  const [indicadoresError, setIndicadoresError] = useState('');
+
+  const carregarIndicadores = async () => {
+    setIndicadoresLoading(true);
+    setIndicadoresError('');
+    try {
+      setIndicadores(await obterIndicadoresPdiReais());
+    } catch (error) {
+      setIndicadoresError(error.message);
+    } finally {
+      setIndicadoresLoading(false);
+    }
+  };
+
+  useEffect(() => { carregarIndicadores(); }, []);
+
+  // Sem isso, a tela mostrava "0" em tudo por um instante a cada carregamento (e, num cold start
+  // do backend em produção, por bem mais que um instante) — fácil de confundir com "sumiram as
+  // escolas", quando na real os dados só ainda não tinham chegado.
+  if (escolasLoading || turmasLoading) {
+    return (
+      <MainLayout>
+        <p className="text-center text-slate-500">Carregando indicadores da rede...</p>
+      </MainLayout>
+    );
+  }
+
+  if (escolasError) {
+    return (
+      <MainLayout>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+          <span>Não foi possível carregar as escolas: {escolasError}</span>
+          <Button size="sm" variant="outline" onClick={loadEscolas}>Tentar novamente</Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   const escolasVisualizadas = activeEscolaId === null ? escolas : escolas.filter(escola => escola.id === activeEscolaId);
   const escolasAtivas = escolasVisualizadas.filter(escola => escola.status === 'ativa').length;
@@ -14,17 +58,35 @@ export const DashboardSecretaria = () => {
   const titulo = activeEscolaId === null ? 'Secretaria de Educação' : escolasVisualizadas[0]?.nome;
   const descricao = activeEscolaId === null ? 'Indicadores gerais da rede municipal de ensino.' : 'Indicadores agregados da escola selecionada.';
 
+  const indicadorPorEscola = new Map(indicadores.map(item => [item.escolaId, item]));
+  const indicadoresVisualizados = activeEscolaId === null ? indicadores : indicadores.filter(item => item.escolaId === activeEscolaId);
+  const totalEsperadoRede = indicadoresVisualizados.reduce((soma, item) => soma + item.totalEsperado, 0);
+  const totalConcluidasRede = indicadoresVisualizados.reduce((soma, item) => soma + item.concluidas, 0);
+  const percentualRede = totalEsperadoRede > 0 ? Math.round((totalConcluidasRede / totalEsperadoRede) * 100) : null;
+
   const resumos = escolasVisualizadas.map(escola => ({
     id: escola.id,
     escola,
     totalTurmas: turmas.filter(turma => turma.escolaId === escola.id).length,
+    indicador: indicadorPorEscola.get(escola.id) ?? null,
   }));
 
   const columns = [
     { key: 'escola', header: 'Escola', render: row => row.escola.nome },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.escola.status === 'ativa' ? 'green' : 'gray'}>{row.escola.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge> },
     { key: 'totalTurmas', header: 'Turmas' },
-    { key: 'totalAlunos', header: 'Alunos PDI', render: () => '—' },
+    {
+      key: 'pdi',
+      header: 'PDI preenchido',
+      render: row => {
+        if (indicadoresLoading) return <span className="text-slate-400">Carregando...</span>;
+        if (!row.indicador || row.indicador.aplicacaoId === null) return <span className="text-slate-400">Sem aplicação ativa</span>;
+        const { concluidas, totalEsperado } = row.indicador;
+        if (totalEsperado === 0) return <span className="text-slate-400">Sem fichas esperadas</span>;
+        const percentual = Math.round((concluidas / totalEsperado) * 100);
+        return <span className="font-semibold text-slate-800">{concluidas}/{totalEsperado} <span className="font-normal text-slate-500">({percentual}%)</span></span>;
+      },
+    },
   ];
 
   return (
@@ -44,6 +106,25 @@ export const DashboardSecretaria = () => {
               <StatCard label="Turmas" value={turmasVisualizadas.length} description={activeEscolaId === null ? 'na rede' : 'na escola'} />
             </div>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4">
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Preenchimento do PDI</p>
+            <p className="mt-1 text-sm text-slate-600">Fichas concluídas nas Aplicações PDI ativas agora, recalculado ao vivo a partir de quem realmente está responsável por cada turma/disciplina hoje.</p>
+          </div>
+          {indicadoresError ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+              <span>Não foi possível carregar os indicadores de PDI: {indicadoresError}</span>
+              <Button size="sm" variant="outline" onClick={carregarIndicadores}>Tentar novamente</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <StatCard label="Fichas esperadas" value={indicadoresLoading ? '—' : totalEsperadoRede} description={activeEscolaId === null ? 'na rede, agora' : 'na escola, agora'} />
+              <StatCard label="Concluídas" value={indicadoresLoading ? '—' : totalConcluidasRede} description="fichas" />
+              <StatCard label="Preenchimento" value={indicadoresLoading ? '—' : (percentualRede === null ? '—' : `${percentualRede}%`)} description="do esperado" />
+            </div>
+          )}
         </section>
 
         <section>

@@ -1,4 +1,4 @@
-import { Badge, Card, StatCard } from '../components/Common';
+import { Badge, Button, Card, StatCard } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
@@ -7,10 +7,31 @@ import { canViewIndicadoresDiretora } from '../utils/roles';
 
 export const DashboardDiretora = () => {
   const { user } = useAuth();
-  const { escolas, turmas } = useData();
+  const { escolas, turmas, escolasLoading, escolasError, turmasLoading, loadEscolas } = useData();
   const { userEscolas, activeEscolaId } = useEscola();
 
   if (!canViewIndicadoresDiretora(user)) return null;
+
+  // Mesmo cuidado do dashboard da Secretaria: sem isso, a tela mostra "0 escolas" por um instante
+  // a cada carregamento (bem mais que um instante num cold start do backend em produção).
+  if (escolasLoading || turmasLoading) {
+    return (
+      <MainLayout>
+        <p className="text-center text-slate-500">Carregando indicadores...</p>
+      </MainLayout>
+    );
+  }
+
+  if (escolasError) {
+    return (
+      <MainLayout>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+          <span>Não foi possível carregar as escolas: {escolasError}</span>
+          <Button size="sm" variant="outline" onClick={loadEscolas}>Tentar novamente</Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   const escolasVinculadas = escolas.filter(escola => userEscolas.some(item => item.id === escola.id));
   const escolasVisualizadas = activeEscolaId === null ? escolasVinculadas : escolasVinculadas.filter(escola => escola.id === activeEscolaId);
