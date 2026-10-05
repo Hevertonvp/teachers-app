@@ -30,8 +30,11 @@ const formatarVinculo = (vinculo: {
 // PDI, turmas e aplicações da própria escola — saber quem leciona o quê na turma é informação
 // pedagógica do mesmo nível, sem conceder nenhum poder de criar/encerrar vínculo (isso continua
 // exclusivo de Secretaria/Diretora, que são quem gerencia professores — ver pessoas.ts).
+// PROFESSOR também pode ler — mas só os PRÓPRIOS vínculos (o handler abaixo nunca confia num
+// professorId vindo da query para esse perfil, força sempre o do próprio token). Sem isso, nem o
+// próprio Dashboard do Professor consegue saber em quais turmas/disciplinas ele está, de verdade.
 function exigirLeituraVinculo(actor: Actor) {
-  if (actor.perfil !== 'SECRETARIA' && actor.perfil !== 'DIRETORA' && actor.perfil !== 'GESTOR') {
+  if (!['SECRETARIA', 'DIRETORA', 'GESTOR', 'PROFESSOR'].includes(actor.perfil)) {
     throw new ForbiddenError('Você não tem permissão para consultar vínculos pedagógicos.');
   }
 }
@@ -52,9 +55,14 @@ professorTurmaDisciplinaRouter.get('/', async (req, res) => {
   const permitidas = await escolasPermitidas(actor);
   const { professorId, turmaId } = req.query;
 
+  // PROFESSOR nunca escolhe professorId pela query — é sempre o próprio, senão ele conseguiria
+  // ler o vínculo de qualquer colega só trocando o parâmetro (seção de segurança do pedido
+  // original de vínculos pedagógicos: nunca confiar em id vindo do frontend).
+  const professorIdFiltro = actor.perfil === 'PROFESSOR' ? actor.id : professorId ? Number(professorId) : undefined;
+
   const vinculos = await prisma.professorTurmaDisciplina.findMany({
     where: {
-      ...(professorId ? { professorId: Number(professorId) } : {}),
+      ...(professorIdFiltro ? { professorId: professorIdFiltro } : {}),
       ...(turmaId ? { turmaId: Number(turmaId) } : {}),
       ...(permitidas ? { turma: { escolaId: { in: permitidas } } } : {}),
     },

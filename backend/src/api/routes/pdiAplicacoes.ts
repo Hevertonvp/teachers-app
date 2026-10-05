@@ -309,12 +309,18 @@ const criarAplicacaoSchema = z.object({
   nome: z.string().trim().min(1).nullish(),
   dataInicio: z.coerce.date(),
   dataFim: z.coerce.date(),
+  // Opcional: quais Modelos ATIVOS entram nesta Aplicação. Omitido (ou undefined) = comportamento
+  // antigo, todos os modelos ativos no momento (compatibilidade com quem ainda chama sem isso).
+  // Passado explicitamente, SEMPRE precisa de pelo menos 1 id — a Secretaria pode querer aplicar
+  // só Inglês numa escola e Inglês+Matemática noutra, por exemplo.
+  modeloIds: z.array(z.number().int()).optional(),
 });
 
-// Cria a Aplicação e, na MESMA transação, o snapshot imutável de todos os Modelos ATIVOS (com
-// suas perguntas ATIVAS) — seções 3-9 do pedido. Disciplina sem modelo ativo é simplesmente
-// ignorada (nunca substituída, seção 10); se NENHUM modelo estiver ativo, bloqueia por completo
-// em vez de criar uma aplicação vazia (seção 11).
+// Cria a Aplicação e, na MESMA transação, o snapshot imutável dos Modelos ATIVOS escolhidos (com
+// suas perguntas ATIVAS) — seções 3-9 do pedido original de Aplicações. Disciplina sem modelo
+// ativo é simplesmente ignorada (nunca substituída, seção 10); se NENHUM modelo ativo sobrar pra
+// usar (nem geral, nem dentro do que foi selecionado), bloqueia por completo em vez de criar uma
+// aplicação vazia (seção 11).
 pdiAplicacoesRouter.post('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
@@ -332,6 +338,19 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
     throw new ValidationError('Não existe nenhum Modelo PDI ativo. Cadastre ao menos um modelo antes de criar uma Aplicação.');
   }
 
+  let modelosParaUsar = modelosAtivos;
+  if (dados.modeloIds) {
+    const idsValidos = new Set(modelosAtivos.map((m) => m.id));
+    const idsInvalidos = dados.modeloIds.filter((id) => !idsValidos.has(id));
+    if (idsInvalidos.length > 0) {
+      throw new ValidationError('Um ou mais modelos selecionados não existem ou não estão ativos no momento.');
+    }
+    modelosParaUsar = modelosAtivos.filter((m) => dados.modeloIds!.includes(m.id));
+    if (modelosParaUsar.length === 0) {
+      throw new ValidationError('Selecione ao menos uma disciplina (modelo ativo) para a Aplicação.');
+    }
+  }
+
   // Timeout maior que o padrão (5s): o snapshot percorre todo Modelo+Pergunta ATIVA de uma vez
   // (dezenas de round-trips ao Neon), e o padrão estourava com o volume real de modelos.
   const criada = await prisma.$transaction(async (tx) => {
@@ -345,7 +364,7 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
       },
     });
 
-    for (const modelo of modelosAtivos) {
+    for (const modelo of modelosParaUsar) {
       const aplicacaoModelo = await tx.aplicacaoModeloPdi.create({
         data: {
           aplicacaoId: aplicacao.id,

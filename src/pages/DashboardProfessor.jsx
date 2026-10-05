@@ -1,18 +1,30 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, EmptyState, StatCard } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
-import { turmasDoProfessor } from '../utils/escolas';
+import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { MainLayout } from '../layouts/Layouts';
 
 export const DashboardProfessor = () => {
   const { user } = useAuth();
-  const { turmas, turmaProfessores, meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
+  const { escolas, meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
   const { userEscolas } = useEscola();
 
-  useEffect(() => { loadMeusPdisReais(); }, [loadMeusPdisReais]);
+  // Vínculo real Turma+Disciplina do professor (nunca o mock turmaProfessores/turmasDoProfessor
+  // — ficou pra trás da migração pro backend real: qualquer professor cadastrado de verdade,
+  // fora da leva original seedada, aparecia aqui com "nenhuma turma", mesmo tendo vínculo real).
+  const [meusVinculos, setMeusVinculos] = useState([]);
+  const [meusVinculosLoading, setMeusVinculosLoading] = useState(true);
+
+  useEffect(() => {
+    loadMeusPdisReais();
+    listarVinculosProfessorTurmaDisciplina()
+      .then((vinculos) => setMeusVinculos(vinculos.filter((v) => v.status === 'ATIVO')))
+      .catch(() => setMeusVinculos([]))
+      .finally(() => setMeusVinculosLoading(false));
+  }, [loadMeusPdisReais]);
 
   if (userEscolas.length === 0) {
     return (
@@ -24,7 +36,7 @@ export const DashboardProfessor = () => {
 
   // Professor vê tudo que é seu em todas as suas escolas, sempre junto — nunca preso ao
   // seletor de escola do topo (removido para este perfil; ver feedback salvo em memória).
-  const minhasTurmas = turmasDoProfessor(turmas, turmaProfessores, user?.id);
+  const totalTurmasUnicas = new Set(meusVinculos.map(v => v.turmaId)).size;
   // Resumo real do PDI por disciplina (Fichas) — fonte: GET /api/pdi-fichas/meus-pdis, a mesma
   // usada por "Meus PDIs" (nunca recalculado aqui com regra própria).
   const resumoFichasPdi = {
@@ -45,7 +57,7 @@ export const DashboardProfessor = () => {
               <p className="mt-2 max-w-2xl text-slate-600">Esta primeira entrega disponibiliza só o módulo PDI — os demais indicadores serão liberados nas próximas etapas.</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <StatCard label="Minhas turmas" value={minhasTurmas.length} description="turmas vinculadas" />
+              <StatCard label="Minhas turmas" value={totalTurmasUnicas} description="turmas vinculadas" />
             </div>
           </div>
         </section>
@@ -81,12 +93,18 @@ export const DashboardProfessor = () => {
           <Card>
             <h2 className="text-xl font-bold text-slate-950">Minhas turmas</h2>
             <div className="mt-4 space-y-3">
-              {minhasTurmas.map(turma => (
-                <div key={turma.id} className="rounded-xl border border-slate-200 p-4">
-                  <p className="font-semibold text-slate-900">{turma.nome}</p>
-                  <p className="mt-1 text-sm text-slate-600">{turma.ciclo}</p>
-                </div>
-              ))}
+              {meusVinculosLoading ? (
+                <p className="text-sm text-slate-500">Carregando...</p>
+              ) : meusVinculos.length === 0 ? (
+                <p className="text-sm text-slate-500">Nenhuma turma/disciplina vinculada no momento.</p>
+              ) : (
+                meusVinculos.map(vinculo => (
+                  <div key={vinculo.id} className="rounded-xl border border-slate-200 p-4">
+                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} · {vinculo.disciplinaNome}</p>
+                    <p className="mt-1 text-sm text-slate-600">{escolas.find(e => e.id === vinculo.escolaId)?.nome}</p>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
 
