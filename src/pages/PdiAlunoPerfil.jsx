@@ -2,6 +2,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, ConfirmDialog, FormField, Modal } from '../components/Common';
 import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
+import { DesempenhoPdiChartMock } from '../components/DesempenhoPdiChartMock';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
@@ -213,6 +214,10 @@ export const PdiAlunoPerfil = () => {
             Nenhum formulário PDI configurado para esta escola/disciplina no momento — nenhuma aplicação PDI aberta, ou nenhuma disciplina com modelo PDI cadastrado, para a turma deste aluno.
           </div>
         )}
+
+        <Card>
+          <DesempenhoPdiChartMock />
+        </Card>
 
         <Card>
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">

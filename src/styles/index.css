@@ -202,6 +202,21 @@ textarea {
 	color: #94c8b0 !important;
 }
 
+@keyframes pdiChartFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.pdi-chart-fade {
+	animation: pdiChartFadeIn 0.35s ease;
+}
+
 .theme-dark .text-amber-700,
 .theme-dark .text-amber-800 {
 	color: #fcd34d !important;

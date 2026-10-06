@@ -234,7 +234,7 @@ export const FormularioPdiProfessor = () => {
     return (
       <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
         <FormField label={question.pergunta}>
-          <textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} onBlur={() => updateAnswer(question, { ...current, texto: aplicarAutoCorrecao(current.texto) })} readOnly={!podePreencher} disabled={bloqueado && podePreencher} />
+          <textarea className={`${inputClass} resize-none`} rows="4" spellCheck lang="pt-BR" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} onBlur={() => updateAnswer(question, { ...current, texto: aplicarAutoCorrecao(current.texto) })} readOnly={!podePreencher} disabled={bloqueado && podePreencher} />
         </FormField>
       </div>
     );
