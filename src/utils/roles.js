@@ -72,3 +72,8 @@ export const canManageProfessores = (user) => isSecretaria(user) || isDiretora(u
 // Gestão de Turmas (criar/editar/inativar) — exclusiva da Secretaria, não herdada por
 // canManagePedagogico (Gestor não cria/edita turma, só usa as que a Secretaria cadastrou).
 export const canManageTurmas = (user) => isSecretaria(user);
+
+// Correções > PDI (localizar/corrigir diretamente/devolver Fichas PDI concluídas) — exclusiva da
+// Secretaria, nunca herdada de canManagePedagogico: Gestor administra Aplicações/Modelos, mas
+// não entra na fila de correção (backend aplica a mesma restrição; aqui é só o gate de UI).
+export const canViewCorrecoesPdi = (user) => isSecretaria(user);

@@ -169,6 +169,7 @@ model Turma {
   vinculosAuxiliar   AuxiliarTurma[]
   fichasPdi          FichaPdi[]
   anamneses          Anamnese[]
+  movimentacoesAluno MovimentacaoAlunoPdi[]
 
   // Cobre o filtro mais comum da listagem (GET /api/turmas?escolaId=...&anoLetivo=...&status=...)
   // — Postgres também usa o prefixo desse índice (só escolaId, ou escolaId+anoLetivo) sozinho.
@@ -337,8 +338,10 @@ model AlunoPdi {
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1)
 
-  fichasPdi  FichaPdi[]
-  anamneses  Anamnese[]
+  fichasPdi      FichaPdi[]
+  anamneses      Anamnese[]
+  movimentacoes  MovimentacaoAlunoPdi[]
+  fichasAnuais   FichaAnualPdi[]
 
   @@index([turmaId])
   @@map("alunos_pdi")
@@ -614,6 +617,8 @@ model FichaPdi {
   version      Int       @default(1)
 
   respostas RespostaPdi[]
+  correcoes CorrecaoFichaPdi[]
+  historicoCorrecao HistoricoCorrecaoResposta[]
 
   @@unique([aplicacaoId, alunoId, disciplinaId])
   @@index([alunoId])
@@ -644,6 +649,135 @@ model RespostaPdi {
   @@unique([fichaId, aplicacaoPerguntaId])
   @@index([fichaId])
   @@map("respostas_pdi")
+}
+
+// --- Ficha Anual PDI, movimentação do aluno e Correções -------------------------------------
+// Tudo aditivo: nenhuma entidade acima muda de formato por causa destas. Fonte da verdade das
+// respostas continua sendo FichaPdi/RespostaPdi — nada aqui duplica conteúdo de formulário.
+
+enum StatusFichaAnualPdi {
+  EM_ANDAMENTO
+  FECHADA
+}
+
+enum StatusCorrecaoFichaPdi {
+  ABERTA
+  RESOLVIDA
+}
+
+enum OrigemHistoricoCorrecao {
+  SECRETARIA_DIRETA
+  PROFESSOR_POS_DEVOLUCAO
+}
+
+// Trilha de "onde o aluno estava": hoje trocar a turma de um AlunoPdi só sobrescreve o campo
+// (ver pdiAlunos.ts), sem deixar rastro de qual era a turma/escola anterior. Esta tabela registra
+// cada período de permanência numa turma — dataFim null = contexto atual. Nunca editada/apagada
+// depois de fechada (dataFim preenchido uma vez, nunca mais muda).
+model MovimentacaoAlunoPdi {
+  id      Int      @id @default(autoincrement())
+  alunoId Int
+  aluno   AlunoPdi @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  turmaId Int
+  turma   Turma    @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+
+  dataInicio DateTime
+  dataFim    DateTime? // null = este é o contexto atual do aluno
+
+  registradoPor String? @db.VarChar(200)
+  createdAt     DateTime @default(now())
+
+  @@index([alunoId, dataInicio])
+  @@map("movimentacoes_aluno_pdi")
+}
+
+// Consolidado anual por aluno — camada de APRESENTAÇÃO/identidade, nunca de conteúdo. O conteúdo
+// (quais Aplicações/disciplinas entram, status de cada Ficha) é sempre derivado ao vivo de
+// FichaPdi/AplicacaoPdi na API (ver pdiFichaAnual.ts); esta tabela só guarda o que precisa de
+// identidade/status/fechamento (seção 35 do pedido original): alunoId+ano é único, nunca duas
+// linhas pro mesmo aluno no mesmo ano. "ano" é o ano civil de AplicacaoPdi.dataInicio das Fichas
+// agrupadas — nunca persistido em FichaPdi, só usado aqui como chave de identidade.
+model FichaAnualPdi {
+  id      Int   @id @default(autoincrement())
+  alunoId Int
+  aluno   AlunoPdi @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  ano     Int
+
+  status    StatusFichaAnualPdi @default(EM_ANDAMENTO)
+  abertaEm  DateTime            @default(now())
+  fechadaEm DateTime?
+  fechadaPor String?            @db.VarChar(200)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@unique([alunoId, ano])
+  @@map("fichas_anuais_pdi")
+}
+
+// Configuração mínima de fechamento automático do ciclo anual (seção 16 do pedido: "se não
+// existir hoje configuração adequada, implemente apenas a estrutura mínima"). Uma linha por ano
+// civil; dataEncerramento null = nenhum fechamento automático configurado pra aquele ano (o job
+// diário simplesmente ignora anos sem configuração ou sem data futura já vencida).
+model CicloAnualPdi {
+  ano              Int       @id
+  dataEncerramento DateTime? @db.Date
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@map("ciclos_anuais_pdi")
+}
+
+// Reabertura INDIVIDUAL de uma única Ficha PDI já concluída — conceito deliberadamente separado
+// de ReaberturaPdi (que reabre a Aplicação inteira, todas as Fichas, todos os alunos). Criada só
+// pela Secretaria ao "devolver" uma Ficha em Correções > PDI. `status` guarda só as duas
+// transições reais (ABERTA->RESOLVIDA); o terceiro estado do pedido ("EXPIRADA") é sempre
+// CALCULADO na leitura (status=='ABERTA' && agora > prazoAte), nunca gravado — mesmo padrão já
+// usado em statusVigencia/domain/pdiAplicacoes.ts, evita precisar de um job só pra "virar" status.
+model CorrecaoFichaPdi {
+  id      Int      @id @default(autoincrement())
+  fichaId Int
+  ficha   FichaPdi @relation(fields: [fichaId], references: [id], onDelete: Restrict)
+
+  observacao String                 @db.VarChar(500)
+  status     StatusCorrecaoFichaPdi @default(ABERTA)
+
+  criadaPor String   @db.VarChar(200)
+  criadaEm  DateTime @default(now())
+  prazoAte  DateTime // criadaEm + 3 dias, timestamp real (nunca só a data)
+
+  concluidaEm  DateTime?
+  concluidaPor String?   @db.VarChar(200)
+
+  @@index([fichaId])
+  @@map("correcoes_ficha_pdi")
+}
+
+// Auditoria de valor anterior/novo de UMA resposta alterada em contexto de correção — nunca
+// escrita no fluxo normal de preenchimento (só quando a Secretaria corrige diretamente, ou
+// quando o Professor salva durante uma janela de CorrecaoFichaPdi ABERTA). "Não sobrescrever sem
+// histórico" (seção 30 do pedido): cada alteração gera uma linha nova, nunca atualiza uma linha
+// existente.
+model HistoricoCorrecaoResposta {
+  id                  Int      @id @default(autoincrement())
+  fichaId             Int
+  ficha               FichaPdi @relation(fields: [fichaId], references: [id], onDelete: Restrict)
+  aplicacaoPerguntaId Int
+
+  valorAnterior Json?
+  valorNovo     Json
+
+  alteradoPor String                  @db.VarChar(200)
+  alteradoEm  DateTime                @default(now())
+  origem      OrigemHistoricoCorrecao
+
+  @@index([fichaId])
+  @@map("historico_correcao_resposta")
 }
 
 // --- Anamnese -------------------------------------------------------------------------------

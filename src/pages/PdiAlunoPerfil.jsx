@@ -194,6 +194,7 @@ export const PdiAlunoPerfil = () => {
                 aluno (Secretaria/Gestor/Diretora) — só a Secretaria edita, o backend garante
                 (seção 33 do pedido de Anamnese). */}
             <Link to={`/pdi/alunos/${aluno.id}/anamnese`}><Button variant="outline">Anamnese</Button></Link>
+            <Link to={`/pdi/alunos/${aluno.id}/ficha-anual`}><Button variant="outline">Ficha Anual PDI</Button></Link>
             {(isGestor(user) || isDiretora(user)) && fichasGestor.map(ficha => (
               <Link key={`${ficha.aplicacaoId}-${ficha.disciplinaId}`} to={`/pdi/fichas/${ficha.aplicacaoId}/${ficha.disciplinaId}/${aluno.id}`}>
                 <Button variant="outline">Formulário PDI — {ficha.disciplinaNome} ({formatFullDate(ficha.dataInicio)}–{formatFullDate(ficha.dataFim)})</Button>

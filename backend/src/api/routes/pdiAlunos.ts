@@ -182,27 +182,46 @@ pdiAlunosRouter.post('/', async (req, res) => {
   const dados = dadosAlunoSchema.parse(req.body);
   const turma = await validarTurmaNoEscopo(actor, dados.turmaId);
 
-  const criado = await prisma.alunoPdi.create({
-    data: { ...dados, status: 'ATIVO', createdBy: String(actor.id) },
-  });
+  // Primeira MovimentacaoAlunoPdi do aluno, já aberta (dataFim null = contexto atual) — mesma
+  // transação do cadastro, pra nunca existir um AlunoPdi sem nenhuma movimentação registrada.
+  const criado = await prisma.$transaction(async (tx) => {
+    const aluno = await tx.alunoPdi.create({ data: { ...dados, status: 'ATIVO', createdBy: String(actor.id) } });
+    await tx.movimentacaoAlunoPdi.create({
+      data: { alunoId: aluno.id, turmaId: aluno.turmaId, dataInicio: aluno.createdAt, registradoPor: String(actor.id) },
+    });
+    return aluno;
+  }, { timeout: 15000 });
 
   res.status(201).json(formatarAluno({ ...criado, turma }));
 });
 
-// Trocar de turma aqui só muda o cadastro atual (seção 9/10 do pedido) — não existe ainda
-// snapshot/histórico de matrícula porque fichas ainda não existem no backend.
+// Trocar de turma aqui muda o cadastro atual E, se a turma mudou de verdade, fecha a
+// MovimentacaoAlunoPdi aberta (dataFim=agora) e abre uma nova (seção 4/6 do pedido de
+// continuidade do aluno) — na mesma transação, pra nunca ficar um intervalo sem nenhuma
+// movimentação aberta. Quando a turma não muda (só nome/responsável), não mexe em movimentação
+// nenhuma.
 pdiAlunosRouter.put('/:id', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirEscrita(actor);
   const id = Number(req.params.id);
-  await buscarAlunoNoEscopo(actor, id); // garante escopo na escola ATUAL antes de qualquer mudança
+  const atual = await buscarAlunoNoEscopo(actor, id); // garante escopo na escola ATUAL antes de qualquer mudança
   const dados = dadosAlunoSchema.parse(req.body);
   const turma = await validarTurmaNoEscopo(actor, dados.turmaId); // e na escola NOVA, se mudou
 
-  const atualizado = await prisma.alunoPdi.update({
-    where: { id },
-    data: { ...dados, updatedBy: String(actor.id), version: { increment: 1 } },
-  });
+  const atualizado = await prisma.$transaction(async (tx) => {
+    const aluno = await tx.alunoPdi.update({
+      where: { id },
+      data: { ...dados, updatedBy: String(actor.id), version: { increment: 1 } },
+    });
+    if (dados.turmaId !== atual.turmaId) {
+      const agora = new Date();
+      await tx.movimentacaoAlunoPdi.updateMany({ where: { alunoId: id, dataFim: null }, data: { dataFim: agora } });
+      await tx.movimentacaoAlunoPdi.create({
+        data: { alunoId: id, turmaId: dados.turmaId, dataInicio: agora, registradoPor: String(actor.id) },
+      });
+    }
+    return aluno;
+  }, { timeout: 15000 });
 
   res.json(formatarAluno({ ...atualizado, turma }));
 });

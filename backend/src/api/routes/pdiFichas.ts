@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { isAplicacaoEditavelAgora, statusVigencia } from '../../domain/pdiAplicacoes.js';
-import { fichaEditavelAgora, statusAposSalvarResposta, statusVisualItem } from '../../domain/pdiFichas.js';
+import { editavelParaProfessor, fichaEditavelAgora, statusAposSalvarResposta, statusVisualItem } from '../../domain/pdiFichas.js';
 import { escolasPermitidas } from './pessoas.js';
 
 export const pdiFichasRouter = Router();
@@ -98,17 +98,42 @@ async function exigirAcessoOperacional(client: Cliente, actor: Actor, contexto: 
   throw new ForbiddenError('Você não tem permissão para acessar Fichas PDI.');
 }
 
-async function exigirEditavelAgora(client: Cliente, ficha: { escolaId: number; aplicacaoId: number }, aplicacao: { dataInicio: Date; dataFim: Date; status: string }) {
-  const [escola, reaberturas] = await Promise.all([
+// Existe uma CorrecaoFichaPdi (devolução individual, ver pdiFichaAnual.ts/correcoesPdi.ts) ainda
+// dentro do prazo de 3 dias pra esta Ficha? "EXPIRADA" nunca é um valor gravado — é só isto aqui
+// dando false depois de prazoAte passar (mesmo padrão de statusVigencia/domain/pdiAplicacoes.ts).
+async function existeCorrecaoIndividualAtiva(client: Cliente, fichaId: number): Promise<boolean> {
+  const correcao = await client.correcaoFichaPdi.findFirst({
+    where: { fichaId, status: 'ABERTA', prazoAte: { gt: new Date() } },
+    select: { id: true },
+  });
+  return !!correcao;
+}
+
+// Devolve se há (ou não) uma janela de correção individual ativa — quem chama usa isso pra saber
+// se deve logar HistoricoCorrecaoResposta (PUT /respostas) ou resolver a correção (POST /concluir),
+// evitando uma segunda consulta idêntica logo depois.
+async function exigirEditavelAgora(
+  client: Cliente,
+  ficha: { id: number; escolaId: number; aplicacaoId: number },
+  aplicacao: { dataInicio: Date; dataFim: Date; status: string },
+): Promise<boolean> {
+  const [escola, reaberturas, correcaoIndividualAtiva] = await Promise.all([
     client.escola.findUniqueOrThrow({ where: { id: ficha.escolaId } }),
     client.reaberturaPdi.findMany({ where: { aplicacaoId: ficha.aplicacaoId }, select: { dataInicio: true, dataFim: true } }),
+    existeCorrecaoIndividualAtiva(client, ficha.id),
   ]);
   // Aplicação removida (INATIVA — ver DELETE /api/pdi-aplicacoes/:id) nunca é editável, mesmo
-  // dentro da vigência original ou com reabertura ativa: saiu de circulação de propósito.
-  const editavel = aplicacao.status === 'ATIVA' && fichaEditavelAgora(escola.status === 'ATIVA', isAplicacaoEditavelAgora(aplicacao, reaberturas));
+  // dentro da vigência original, com reabertura ativa, ou com correção individual ativa: saiu de
+  // circulação de propósito. Editável = vigência normal OU correção individual ativa (seção 38/41
+  // do pedido de Ficha Anual/Correções) — nunca substitui a regra de vigência, só soma a ela.
+  const editavel = aplicacao.status === 'ATIVA' && fichaEditavelAgora(
+    escola.status === 'ATIVA',
+    editavelParaProfessor(isAplicacaoEditavelAgora(aplicacao, reaberturas), correcaoIndividualAtiva),
+  );
   if (!editavel) {
     throw new ValidationError('Esta Ficha PDI não está editável no momento (fora da vigência, sem reabertura ativa, ou a Aplicação foi removida).');
   }
+  return correcaoIndividualAtiva;
 }
 
 const formatarFicha = (f: {
@@ -179,20 +204,26 @@ const formatarResposta = (r: {
 // Resposta única "suficiente pra montar a tela" (seção 31 do pedido): ficha + perguntas do
 // snapshot (nunca do Modelo vivo) + respostas já salvas + se está editável agora (calculado com a
 // Aplicação/Reaberturas REAIS atuais, nunca com o snapshot congelado da própria Ficha).
-async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>) {
-  const [perguntas, respostas, aplicacao, reaberturas, escola] = await Promise.all([
+// Exportada: reaproveitada por correcoesPdi.ts no detalhe de uma Ficha (GET /api/correcoes-pdi/:fichaId)
+// — mesmo formato "suficiente pra montar a tela" usado aqui, sem duplicar a lógica.
+export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>) {
+  const [perguntas, respostas, aplicacao, reaberturas, escola, correcaoIndividualAtiva] = await Promise.all([
     prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId }, orderBy: { ordem: 'asc' } }),
     prisma.respostaPdi.findMany({ where: { fichaId: ficha.id } }),
     prisma.aplicacaoPdi.findUniqueOrThrow({ where: { id: ficha.aplicacaoId } }),
     prisma.reaberturaPdi.findMany({ where: { aplicacaoId: ficha.aplicacaoId }, select: { dataInicio: true, dataFim: true } }),
     prisma.escola.findUniqueOrThrow({ where: { id: ficha.escolaId } }),
+    existeCorrecaoIndividualAtiva(prisma, ficha.id),
   ]);
 
   return {
     ficha: formatarFicha(ficha),
     perguntas: perguntas.map(formatarPerguntaSnapshot),
     respostas: respostas.map(formatarResposta),
-    editavelAgora: aplicacao.status === 'ATIVA' && fichaEditavelAgora(escola.status === 'ATIVA', isAplicacaoEditavelAgora(aplicacao, reaberturas)),
+    editavelAgora: aplicacao.status === 'ATIVA' && fichaEditavelAgora(
+      escola.status === 'ATIVA',
+      editavelParaProfessor(isAplicacaoEditavelAgora(aplicacao, reaberturas), correcaoIndividualAtiva),
+    ),
   };
 }
 
@@ -477,8 +508,9 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
     prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId } }),
   ]);
   // As duas checagens de autorização são independentes entre si (nenhuma usa o resultado da
-  // outra) — também em paralelo.
-  await Promise.all([
+  // outra) — também em paralelo. `correcaoIndividualAtiva` vem do retorno de exigirEditavelAgora
+  // (evita reconsultar a mesma coisa duas vezes).
+  const [, correcaoIndividualAtiva] = await Promise.all([
     exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true }),
     exigirEditavelAgora(prisma, ficha, contexto.aplicacao),
   ]);
@@ -489,6 +521,16 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   }
   const respostasAplicaveis = respostas.filter((item) => perguntasPorId.get(item.aplicacaoPerguntaId)!.tipoResposta !== 'ORIENTACAO');
 
+  // Auditoria (seção 30/38 do pedido de Correções): só lê o valor "antes" quando há uma correção
+  // individual ativa — no preenchimento normal (sem nenhuma devolução em aberto) nada disto roda,
+  // comportamento idêntico ao de antes desta feature existir.
+  const valoresAntes = correcaoIndividualAtiva
+    ? new Map((await prisma.respostaPdi.findMany({
+        where: { fichaId, aplicacaoPerguntaId: { in: respostasAplicaveis.map((item) => item.aplicacaoPerguntaId) } },
+        select: { aplicacaoPerguntaId: true, valor: true },
+      })).map((r) => [r.aplicacaoPerguntaId, r.valor]))
+    : null;
+
   await prisma.$transaction(
     respostasAplicaveis.map((item) => prisma.respostaPdi.upsert({
       where: { fichaId_aplicacaoPerguntaId: { fichaId, aplicacaoPerguntaId: item.aplicacaoPerguntaId } },
@@ -496,6 +538,19 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
       update: { valor: item.valor, updatedBy: String(actor.id) },
     })),
   );
+
+  if (valoresAntes) {
+    await prisma.historicoCorrecaoResposta.createMany({
+      data: respostasAplicaveis.map((item) => ({
+        fichaId,
+        aplicacaoPerguntaId: item.aplicacaoPerguntaId,
+        valorAnterior: valoresAntes.get(item.aplicacaoPerguntaId) ?? Prisma.JsonNull,
+        valorNovo: item.valor,
+        alteradoPor: String(actor.id),
+        origem: 'PROFESSOR_POS_DEVOLUCAO' as const,
+      })),
+    });
+  }
 
   // updatedBy/updatedAt da Ficha precisam refletir quem de fato salvou algo aqui, mesmo quando o
   // status não muda (ex.: editar uma resposta de uma Ficha já CONCLUIDA) — nunca só quando há
@@ -532,7 +587,7 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
 
   const contexto = await resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId);
-  await Promise.all([
+  const [, correcaoIndividualAtiva] = await Promise.all([
     exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true }),
     exigirEditavelAgora(prisma, ficha, contexto.aplicacao),
   ]);
@@ -551,6 +606,17 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
     await prisma.fichaPdi.update({
       where: { id: fichaId },
       data: { status: 'CONCLUIDA', concluidaEm: new Date(), concluidaPor: String(actor.id), updatedBy: String(actor.id) },
+    });
+  }
+
+  // Fora do `if` acima de propósito: o caso real de "concluir de novo depois de uma devolução"
+  // (seção 29/40 do pedido) é justamente quando a Ficha JÁ estava CONCLUIDA antes de ser
+  // devolvida — o bloco de cima é pulado (idempotente), mas a correção em aberto ainda precisa
+  // ser resolvida aqui. Nunca mexe em ReaberturaPdi nem na Aplicação, só nesta Ficha.
+  if (correcaoIndividualAtiva) {
+    await prisma.correcaoFichaPdi.updateMany({
+      where: { fichaId, status: 'ABERTA', prazoAte: { gt: new Date() } },
+      data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) },
     });
   }
 

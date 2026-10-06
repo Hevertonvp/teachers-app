@@ -20,6 +20,10 @@ import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
 import { PdiPage } from './pages/PdiPage';
 import { PdiAlunoPerfil } from './pages/PdiAlunoPerfil';
+import { FichaAnualPdiPage } from './pages/FichaAnualPdiPage';
+import { CorrecoesHomePage } from './pages/CorrecoesHomePage';
+import { CorrecoesPdiListaPage } from './pages/CorrecoesPdiListaPage';
+import { CorrecoesPdiDetalhePage } from './pages/CorrecoesPdiDetalhePage';
 import { AnamnesePage } from './pages/AnamnesePage';
 import { AnamneseModeloPage } from './pages/AnamneseModeloPage';
 import { AnamnesesPendentesPage } from './pages/AnamnesesPendentesPage';
@@ -56,6 +60,7 @@ const AppRoutes = () => <Routes>
   <Route path="/pdi/alunos/:id" element={<ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute>} />
   <Route path="/pdi/fichas/:aplicacaoId/:disciplinaId/:alunoId" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id/anamnese" element={<ProtectedRoute><AnamnesePage /></ProtectedRoute>} />
+  <Route path="/pdi/alunos/:id/ficha-anual" element={<ProtectedRoute><FichaAnualPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/anamnese-modelo" element={<ProtectedRoute><AnamneseModeloPage /></ProtectedRoute>} />
   <Route path="/pdi/anamnese/pendentes" element={<ProtectedRoute><AnamnesesPendentesPage /></ProtectedRoute>} />
   <Route path="/meus-alunos" element={<ProtectedRoute><MeusAlunosAuxiliarPage /></ProtectedRoute>} />
@@ -64,6 +69,9 @@ const AppRoutes = () => <Routes>
   <Route path="/turmas" element={<ProtectedRoute><GestaoTurmas /></ProtectedRoute>} />
   <Route path="/pessoas" element={<ProtectedRoute><GestaoPessoas /></ProtectedRoute>} />
   <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
+  <Route path="/correcoes" element={<ProtectedRoute><CorrecoesHomePage /></ProtectedRoute>} />
+  <Route path="/correcoes/pdi" element={<ProtectedRoute><CorrecoesPdiListaPage /></ProtectedRoute>} />
+  <Route path="/correcoes/pdi/:fichaId" element={<ProtectedRoute><CorrecoesPdiDetalhePage /></ProtectedRoute>} />
 
   {/* Fora do escopo desta entrega (só PDI) — "em construção" para todos os perfis. */}
   <Route path="/formulario-um-terco" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />

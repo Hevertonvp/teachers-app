@@ -20,6 +20,15 @@ export function fichaEditavelAgora(
   return escolaAtiva && aplicacaoEditavelAgora;
 }
 
+// Correção individual (CorrecaoFichaPdi) abre uma segunda porta de edição pro Professor, paralela
+// à vigência normal da Aplicação — nunca a substitui, só OR com ela (seção 38/41 do pedido de
+// Ficha Anual/Correções). Função separada de `fichaEditavelAgora` de propósito: quando não existe
+// nenhuma CorrecaoFichaPdi ativa para a Ficha, `correcaoIndividualAtiva` é sempre false e o
+// resultado fica idêntico ao comportamento de antes desta função existir.
+export function editavelParaProfessor(aplicacaoEditavelAgora: boolean, correcaoIndividualAtiva: boolean): boolean {
+  return aplicacaoEditavelAgora || correcaoIndividualAtiva;
+}
+
 export type StatusVisualPdi = 'nao_iniciado' | 'agendado' | 'em_andamento' | 'concluido' | 'prazo_encerrado';
 
 // Status visual único para listagens (Meus PDIs, perfil do aluno) — deriva de status da Ficha
