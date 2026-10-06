@@ -291,13 +291,13 @@ function exigirInicioNaoNoPassado(dataInicio: Date) {
 // Sobreposição é sempre dentro da MESMA escola (seção 13/14 do pedido — escolas diferentes com
 // datas idênticas são permitidas). Fronteiras iguais contam como sobreposição (vigenciasSobrepoem
 // já cobre isso). `ignorarId` existe para a própria aplicação não colidir consigo mesma na edição.
-// Uma Aplicação já ENCERRADA (dataFim no passado) nunca entra nesta checagem — ela já não ocupa
-// mais o prazo de ninguém, então não pode travar a criação/edição de uma nova vigência que passe
-// por cima das suas datas antigas (pedido do usuário). "Encerrada" aqui é só a data em si, nunca
-// o status de registro (Removida/INATIVA é outra coisa, tratada à parte).
+// Regra do usuário: só trava sobreposição contra Aplicação ATIVA — nunca contra uma já ENCERRADA
+// (dataFim no passado) nem contra uma REMOVIDA (status INATIVA, ver DELETE /:id). As duas saem do
+// conjunto considerado; só uma Aplicação com status ATIVA e ainda dentro (ou no futuro) da própria
+// vigência pode gerar conflito.
 async function validarSemSobreposicao(escolaId: number, periodo: { dataInicio: Date; dataFim: Date }, ignorarId?: number) {
   const existentes = await prisma.aplicacaoPdi.findMany({
-    where: { escolaId, dataFim: { gte: hojeComoData() }, ...(ignorarId ? { id: { not: ignorarId } } : {}) },
+    where: { escolaId, status: 'ATIVA', dataFim: { gte: hojeComoData() }, ...(ignorarId ? { id: { not: ignorarId } } : {}) },
     select: { id: true, dataInicio: true, dataFim: true },
   });
   const conflito = existentes.find((existente) => vigenciasSobrepoem(periodo, existente));
