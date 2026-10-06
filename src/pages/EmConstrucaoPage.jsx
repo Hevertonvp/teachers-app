@@ -7,10 +7,7 @@ import { MainLayout } from '../layouts/Layouts';
 // visível no menu para todos os perfis; ao entrar, mostra só este aviso, sem nenhum dado mock.
 export const EmConstrucaoPage = () => (
   <MainLayout>
-    <EmptyState
-      title="Em construção"
-      description="Esta funcionalidade ainda não faz parte desta primeira entrega. Nesta etapa, só o módulo PDI está disponível."
-    >
+    <EmptyState title="Em construção">
       <VoltarButton />
     </EmptyState>
   </MainLayout>

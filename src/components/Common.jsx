@@ -169,7 +169,7 @@ export const FormField = ({ label, children }) => (
 export const EmptyState = ({ title, description, children }) => (
   <Card className="py-12 text-center">
     <p className="font-semibold text-slate-800">{title}</p>
-    <p className="mt-1 text-sm text-slate-500">{description}</p>
+    {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
     {children && <div className="mt-4 flex justify-center">{children}</div>}
   </Card>
 );
