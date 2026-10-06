@@ -17,21 +17,28 @@ type Cliente = typeof prisma | Prisma.TransactionClient;
 // responsável aqui (isso só bloqueia CRIAÇÃO, não leitura de uma Ficha já existente — ver seção
 // 11 do pedido). `ptd` vem null quando não há vínculo ativo; quem decide se isso é bloqueante é
 // quem chama esta função.
+// As 4 primeiras buscas não dependem uma da outra (cada uma só precisa de um id já recebido por
+// parâmetro) — rodar em paralelo em vez de 1 por vez economiza ~4 round-trips reais por chamada.
+// Só `ptd` depende de verdade de outra (precisa de `aluno.turmaId`, que só existe depois de
+// `aluno` resolver), por isso fica de fora do Promise.all. Antes disto, salvar UMA resposta de
+// Ficha PDI fazia ~12 consultas em sequência (contando as outras funções chamadas depois desta) —
+// cada uma pagando a latência real até o Neon, daí a demora perceptível por clique relatada em
+// teste manual.
 async function resolverContexto(client: Cliente, aplicacaoId: number, alunoId: number, disciplinaId: number) {
-  const aplicacao = await client.aplicacaoPdi.findUnique({ where: { id: aplicacaoId } });
-  if (!aplicacao) throw new NotFoundError('Aplicação não encontrada.');
+  const [aplicacao, aluno, disciplina, aplicacaoModelo] = await Promise.all([
+    client.aplicacaoPdi.findUnique({ where: { id: aplicacaoId } }),
+    client.alunoPdi.findUnique({ where: { id: alunoId }, include: { turma: { include: { escola: true } } } }),
+    client.disciplina.findUnique({ where: { id: disciplinaId } }),
+    // Nunca lê o ModeloPdi vivo — só o snapshot já congelado na Aplicação (seção 12 do pedido).
+    client.aplicacaoModeloPdi.findFirst({ where: { aplicacaoId, disciplinaId } }),
+  ]);
 
-  const aluno = await client.alunoPdi.findUnique({ where: { id: alunoId }, include: { turma: { include: { escola: true } } } });
+  if (!aplicacao) throw new NotFoundError('Aplicação não encontrada.');
   if (!aluno) throw new NotFoundError('Aluno não encontrado.');
   if (aluno.turma.escolaId !== aplicacao.escolaId) {
     throw new ValidationError('Esta aplicação não pertence à escola atual deste aluno.');
   }
-
-  const disciplina = await client.disciplina.findUnique({ where: { id: disciplinaId } });
   if (!disciplina) throw new NotFoundError('Disciplina não encontrada.');
-
-  // Nunca lê o ModeloPdi vivo — só o snapshot já congelado na Aplicação (seção 12 do pedido).
-  const aplicacaoModelo = await client.aplicacaoModeloPdi.findFirst({ where: { aplicacaoId, disciplinaId } });
   if (!aplicacaoModelo) {
     throw new ValidationError('Esta Aplicação não possui um Modelo PDI desta disciplina no snapshot. Não é possível abrir esta Ficha.');
   }
@@ -463,11 +470,19 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
 
-  const contexto = await resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId);
-  await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
-  await exigirEditavelAgora(prisma, ficha, contexto.aplicacao);
+  // perguntasDoModelo só depende de ficha.aplicacaoModeloId (já em mãos) — nada a ver com
+  // contexto/autorização, então roda em paralelo com resolverContexto em vez de depois dele.
+  const [contexto, perguntasDoModelo] = await Promise.all([
+    resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId),
+    prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId } }),
+  ]);
+  // As duas checagens de autorização são independentes entre si (nenhuma usa o resultado da
+  // outra) — também em paralelo.
+  await Promise.all([
+    exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true }),
+    exigirEditavelAgora(prisma, ficha, contexto.aplicacao),
+  ]);
 
-  const perguntasDoModelo = await prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId } });
   const perguntasPorId = new Map(perguntasDoModelo.map((p) => [p.id, p]));
   if (respostas.some((item) => !perguntasPorId.has(item.aplicacaoPerguntaId))) {
     throw new ValidationError('Uma ou mais perguntas informadas não pertencem a esta Ficha.');
@@ -510,8 +525,10 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
 
   const contexto = await resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId);
-  await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
-  await exigirEditavelAgora(prisma, ficha, contexto.aplicacao);
+  await Promise.all([
+    exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true }),
+    exigirEditavelAgora(prisma, ficha, contexto.aplicacao),
+  ]);
 
   if (ficha.status !== 'CONCLUIDA') {
     await prisma.fichaPdi.update({
