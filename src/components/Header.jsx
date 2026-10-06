@@ -58,7 +58,7 @@ export const Header = ({ onMenuClick }) => {
       className={`sticky top-0 z-40 border-b backdrop-blur ${isDark ? 'border-slate-800 bg-slate-950/95' : 'border-slate-200 bg-white/95'}`}
       style={isDark ? { backgroundColor: 'rgba(15, 23, 42, 0.96)', borderColor: '#1e293b' } : undefined}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3 md:px-6">
+      <div className="flex min-w-0 flex-wrap items-center gap-y-3 px-4 py-3 md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
