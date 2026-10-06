@@ -88,6 +88,7 @@ export const FormularioPdiPage = () => {
   const [excluindoModelo, setExcluindoModelo] = useState(null);
   const [mostrarHistoricoModelos, setMostrarHistoricoModelos] = useState(false);
   const [mostrarAplicacoesEncerradas, setMostrarAplicacoesEncerradas] = useState(false);
+  const [mostrarAplicacoesRemovidas, setMostrarAplicacoesRemovidas] = useState(false);
   const [aplicacaoForm, setAplicacaoForm] = useState(null);
   const [editingAplicacao, setEditingAplicacao] = useState(null);
   const [removendoAplicacao, setRemovendoAplicacao] = useState(null);
@@ -129,11 +130,18 @@ export const FormularioPdiPage = () => {
   // formStatusClasses esperam ('scheduled'/'active'/'expired') — nunca recalculado aqui.
   // `operacional` decide só ONDE o item aparece (tela principal vs histórico de encerradas) — uma
   // Encerrada com Reabertura ativa agora continua 'expired' no badge, só muda de seção.
+  // Removida (statusRegistro INATIVA) nunca entra em "operacional"/"encerradas" — fica no próprio
+  // grupo, fora da tela principal por padrão (só o botão "Ver aplicações removidas" mostra),
+  // porque uma Aplicação removida não é mais "Vigente" nem "Encerrada normal": ela saiu de
+  // circulação de propósito (ver DELETE /api/pdi-aplicacoes/:id) e misturar os dois rótulos no
+  // mesmo card confundia (pedido do usuário).
   const aplicacoesComStatus = [...pdiAplicacoesReais]
     .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio))
     .map(aplicacao => ({ aplicacao, status: aplicacao.status, operacional: aplicacao.status !== 'expired' || !!aplicacao.reaberturaAtivaAgora }));
-  const aplicacoesOperacionais = aplicacoesComStatus.filter(item => item.operacional);
-  const aplicacoesEncerradas = [...aplicacoesComStatus.filter(item => !item.operacional)].reverse();
+  const aplicacoesAtivas = aplicacoesComStatus.filter(item => item.aplicacao.statusRegistro !== 'inativa');
+  const aplicacoesRemovidas = [...aplicacoesComStatus.filter(item => item.aplicacao.statusRegistro === 'inativa')].reverse();
+  const aplicacoesOperacionais = aplicacoesAtivas.filter(item => item.operacional);
+  const aplicacoesEncerradas = [...aplicacoesAtivas.filter(item => !item.operacional)].reverse();
 
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '', carregarPerguntasPadrao: true });
   const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao(modelosAtivos.map(modelo => modelo.id))); setBuscaEscolaAplicacao(''); };
@@ -301,9 +309,14 @@ export const FormularioPdiPage = () => {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold text-slate-900">{aplicacao.escolaNome || escolas.find(item => item.id === aplicacao.escolaId)?.nome || 'Escola não encontrada'}</p>
-            <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
-            {aplicacao.reaberturaAtivaAgora && <Badge variant="blue">Reabertura ativa agora</Badge>}
-            {aplicacao.statusRegistro === 'inativa' && <Badge variant="gray">Removida</Badge>}
+            {aplicacao.statusRegistro === 'inativa' ? (
+              <Badge variant="gray">Removida</Badge>
+            ) : (
+              <>
+                <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(status)}`}>{formStatusLabel(status)}</span>
+                {aplicacao.reaberturaAtivaAgora && <Badge variant="blue">Reabertura ativa agora</Badge>}
+              </>
+            )}
           </div>
           <p className="mt-1 text-sm text-slate-600">{formatFullDate(aplicacao.dataInicio)} a {formatFullDate(aplicacao.dataFim)}</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -531,6 +544,11 @@ export const FormularioPdiPage = () => {
                     {mostrarAplicacoesEncerradas ? 'Ocultar encerradas' : 'Ver aplicações encerradas'}
                   </Button>
                 )}
+                {aplicacoesRemovidas.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setMostrarAplicacoesRemovidas(prev => !prev)}>
+                    {mostrarAplicacoesRemovidas ? 'Ocultar removidas' : 'Ver aplicações removidas'}
+                  </Button>
+                )}
                 {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
               </div>
             </div>
@@ -553,7 +571,13 @@ export const FormularioPdiPage = () => {
               </div>
             ) : aplicacoesOperacionais.length === 0 ? (
               <div className="mt-4">
-                <EmptyState title="Nenhuma aplicação agendada ou vigente no momento" description={`Todas as ${aplicacoesEncerradas.length} aplicações existentes estão encerradas — consulte-as no histórico.`}>
+                <EmptyState
+                  title="Nenhuma aplicação agendada ou vigente no momento"
+                  description={[
+                    aplicacoesEncerradas.length > 0 ? `${aplicacoesEncerradas.length} encerrada(s)` : null,
+                    aplicacoesRemovidas.length > 0 ? `${aplicacoesRemovidas.length} removida(s)` : null,
+                  ].filter(Boolean).join(' e ') + ' — use os botões acima para consultá-las.'}
+                >
                   {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
                 </EmptyState>
               </div>
@@ -579,6 +603,15 @@ export const FormularioPdiPage = () => {
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Histórico de aplicações encerradas</p>
                 <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 opacity-75">
                   {aplicacoesEncerradas.map(renderAplicacaoItem)}
+                </div>
+              </div>
+            )}
+
+            {mostrarAplicacoesRemovidas && aplicacoesRemovidas.length > 0 && (
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Aplicações removidas</p>
+                <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 opacity-75">
+                  {aplicacoesRemovidas.map(renderAplicacaoItem)}
                 </div>
               </div>
             )}
