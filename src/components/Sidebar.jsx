@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { isAuxiliar, isDiretora, isProfessor, isSecretaria } from '../utils/roles';
+import { Logo } from './Logo';
 
 // Ícones de linha simples (sem biblioteca externa) para o menu lateral — mesmo padrão de svg
 // inline já usado em EscolaSelector/Header (viewBox 24, stroke currentColor). Um id por item de
@@ -189,15 +190,18 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
 
       <aside className={`fixed bottom-0 left-0 top-0 z-50 w-72 max-w-[85vw] border-r border-slate-800 bg-slate-950 text-white shadow-2xl transition-transform duration-[900ms] ease-out md:top-16.25 md:z-30 md:w-64 md:translate-x-0 md:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <nav className="flex h-full flex-col p-4 md:pt-6">
-          <div className="mb-5 flex items-center justify-between md:hidden">
-            <div>
-              <p className="text-sm font-bold text-white">Gestão Pedagógica</p>
-              <p className="text-xs text-slate-400">Menu principal</p>
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Logo size={34} />
+              <div>
+                <p className="text-sm font-bold text-white">Gestão Pedagógica</p>
+                <p className="text-xs text-slate-400">Menu principal</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="grid h-9 w-9 place-items-center rounded-md bg-white/10 text-lg text-white transition hover:bg-white/15"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white/10 text-lg text-white transition hover:bg-white/15 md:hidden"
               aria-label="Fechar menu"
             >
               ×

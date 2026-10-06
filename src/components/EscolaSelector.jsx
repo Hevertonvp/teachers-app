@@ -48,7 +48,7 @@ export const EscolaSelector = () => {
         onClick={() => setOpen(prev => !prev)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex max-w-[6.5rem] shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-teal-300 hover:bg-teal-50/40 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-100 sm:max-w-[14rem] sm:text-sm"
+        className="flex max-w-18 shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-teal-300 hover:bg-teal-50/40 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-100 sm:max-w-56 sm:text-sm"
       >
         <span className="truncate">{selected?.nome}</span>
         <svg

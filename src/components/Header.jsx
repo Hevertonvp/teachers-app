@@ -4,11 +4,13 @@ import { useData } from '../context/DataContext';
 import { useTheme } from '../context/ThemeContext';
 import { isProfessor } from '../utils/roles';
 import { EscolaSelector } from './EscolaSelector';
-import { Logo } from './Logo';
 import { ProfessorName } from './ProfessorName';
 import { NotificacoesBell } from './NotificacoesBell';
 import { InstalarAppModal } from './InstalarAppModal';
 import { useNavigate } from 'react-router-dom';
+// Logo não mora mais aqui — foi pro título do menu lateral (ver Sidebar.jsx), pra sobrar espaço
+// no cabeçalho no mobile (o usuário reportou os ícones da direita quebrando linha por falta de
+// espaço).
 
 // Rótulo exibido do tipo de conta logada — nomes de cargo valem para os dois gêneros.
 const TIPO_LABEL = {
@@ -66,7 +68,6 @@ export const Header = ({ onMenuClick }) => {
           >
             ☰
           </button>
-          <Logo size={40} className="shrink-0" />
           <div className="hidden sm:block">
             <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
             <p className="truncate text-xs text-slate-500">Rede Municipal de Ensino</p>
