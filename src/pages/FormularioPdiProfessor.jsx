@@ -52,11 +52,15 @@ export const FormularioPdiProfessor = () => {
   const [erro, setErro] = useState('');
   const [dados, setDados] = useState(null); // { ficha, perguntas, respostas, editavelAgora }
   const [answers, setAnswers] = useState({});
-  // Um Set de ids em vez de um booleano único: travar o formulário INTEIRO enquanto só UMA
-  // resposta está sendo salva fazia cada clique parecer travar a tela inteira (cada salvamento é
-  // uma chamada de rede de verdade) — agora só a pergunta que está salvando fica desabilitada,
-  // as outras continuam respondíveis em paralelo.
-  const [salvandoIds, setSalvandoIds] = useState(() => new Set());
+  // Nada é salvo a cada clique/tecla mais (era 1 chamada de rede por resposta — pra um formulário
+  // de 20+ perguntas isso virava 20+ chamadas, cada uma pagando sozinha toda a validação/
+  // autorização no backend). Agora só acumula localmente em `answers`, e `touchedIds` marca QUAIS
+  // perguntas foram mexidas nesta visita (precisa disso separado do valor em si: um checkbox
+  // desmarcado e um checkbox nunca tocado têm o mesmo valor `false`, só o Set distingue os dois).
+  // O salvamento de verdade — tudo que estiver em `touchedIds`, numa chamada só — só acontece em
+  // dois momentos: clicar em "Voltar" sem ter concluído, ou clicar em "Concluir".
+  const [touchedIds, setTouchedIds] = useState(() => new Set());
+  const [salvandoSaida, setSalvandoSaida] = useState(false);
   const [concluindo, setConcluindo] = useState(false);
   const [mensagem, setMensagem] = useState('');
   const [mensagemErro, setMensagemErro] = useState('');
@@ -77,6 +81,7 @@ export const FormularioPdiProfessor = () => {
     setErro('');
     setDados(null);
     setAnswers({});
+    setTouchedIds(new Set());
     setMensagemErro('');
 
     (async () => {
@@ -115,36 +120,71 @@ export const FormularioPdiProfessor = () => {
     );
   }
 
-  const { ficha, perguntas, editavelAgora } = dados;
+  const { ficha, perguntas, respostas, editavelAgora } = dados;
   const podePreencher = podeEditarPerfil && editavelAgora;
   const questions = [...perguntas];
   const secoes = agruparPorSecao(questions);
 
-  const updateAnswer = (question, value) => setAnswers(prev => ({ ...prev, [question.id]: value }));
+  // "Respondida" pra fins de exibição/validação no frontend = já estava salva (veio do servidor
+  // no load) OU foi tocada agora nesta visita (ainda não enviada, mas já preenchida na tela) —
+  // precisa ser assim porque, sem salvamento incremental, `respostas` do servidor só reflete o
+  // que existia ANTES de abrir a tela. ORIENTACAO nunca entra na conta, é só texto informativo.
+  const perguntasObrigatorias = questions.filter(question => question.tipoResposta !== 'orientacao');
+  const idsJaSalvos = new Set(respostas.map(resposta => resposta.aplicacaoPerguntaId));
+  const perguntasFaltando = perguntasObrigatorias.filter(question => !idsJaSalvos.has(question.id) && !touchedIds.has(question.id)).length;
 
-  // Salva a resposta de UMA pergunta imediatamente (rascunho) — mesma UX de sempre: cada resposta
-  // já fica gravada assim que o professor sai do campo/marca a opção, sem precisar de envio final
-  // (seções 17/18 do pedido: salvamento parcial, sem exigir formulário completo).
-  const persistAnswer = async (question, current) => {
-    if (!podePreencher || salvandoIds.has(question.id)) return;
+  const bloqueado = salvandoSaida || concluindo;
+
+  const updateAnswer = (question, value) => {
+    setAnswers(prev => ({ ...prev, [question.id]: value }));
+    setTouchedIds(prev => (prev.has(question.id) ? prev : new Set(prev).add(question.id)));
+  };
+
+  // Único ponto que de fato manda algo pro backend — tudo que foi tocado desde o último envio,
+  // numa chamada só (nunca mais uma por pergunta). Chamado só nos dois momentos que importam:
+  // clicar em "Voltar" sem ter concluído, ou clicar em "Concluir" (que chama isto primeiro e só
+  // depois valida/fecha a Ficha). Nada tocado = não manda nada (evita uma chamada vazia à toa).
+  const salvarPendentes = async () => {
+    if (touchedIds.size === 0) return { ok: true };
+    const respostasPendentes = [...touchedIds].map(id => {
+      const question = questions.find(item => item.id === id);
+      return { aplicacaoPerguntaId: id, valor: paraPayloadValor(question.tipoResposta, answers[id]) };
+    });
+    const resultado = await salvarRespostasFichaPdi(ficha.id, respostasPendentes);
+    if (!resultado.ok) return resultado;
+    setDados(prev => ({ ...prev, ficha: resultado.ficha, respostas: resultado.respostas }));
+    setTouchedIds(new Set());
+    return resultado;
+  };
+
+  // Sair sem concluir: salva tudo que foi preenchido até aqui de uma vez (Ficha fica com o status
+  // que já tinha — PENDENTE/EM_ANDAMENTO, nunca CONCLUIDA — ver POST /:id/concluir no backend, que
+  // só libera a conclusão com 100% respondido). Em erro, NUNCA navega — fica na tela com o que foi
+  // digitado intacto, pro professor tentar de novo (mesmo princípio de antes: nunca perder dado
+  // silenciosamente).
+  const handleVoltar = async () => {
+    if (!podePreencher || ficha.status === 'concluida' || bloqueado) { navigate(-1); return; }
     setMensagemErro('');
-    setSalvandoIds(prev => new Set(prev).add(question.id));
-    const resultado = await salvarRespostasFichaPdi(ficha.id, [
-      { aplicacaoPerguntaId: question.id, valor: paraPayloadValor(question.tipoResposta, current) },
-    ]);
-    setSalvandoIds(prev => { const proximo = new Set(prev); proximo.delete(question.id); return proximo; });
+    setSalvandoSaida(true);
+    const resultado = await salvarPendentes();
+    setSalvandoSaida(false);
     if (!resultado.ok) {
-      // Nunca limpa o campo nem navega em caso de erro — o valor digitado continua na tela e o
-      // usuário pode tentar novamente (seção 34 do pedido).
       setMensagemErro(resultado.error);
       return;
     }
-    setDados(prev => ({ ...prev, ficha: resultado.ficha, respostas: resultado.respostas }));
+    navigate(-1);
   };
 
   const concluir = async () => {
-    if (!podePreencher || concluindo) return;
+    if (!podePreencher || bloqueado) return;
+    setMensagemErro('');
     setConcluindo(true);
+    const salvo = await salvarPendentes();
+    if (!salvo.ok) {
+      setConcluindo(false);
+      setMensagemErro(salvo.error);
+      return;
+    }
     const resultado = await concluirFichaPdi(ficha.id);
     setConcluindo(false);
     if (!resultado.ok) {
@@ -162,29 +202,28 @@ export const FormularioPdiProfessor = () => {
   const renderSelecaoOuMarcacao = (question) => {
     const current = answers[question.id] || answerFromResposta(question, null);
     const complementarVisivel = question.complementar && (question.tipoResposta === 'marcacao' ? current.marcado : current.opcao === question.complementar.gatilho);
-    const emSalvamento = salvandoIds.has(question.id);
     return (
       <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
         <p className="text-sm font-semibold text-slate-800">{question.codigo && <span className="mr-1.5 text-xs font-bold text-teal-700">{question.codigo}</span>}{question.pergunta}</p>
         <div className="mt-2">
           {question.tipoResposta === 'numero' ? (
-            <input type="number" className={`${inputClass} max-w-40`} value={current.valor} onChange={event => updateAnswer(question, { valor: event.target.value })} onBlur={() => persistAnswer(question, current)} readOnly={!podePreencher} disabled={emSalvamento && podePreencher} />
+            <input type="number" className={`${inputClass} max-w-40`} value={current.valor} onChange={event => updateAnswer(question, { valor: event.target.value })} readOnly={!podePreencher} disabled={bloqueado && podePreencher} />
           ) : question.tipoResposta === 'marcacao' ? (
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <input type="checkbox" checked={current.marcado} onChange={event => { const proximo = { ...current, marcado: event.target.checked }; updateAnswer(question, proximo); persistAnswer(question, proximo); }} disabled={!podePreencher || emSalvamento} />
+              <input type="checkbox" checked={current.marcado} onChange={event => updateAnswer(question, { ...current, marcado: event.target.checked })} disabled={!podePreencher || bloqueado} />
               Marcar
             </label>
           ) : (
             <SegmentedToggle
               value={current.opcao}
-              onChange={value => { const proximo = { ...current, opcao: value }; updateAnswer(question, proximo); persistAnswer(question, proximo); }}
+              onChange={value => updateAnswer(question, { ...current, opcao: value })}
               options={question.opcoes.map(opcao => ({ value: opcao, label: opcao }))}
-              disabled={!podePreencher || emSalvamento}
+              disabled={!podePreencher || bloqueado}
             />
           )}
         </div>
         {complementarVisivel && (
-          <div className="mt-2"><FormField label={question.complementar.label}><input className={inputClass} spellCheck lang="pt-BR" value={current.complementar} onChange={event => updateAnswer(question, { ...current, complementar: event.target.value })} onBlur={() => { const corrigido = { ...current, complementar: aplicarAutoCorrecao(current.complementar) }; updateAnswer(question, corrigido); persistAnswer(question, corrigido); }} readOnly={!podePreencher} disabled={emSalvamento && podePreencher} /></FormField></div>
+          <div className="mt-2"><FormField label={question.complementar.label}><input className={inputClass} spellCheck lang="pt-BR" value={current.complementar} onChange={event => updateAnswer(question, { ...current, complementar: event.target.value })} onBlur={() => updateAnswer(question, { ...current, complementar: aplicarAutoCorrecao(current.complementar) })} readOnly={!podePreencher} disabled={bloqueado && podePreencher} /></FormField></div>
         )}
       </div>
     );
@@ -192,11 +231,10 @@ export const FormularioPdiProfessor = () => {
 
   const renderTexto = (question) => {
     const current = answers[question.id] || answerFromResposta(question, null);
-    const emSalvamento = salvandoIds.has(question.id);
     return (
       <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
         <FormField label={question.pergunta}>
-          <textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} onBlur={() => { const corrigido = { ...current, texto: aplicarAutoCorrecao(current.texto) }; updateAnswer(question, corrigido); persistAnswer(question, corrigido); }} readOnly={!podePreencher} disabled={emSalvamento && podePreencher} />
+          <textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={current.texto} onChange={event => updateAnswer(question, { ...current, texto: event.target.value })} onBlur={() => updateAnswer(question, { ...current, texto: aplicarAutoCorrecao(current.texto) })} readOnly={!podePreencher} disabled={bloqueado && podePreencher} />
         </FormField>
       </div>
     );
@@ -213,7 +251,7 @@ export const FormularioPdiProfessor = () => {
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <button type="button" onClick={() => navigate(-1)} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar</button>
+            <button type="button" onClick={handleVoltar} disabled={bloqueado} className="text-sm font-semibold text-teal-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">{salvandoSaida ? 'Salvando...' : '← Voltar'}</button>
             <h1 className="mt-3 text-3xl font-bold text-slate-950">{ficha.disciplinaNome}</h1>
             <p className="mt-2 text-slate-600">{ficha.alunoNome} · {ficha.turmaNome} · {ficha.escolaNome}</p>
           </div>
@@ -228,9 +266,14 @@ export const FormularioPdiProfessor = () => {
             <p className="text-sm font-semibold text-slate-700">Vigência da aplicação</p>
             <p className="mt-1 text-lg font-bold text-slate-900">{formatFullDate(ficha.aplicacaoDataInicio)} a {formatFullDate(ficha.aplicacaoDataFim)}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={STATUS_VARIANT[ficha.status]}>{STATUS_LABEL[ficha.status]}</Badge>
-            <Badge variant={podePreencher ? 'green' : 'gray'}>{podePreencher ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <Badge variant={STATUS_VARIANT[ficha.status]}>{STATUS_LABEL[ficha.status]}</Badge>
+              <Badge variant={podePreencher ? 'green' : 'gray'}>{podePreencher ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
+            </div>
+            {perguntasObrigatorias.length > 0 && (
+              <p className="text-xs font-semibold text-slate-500">{perguntasObrigatorias.length - perguntasFaltando}/{perguntasObrigatorias.length} perguntas respondidas</p>
+            )}
           </div>
         </Card>
 
@@ -251,8 +294,13 @@ export const FormularioPdiProfessor = () => {
             ))}
 
             {podePreencher && (
-              <div className="flex justify-end">
-                <Button onClick={concluir} disabled={concluindo || salvandoIds.size > 0 || ficha.status === 'concluida'}>
+              <div className="flex flex-col items-end gap-2">
+                {ficha.status !== 'concluida' && perguntasFaltando > 0 && (
+                  <p className="text-sm font-semibold text-amber-700">
+                    Faltam {perguntasFaltando} {perguntasFaltando === 1 ? 'pergunta' : 'perguntas'} para poder concluir.
+                  </p>
+                )}
+                <Button onClick={concluir} disabled={bloqueado || ficha.status === 'concluida' || perguntasFaltando > 0}>
                   {ficha.status === 'concluida' ? 'Ficha concluída' : concluindo ? 'Concluindo...' : 'Concluir Ficha PDI'}
                 </Button>
               </div>

@@ -516,7 +516,14 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
 
 // Ação explícita de conclusão (seção 20 do pedido) — idempotente: concluir uma Ficha já CONCLUIDA
 // não é erro, só devolve o estado atual. Continua exigindo estar dentro da vigência/reabertura
-// atual, igual ao salvamento de respostas.
+// atual, igual ao salvamento de respostas. NUNCA conclui com pergunta sem resposta: só vira
+// CONCLUIDA quando toda pergunta que exige resposta (tudo, exceto ORIENTACAO — essa é só texto
+// informativo, nunca gera RespostaPdi) já tem uma linha salva. "Respondida" usa o mesmo critério
+// que o resto do sistema já usa pra decidir PENDENTE→EM_ANDAMENTO (existe uma RespostaPdi pra
+// aquela pergunta), nunca uma regra nova de "valor não-vazio" — ficaria inconsistente com como o
+// preenchimento parcial já é tratado em todo o resto do fluxo. Ficha incompleta nunca é bloqueada
+// de continuar sendo editada — ela só não vira CONCLUIDA; "reabrir e continuar" já é automático,
+// porque nada muda de estado quando a conclusão é recusada.
 pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   const fichaId = Number(req.params.id);
@@ -531,6 +538,16 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   ]);
 
   if (ficha.status !== 'CONCLUIDA') {
+    const [perguntasObrigatorias, respostasExistentes] = await Promise.all([
+      prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId, tipoResposta: { not: 'ORIENTACAO' } }, select: { id: true } }),
+      prisma.respostaPdi.findMany({ where: { fichaId }, select: { aplicacaoPerguntaId: true } }),
+    ]);
+    const respondidasIds = new Set(respostasExistentes.map((r) => r.aplicacaoPerguntaId));
+    const faltando = perguntasObrigatorias.filter((p) => !respondidasIds.has(p.id)).length;
+    if (faltando > 0) {
+      throw new ValidationError(`Esta Ficha ainda não pode ser concluída: faltam ${faltando} ${faltando === 1 ? 'pergunta' : 'perguntas'} sem resposta.`);
+    }
+
     await prisma.fichaPdi.update({
       where: { id: fichaId },
       data: { status: 'CONCLUIDA', concluidaEm: new Date(), concluidaPor: String(actor.id), updatedBy: String(actor.id) },
