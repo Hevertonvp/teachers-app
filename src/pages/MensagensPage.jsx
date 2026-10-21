@@ -8,6 +8,7 @@ import {
   criarConversaReal, responderConversaReal, ocultarConversaReal,
 } from '../services/mensagens';
 import { MainLayout } from '../layouts/Layouts';
+import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 
 const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100';
 const emptyCompose = { escolaId: '', destinatarioIds: [], assunto: '', conteudo: '' };
@@ -38,6 +39,7 @@ const BotaoAnexo = () => {
 
 export const MensagensPage = () => {
   const { user } = useAuth();
+  const userId = user?.email?.toLowerCase();
   const { loadMensagensNaoLidas } = useData();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -87,11 +89,22 @@ export const MensagensPage = () => {
       setThread(detalhe);
       await carregarConversas();
       await loadMensagensNaoLidas();
+      // Restaura rascunho local da resposta ainda não enviada (sobrevive a reload/fechamento) —
+      // nunca envia sozinho (seção "Mensagens" do pedido: enviar continua sendo ação explícita).
+      const draft = await lerDraft(`${userId}::mensagem-resposta::${id}`);
+      if (draft?.texto) setRespostaTexto(draft.texto);
     } catch (error) {
       setMensagem(error.message);
       setSelectedId(null);
     }
   };
+
+  // Salvamento local com debounce leve do texto em andamento — por conversa.
+  useEffect(() => {
+    if (!selectedId || !respostaTexto.trim()) return undefined;
+    const t = setTimeout(() => salvarDraft(`${userId}::mensagem-resposta::${selectedId}`, { userId, texto: respostaTexto, savedAt: Date.now() }), 500);
+    return () => clearTimeout(t);
+  }, [respostaTexto, selectedId, userId]);
 
   // Clique numa notificação de "nova mensagem" leva direto pra conversa (seção 12 do pedido) —
   // link vem como /mensagens?conversa=ID. Limpa o parâmetro depois de abrir pra não reabrir ao
@@ -110,6 +123,7 @@ export const MensagensPage = () => {
     setEnviandoResposta(true);
     try {
       await responderConversaReal(selectedId, respostaTexto.trim());
+      apagarDraft(`${userId}::mensagem-resposta::${selectedId}`);
       setRespostaTexto('');
       setThread(await obterConversaReal(selectedId));
       await carregarConversas();
@@ -144,11 +158,21 @@ export const MensagensPage = () => {
       if ((resultado.escolas || []).length <= 1 && (resultado.destinatarios || []).length > 0) {
         setForm(prev => ({ ...prev, escolaId: resultado.escolas[0]?.id ?? '' }));
       }
+      // Restaura rascunho de uma nova conversa ainda não enviada.
+      const draft = await lerDraft(`${userId}::mensagem-nova::rascunho`);
+      if (draft?.form) setForm(prev => ({ ...prev, ...draft.form }));
     } catch (error) {
       setComposeError(error.message);
     }
     setComposeOpen(true);
   };
+
+  // Salvamento local com debounce leve — só enquanto o compose está aberto.
+  useEffect(() => {
+    if (!composeOpen || (!form.assunto && !form.conteudo && form.destinatarioIds.length === 0)) return undefined;
+    const t = setTimeout(() => salvarDraft(`${userId}::mensagem-nova::rascunho`, { userId, form, savedAt: Date.now() }), 500);
+    return () => clearTimeout(t);
+  }, [form, composeOpen, userId]);
 
   const escolherEscola = async (escolaId) => {
     setForm(prev => ({ ...prev, escolaId, destinatarioIds: [] }));
@@ -182,6 +206,7 @@ export const MensagensPage = () => {
     setEnviando(true);
     try {
       const resultado = await criarConversaReal({ destinatarios: form.destinatarioIds, assunto: form.assunto.trim(), conteudo: form.conteudo.trim() });
+      apagarDraft(`${userId}::mensagem-nova::rascunho`);
       setComposeOpen(false);
       setMensagem(resultado.conversas.length > 1 ? `Mensagem enviada para ${resultado.conversas.length} pessoas.` : 'Mensagem enviada com sucesso.');
       setTab('enviadas');

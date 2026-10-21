@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, EmptyState, StatCard } from '../components/Common';
+import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
@@ -50,6 +51,7 @@ export const DashboardProfessor = () => {
   return (
     <MainLayout>
       <div className="space-y-7">
+        <FeedbackSistemaBanner />
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>

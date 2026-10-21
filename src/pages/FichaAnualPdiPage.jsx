@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Badge, Button, Card, EmptyState, FormField } from '../components/Common';
+import { Badge, Button, Card, ConfirmDialog, EmptyState, FormField } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { inputClass } from '../utils/display';
 import { isSecretaria } from '../utils/roles';
-import { obterFichaAnualReal, fecharFichaAnualReal, obterCicloAnualReal, salvarCicloAnualReal } from '../services/pdiFichaAnual';
+import { obterFichaAnualReal, fecharFichaAnualReal, obterCicloAnualReal, salvarCicloAnualReal, listarAnosFichaAnualReal } from '../services/pdiFichaAnual';
 import { MainLayout } from '../layouts/Layouts';
 
+const STATUS_FICHA_ANUAL_LABEL = { EM_ANDAMENTO: 'em andamento', FECHADA: 'fechada' };
 const STATUS_FICHA_LABEL = { PENDENTE: 'Não iniciado', EM_ANDAMENTO: 'Em preenchimento', CONCLUIDA: 'Concluído' };
 const STATUS_FICHA_VARIANT = { PENDENTE: 'gray', EM_ANDAMENTO: 'blue', CONCLUIDA: 'green' };
 const INDICADOR_CORRECAO_LABEL = { solicitada: 'Correção solicitada', resolvida: 'Corrigida pela Secretaria' };
@@ -32,6 +33,16 @@ export const FichaAnualPdiPage = () => {
   const [dataEncerramentoForm, setDataEncerramentoForm] = useState('');
   const [salvandoCiclo, setSalvandoCiclo] = useState(false);
   const [mensagem, setMensagem] = useState('');
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [confirmandoFechamento, setConfirmandoFechamento] = useState(false);
+
+  // Lista de anos com dado — carregada 1x por aluno (não depende do `ano` selecionado), pra
+  // alimentar o seletor sem precisar navegar às cegas ano por ano.
+  useEffect(() => {
+    listarAnosFichaAnualReal(id)
+      .then((resultado) => setAnosDisponiveis(resultado.anos))
+      .catch(() => setAnosDisponiveis([]));
+  }, [id]);
 
   const carregar = async (anoAlvo) => {
     setCarregando(true);
@@ -57,12 +68,14 @@ export const FichaAnualPdiPage = () => {
   }, [ano, user]);
 
   const fecharAno = async () => {
+    setConfirmandoFechamento(false);
     setFechando(true);
     setMensagem('');
     try {
       await fecharFichaAnualReal(id, ano);
       setMensagem('Ficha Anual fechada com sucesso.');
       await carregar(ano);
+      listarAnosFichaAnualReal(id).then((resultado) => setAnosDisponiveis(resultado.anos)).catch(() => {});
     } catch (error) {
       setErro(error.message);
     } finally {
@@ -97,6 +110,20 @@ export const FichaAnualPdiPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setAno((prev) => prev - 1)}>← {ano - 1}</Button>
+              {anosDisponiveis.length > 0 && (
+                <select
+                  className={`${inputClass} w-auto`}
+                  value={anosDisponiveis.some((item) => item.ano === ano) ? ano : ''}
+                  onChange={(event) => setAno(Number(event.target.value))}
+                >
+                  {!anosDisponiveis.some((item) => item.ano === ano) && <option value="">{ano} (sem dado ainda)</option>}
+                  {anosDisponiveis.map((item) => (
+                    <option key={item.ano} value={item.ano}>
+                      {item.ano} — {item.totalFichas} {item.totalFichas === 1 ? 'ficha' : 'fichas'}{item.statusFichaAnual ? ` (${STATUS_FICHA_ANUAL_LABEL[item.statusFichaAnual]})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
               <Button variant="outline" size="sm" onClick={() => setAno((prev) => prev + 1)}>{ano + 1} →</Button>
             </div>
           </div>
@@ -127,7 +154,7 @@ export const FichaAnualPdiPage = () => {
                   )}
                 </div>
                 {isSecretaria(user) && dados.fichaAnual.status !== 'FECHADA' && (
-                  <Button variant="outline" onClick={fecharAno} disabled={fechando}>{fechando ? 'Fechando...' : 'Fechar Ficha Anual'}</Button>
+                  <Button variant="outline" onClick={() => setConfirmandoFechamento(true)} disabled={fechando}>{fechando ? 'Fechando...' : 'Fechar Ficha Anual'}</Button>
                 )}
               </div>
 
@@ -199,6 +226,16 @@ export const FichaAnualPdiPage = () => {
             </Card>
           </>
         ) : null}
+
+        {confirmandoFechamento && (
+          <ConfirmDialog
+            title="Fechar Ficha Anual"
+            message={`Isso marca o ciclo ${ano} deste aluno como encerrado. Hoje não existe um botão para reabrir depois — formulários que ainda estiverem em aberto continuam preenchíveis normalmente (o fechamento não bloqueia nada, é só o status do ciclo), mas desfazer precisa ser pedido à Secretaria responsável pelo sistema. Deseja continuar?`}
+            confirmLabel="Fechar Ficha Anual"
+            onCancel={() => setConfirmandoFechamento(false)}
+            onConfirm={fecharAno}
+          />
+        )}
       </div>
     </MainLayout>
   );

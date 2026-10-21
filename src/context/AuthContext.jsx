@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState, useContext } from 'react';
 import { usuarios as usuariosIniciais } from '../data/mockData';
 import { apiFetch, getAuthToken, setAuthToken, setSenhaTemporariaPendenteHandler, setUnauthorizedHandler } from '../services/api';
+import { registrarUsuarioAtual } from '../offline/syncQueue';
 import { useData } from './DataContext';
 
 const AuthContext = createContext();
@@ -26,7 +27,7 @@ export const AuthProvider = ({ children }) => {
   // assim, uma pessoa cadastrada ou editada em Gestão de Pessoas já entra corretamente aqui,
   // sem depender de recarregar a página. Por isso o AuthProvider precisa estar DENTRO do
   // DataProvider (ver App.jsx).
-  const { professores, gestores, diretores, secretarias, auxiliares, loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais } = useData();
+  const { professores, gestores, diretores, secretarias, auxiliares, loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais, loadTrimestres } = useData();
 
   // Login REAL: quem valida e-mail/senha é o backend (bcrypt + JWT). O array `usuarios` do mock
   // continua servindo só para ligar a conta ao perfil detalhado (turmas, disciplinas, avatar...)
@@ -94,6 +95,7 @@ export const AuthProvider = ({ children }) => {
     loadEscolas();
     loadTurmas();
     loadDisciplinasReais();
+    loadTrimestres();
     // GET /api/pdi-alunos é exclusivo de Secretaria/Gestor/Diretora (ver exigirLeitura em
     // pdiAlunos.ts) — Professor e Auxiliar sempre recebiam 403 aqui à toa.
     if (['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(pessoa.perfil)) loadPdiAlunosReais();
@@ -139,6 +141,15 @@ export const AuthProvider = ({ children }) => {
       setSenhaTemporariaPendenteHandler(null);
     };
   }, []);
+
+  // Isolamento da infra offline por usuário (nunca por "id", que é sobrescrito pelo id do perfil
+  // rico do mock — ver login() acima; email é sempre único e sempre presente). Cobre login,
+  // logout e o reload inicial (usuário já vinha de localStorage) num só lugar. Logout NUNCA
+  // apaga rascunho não sincronizado (decisão confirmada) — só para de ler/escrever o namespace
+  // daquele usuário; o dado fica inerte no IndexedDB até ele logar de novo no mesmo navegador.
+  useEffect(() => {
+    registrarUsuarioAtual(user?.email?.toLowerCase() ?? null);
+  }, [user]);
 
   const isAuthenticated = () => user !== null;
 

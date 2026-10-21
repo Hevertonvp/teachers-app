@@ -69,6 +69,10 @@ enum PerfilPessoa {
   DIRETORA
   PROFESSOR
   AUXILIAR
+  // Suporte técnico do sistema (Feedback do Sistema) — fora da hierarquia pedagógica, nunca
+  // precisa de VinculoEscolar, vê feedbacks de todas as escolas. Conta provisionada por script
+  // administrativo (ver backend/scripts/provisionar-suporte-sistema.ts), nunca por tela pública.
+  SUPORTE_SISTEMA
 }
 
 // Um módulo novo no futuro é só um valor novo aqui — nunca um range de IDs de escola.
@@ -82,9 +86,9 @@ enum ModuloSistema {
 // --- Entidades ----------------------------------------------------------------------------
 
 model Escola {
-  id        Int            @id @default(autoincrement())
-  nome      String         @db.VarChar(200)
-  status    StatusRegistro @default(ATIVA)
+  id     Int            @id @default(autoincrement())
+  nome   String         @db.VarChar(200)
+  status StatusRegistro @default(ATIVA)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -92,13 +96,14 @@ model Escola {
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1) // preparado para concorrência otimista (ver README)
 
-  modulos          EscolaModulo[]
-  turmas           Turma[]
+  modulos           EscolaModulo[]
+  turmas            Turma[]
   vinculosEscolares VinculoEscolar[]
-  aplicacoesPdi    AplicacaoPdi[]
-  fichasPdi        FichaPdi[]
-  anamneses        Anamnese[]
+  aplicacoesPdi     AplicacaoPdi[]
+  fichasPdi         FichaPdi[]
+  anamneses         Anamnese[]
   conversasMensagem ConversaMensagem[]
+  feedbacksSistema  FeedbackSistema[]
 
   @@map("escolas")
 }
@@ -121,10 +126,11 @@ model Disciplina {
   id   Int    @id @default(autoincrement())
   nome String @unique @db.VarChar(100)
 
-  vinculosProfessor ProfessorTurmaDisciplina[]
-  modelosPdi        ModeloPdi[]
-  aplicacaoModelosPdi AplicacaoModeloPdi[]
-  fichasPdi         FichaPdi[]
+  vinculosProfessor    ProfessorTurmaDisciplina[]
+  modelosPdi           ModeloPdi[]
+  aplicacaoModelosPdi  AplicacaoModeloPdi[]
+  fichasPdi            FichaPdi[]
+  componenteCurricular DisciplinaComponenteCurricular?
 
   @@map("disciplinas")
 }
@@ -133,9 +139,9 @@ model Disciplina {
 // letivo+série/segmento+turno+identificador) precisa ser única mesmo entre turmas inativas —
 // ver identidadeChave abaixo e o comentário completo em src/domain/turma.ts.
 model Turma {
-  id       Int         @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   escolaId Int
-  escola   Escola      @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  escola   Escola @relation(fields: [escolaId], references: [id], onDelete: Restrict)
 
   anoLetivo Int
   etapa     EtapaEnsino
@@ -170,6 +176,7 @@ model Turma {
   fichasPdi          FichaPdi[]
   anamneses          Anamnese[]
   movimentacoesAluno MovimentacaoAlunoPdi[]
+  blocosPadrao       BlocoRespostasPadraoPdi[]
 
   // Cobre o filtro mais comum da listagem (GET /api/turmas?escolaId=...&anoLetivo=...&status=...)
   // — Postgres também usa o prefixo desse índice (só escolaId, ou escolaId+anoLetivo) sozinho.
@@ -210,15 +217,19 @@ model Pessoa {
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1)
 
-  vinculosEscolares      VinculoEscolar[]
-  vinculosComoProfessor  ProfessorTurmaDisciplina[] @relation("ProfessorVinculo")
-  vinculosComoAuxiliar   AuxiliarTurma[]            @relation("AuxiliarVinculo")
-  eventos                PessoaEvento[]             @relation("PessoaEventoPessoa")
-  fichasComoResponsavel  FichaPdi[]                 @relation("FichaProfessorResponsavel")
-  participacoesConversa  ParticipanteConversa[]
-  mensagensEnviadas      Mensagem[]                 @relation("MensagemRemetente")
-  notificacoes           Notificacao[]
-  assinaturasPush        AssinaturaPush[]
+  vinculosEscolares         VinculoEscolar[]
+  vinculosComoProfessor     ProfessorTurmaDisciplina[] @relation("ProfessorVinculo")
+  vinculosComoAuxiliar      AuxiliarTurma[]            @relation("AuxiliarVinculo")
+  eventos                   PessoaEvento[]             @relation("PessoaEventoPessoa")
+  fichasComoResponsavel     FichaPdi[]                 @relation("FichaProfessorResponsavel")
+  blocosPadraoComoProfessor BlocoRespostasPadraoPdi[]  @relation("BlocoPadraoProfessor")
+  participacoesConversa     ParticipanteConversa[]
+  mensagensEnviadas         Mensagem[]                 @relation("MensagemRemetente")
+  notificacoes              Notificacao[]
+  assinaturasPush           AssinaturaPush[]
+  feedbacksSistema          FeedbackSistema[]          @relation("FeedbackSistemaAutor")
+  mensagensFeedbackSistema  MensagemFeedbackSistema[]  @relation("MensagemFeedbackSistemaAutor")
+  eventosFeedbackSistema    FeedbackSistemaEvento[]    @relation("FeedbackSistemaEventoAutor")
 
   @@map("pessoas")
 }
@@ -252,14 +263,14 @@ model PessoaEvento {
 
 // Vínculo genérico Pessoa↔Escola (qualquer perfil). Nunca apagado fisicamente.
 model VinculoEscolar {
-  id        Int           @id @default(autoincrement())
-  escolaId  Int
-  escola    Escola        @relation(fields: [escolaId], references: [id], onDelete: Restrict)
-  pessoaId  Int
-  pessoa    Pessoa        @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
-  status    StatusVinculo @default(ATIVO)
-  dataInicio DateTime     @db.Date
-  dataFim    DateTime?    @db.Date
+  id         Int           @id @default(autoincrement())
+  escolaId   Int
+  escola     Escola        @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  pessoaId   Int
+  pessoa     Pessoa        @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  status     StatusVinculo @default(ATIVO)
+  dataInicio DateTime      @db.Date
+  dataFim    DateTime?     @db.Date
 
   createdAt DateTime @default(now())
   createdBy String?  @db.VarChar(200)
@@ -274,11 +285,11 @@ model VinculoEscolar {
 // prisma/migrations/.../migration.sql e README.md. O índice abaixo no schema é só o "normal"
 // (não único) para consultas; a garantia de unicidade mora na migration SQL.
 model ProfessorTurmaDisciplina {
-  id           Int    @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   turmaId      Int
-  turma        Turma  @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  turma        Turma      @relation(fields: [turmaId], references: [id], onDelete: Restrict)
   professorId  Int
-  professor    Pessoa @relation("ProfessorVinculo", fields: [professorId], references: [id], onDelete: Restrict)
+  professor    Pessoa     @relation("ProfessorVinculo", fields: [professorId], references: [id], onDelete: Restrict)
   disciplinaId Int
   disciplina   Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
 
@@ -324,11 +335,11 @@ model AlunoPdi {
   // de uma nova versão de Anamnese), não pertenciam ao AlunoPdi real até aqui porque nenhuma
   // tela precisava deles — o mock já os tinha soltos no aluno. Ambos opcionais: alunos já
   // cadastrados não têm valor retroativo.
-  dataNascimento                 DateTime? @db.Date
-  responsavelNome                String    @db.VarChar(200)
-  responsavelParentesco          String    @db.VarChar(50)
-  responsavelTelefone            String    @db.VarChar(30)
-  responsavelTelefoneSecundario  String?   @db.VarChar(30)
+  dataNascimento                DateTime? @db.Date
+  responsavelNome               String    @db.VarChar(200)
+  responsavelParentesco         String    @db.VarChar(50)
+  responsavelTelefone           String    @db.VarChar(30)
+  responsavelTelefoneSecundario String?   @db.VarChar(30)
 
   status StatusAluno @default(ATIVO)
 
@@ -338,10 +349,11 @@ model AlunoPdi {
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1)
 
-  fichasPdi      FichaPdi[]
-  anamneses      Anamnese[]
-  movimentacoes  MovimentacaoAlunoPdi[]
-  fichasAnuais   FichaAnualPdi[]
+  fichasPdi     FichaPdi[]
+  anamneses     Anamnese[]
+  movimentacoes MovimentacaoAlunoPdi[]
+  fichasAnuais  FichaAnualPdi[]
+  blocosPadrao  BlocoRespostasPadraoPdi[]
 
   @@index([turmaId])
   @@map("alunos_pdi")
@@ -385,12 +397,17 @@ enum OrigemPerguntaPdi {
   PERSONALIZADA
 }
 
+// HABILIDADE_CRMG: pergunta escrita normalmente pela Secretaria cuja RESPOSTA é a escolha de uma
+// ou várias habilidades do catálogo HabilidadeCurricular (ou "todas"), sempre do componente da
+// disciplina da Ficha. O valor salvo congela código/descrição das escolhidas — ver
+// domain/habilidadesCurriculares.ts.
 enum TipoRespostaPdi {
   TEXTO
   SELECAO
   MARCACAO
   NUMERO
   ORIENTACAO
+  HABILIDADE_CRMG
 }
 
 model PerguntaPdi {
@@ -409,6 +426,18 @@ model PerguntaPdi {
   complementar Json?
   ordem        Int
   status       StatusRegistro    @default(ATIVA)
+  // null = aparece em qualquer trimestre (comportamento de sempre); 1/2/3 = só entra no snapshot de
+  // uma Aplicação daquele trimestre (ver PeriodoTrimestre e POST /api/pdi-aplicacoes).
+  trimestre    Int?
+
+  // Vínculo real (nunca por texto/código) com a pergunta padrão de origem — só existe quando esta
+  // cópia nasceu de PerguntaPdiPadrao (carregarPerguntasPadrao=true) OU foi reconciliada manualmente
+  // pela Secretaria (ver POST /api/pdi-perguntas/:id/vincular-padrao, legado anterior a esta FK).
+  // Enquanto setado, esta pergunta é "compartilhável": não pode ser editada/inativada isoladamente
+  // (PUT /api/pdi-perguntas/:id bloqueia) e, numa Aplicação nova, vira resposta única no bloco comum
+  // do Professor (BlocoRespostasPadraoPdi) em vez de um snapshot por disciplina.
+  padraoOriginalId Int?
+  padraoOriginal   PerguntaPdiPadrao? @relation(fields: [padraoOriginalId], references: [id], onDelete: Restrict)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -419,6 +448,7 @@ model PerguntaPdi {
   snapshots AplicacaoPerguntaPdi[]
 
   @@index([modeloId, ordem])
+  @@index([padraoOriginalId])
   @@map("perguntas_pdi")
 }
 
@@ -440,11 +470,15 @@ model PerguntaPdiPadrao {
   complementar Json?
   ordem        Int
   status       StatusRegistro    @default(ATIVA)
+  trimestre    Int? // mesmo significado de PerguntaPdi.trimestre — copiado para o Modelo na criação
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
+
+  copias                      PerguntaPdi[]
+  aplicacaoPerguntaPadraoPdis AplicacaoPerguntaPadraoPdi[]
 
   @@index([ordem])
   @@map("perguntas_pdi_padrao")
@@ -466,6 +500,9 @@ model AplicacaoPdi {
   dataInicio DateTime       @db.Date
   dataFim    DateTime       @db.Date
   status     StatusRegistro @default(ATIVA)
+  // Trimestre do calendário (PeriodoTrimestre) que contém dataInicio, resolvido na criação —
+  // null quando nenhum período configurado a contém (e nas Aplicações anteriores a este campo).
+  trimestre  Int?
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -473,9 +510,11 @@ model AplicacaoPdi {
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1)
 
-  modelos     AplicacaoModeloPdi[]
-  reaberturas ReaberturaPdi[]
-  fichas      FichaPdi[]
+  modelos         AplicacaoModeloPdi[]
+  reaberturas     ReaberturaPdi[]
+  fichas          FichaPdi[]
+  perguntasPadrao AplicacaoPerguntaPadraoPdi[]
+  blocosPadrao    BlocoRespostasPadraoPdi[]
 
   @@index([escolaId, dataInicio, dataFim])
   @@map("aplicacoes_pdi")
@@ -499,15 +538,19 @@ model AplicacaoModeloPdi {
   disciplina     Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
   disciplinaNome String     @db.VarChar(100)
 
-  perguntas AplicacaoPerguntaPdi[]
-  fichas    FichaPdi[]
+  perguntas       AplicacaoPerguntaPdi[]
+  fichas          FichaPdi[]
+  perguntasPadrao AplicacaoModeloPerguntaPadraoPdi[]
 
   @@index([aplicacaoId])
   @@map("aplicacao_modelos_pdi")
 }
 
 // Snapshot IMUTÁVEL de cada PerguntaPdi ATIVA do modelo no momento da criação — mesmos campos do
-// PerguntaPdi vivo, copiados (nunca referenciados por FK como fonte de leitura futura).
+// PerguntaPdi vivo, copiados (nunca referenciados por FK como fonte de leitura futura). Só
+// perguntas SEM padraoOriginalId (específicas da disciplina) viram uma linha aqui — as
+// compartilháveis (padraoOriginalId setado) viram AplicacaoPerguntaPadraoPdi em vez disso, uma
+// única vez por Aplicação (ver POST /api/pdi-aplicacoes).
 model AplicacaoPerguntaPdi {
   id                Int                @id @default(autoincrement())
   aplicacaoModeloId Int
@@ -531,6 +574,235 @@ model AplicacaoPerguntaPdi {
 
   @@index([aplicacaoModeloId])
   @@map("aplicacao_perguntas_pdi")
+}
+
+// --- Bloco de respostas padrão compartilhado (aplicacaoId+alunoId+turmaId+professorId) --------
+// Resolve o caso do mesmo Professor lecionando várias disciplinas pra mesma turma: perguntas
+// padrão (PerguntaPdi.padraoOriginalId setado) passam a ter UMA resposta por Aplicação+aluno+
+// turma+Professor, reaproveitada em todas as Fichas de disciplina daquele Professor — nunca
+// duplicada fisicamente. Conteúdo específico de disciplina (incluindo HABILIDADE_CRMG) nunca
+// passa por aqui, continua só em AplicacaoPerguntaPdi/RespostaPdi/FichaPdi, intocados.
+
+// Snapshot IMUTÁVEL de UMA PerguntaPdiPadrao, uma única vez por Aplicação (nunca por disciplina) —
+// dedup natural: todo Modelo que carregou aquela pergunta padrão aponta pro MESMO registro aqui
+// (ver AplicacaoModeloPerguntaPadraoPdi). Igual ao resto do PDI, nunca relido do padrão vivo depois
+// de criado (seção 18/19 do pedido: alterar a pergunta padrão central depois não muda Aplicações já
+// criadas).
+model AplicacaoPerguntaPadraoPdi {
+  id          Int          @id @default(autoincrement())
+  aplicacaoId Int
+  aplicacao   AplicacaoPdi @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
+
+  padraoOriginalId Int
+  padraoOriginal   PerguntaPdiPadrao @relation(fields: [padraoOriginalId], references: [id], onDelete: Restrict)
+
+  secao        String            @db.VarChar(100)
+  subsecao     String?           @db.VarChar(100)
+  codigo       String?           @db.VarChar(20)
+  texto        String            @db.Text
+  indicador    String?           @db.VarChar(100)
+  origem       OrigemPerguntaPdi
+  tipoResposta TipoRespostaPdi
+  opcoes       Json?
+  complementar Json?
+  ordem        Int
+
+  modelos   AplicacaoModeloPerguntaPadraoPdi[]
+  respostas RespostaPadraoPdi[]
+
+  @@unique([aplicacaoId, padraoOriginalId])
+  @@map("aplicacao_perguntas_padrao_pdi")
+}
+
+// Join: quais Modelos (disciplinas) desta Aplicação de fato incluem cada pergunta padrão
+// compartilhada — decide quais perguntas do bloco comum aparecem na Ficha de cada disciplina
+// (um Modelo criado com carregarPerguntasPadrao=false, ou sem aquela pergunta especificamente,
+// nunca mostra o que não carregou). Criado uma vez por Modelo, no momento do snapshot da Aplicação.
+model AplicacaoModeloPerguntaPadraoPdi {
+  id                        Int                        @id @default(autoincrement())
+  aplicacaoModeloId         Int
+  aplicacaoModelo           AplicacaoModeloPdi         @relation(fields: [aplicacaoModeloId], references: [id], onDelete: Restrict)
+  aplicacaoPerguntaPadraoId Int
+  aplicacaoPerguntaPadrao   AplicacaoPerguntaPadraoPdi @relation(fields: [aplicacaoPerguntaPadraoId], references: [id], onDelete: Restrict)
+
+  @@unique([aplicacaoModeloId, aplicacaoPerguntaPadraoId])
+  @@index([aplicacaoModeloId])
+  @@map("aplicacao_modelo_perguntas_padrao_pdi")
+}
+
+// Identidade do bloco: um por Aplicação+aluno+turma+Professor — nunca por disciplina. Professores
+// diferentes do mesmo aluno/turma nunca compartilham um bloco (cada um tem o seu). `version` é
+// checado de verdade (incrementado e comparado) nas escritas — proteção real contra duas abas
+// sobrescrevendo uma à outra sem aviso (seção 23 do pedido; diferente de FichaPdi.version, que
+// hoje só é incrementado, nunca comparado — ver domain/pdiBlocoPadrao.ts).
+model BlocoRespostasPadraoPdi {
+  id Int @id @default(autoincrement())
+
+  aplicacaoId Int
+  aplicacao   AplicacaoPdi @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
+  alunoId     Int
+  aluno       AlunoPdi     @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  turmaId     Int
+  turma       Turma        @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  professorId Int
+  professor   Pessoa       @relation("BlocoPadraoProfessor", fields: [professorId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  respostas         RespostaPadraoPdi[]
+  correcoes         CorrecaoBlocoPadraoPdi[]
+  historicoCorrecao HistoricoCorrecaoRespostaPadrao[]
+
+  @@unique([aplicacaoId, alunoId, turmaId, professorId])
+  @@map("blocos_respostas_padrao_pdi")
+}
+
+// Resposta de UMA pergunta padrão do bloco — igual a RespostaPdi, mas vinculada ao bloco em vez de
+// a uma Ficha de disciplina. Lida/editada por qualquer Ficha de disciplina daquele Professor que
+// inclua aquela pergunta no snapshot (via AplicacaoModeloPerguntaPadraoPdi).
+model RespostaPadraoPdi {
+  id                        Int                        @id @default(autoincrement())
+  blocoId                   Int
+  bloco                     BlocoRespostasPadraoPdi    @relation(fields: [blocoId], references: [id], onDelete: Restrict)
+  aplicacaoPerguntaPadraoId Int
+  aplicacaoPerguntaPadrao   AplicacaoPerguntaPadraoPdi @relation(fields: [aplicacaoPerguntaPadraoId], references: [id], onDelete: Restrict)
+
+  valor Json
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@unique([blocoId, aplicacaoPerguntaPadraoId])
+  @@index([blocoId])
+  @@map("respostas_padrao_pdi")
+}
+
+// Devolução/correção do bloco comum — mesmo idioma de CorrecaoFichaPdi (mesmo enum de status),
+// mas corrigir/devolver aqui vale para TODAS as disciplinas daquele Professor ao mesmo tempo
+// (seção 14/16 do pedido), nunca uma correção duplicada por disciplina.
+model CorrecaoBlocoPadraoPdi {
+  id      Int                     @id @default(autoincrement())
+  blocoId Int
+  bloco   BlocoRespostasPadraoPdi @relation(fields: [blocoId], references: [id], onDelete: Restrict)
+
+  observacao String                 @db.VarChar(500)
+  status     StatusCorrecaoFichaPdi @default(ABERTA)
+
+  criadaPor String   @db.VarChar(200)
+  criadaEm  DateTime @default(now())
+  prazoAte  DateTime
+
+  concluidaEm  DateTime?
+  concluidaPor String?   @db.VarChar(200)
+
+  @@index([blocoId])
+  @@map("correcoes_bloco_padrao_pdi")
+}
+
+// Auditoria de valor anterior/novo de UMA resposta padrão alterada em contexto de correção — mesmo
+// idioma de HistoricoCorrecaoResposta, só trocando fichaId por blocoId.
+model HistoricoCorrecaoRespostaPadrao {
+  id                        Int                     @id @default(autoincrement())
+  blocoId                   Int
+  bloco                     BlocoRespostasPadraoPdi @relation(fields: [blocoId], references: [id], onDelete: Restrict)
+  aplicacaoPerguntaPadraoId Int
+
+  valorAnterior Json?
+  valorNovo     Json
+
+  alteradoPor String                  @db.VarChar(200)
+  alteradoEm  DateTime                @default(now())
+  origem      OrigemHistoricoCorrecao
+
+  @@index([blocoId])
+  @@map("historico_correcao_resposta_padrao")
+}
+
+// --- Catálogo curricular (CRMG) ---------------------------------------------------------------
+
+enum ComponenteCurricular {
+  ARTE
+  CIENCIAS
+  EDUCACAO_FISICA
+  ENSINO_RELIGIOSO
+  GEOGRAFIA
+  HISTORIA
+  LINGUA_INGLESA
+  LINGUA_PORTUGUESA
+  MATEMATICA
+}
+
+// Habilidade oficial de um currículo de referência, importada de forma reproduzível por
+// scripts/crmg/importar.ts (nunca editada à mão, nunca apagada — versão nova = linhas novas com
+// outro versaoCurriculo; linhas antigas viram ativa=false). `id` é a identidade interna: o código
+// oficial NÃO é único (a própria fonte repete código para textos diferentes — ver relatório de
+// auditoria em prisma/data/crmg/). Idempotência da importação = (versaoCurriculo, chaveImportacao).
+model HabilidadeCurricular {
+  id               Int                  @id @default(autoincrement())
+  versaoCurriculo  String               @db.VarChar(40)
+  chaveImportacao  String               @db.VarChar(80)
+  codigo           String               @db.VarChar(20)
+  descricaoOficial String               @db.Text
+  componente       ComponenteCurricular
+  anoOuBloco       String?              @db.VarChar(10) // dígitos do código: "06", "15", "69"...
+  anosEscolares    Int[] // anos em que o texto aparece no documento (metadado interno)
+  origem           String               @db.VarChar(20) // "CRMG"
+
+  // Campos auxiliares de busca — normalizados (minúsculas, sem acento), NUNCA exibidos.
+  codigoBusca    String @db.VarChar(20)
+  descricaoBusca String @db.Text
+
+  fonteUrl     String @db.VarChar(500)
+  fonteSha256  String @db.VarChar(64)
+  fontePaginas Int[]
+
+  // Inconsistência da fonte registrada para revisão humana (código atípico, mesmo código com
+  // textos distintos...). O texto/código oficial é preservado exatamente como publicado.
+  requerRevisao     Boolean @default(false)
+  observacaoRevisao String? @db.Text
+
+  ativa Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@unique([versaoCurriculo, chaveImportacao])
+  @@index([componente, ativa])
+  @@index([codigo])
+  @@map("habilidades_curriculares")
+}
+
+// Mapeamento explícito Disciplina -> componente curricular (nunca comparação de nomes em runtime).
+// Disciplina sem linha aqui = sem habilidades disponíveis. Várias disciplinas podem apontar para o
+// mesmo componente (ex.: Redação usa Língua Portuguesa, continuando uma Disciplina independente).
+model DisciplinaComponenteCurricular {
+  disciplinaId Int                  @id
+  disciplina   Disciplina           @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  componente   ComponenteCurricular
+
+  createdAt DateTime @default(now())
+
+  @@map("disciplina_componentes_curriculares")
+}
+
+// Calendário de trimestres do ano letivo (tela Configurações > Trimestres). Antes vivia só no
+// estado do frontend; persistido aqui para que a criação de uma Aplicação saiba em qual trimestre
+// ela cai e inclua só as perguntas daquele trimestre (PerguntaPdi.trimestre).
+model PeriodoTrimestre {
+  trimestre  Int      @id // 1, 2 ou 3
+  dataInicio DateTime @db.Date
+  dataFim    DateTime @db.Date
+
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@map("periodos_trimestre")
 }
 
 // Reabertura real e histórica de uma Aplicação já encerrada — NUNCA edita dataInicio/dataFim
@@ -616,8 +888,8 @@ model FichaPdi {
   concluidaPor String?   @db.VarChar(200)
   version      Int       @default(1)
 
-  respostas RespostaPdi[]
-  correcoes CorrecaoFichaPdi[]
+  respostas         RespostaPdi[]
+  correcoes         CorrecaoFichaPdi[]
   historicoCorrecao HistoricoCorrecaoResposta[]
 
   @@unique([aplicacaoId, alunoId, disciplinaId])
@@ -684,7 +956,7 @@ model MovimentacaoAlunoPdi {
   dataInicio DateTime
   dataFim    DateTime? // null = este é o contexto atual do aluno
 
-  registradoPor String? @db.VarChar(200)
+  registradoPor String?  @db.VarChar(200)
   createdAt     DateTime @default(now())
 
   @@index([alunoId, dataInicio])
@@ -698,15 +970,15 @@ model MovimentacaoAlunoPdi {
 // linhas pro mesmo aluno no mesmo ano. "ano" é o ano civil de AplicacaoPdi.dataInicio das Fichas
 // agrupadas — nunca persistido em FichaPdi, só usado aqui como chave de identidade.
 model FichaAnualPdi {
-  id      Int   @id @default(autoincrement())
+  id      Int      @id @default(autoincrement())
   alunoId Int
   aluno   AlunoPdi @relation(fields: [alunoId], references: [id], onDelete: Restrict)
   ano     Int
 
-  status    StatusFichaAnualPdi @default(EM_ANDAMENTO)
-  abertaEm  DateTime            @default(now())
-  fechadaEm DateTime?
-  fechadaPor String?            @db.VarChar(200)
+  status     StatusFichaAnualPdi @default(EM_ANDAMENTO)
+  abertaEm   DateTime            @default(now())
+  fechadaEm  DateTime?
+  fechadaPor String?             @db.VarChar(200)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -825,8 +1097,8 @@ model ModeloAnamnese {
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
 
-  perguntas  PerguntaAnamnese[]
-  anamneses  Anamnese[]
+  perguntas PerguntaAnamnese[]
+  anamneses Anamnese[]
 
   @@map("modelos_anamnese")
 }
@@ -888,22 +1160,22 @@ model Anamnese {
 
   acompanhadoForaDaEscola      Boolean?
   especialidadesAcompanhamento Json? // string[] (chaves de ESPECIALIDADES_ACOMPANHAMENTO)
-  especialidadeOutroTexto      String? @db.VarChar(200)
+  especialidadeOutroTexto      String?  @db.VarChar(200)
 
-  usoContinuoMedicamento      Boolean?
-  medicamentoQual             String?  @db.VarChar(200)
-  medicamentoPrescritoPor     String?  @db.VarChar(200)
-  medicamentoQuando           String?  @db.VarChar(200)
-  medicamentoParaQue          String?  @db.VarChar(200)
+  usoContinuoMedicamento       Boolean?
+  medicamentoQual              String?  @db.VarChar(200)
+  medicamentoPrescritoPor      String?  @db.VarChar(200)
+  medicamentoQuando            String?  @db.VarChar(200)
+  medicamentoParaQue           String?  @db.VarChar(200)
   medicamentoEfeitosColaterais Boolean?
-  medicamentoEfeitosQuais     String?  @db.Text
+  medicamentoEfeitosQuais      String?  @db.Text
 
-  comoGostaDeSeDivertir String? @db.Text
-  idadeInicioEscola     String? @db.VarChar(50)
-  ondeComecou           String? @db.VarChar(200)
-  percursoEscolar       String? @db.Text
+  comoGostaDeSeDivertir String?  @db.Text
+  idadeInicioEscola     String?  @db.VarChar(50)
+  ondeComecou           String?  @db.VarChar(200)
+  percursoEscolar       String?  @db.Text
   frequentaSalaRecursos Boolean?
-  frequenciaAtendimento String? @db.VarChar(200)
+  frequenciaAtendimento String?  @db.VarChar(200)
 
   // Contexto histórico congelado na criação desta VERSÃO — mesmo raciocínio de FichaPdi.
   // Snapshot, nunca fonte de autorização (seção 28 do pedido).
@@ -1042,6 +1314,8 @@ enum TipoNotificacao {
   NOVA_MENSAGEM
   PDI_PRAZO_PROFESSOR
   PDI_PRAZO_GESTOR
+  NOVO_FEEDBACK_SISTEMA
+  RESPOSTA_FEEDBACK_SISTEMA
 }
 
 // Uma Notificação pertence sempre a UM destinatário (nunca em massa/genérica). `chaveIdempotencia`
@@ -1101,4 +1375,108 @@ model AssinaturaPush {
 
   @@index([pessoaId, status])
   @@map("assinaturas_push")
+}
+
+// --- Feedback do Sistema --------------------------------------------------------------------
+// Entidades PRÓPRIAS, deliberadamente separadas de Mensagem/ConversaMensagem (nunca reaproveita
+// aquelas regras de escopo por escola/hierarquia pedagógica — ver domain/feedbackSistema.ts):
+// canal técnico global entre qualquer usuário autenticado e SUPORTE_SISTEMA, independente de
+// escola/vínculo/hierarquia.
+
+enum CategoriaFeedbackSistema {
+  ERRO_BUG
+  SUGESTAO_MELHORIA
+  DIFICULDADE_USO
+  LENTIDAO_TECNICO
+  OUTRO_PROBLEMA
+}
+
+enum StatusFeedbackSistema {
+  NOVO
+  EM_ANALISE
+  RESOLVIDO
+  NAO_E_PROBLEMA_DO_SISTEMA
+}
+
+enum TipoEventoFeedbackSistema {
+  CRIACAO
+  MUDANCA_STATUS
+  REABERTURA_AUTOMATICA
+}
+
+// Um chamado. `autorPerfilSnapshot` é congelado na criação (filtro "perfil do autor" não depende
+// de join nem fica errado se o perfil da Pessoa mudar depois — cenário raro, mas possível).
+// `escolaId` é opcional e só contexto (seção 6 do pedido: "quando disponível") — nunca usado para
+// autorização (quem pode ver o quê é sempre por autorId ou por ser SUPORTE_SISTEMA).
+model FeedbackSistema {
+  id Int @id @default(autoincrement())
+
+  autorId             Int
+  autor               Pessoa       @relation("FeedbackSistemaAutor", fields: [autorId], references: [id], onDelete: Restrict)
+  autorPerfilSnapshot PerfilPessoa
+
+  escolaId Int?
+  escola   Escola? @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+
+  categoria CategoriaFeedbackSistema
+  assunto   String                   @db.VarChar(200)
+  descricao String                   @db.Text
+  status    StatusFeedbackSistema    @default(NOVO)
+
+  // Capturados automaticamente pelo frontend no momento da criação (seção 20 do pedido) — nunca
+  // conteúdo de formulário/senha/token, só contexto técnico leve.
+  rotaOrigem      String? @db.VarChar(200)
+  userAgentResumo String? @db.VarChar(200)
+  tipoDispositivo String? @db.VarChar(20)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  mensagens MensagemFeedbackSistema[]
+  eventos   FeedbackSistemaEvento[]
+
+  @@index([status, createdAt])
+  @@index([autorId])
+  @@index([categoria])
+  @@map("feedbacks_sistema")
+}
+
+// Conversa dentro do chamado — autor pode ser o próprio usuário (continuidade, seção 17 do
+// pedido) ou SUPORTE_SISTEMA (resposta, seção 11). Nunca editada/apagada depois de criada, mesmo
+// idioma de Mensagem.
+model MensagemFeedbackSistema {
+  id         Int             @id @default(autoincrement())
+  feedbackId Int
+  feedback   FeedbackSistema @relation(fields: [feedbackId], references: [id], onDelete: Restrict)
+  autorId    Int
+  autor      Pessoa          @relation("MensagemFeedbackSistemaAutor", fields: [autorId], references: [id], onDelete: Restrict)
+
+  conteudo String @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([feedbackId, createdAt])
+  @@map("mensagens_feedback_sistema")
+}
+
+// Auditoria estrutural do chamado (seção 25 do pedido) — separada das mensagens em si (que já
+// carregam autor/timestamp/conteúdo próprios): criação, mudança de status (manual, por
+// SUPORTE_SISTEMA) e reabertura automática (autorId null = disparada pelo sistema, nunca por uma
+// pessoa, quando o próprio autor do feedback responde um chamado já RESOLVIDO).
+model FeedbackSistemaEvento {
+  id         Int             @id @default(autoincrement())
+  feedbackId Int
+  feedback   FeedbackSistema @relation(fields: [feedbackId], references: [id], onDelete: Restrict)
+
+  tipo           TipoEventoFeedbackSistema
+  statusAnterior StatusFeedbackSistema?
+  statusNovo     StatusFeedbackSistema?
+
+  autorId Int?
+  autor   Pessoa? @relation("FeedbackSistemaEventoAutor", fields: [autorId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([feedbackId, createdAt])
+  @@map("feedback_sistema_eventos")
 }

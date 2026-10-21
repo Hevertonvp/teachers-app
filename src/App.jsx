@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { EscolaProvider } from './context/EscolaContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { isAuxiliar, isDiretora, isGestor, isProfessor, isSecretaria } from './utils/roles';
+import { isAuxiliar, isDiretora, isGestor, isProfessor, isSecretaria, isSuporteSistema } from './utils/roles';
 import { ProtectedRoute, PrimeiroAcessoRoute } from './routes/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { PrimeiroAcessoPage } from './pages/PrimeiroAcessoPage';
@@ -33,6 +33,10 @@ import { PerfilPage } from './pages/PerfilPage';
 import { EmConstrucaoPage } from './pages/EmConstrucaoPage';
 import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
 import { MensagensPage } from './pages/MensagensPage';
+import { NovoFeedbackPage } from './pages/NovoFeedbackPage';
+import { MeusFeedbacksPage } from './pages/MeusFeedbacksPage';
+import { FeedbackSistemaDetalhePage } from './pages/FeedbackSistemaDetalhePage';
+import { FeedbacksSistemaListaPage } from './pages/FeedbacksSistemaListaPage';
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -42,6 +46,9 @@ const DashboardRouter = () => {
   if (isSecretaria(user)) return <DashboardSecretaria />;
   // Auxiliar ainda não tem um Dashboard próprio nesta etapa — "Meus alunos" é a tela inicial.
   if (isAuxiliar(user)) return <Navigate to="/meus-alunos" replace />;
+  // Suporte do Sistema está fora da hierarquia pedagógica — a própria caixa de feedbacks já é a
+  // tela inicial (seção 2/23 do pedido de Feedback do Sistema), nunca um Dashboard pedagógico.
+  if (isSuporteSistema(user)) return <Navigate to="/feedback-sistema" replace />;
   return <Navigate to="/login" />;
 };
 
@@ -82,6 +89,11 @@ const AppRoutes = () => <Routes>
   <Route path="/eventos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/noticias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/mensagens" element={<ProtectedRoute><MensagensPage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema/novo" element={<ProtectedRoute><NovoFeedbackPage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema/meus" element={<ProtectedRoute><MeusFeedbacksPage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema/meus/:id" element={<ProtectedRoute><FeedbackSistemaDetalhePage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema" element={<ProtectedRoute><FeedbacksSistemaListaPage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema/:id" element={<ProtectedRoute><FeedbackSistemaDetalhePage /></ProtectedRoute>} />
   <Route path="/planejamentos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/planejamentos-gestor" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/novo-planejamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />

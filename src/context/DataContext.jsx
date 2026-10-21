@@ -4,19 +4,20 @@ import { listarDisciplinas } from '../services/disciplinas';
 import { criarTurma as criarTurmaApi, editarTurma, inativarTurmaApi, listarTurmas, reativarTurmaApi } from '../services/turmas';
 import { arquivarPdiAlunoReal, criarPdiAlunoReal, editarPdiAlunoReal, listarMeusAlunosAuxiliarReais, listarPdiAlunos, obterPdiAluno, reativarPdiAlunoReal } from '../services/pdiAlunos';
 import {
-  criarPdiModeloPerguntaReal, criarPdiModeloReal, editarPdiModeloPerguntaReal, excluirPdiModeloReal, inativarPdiModeloReal,
+  criarPdiModeloPerguntaReal, criarPdiModeloReal, desvincularPdiPerguntaPadraoReal, editarPdiModeloPerguntaReal, excluirPdiModeloReal, inativarPdiModeloReal,
   inativarPdiPerguntaReal, listarPdiModelosReais, reativarPdiModeloReal, reativarPdiPerguntaReal,
-  reordenarPdiModeloPerguntasReais,
+  reordenarPdiModeloPerguntasReais, vincularPdiPerguntaPadraoReal,
 } from '../services/pdiModelos';
 import {
   criarPdiPerguntaPadraoReal, editarPdiPerguntaPadraoReal, excluirPdiPerguntaPadraoReal, inativarPdiPerguntaPadraoReal,
   listarPdiPerguntasPadraoReais, reativarPdiPerguntaPadraoReal, reordenarPdiPerguntasPadraoReais,
 } from '../services/pdiPerguntasPadrao';
+import { atualizarTrimestre, listarTrimestres } from '../services/trimestres';
 import {
   criarPdiAplicacaoReal, criarReaberturaPdiReal, editarPdiAplicacaoReal, listarPdiAplicacoesReais,
   listarReaberturasPdiReais, obterSnapshotPdiAplicacaoReal, removerPdiAplicacaoReal,
 } from '../services/pdiAplicacoes';
-import { concluirFichaReal, listarFichasPdiReais, listarMeusPdisReais, obterFichaReal, obterOuCriarFichaReal, salvarRespostasFichaReal } from '../services/pdiFichas';
+import { concluirFichaReal, listarFichasPdiReais, listarMeusPdisReais, obterFichaReal, obterOuCriarFichaReal, salvarRespostasFichaReal, salvarRespostasPadraoFichaReal } from '../services/pdiFichas';
 import {
   concluirAnamneseReal, criarAnamnesePerguntaReal, editarAnamnesePerguntaReal, iniciarAnamneseReal,
   inativarAnamnesePerguntaReal, listarAnamneseModelosReais, listarAnamnesesPendentesReal, obterAnamneseModeloReal, obterAnamneseReal,
@@ -410,6 +411,28 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  // Reconciliação manual do legado (bloco de respostas padrão compartilhado) — nunca inferida,
+  // sempre uma confirmação explícita da Secretaria (ver pdiModelos.ts, POST .../vincular-padrao).
+  const vincularPdiPerguntaPadrao = async (modeloId, perguntaId, padraoOriginalId) => {
+    try {
+      const pergunta = await vincularPdiPerguntaPadraoReal(perguntaId, padraoOriginalId);
+      atualizarPerguntaNoModelo(modeloId, pergunta);
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
+  const desvincularPdiPerguntaPadrao = async (modeloId, perguntaId) => {
+    try {
+      const pergunta = await desvincularPdiPerguntaPadraoReal(perguntaId);
+      atualizarPerguntaNoModelo(modeloId, pergunta);
+      return { ok: true, pergunta };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  };
+
   const mudarStatusPdiPerguntaReal = async (modeloId, perguntaId, ativar) => {
     try {
       const pergunta = await (ativar ? reativarPdiPerguntaReal(perguntaId) : inativarPdiPerguntaReal(perguntaId));
@@ -584,11 +607,13 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  const salvarRespostasFichaPdi = async (fichaId, respostas) => {
+  const salvarRespostasFichaPdi = async (fichaId, respostas, baseUpdatedAt) => {
     try {
-      return { ok: true, ...(await salvarRespostasFichaReal(fichaId, respostas)) };
+      return { ok: true, ...(await salvarRespostasFichaReal(fichaId, respostas, baseUpdatedAt)) };
     } catch (error) {
-      return { ok: false, error: error.message };
+      // codigo/dadosAtuais preservados (infra offline — CONFLITO_VERSAO) além da mensagem, pra
+      // quem chamou poder distinguir "conflito real" de "erro genérico" sem reparsear texto.
+      return { ok: false, error: error.message, codigo: error.codigo, dadosAtuais: error.dadosAtuais };
     }
   };
 
@@ -597,6 +622,15 @@ export const DataProvider = ({ children }) => {
       return { ok: true, ...(await concluirFichaReal(fichaId)) };
     } catch (error) {
       return { ok: false, error: error.message };
+    }
+  };
+
+  // Bloco comum de perguntas padrão — ver FormularioPdiProfessor.jsx (seção "Perguntas padrão").
+  const salvarRespostasPadraoFichaPdi = async (fichaId, respostas, version) => {
+    try {
+      return { ok: true, ...(await salvarRespostasPadraoFichaReal(fichaId, respostas, version)) };
+    } catch (error) {
+      return { ok: false, error: error.message, codigo: error.codigo, dadosAtuais: error.dadosAtuais };
     }
   };
 
@@ -729,7 +763,7 @@ export const DataProvider = ({ children }) => {
     try {
       return { ok: true, ...(await salvarAnamneseReal(id, payload)) };
     } catch (error) {
-      return { ok: false, error: error.message };
+      return { ok: false, error: error.message, codigo: error.codigo, dadosAtuais: error.dadosAtuais };
     }
   };
 
@@ -924,9 +958,25 @@ export const DataProvider = ({ children }) => {
     )));
   };
 
+  // Mesmo comportamento de sempre na tela (atualiza na hora), agora também salvo no backend — é de
+  // lá que a criação de uma Aplicação PDI descobre o trimestre. Se o servidor recusar, volta ao
+  // valor anterior.
   const updateTrimestrePeriod = (trimestre, payload) => {
+    const anterior = trimestrePeriods.find(item => item.trimestre === trimestre);
     setTrimestrePeriods(prev => prev.map(item => item.trimestre === trimestre ? { ...item, ...payload } : item));
+    atualizarTrimestre(trimestre, payload).catch(() => {
+      if (anterior) setTrimestrePeriods(prev => prev.map(item => item.trimestre === trimestre ? anterior : item));
+    });
   };
+
+  const loadTrimestres = useCallback(async () => {
+    try {
+      const periodos = await listarTrimestres();
+      if (periodos.length) setTrimestrePeriods(periodos);
+    } catch {
+      // Sem conexão: mantém os períodos padrão da tela (comportamento anterior).
+    }
+  }, []);
 
   const updateFormPeriod = (id, payload) => {
     setFormPeriods(prev => prev.map(period => period.id === id ? { ...period, ...payload } : period));
@@ -1003,6 +1053,7 @@ export const DataProvider = ({ children }) => {
       loadEscolas();
       loadTurmas();
       loadDisciplinasReais();
+      loadTrimestres();
       // GET /api/pdi-alunos é exclusivo de Secretaria/Gestor/Diretora (ver exigirLeitura em
       // pdiAlunos.ts) — Professor e Auxiliar sempre recebiam 403 aqui à toa. DataContext não tem
       // acesso ao AuthContext (é o contrário), por isso lê o perfil direto do localStorage, igual
@@ -1017,7 +1068,7 @@ export const DataProvider = ({ children }) => {
       setDisciplinasReaisLoading(false);
       setPdiAlunosReaisLoading(false);
     }
-  }, [loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais]);
+  }, [loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais, loadTrimestres]);
 
   // Sem optimistic update neste piloto: só atualiza o estado local com o registro que o backend
   // efetivamente confirmou salvar. Em caso de erro, a lista atual permanece intacta.
@@ -1115,6 +1166,8 @@ export const DataProvider = ({ children }) => {
     updatePdiModeloPerguntaReal: updatePdiModeloPerguntaRealFn,
     inativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, false),
     reativarPdiPergunta: (modeloId, perguntaId) => mudarStatusPdiPerguntaReal(modeloId, perguntaId, true),
+    vincularPdiPerguntaPadrao,
+    desvincularPdiPerguntaPadrao,
     pdiPerguntasPadraoReais,
     pdiPerguntasPadraoReaisLoading,
     pdiPerguntasPadraoReaisError,
@@ -1139,6 +1192,7 @@ export const DataProvider = ({ children }) => {
     obterOuCriarFichaPdi,
     obterFichaPdi,
     salvarRespostasFichaPdi,
+    salvarRespostasPadraoFichaPdi,
     concluirFichaPdi,
     listarFichasPdi,
     meusPdisReais,
@@ -1182,6 +1236,7 @@ export const DataProvider = ({ children }) => {
     vincularProfessorTurma,
     encerrarVinculoProfessorTurma,
     trimestrePeriods,
+    loadTrimestres,
     updateTrimestrePeriod,
     pendencias,
     indicadores,

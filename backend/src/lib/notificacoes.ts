@@ -3,7 +3,7 @@ import { enviarPushParaPessoa } from './webPush.js';
 
 export type DadosNotificacao = {
   destinatarioId: number;
-  tipo: 'NOVA_MENSAGEM' | 'PDI_PRAZO_PROFESSOR' | 'PDI_PRAZO_GESTOR';
+  tipo: 'NOVA_MENSAGEM' | 'PDI_PRAZO_PROFESSOR' | 'PDI_PRAZO_GESTOR' | 'NOVO_FEEDBACK_SISTEMA' | 'RESPOSTA_FEEDBACK_SISTEMA';
   titulo: string;
   corpo: string;
   linkContexto?: string | null;

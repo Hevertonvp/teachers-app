@@ -3,7 +3,7 @@
 // fictícios/inconsistentes (ver auditoria). Em produção real, trocar as senhas de demonstração
 // (ou remover estas contas) antes de liberar o sistema para usuários reais.
 import bcrypt from 'bcryptjs';
-import { PerfilPessoa, PrismaClient } from '@prisma/client';
+import { ComponenteCurricular, PerfilPessoa, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -36,6 +36,20 @@ const DISCIPLINAS = [
   'Ensino Religioso',
 ];
 
+// Redação usa as habilidades de Língua Portuguesa, mas continua sendo uma Disciplina independente.
+const COMPONENTE_POR_DISCIPLINA: Record<string, ComponenteCurricular> = {
+  'Língua Portuguesa': 'LINGUA_PORTUGUESA',
+  'Redação': 'LINGUA_PORTUGUESA',
+  'Arte': 'ARTE',
+  'Educação Física': 'EDUCACAO_FISICA',
+  'Matemática': 'MATEMATICA',
+  'Ciências': 'CIENCIAS',
+  'Geografia': 'GEOGRAFIA',
+  'História': 'HISTORIA',
+  'Inglês': 'LINGUA_INGLESA',
+  'Ensino Religioso': 'ENSINO_RELIGIOSO',
+};
+
 async function main() {
   for (const nome of DISCIPLINAS) {
     await prisma.disciplina.upsert({
@@ -45,6 +59,19 @@ async function main() {
     });
   }
   console.log(`Seed concluído: ${DISCIPLINAS.length} disciplinas garantidas.`);
+
+  // Mapeamento Disciplina -> componente CRMG (mesmo da migration 20261015120000; aqui para bancos
+  // criados do zero, onde a migration roda antes de existir qualquer disciplina). Nunca sobrescreve
+  // um mapeamento já existente.
+  for (const [nome, componente] of Object.entries(COMPONENTE_POR_DISCIPLINA)) {
+    const disciplina = await prisma.disciplina.findUnique({ where: { nome } });
+    if (!disciplina) continue;
+    await prisma.disciplinaComponenteCurricular.upsert({
+      where: { disciplinaId: disciplina.id },
+      update: {},
+      create: { disciplinaId: disciplina.id, componente },
+    });
+  }
 
   const senhaHash = await bcrypt.hash(SENHA_DEMONSTRACAO, 10);
   for (const conta of CONTAS_DEMONSTRACAO) {

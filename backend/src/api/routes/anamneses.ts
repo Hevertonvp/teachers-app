@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { statusAposSalvarResposta } from '../../domain/anamnese.js';
+import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
 
 export const anamnesesRouter = Router();
 
@@ -312,6 +313,9 @@ const dadosEstruturaisSchema = z.object({
 const salvarSchema = z.object({
   estrutural: dadosEstruturaisSchema.optional(),
   respostas: z.array(respostaItemSchema).optional(),
+  // Infra offline (ver domain/offlineConflito.ts) — updatedAt da Anamnese que a Secretaria tinha
+  // quando começou a editar.
+  baseUpdatedAt: z.string(),
 });
 
 async function exigirVersaoAtualEditavel(anamnese: { id: number; alunoId: number; numeroVersao: number }) {
@@ -326,11 +330,17 @@ anamnesesRouter.put('/:id/respostas', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   if (actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria administra a Anamnese.');
   const id = Number(req.params.id);
-  const { estrutural, respostas } = salvarSchema.parse(req.body);
+  const { estrutural, respostas, baseUpdatedAt } = salvarSchema.parse(req.body);
 
   const anamnese = await prisma.anamnese.findUnique({ where: { id } });
   if (!anamnese) throw new NotFoundError('Anamnese não encontrada.');
   await exigirVersaoAtualEditavel(anamnese);
+  await exigirSemConflitoDeVersao(
+    baseUpdatedAt,
+    anamnese.updatedAt ?? anamnese.createdAt,
+    () => montarDetalhe(anamnese),
+    'Esta Anamnese foi alterada enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.',
+  );
 
   if (estrutural) {
     await prisma.anamnese.update({ where: { id }, data: { ...estrutural, updatedBy: String(actor.id) } });

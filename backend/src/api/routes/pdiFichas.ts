@@ -2,9 +2,14 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
+import { ConflitoVersaoError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { isAplicacaoEditavelAgora, statusVigencia } from '../../domain/pdiAplicacoes.js';
 import { editavelParaProfessor, fichaEditavelAgora, statusAposSalvarResposta, statusVisualItem } from '../../domain/pdiFichas.js';
+import { prepararValoresResposta } from '../../domain/habilidadesCurriculares.js';
+import {
+  exigirBlocoEditavelAgora, montarBlocoParaFicha, perguntasPadraoDaFicha, resolverOuCriarBloco,
+} from '../../domain/pdiBlocoPadrao.js';
+import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
 import { escolasPermitidas } from './pessoas.js';
 
 export const pdiFichasRouter = Router();
@@ -224,6 +229,9 @@ export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof pr
       escola.status === 'ATIVA',
       editavelParaProfessor(isAplicacaoEditavelAgora(aplicacao, reaberturas), correcaoIndividualAtiva),
     ),
+    // null = este Modelo não carregou nenhuma pergunta padrão compartilhável (seção 21 do pedido de
+    // bloco comum) — o frontend simplesmente não mostra a seção "Perguntas padrão" nesse caso.
+    blocoPadrao: await montarBlocoParaFicha(ficha),
   };
 }
 
@@ -486,9 +494,18 @@ const respostaItemSchema = z.object({
   valor: z.object({
     resposta: z.union([z.string(), z.number(), z.boolean()]).nullish(),
     complementarTexto: z.string().nullish(),
+    // Só HABILIDADE_CRMG usa (ids do catálogo ou "todas"); ignorados para os demais tipos.
+    habilidadeIds: z.array(z.number().int()).nullish(),
+    todas: z.boolean().nullish(),
   }),
 });
-const salvarRespostasSchema = z.object({ respostas: z.array(respostaItemSchema).min(1) });
+const salvarRespostasSchema = z.object({
+  respostas: z.array(respostaItemSchema).min(1),
+  // Infraestrutura offline (seção "Conflitos" do pedido): updatedAt da Ficha que o cliente tinha
+  // quando começou a editar — nunca sobrescreve silenciosamente se alguém salvou por cima
+  // enquanto este estava offline/editando (ver domain/offlineConflito.ts).
+  baseUpdatedAt: z.string(),
+});
 
 // Salvamento parcial (seções 17/18 do pedido): qualquer subconjunto de respostas, quantas vezes
 // quiser, sem exigir o formulário completo. Perguntas informativas (ORIENTACAO) nunca geram
@@ -496,7 +513,7 @@ const salvarRespostasSchema = z.object({ respostas: z.array(respostaItemSchema).
 pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   const fichaId = Number(req.params.id);
-  const { respostas } = salvarRespostasSchema.parse(req.body);
+  const { respostas, baseUpdatedAt } = salvarRespostasSchema.parse(req.body);
 
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
@@ -515,11 +532,26 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
     exigirEditavelAgora(prisma, ficha, contexto.aplicacao),
   ]);
 
+  // Nunca sobrescrever silenciosamente (seção "Conflitos" da infra offline) — depois de garantir
+  // que o ator tem acesso, nunca antes (não vaza estado de conflito pra quem não tem permissão).
+  await exigirSemConflitoDeVersao(
+    baseUpdatedAt,
+    ficha.updatedAt ?? ficha.createdAt,
+    () => montarRespostaCompleta(ficha),
+    'Esta Ficha PDI foi alterada enquanto você estava sem conexão. Suas respostas continuam protegidas e precisam ser revisadas antes da sincronização.',
+  );
+
+
   const perguntasPorId = new Map(perguntasDoModelo.map((p) => [p.id, p]));
   if (respostas.some((item) => !perguntasPorId.has(item.aplicacaoPerguntaId))) {
     throw new ValidationError('Uma ou mais perguntas informadas não pertencem a esta Ficha.');
   }
-  const respostasAplicaveis = respostas.filter((item) => perguntasPorId.get(item.aplicacaoPerguntaId)!.tipoResposta !== 'ORIENTACAO');
+  const respostasAplicaveis = await prepararValoresResposta(
+    prisma,
+    respostas.filter((item) => perguntasPorId.get(item.aplicacaoPerguntaId)!.tipoResposta !== 'ORIENTACAO'),
+    new Map(perguntasDoModelo.map((p) => [p.id, p.tipoResposta])),
+    ficha.disciplinaId,
+  );
 
   // Auditoria (seção 30/38 do pedido de Correções): só lê o valor "antes" quando há uma correção
   // individual ativa — no preenchimento normal (sem nenhuma devolução em aberto) nada disto roda,
@@ -569,6 +601,117 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   res.json(await montarRespostaCompleta(atualizada));
 });
 
+const respostaPadraoItemSchema = z.object({
+  aplicacaoPerguntaPadraoId: z.number().int(),
+  valor: z.object({
+    resposta: z.union([z.string(), z.number(), z.boolean()]).nullish(),
+    complementarTexto: z.string().nullish(),
+  }),
+});
+const salvarRespostasPadraoSchema = z.object({
+  respostas: z.array(respostaPadraoItemSchema).min(1),
+  // Optimistic lock real (seção 23 do pedido: duas abas abertas ao mesmo tempo nunca podem se
+  // sobrescrever em silêncio) — version do bloco que o Professor tinha em tela quando começou a
+  // editar; 0 quando o bloco ainda nem existia (nunca foi salvo nada nele ainda).
+  version: z.number().int(),
+});
+
+// Salva respostas do BLOCO COMUM de perguntas padrão (seções 5/6/12/21-23 do pedido) a partir de
+// UMA Ficha — resolve a identidade do bloco (aplicacaoId+alunoId+turmaId+professorResponsavelId)
+// pela própria Ficha, nunca pede isso ao cliente. Mesma autorização/editabilidade de
+// PUT /:id/respostas (é a mesma pessoa preenchendo, só que um bloco compartilhado em vez de uma
+// Ficha); a diferença é o optimistic lock por `version`, que FichaPdi/RespostaPdi nunca usaram.
+pdiFichasRouter.put('/:id/respostas-padrao', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  const fichaId = Number(req.params.id);
+  const { respostas, version } = salvarRespostasPadraoSchema.parse(req.body);
+
+  const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
+  if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+
+  const [contexto, perguntasPadrao] = await Promise.all([
+    resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId),
+    perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId),
+  ]);
+  const perguntasPorId = new Map(perguntasPadrao.map((p) => [p.id, p]));
+  if (perguntasPadrao.length === 0 || respostas.some((item) => !perguntasPorId.has(item.aplicacaoPerguntaPadraoId))) {
+    throw new ValidationError('Uma ou mais perguntas informadas não pertencem ao bloco padrão desta Ficha.');
+  }
+
+  await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
+
+  const bloco = await resolverOuCriarBloco(
+    { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: ficha.turmaId, professorId: ficha.professorResponsavelId },
+    actor.id,
+  );
+  if (bloco.version !== version) {
+    // Mesmo código de máquina (CONFLITO_VERSAO) de qualquer outro recurso da infra offline —
+    // nunca sobrescreve, o frontend usa `dadosAtuais` pra mostrar o conflito.
+    throw new ConflitoVersaoError(
+      'Este bloco de respostas padrão foi atualizado em outra aba/sessão enquanto você editava. Suas respostas continuam protegidas e precisam ser revisadas antes da sincronização.',
+      await montarRespostaCompleta(ficha),
+    );
+  }
+  const correcaoAtiva = await exigirBlocoEditavelAgora(prisma, bloco, contexto.aplicacao);
+
+  const valoresAntes = correcaoAtiva
+    ? new Map((await prisma.respostaPadraoPdi.findMany({
+        where: { blocoId: bloco.id, aplicacaoPerguntaPadraoId: { in: respostas.map((item) => item.aplicacaoPerguntaPadraoId) } },
+        select: { aplicacaoPerguntaPadraoId: true, valor: true },
+      })).map((r) => [r.aplicacaoPerguntaPadraoId, r.valor]))
+    : null;
+
+  await prisma.$transaction(async (tx) => {
+    // Comparar-e-incrementar version dentro da mesma transação das respostas: se outra aba já
+    // passou por aqui entre a leitura acima e agora, este updateMany casa 0 linhas e nós abortamos
+    // — nunca um "último save ganha" silencioso.
+    const trocou = await tx.blocoRespostasPadraoPdi.updateMany({
+      where: { id: bloco.id, version },
+      data: { version: { increment: 1 }, updatedBy: String(actor.id) },
+    });
+    if (trocou.count === 0) {
+      // Corrida rara entre a checagem acima e este commit — sem dadosAtuais aqui (evitaria
+      // chamar montarRespostaCompleta dentro da própria transação abortando); ainda assim o
+      // mesmo código de máquina, o frontend recarrega e tenta de novo.
+      throw new ConflitoVersaoError('Este bloco de respostas padrão foi atualizado em outra aba/sessão enquanto você editava. Suas respostas continuam protegidas e precisam ser revisadas antes da sincronização.', null);
+    }
+
+    // Sequencial de propósito: uma transação interativa do Prisma usa UMA conexão só — rodar
+    // várias queries em paralelo no mesmo `tx` (Promise.all) trava sob pgbouncer em modo
+    // transaction pooling (cada query concorrente competindo pela mesma conexão/transação).
+    for (const item of respostas) {
+      await tx.respostaPadraoPdi.upsert({
+        where: { blocoId_aplicacaoPerguntaPadraoId: { blocoId: bloco.id, aplicacaoPerguntaPadraoId: item.aplicacaoPerguntaPadraoId } },
+        create: { blocoId: bloco.id, aplicacaoPerguntaPadraoId: item.aplicacaoPerguntaPadraoId, valor: item.valor, createdBy: String(actor.id) },
+        update: { valor: item.valor, updatedBy: String(actor.id) },
+      });
+    }
+
+    if (valoresAntes) {
+      await tx.historicoCorrecaoRespostaPadrao.createMany({
+        data: respostas.map((item) => ({
+          blocoId: bloco.id,
+          aplicacaoPerguntaPadraoId: item.aplicacaoPerguntaPadraoId,
+          valorAnterior: valoresAntes.get(item.aplicacaoPerguntaPadraoId) ?? Prisma.JsonNull,
+          valorNovo: item.valor,
+          alteradoPor: String(actor.id),
+          origem: 'PROFESSOR_POS_DEVOLUCAO' as const,
+        })),
+      });
+      // Diferente da correção individual de Ficha (que só resolve ao CONCLUIR de novo): o bloco
+      // não tem um "concluir" próprio — "o Professor corrige uma única vez" (seção 16 do pedido)
+      // significa que SALVAR já resolve, pra todas as disciplinas daquele agrupamento de uma vez.
+      await tx.correcaoBlocoPadraoPdi.updateMany({
+        where: { blocoId: bloco.id, status: 'ABERTA', prazoAte: { gt: new Date() } },
+        data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) },
+      });
+    }
+  }, { timeout: 15000 });
+
+  const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });
+  res.json(await montarRespostaCompleta(atualizada));
+});
+
 // Ação explícita de conclusão (seção 20 do pedido) — idempotente: concluir uma Ficha já CONCLUIDA
 // não é erro, só devolve o estado atual. Continua exigindo estar dentro da vigência/reabertura
 // atual, igual ao salvamento de respostas. NUNCA conclui com pergunta sem resposta: só vira
@@ -593,12 +736,29 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   ]);
 
   if (ficha.status !== 'CONCLUIDA') {
-    const [perguntasObrigatorias, respostasExistentes] = await Promise.all([
+    // Seção 11 do pedido de bloco padrão: concluir exige tanto as perguntas específicas desta
+    // disciplina quanto as perguntas padrão compartilhadas do bloco comum — nunca exige que as
+    // OUTRAS disciplinas do mesmo Professor estejam concluídas (cada Ficha conclui sozinha).
+    const [perguntasObrigatorias, respostasExistentes, perguntasPadrao] = await Promise.all([
       prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId, tipoResposta: { not: 'ORIENTACAO' } }, select: { id: true } }),
       prisma.respostaPdi.findMany({ where: { fichaId }, select: { aplicacaoPerguntaId: true } }),
+      perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId),
     ]);
     const respondidasIds = new Set(respostasExistentes.map((r) => r.aplicacaoPerguntaId));
-    const faltando = perguntasObrigatorias.filter((p) => !respondidasIds.has(p.id)).length;
+    const faltandoEspecificas = perguntasObrigatorias.filter((p) => !respondidasIds.has(p.id)).length;
+
+    let faltandoPadrao = 0;
+    if (perguntasPadrao.length > 0) {
+      const bloco = await prisma.blocoRespostasPadraoPdi.findUnique({
+        where: { aplicacaoId_alunoId_turmaId_professorId: { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: ficha.turmaId, professorId: ficha.professorResponsavelId } },
+      });
+      const respondidasPadraoIds = bloco
+        ? new Set((await prisma.respostaPadraoPdi.findMany({ where: { blocoId: bloco.id }, select: { aplicacaoPerguntaPadraoId: true } })).map((r) => r.aplicacaoPerguntaPadraoId))
+        : new Set<number>();
+      faltandoPadrao = perguntasPadrao.filter((p) => !respondidasPadraoIds.has(p.id)).length;
+    }
+
+    const faltando = faltandoEspecificas + faltandoPadrao;
     if (faltando > 0) {
       throw new ValidationError(`Esta Ficha ainda não pode ser concluída: faltam ${faltando} ${faltando === 1 ? 'pergunta' : 'perguntas'} sem resposta.`);
     }

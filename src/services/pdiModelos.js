@@ -7,7 +7,7 @@ import { apiFetch } from './api';
 const STATUS_FROM_API = { ATIVA: 'ativa', INATIVA: 'inativa' };
 const ORIGEM_FROM_API = { ESTRUTURADA: 'estruturada', HABILIDADE: 'habilidade', ORIENTACAO: 'orientacao', QUALITATIVA: 'qualitativa', PERSONALIZADA: 'personalizada' };
 const ORIGEM_TO_API = Object.fromEntries(Object.entries(ORIGEM_FROM_API).map(([api, front]) => [front, api]));
-const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao' };
+const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao', HABILIDADE_CRMG: 'habilidade_crmg' };
 const TIPO_TO_API = Object.fromEntries(Object.entries(TIPO_FROM_API).map(([api, front]) => [front, api]));
 
 // O resto do app (mock) sempre chamou o texto da pergunta de `pergunta` (nunca `texto`) — ver
@@ -37,6 +37,7 @@ const paraPayloadPergunta = (payload) => ({
   tipoResposta: TIPO_TO_API[payload.tipoResposta] ?? payload.tipoResposta,
   opcoes: payload.opcoes || [],
   complementar: payload.complementar || null,
+  trimestre: payload.trimestre ? Number(payload.trimestre) : null, // null = qualquer trimestre
 });
 
 export const listarPdiModelosReais = async () => (await apiFetch('/api/pdi-modelos')).map(normalizeModelo);
@@ -51,3 +52,8 @@ export const editarPdiModeloPerguntaReal = async (perguntaId, payload) => normal
 export const inativarPdiPerguntaReal = async (id) => normalizePergunta(await apiFetch(`/api/pdi-perguntas/${id}/inativar`, { method: 'POST' }));
 export const reativarPdiPerguntaReal = async (id) => normalizePergunta(await apiFetch(`/api/pdi-perguntas/${id}/reativar`, { method: 'POST' }));
 export const reordenarPdiModeloPerguntasReais = async (modeloId, ordens) => (await apiFetch(`/api/pdi-modelos/${modeloId}/perguntas/reordenar`, { method: 'POST', body: { ordens } })).map(normalizePergunta);
+
+// Reconciliação manual do legado (ver pdiModelos.ts, pdiPerguntasRouter) — nunca inferida por
+// texto/código, sempre uma confirmação explícita da Secretaria.
+export const vincularPdiPerguntaPadraoReal = async (perguntaId, padraoOriginalId) => normalizePergunta(await apiFetch(`/api/pdi-perguntas/${perguntaId}/vincular-padrao`, { method: 'POST', body: { padraoOriginalId } }));
+export const desvincularPdiPerguntaPadraoReal = async (perguntaId) => normalizePergunta(await apiFetch(`/api/pdi-perguntas/${perguntaId}/desvincular-padrao`, { method: 'POST' }));

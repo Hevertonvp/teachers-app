@@ -80,11 +80,12 @@ const paraPayloadEstrutural = (estrutural) => ({
   possuiLaudo: estrutural.possuiLaudo ? (POSSUI_LAUDO_TO_API[estrutural.possuiLaudo] ?? estrutural.possuiLaudo) : null,
 });
 
-export const salvarAnamneseReal = async (id, { estrutural, respostas }) => normalizeDetalhe(await apiFetch(`/api/anamneses/${id}/respostas`, {
+export const salvarAnamneseReal = async (id, { estrutural, respostas, baseUpdatedAt }) => normalizeDetalhe(await apiFetch(`/api/anamneses/${id}/respostas`, {
   method: 'PUT',
   body: {
     ...(estrutural ? { estrutural: paraPayloadEstrutural(estrutural) } : {}),
     ...(respostas ? { respostas: respostas.map((item) => ({ perguntaAnamneseId: item.perguntaAnamneseId, valor: item.valor })) } : {}),
+    baseUpdatedAt,
   },
 }));
 

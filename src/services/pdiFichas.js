@@ -6,7 +6,7 @@ import { apiFetch } from './api';
 // migrados (MeusPdisPage, DashboardProfessor — ver seção 35/37 do pedido).
 const STATUS_FICHA_FROM_API = { PENDENTE: 'pendente', EM_ANDAMENTO: 'em_andamento', CONCLUIDA: 'concluida' };
 const ORIGEM_FROM_API = { ESTRUTURADA: 'estruturada', HABILIDADE: 'habilidade', ORIENTACAO: 'orientacao', QUALITATIVA: 'qualitativa', PERSONALIZADA: 'personalizada' };
-const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao' };
+const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao', HABILIDADE_CRMG: 'habilidade_crmg' };
 
 // Datas @db.Date chegam como ISO completo — o resto do app trata como 'YYYY-MM-DD' (ver
 // utils/formAvailability.js).
@@ -26,11 +26,18 @@ const normalizePerguntaSnapshot = ({ texto, ...pergunta }) => ({
   tipoResposta: TIPO_FROM_API[pergunta.tipoResposta] ?? pergunta.tipoResposta,
 });
 
+const normalizeBlocoPadrao = (bloco) => (bloco ? {
+  ...bloco,
+  perguntas: bloco.perguntas.map(normalizePerguntaSnapshot),
+} : null);
+
 const normalizeRespostaCompleta = (payload) => ({
   ficha: normalizeFicha(payload.ficha),
   perguntas: payload.perguntas.map(normalizePerguntaSnapshot),
   respostas: payload.respostas,
   editavelAgora: payload.editavelAgora,
+  // null = este Modelo não carrega nenhuma pergunta padrão compartilhável — ver domain/pdiBlocoPadrao.ts.
+  blocoPadrao: normalizeBlocoPadrao(payload.blocoPadrao),
 });
 
 // Item de listagem (Meus PDIs / consulta por aluno) — mais leve que a Ficha completa: não tem
@@ -65,14 +72,26 @@ export const obterFichaReal = async (aplicacaoId, alunoId, disciplinaId) => norm
   await apiFetch(`/api/pdi-fichas/${aplicacaoId}/${alunoId}/${disciplinaId}`),
 );
 
-export const salvarRespostasFichaReal = async (fichaId, respostas) => normalizeRespostaCompleta(await apiFetch(`/api/pdi-fichas/${fichaId}/respostas`, {
+export const salvarRespostasFichaReal = async (fichaId, respostas, baseUpdatedAt) => normalizeRespostaCompleta(await apiFetch(`/api/pdi-fichas/${fichaId}/respostas`, {
   method: 'PUT',
-  body: { respostas: respostas.map((item) => ({ aplicacaoPerguntaId: item.aplicacaoPerguntaId, valor: item.valor })) },
+  body: { respostas: respostas.map((item) => ({ aplicacaoPerguntaId: item.aplicacaoPerguntaId, valor: item.valor })), baseUpdatedAt },
 }));
 
 export const concluirFichaReal = async (fichaId) => normalizeRespostaCompleta(await apiFetch(`/api/pdi-fichas/${fichaId}/concluir`, { method: 'POST' }));
 
-export const paraPayloadValor = (tipoResposta, current) => ({
+// Bloco comum de perguntas padrão (mesmo Professor, várias disciplinas da mesma turma) — salvo a
+// partir de UMA Ficha; `version` é o optimistic lock que o Professor tinha em tela (409/erro claro
+// se outra aba salvou primeiro, nunca sobrescrita silenciosa).
+export const salvarRespostasPadraoFichaReal = async (fichaId, respostas, version) => normalizeRespostaCompleta(await apiFetch(`/api/pdi-fichas/${fichaId}/respostas-padrao`, {
+  method: 'PUT',
+  body: { respostas: respostas.map((item) => ({ aplicacaoPerguntaPadraoId: item.aplicacaoPerguntaPadraoId, valor: item.valor })), version },
+}));
+
+export const paraPayloadValor = (tipoResposta, current) => (tipoResposta === 'habilidade_crmg' ? {
+  // Só os ids vão pro backend — código/descrição são resolvidos lá, a partir do catálogo.
+  todas: !!current.todas,
+  habilidadeIds: current.todas ? [] : (current.habilidades || []).map(h => h.id),
+} : {
   resposta: tipoResposta === 'numero' ? (current.valor === '' ? null : Number(current.valor))
     : tipoResposta === 'selecao' ? current.opcao
     : tipoResposta === 'marcacao' ? current.marcado

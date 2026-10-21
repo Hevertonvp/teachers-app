@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { isAuxiliar, isDiretora, isProfessor, isSecretaria } from '../utils/roles';
+import { isAuxiliar, isDiretora, isProfessor, isSecretaria, isSuporteSistema } from '../utils/roles';
 import { Logo } from './Logo';
 
 // Ícones de linha simples (sem biblioteca externa) para o menu lateral — mesmo padrão de svg
@@ -72,6 +72,11 @@ const ICON_PATHS = {
     <path d="M16.5 8h2A1.5 1.5 0 0 1 20 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-2" />
   </>,
   mensagens: <path d="M4 5.8A2.3 2.3 0 0 1 6.3 3.5h11.4A2.3 2.3 0 0 1 20 5.8v7.4a2.3 2.3 0 0 1-2.3 2.3H9.2l-4.3 3.7-.9-.9V5.8Z" />,
+  feedback: <>
+    <path d="M12 3.2 2.5 19.5h19Z" />
+    <line x1="12" y1="9.3" x2="12" y2="13.5" />
+    <circle cx="12" cy="16.8" r="0.6" fill="currentColor" stroke="none" />
+  </>,
   perfil: <>
     <circle cx="12" cy="12" r="8.2" />
     <circle cx="12" cy="9.9" r="2.7" />
@@ -101,6 +106,13 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   useEffect(() => { if (user) loadMensagensNaoLidas(); }, [user, loadMensagensNaoLidas]);
   useEffect(() => { if (user) loadNotificacoesNaoLidas(); }, [user, loadNotificacoesNaoLidas]);
 
+  // Novo feedback/Meus feedbacks (seção 23 do pedido de Feedback do Sistema) — item comum a
+  // todos os perfis pedagógicos, nunca ao Suporte (que tem sua própria caixa, ver menuSuporte).
+  const itensFeedback = [
+    { name: 'Novo feedback', path: '/feedback-sistema/novo', icon: 'feedback' },
+    { name: 'Meus feedbacks', path: '/feedback-sistema/meus', icon: 'feedback' },
+  ];
+
   const menuProfessor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { name: 'Formulário 1/3', path: '/formulario-um-terco', icon: 'formulario' },
@@ -109,6 +121,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
+    ...itensFeedback,
   ];
 
   const menuGestor = [
@@ -120,6 +133,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
+    ...itensFeedback,
   ];
 
   const menuSecretaria = [
@@ -134,12 +148,14 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
+    ...itensFeedback,
   ];
 
   const menuDiretora = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
+    ...itensFeedback,
   ];
 
   // Etapa inicial do perfil Auxiliar: só a lista dos alunos que acompanha — sem módulos
@@ -147,12 +163,20 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const menuAuxiliar = [
     { name: 'Meus alunos', path: '/meus-alunos', icon: 'pessoas' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
+    ...itensFeedback,
+  ];
+
+  // Suporte do Sistema (Feedback do Sistema) — fora da hierarquia pedagógica, só a própria caixa
+  // de feedbacks (seção 23 do pedido). Nunca cai no fallback de Gestor abaixo.
+  const menuSuporte = [
+    { name: 'Feedbacks do sistema', path: '/feedback-sistema', icon: 'feedback' },
   ];
 
   const menu = isProfessor(user) ? menuProfessor
     : isSecretaria(user) ? menuSecretaria
     : isDiretora(user) ? menuDiretora
     : isAuxiliar(user) ? menuAuxiliar
+    : isSuporteSistema(user) ? menuSuporte
     : menuGestor;
   const menuWithUnread = menu.map(item => item.path === '/mensagens' ? { ...item, badge: mensagensNaoLidas } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'perfil' }, { name: 'Configurações', path: '/configuracoes', icon: 'configuracoes' }];

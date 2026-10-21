@@ -7,6 +7,10 @@ export const ROLES = {
   DIRETORA: 'diretora',
   SECRETARIA: 'secretaria',
   AUXILIAR: 'auxiliar',
+  // Suporte técnico do Feedback do Sistema — fora da hierarquia pedagógica (ver CLAUDE.md:
+  // backend não depende do React, mas aqui o inverso vale igual — este perfil nunca ganha
+  // nenhuma das capacidades pedagógicas abaixo, só as próprias do Feedback do Sistema).
+  SUPORTE_SISTEMA: 'suporte_sistema',
 };
 
 export const isProfessor = (user) => user?.tipo === ROLES.PROFESSOR;
@@ -17,6 +21,7 @@ export const isSecretaria = (user) => user?.tipo === ROLES.SECRETARIA;
 // secretaria abaixo — acompanha alunos específicos (ver utils/auxiliares.js), sem gerenciar
 // nada. Não herda nenhuma das capacidades listadas a seguir.
 export const isAuxiliar = (user) => user?.tipo === ROLES.AUXILIAR;
+export const isSuporteSistema = (user) => user?.tipo === ROLES.SUPORTE_SISTEMA;
 
 // --- Capacidades específicas ---
 // Cada capacidade lista explicitamente quem a possui. Nenhuma é herdada por pertencer

@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
-import { ConflictError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
+import { ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
 import { bloquearSenhaTemporariaPendente, requireAuth } from './middleware/auth.js';
 import { authProtectedRouter, authRouter } from './routes/auth.js';
 import { escolasRouter } from './routes/escolas.js';
@@ -23,6 +23,9 @@ import { anamneseModelosRouter, anamnesePerguntasRouter } from './routes/anamnes
 import { anamnesesRouter } from './routes/anamneses.js';
 import { mensagensRouter } from './routes/mensagens.js';
 import { notificacoesRouter } from './routes/notificacoes.js';
+import { feedbackSistemaRouter } from './routes/feedbackSistema.js';
+import { habilidadesCurricularesRouter } from './routes/habilidadesCurriculares.js';
+import { trimestresRouter } from './routes/trimestres.js';
 
 export function createApp() {
   const app = express();
@@ -91,6 +94,9 @@ export function createApp() {
   app.use('/api/anamneses', anamnesesRouter);
   app.use('/api/mensagens', mensagensRouter);
   app.use('/api/notificacoes', notificacoesRouter);
+  app.use('/api/feedback-sistema', feedbackSistemaRouter);
+  app.use('/api/habilidades-curriculares', habilidadesCurricularesRouter);
+  app.use('/api/trimestres', trimestresRouter);
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 
@@ -106,6 +112,7 @@ export function createApp() {
     if (err instanceof ForbiddenError) return res.status(403).json({ message: err.message });
     if (err instanceof ValidationError) return res.status(400).json({ message: err.message });
     if (err instanceof NotFoundError) return res.status(404).json({ message: err.message });
+    if (err instanceof ConflitoVersaoError) return res.status(409).json({ message: err.message, codigo: 'CONFLITO_VERSAO', dadosAtuais: err.dadosAtuais });
     if (err instanceof ConflictError) return res.status(409).json({ message: err.message });
 
     console.error(err);

@@ -92,6 +92,48 @@ pdiFichaAnualRouter.put('/ciclo/:ano', async (req, res) => {
   res.json(ciclo);
 });
 
+// Lista os anos com algum dado pra este aluno (seção "quais anos existem", pedido do usuário após
+// a auditoria) — nunca uma lista "2000 a 2100", só os anos que realmente têm Ficha concluída/em
+// andamento ou uma FichaAnualPdi já aberta (ex.: alguém abriu o ano mas ainda não preencheu nada).
+// Mesma autorização de GET /:alunoId/:ano (resolverAcessoAluno) — Professor só conta as Fichas das
+// próprias disciplinas, igual ao resto da Ficha Anual. Registrada ANTES de /:alunoId/:ano pelo
+// mesmo motivo de /ciclo/:ano acima: "anos" não pode ser interpretado como um :ano numérico.
+pdiFichaAnualRouter.get('/:alunoId/anos', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  const alunoId = Number(req.params.alunoId);
+  const { disciplinasPermitidas } = await resolverAcessoAluno(actor, alunoId);
+
+  const [fichas, fichasAnuais] = await Promise.all([
+    prisma.fichaPdi.findMany({
+      where: { alunoId, ...(disciplinasPermitidas ? { disciplinaId: { in: disciplinasPermitidas } } : {}) },
+      select: { aplicacao: { select: { dataInicio: true } } },
+    }),
+    prisma.fichaAnualPdi.findMany({ where: { alunoId }, select: { ano: true, status: true } }),
+  ]);
+
+  const infoPorAno = new Map<number, { totalFichas: number; status: string | null }>();
+  for (const f of fichas) {
+    const ano = f.aplicacao.dataInicio.getUTCFullYear();
+    const atual = infoPorAno.get(ano) ?? { totalFichas: 0, status: null };
+    atual.totalFichas += 1;
+    infoPorAno.set(ano, atual);
+  }
+  // FichaAnualPdi pode existir pra um ano sem nenhuma Ficha visível pra este ator ainda (ex.:
+  // alguém abriu a tela e ela foi criada sob demanda) — entra na lista mesmo com totalFichas 0,
+  // pra não "sumir" um ano que já foi fechado/aberto administrativamente.
+  for (const fa of fichasAnuais) {
+    const atual = infoPorAno.get(fa.ano) ?? { totalFichas: 0, status: null };
+    atual.status = fa.status;
+    infoPorAno.set(fa.ano, atual);
+  }
+
+  const anos = [...infoPorAno.entries()]
+    .map(([ano, info]) => ({ ano, totalFichas: info.totalFichas, statusFichaAnual: info.status }))
+    .sort((a, b) => b.ano - a.ano);
+
+  res.json({ anos });
+});
+
 // --- Ficha Anual PDI ------------------------------------------------------------------------
 
 // Consolidado leve (seção 43/56 do pedido): nunca devolve respostas completas, só o suficiente

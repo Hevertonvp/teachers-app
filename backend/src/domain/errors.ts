@@ -45,3 +45,17 @@ export class SenhaTemporariaPendenteError extends Error {
     this.name = 'SenhaTemporariaPendenteError';
   }
 }
+
+// 409 com código de máquina (infraestrutura offline/conflito — ver api/app.ts): o cliente enviou
+// `baseUpdatedAt`/`baseVersion` desatualizado — alguém (ou outra aba/dispositivo do mesmo usuário)
+// já salvou uma versão mais nova deste recurso enquanto este estava offline/editando. NUNCA
+// sobrescreve — o frontend usa `dadosAtuais` para mostrar o conflito e preservar o rascunho local,
+// nunca um segundo round-trip só para buscar o estado atual.
+export class ConflitoVersaoError extends Error {
+  dadosAtuais: unknown;
+  constructor(message: string, dadosAtuais: unknown) {
+    super(message);
+    this.name = 'ConflitoVersaoError';
+    this.dadosAtuais = dadosAtuais;
+  }
+}

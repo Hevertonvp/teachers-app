@@ -8,8 +8,10 @@ export const pdiPerguntasPadraoRouter = Router();
 type Actor = { id: number; perfil: string };
 
 // Template GLOBAL (nenhuma disciplina/escola) — só a Secretaria administra, mesmo recorte de
-// Modelos PDI. CRUD completo de verdade (inclusive DELETE físico): nada no sistema referencia
-// esta tabela por FK, ela só é lida/copiada no momento de criar um ModeloPdi (ver pdiModelos.ts).
+// Modelos PDI. CRUD completo de verdade (inclusive DELETE físico, bloqueado só quando alguma
+// PerguntaPdi.padraoOriginalId ainda referencia esta pergunta — ver DELETE abaixo): ela é lida/
+// copiada no momento de criar um ModeloPdi (ver pdiModelos.ts) e, desde o bloco de respostas
+// padrão compartilhado, também pode ganhar vínculo de volta (PerguntaPdi.padraoOriginalId).
 function exigirSecretaria(actor: Actor) {
   if (actor.perfil !== 'SECRETARIA') {
     throw new ForbiddenError('Somente a Secretaria pode gerenciar as perguntas padrão.');
@@ -19,7 +21,7 @@ function exigirSecretaria(actor: Actor) {
 const formatarPerguntaPadrao = (p: {
   id: number; secao: string; subsecao: string | null; codigo: string | null; texto: string;
   indicador: string | null; origem: string; tipoResposta: string; opcoes: unknown;
-  complementar: unknown; ordem: number; status: string; createdAt: Date; updatedAt: Date | null;
+  complementar: unknown; ordem: number; status: string; trimestre: number | null; createdAt: Date; updatedAt: Date | null;
 }) => ({
   id: p.id,
   secao: p.secao,
@@ -33,6 +35,7 @@ const formatarPerguntaPadrao = (p: {
   complementar: p.complementar ?? null,
   ordem: p.ordem,
   status: p.status,
+  trimestre: p.trimestre,
   createdAt: p.createdAt,
   updatedAt: p.updatedAt,
 });
@@ -51,15 +54,27 @@ const dadosPerguntaSchema = z.object({
   texto: z.string().trim().min(1, 'Informe o texto da pergunta.'),
   indicador: z.string().trim().nullish(),
   origem: z.enum(['ESTRUTURADA', 'HABILIDADE', 'ORIENTACAO', 'QUALITATIVA', 'PERSONALIZADA']).default('PERSONALIZADA'),
-  tipoResposta: z.enum(['TEXTO', 'SELECAO', 'MARCACAO', 'NUMERO', 'ORIENTACAO']),
+  // HABILIDADE_CRMG continua aceito aqui (não quebrar edição de perguntas padrão antigas que já
+  // tinham esse tipo) — o bloqueio de CRIAR uma NOVA é feito explicitamente no POST abaixo, nunca
+  // aqui no schema, porque PUT precisa continuar aceitando salvar as que já existem.
+  tipoResposta: z.enum(['TEXTO', 'SELECAO', 'MARCACAO', 'NUMERO', 'ORIENTACAO', 'HABILIDADE_CRMG']),
   opcoes: z.array(z.string()).default([]),
   complementar: z.object({ gatilho: z.union([z.string(), z.boolean()]), label: z.string() }).nullish(),
+  trimestre: z.number().int().min(1).max(3).nullish(), // null = qualquer trimestre
 });
 
 pdiPerguntasPadraoRouter.post('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
   const dados = dadosPerguntaSchema.parse(req.body);
+  // HABILIDADE_CRMG NUNCA pode ser uma NOVA pergunta padrão (bloco de respostas padrão
+  // compartilhado, seção 9 do pedido): ela é sempre isolada por disciplina (componente curricular
+  // da Ficha), e compartilhar entre disciplinas quebraria esse isolamento. Duas perguntas padrão
+  // antigas já têm esse tipo (nunca chegaram a ser usadas em nenhum Modelo real) — continuam
+  // editáveis, só não dá mais pra criar uma nova assim.
+  if (dados.tipoResposta === 'HABILIDADE_CRMG') {
+    throw new ValidationError('Habilidades do CRMG são sempre específicas de uma disciplina e não podem ser uma nova pergunta padrão compartilhada. Crie esta pergunta diretamente no Modelo PDI da disciplina desejada.');
+  }
 
   const ultima = await prisma.perguntaPdiPadrao.findFirst({ orderBy: { ordem: 'desc' } });
   const criada = await prisma.perguntaPdiPadrao.create({
@@ -73,6 +88,7 @@ pdiPerguntasPadraoRouter.post('/', async (req, res) => {
       tipoResposta: dados.tipoResposta,
       opcoes: dados.opcoes,
       complementar: dados.complementar ?? undefined,
+      trimestre: dados.trimestre ?? null,
       ordem: (ultima?.ordem ?? 0) + 1,
       status: 'ATIVA',
       createdBy: String(actor.id),
@@ -91,8 +107,14 @@ pdiPerguntasPadraoRouter.put('/:id', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
   const id = Number(req.params.id);
-  await buscarPerguntaPadrao(id);
+  const atual = await buscarPerguntaPadrao(id);
   const dados = dadosPerguntaSchema.parse(req.body);
+  // Mesmo bloqueio do POST, só que como TRANSIÇÃO: uma pergunta padrão que já é HABILIDADE_CRMG
+  // continua podendo ser salva (nunca quebra o que já existe), mas nenhuma outra pode passar a
+  // ser HABILIDADE_CRMG depois de criada.
+  if (dados.tipoResposta === 'HABILIDADE_CRMG' && atual.tipoResposta !== 'HABILIDADE_CRMG') {
+    throw new ValidationError('Habilidades do CRMG são sempre específicas de uma disciplina e não podem se tornar uma pergunta padrão compartilhada. Crie uma pergunta nova diretamente no Modelo PDI da disciplina desejada.');
+  }
 
   const atualizada = await prisma.perguntaPdiPadrao.update({
     where: { id },
@@ -106,6 +128,7 @@ pdiPerguntasPadraoRouter.put('/:id', async (req, res) => {
       tipoResposta: dados.tipoResposta,
       opcoes: dados.opcoes,
       complementar: dados.complementar ?? undefined,
+      trimestre: dados.trimestre ?? null,
       updatedBy: String(actor.id),
     },
   });
@@ -132,13 +155,19 @@ pdiPerguntasPadraoRouter.post('/:id/reativar', async (req, res) => {
   res.json(formatarPerguntaPadrao(await mudarStatusPerguntaPadrao(actor, Number(req.params.id), 'ATIVA')));
 });
 
-// DELETE físico de verdade — nada referencia esta tabela por FK (ver comentário no topo do
-// arquivo), diferente de PerguntaPdi (que pode já estar snapshotada numa Aplicação).
+// DELETE físico de verdade — bloqueado só quando alguma PerguntaPdi.padraoOriginalId ainda
+// referencia esta pergunta (FK Restrict), nunca quando ela só foi copiada sem vínculo (legado
+// anterior ao bloco de respostas padrão — isso continua podendo ser excluído livremente, igual
+// a antes).
 pdiPerguntasPadraoRouter.delete('/:id', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
   const id = Number(req.params.id);
   await buscarPerguntaPadrao(id);
+  const vinculada = await prisma.perguntaPdi.findFirst({ where: { padraoOriginalId: id }, select: { id: true } });
+  if (vinculada) {
+    throw new ValidationError('Esta pergunta padrão está vinculada a pergunta(s) de Modelo PDI (bloco de respostas compartilhado) e não pode ser excluída. Inative-a em vez disso.');
+  }
   await prisma.perguntaPdiPadrao.delete({ where: { id } });
   res.json({ removidoFisicamente: true });
 });

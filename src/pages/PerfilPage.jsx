@@ -10,6 +10,7 @@ const TIPO_LABEL = {
   diretora: 'Diretor(a)',
   secretaria: 'Secretaria',
   auxiliar: 'Auxiliar',
+  suporte_sistema: 'Suporte do Sistema',
 };
 
 export const PerfilPage = () => {

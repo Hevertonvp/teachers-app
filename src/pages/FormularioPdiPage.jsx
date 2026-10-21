@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal, OrderButtons } from '../components/Common';
-import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel } from '../components/PerguntaPdiFormModal';
+import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
@@ -66,6 +66,7 @@ export const FormularioPdiPage = () => {
     pdiModelosReais, pdiModelosReaisLoading, pdiModelosReaisError, loadPdiModelosReais,
     createPdiModeloReal, inativarPdiModelo, reativarPdiModeloReal,
     createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal, excluirPdiModelo,
+    pdiPerguntasPadraoReais, loadPdiPerguntasPadraoReais, vincularPdiPerguntaPadrao, desvincularPdiPerguntaPadrao,
     pdiAplicacoesReais, pdiAplicacoesReaisLoading, pdiAplicacoesReaisError, loadPdiAplicacoesReais,
     createPdiAplicacaoReal, updatePdiAplicacaoReal, removePdiAplicacaoReal, listarReaberturasPdiAplicacao, criarReaberturaPdiAplicacao,
   } = useData();
@@ -84,6 +85,13 @@ export const FormularioPdiPage = () => {
   const [perguntaForm, setPerguntaForm] = useState(null);
   const [salvandoPergunta, setSalvandoPergunta] = useState(false);
   const [inativandoPergunta, setInativandoPergunta] = useState(null);
+  // Reconciliação manual do legado (bloco de respostas padrão compartilhado) — ver CLAUDE.md/
+  // decisão do usuário: nunca inferir automaticamente, sempre a Secretaria confirmando item a item.
+  const [vincularPadraoForm, setVincularPadraoForm] = useState(null); // { pergunta }
+  const [padraoEscolhidoId, setPadraoEscolhidoId] = useState('');
+  const [vinculandoPadrao, setVinculandoPadrao] = useState(false);
+  const [vincularPadraoErro, setVincularPadraoErro] = useState('');
+  const [desvinculandoPergunta, setDesvinculandoPergunta] = useState(null);
   const [mudandoStatusModelo, setMudandoStatusModelo] = useState(null);
   const [excluindoModelo, setExcluindoModelo] = useState(null);
   const [mostrarHistoricoModelos, setMostrarHistoricoModelos] = useState(false);
@@ -107,6 +115,9 @@ export const FormularioPdiPage = () => {
   // Modelos pra qualquer outro perfil desde esta tarefa (a criação de Aplicação passou a
   // resolver o snapshot no próprio backend, sem o frontend precisar ler Modelos pra isso).
   useEffect(() => { if (souSecretaria) loadPdiModelosReais(); }, [souSecretaria, loadPdiModelosReais]);
+  // Catálogo de perguntas padrão (Configurações) — carregado aqui também pra alimentar o picker
+  // de reconciliação manual do legado, sem duplicar a chamada se a Secretaria já visitou Configurações.
+  useEffect(() => { if (souSecretaria) loadPdiPerguntasPadraoReais(); }, [souSecretaria, loadPdiPerguntasPadraoReais]);
   // Aplicações é carregado para todo mundo com acesso a esta tela (Secretaria/Gestor/Diretora).
   useEffect(() => { loadPdiAplicacoesReais(); }, [loadPdiAplicacoesReais]);
 
@@ -422,13 +433,20 @@ export const FormularioPdiPage = () => {
                     <div key={pergunta.id} className="flex items-center gap-3 p-4">
                       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">{index + 1}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900">{pergunta.codigo ? `${pergunta.codigo} — ${pergunta.pergunta}` : pergunta.pergunta}</p>
+                        <p className="font-semibold text-slate-900">
+                          {pergunta.codigo ? `${pergunta.codigo} — ${pergunta.pergunta}` : pergunta.pergunta}
+                          {pergunta.padraoOriginalId && <Badge variant="blue" className="ml-2 align-middle">Padrão compartilhada</Badge>}
+                        </p>
                         <p className="mt-1 truncate text-xs text-slate-500">
                           {tipoRespostaLabel(pergunta.tipoResposta)}
                           {pergunta.tipoResposta === 'selecao' && pergunta.opcoes?.length > 0 && ` • ${pergunta.opcoes.length} opções`}
                           {pergunta.secao && ` · ${pergunta.secao}${pergunta.subsecao ? ` › ${pergunta.subsecao}` : ''}`}
+                          {pergunta.trimestre && ` · ${trimestreLabel(pergunta.trimestre)}`}
                           {pergunta.status !== 'ativa' && ' · Inativa'}
                         </p>
+                        {pergunta.padraoOriginalId && (
+                          <p className="mt-1 text-xs text-slate-500">Respondida uma vez e reaproveitada em todas as disciplinas do mesmo Professor. Para alterar o texto/opções, edite a pergunta padrão em Configurações.</p>
+                        )}
                       </div>
                       <OrderButtons
                         onUp={() => reorderPdiModeloPerguntaReal(modeloSelecionado.id, calcularReordenacao(perguntasDoModelo, pergunta.id, -1))}
@@ -436,8 +454,11 @@ export const FormularioPdiPage = () => {
                         upDisabled={index === 0}
                         downDisabled={index === perguntasDoModelo.length - 1}
                       />
-                      <ActionMenu items={[
+                      <ActionMenu items={pergunta.padraoOriginalId ? [
+                        { label: 'Desvincular da pergunta padrão', variant: 'danger', onClick: () => setDesvinculandoPergunta(pergunta) },
+                      ] : [
                         { label: 'Editar', onClick: () => setPerguntaForm({ ...pergunta, opcoes: pergunta.opcoes || [] }) },
+                        { label: 'Vincular à pergunta padrão', onClick: () => { setVincularPadraoErro(''); setPadraoEscolhidoId(''); setVincularPadraoForm({ pergunta }); } },
                         pergunta.status === 'ativa'
                           ? { label: 'Inativar', variant: 'danger', onClick: () => setInativandoPergunta({ pergunta, ativar: false }) }
                           : { label: 'Reativar', onClick: () => setInativandoPergunta({ pergunta, ativar: true }) },
@@ -650,6 +671,59 @@ export const FormularioPdiPage = () => {
             onSubmit={salvarPergunta}
             onClose={() => setPerguntaForm(null)}
             saving={salvandoPergunta}
+          />
+        )}
+
+        {vincularPadraoForm && (
+          <Modal title="Vincular à pergunta padrão" onClose={() => setVincularPadraoForm(null)}>
+            <form
+              className="space-y-4"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (!padraoEscolhidoId) return;
+                setVinculandoPadrao(true);
+                setVincularPadraoErro('');
+                const resultado = await vincularPdiPerguntaPadrao(modeloSelecionado.id, vincularPadraoForm.pergunta.id, Number(padraoEscolhidoId));
+                setVinculandoPadrao(false);
+                if (!resultado.ok) { setVincularPadraoErro(resultado.error); return; }
+                setVincularPadraoForm(null);
+                setMessage('Pergunta vinculada ao padrão compartilhado — reaproveitada nas outras disciplinas do mesmo Professor a partir da próxima Aplicação criada.');
+              }}
+            >
+              <p className="text-sm text-slate-600">
+                Confirme qual pergunta padrão (Configurações) é exatamente a mesma que <strong>"{vincularPadraoForm.pergunta.pergunta}"</strong>.
+                Isso nunca é adivinhado por texto — só vale a partir de agora: Aplicações já criadas não mudam.
+              </p>
+              {vincularPadraoErro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{vincularPadraoErro}</div>}
+              <FormField label="Pergunta padrão">
+                <select className={inputClass} value={padraoEscolhidoId} onChange={event => setPadraoEscolhidoId(event.target.value)} required>
+                  <option value="">Selecione...</option>
+                  {pdiPerguntasPadraoReais.map(padrao => (
+                    <option key={padrao.id} value={padrao.id}>{padrao.pergunta} ({tipoRespostaLabel(padrao.tipoResposta)}{padrao.status !== 'ativa' ? ' · inativa' : ''})</option>
+                  ))}
+                </select>
+              </FormField>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="secondary" onClick={() => setVincularPadraoForm(null)} disabled={vinculandoPadrao}>Cancelar</Button>
+                <Button type="submit" disabled={vinculandoPadrao || !padraoEscolhidoId}>{vinculandoPadrao ? 'Vinculando...' : 'Vincular'}</Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+
+        {desvinculandoPergunta && (
+          <ConfirmDialog
+            title="Desvincular da pergunta padrão"
+            message={`"${desvinculandoPergunta.pergunta}" volta a ser uma pergunta específica desta disciplina — deixa de ser compartilhada com as outras disciplinas do mesmo Professor a partir da próxima Aplicação. Nenhuma resposta já salva é afetada.`}
+            confirmLabel="Desvincular"
+            onCancel={() => setDesvinculandoPergunta(null)}
+            onConfirm={async () => {
+              const pergunta = desvinculandoPergunta;
+              setDesvinculandoPergunta(null);
+              const resultado = await desvincularPdiPerguntaPadrao(modeloSelecionado.id, pergunta.id);
+              setMessage(resultado.ok ? 'Pergunta desvinculada do padrão compartilhado.' : '');
+              if (!resultado.ok) setMessage(resultado.error);
+            }}
           />
         )}
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MainLayout } from '../layouts/Layouts';
 import { ActionMenu, Button, Card, ConfirmDialog, FormField, OrderButtons, StatusBadge } from '../components/Common';
-import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel } from '../components/PerguntaPdiFormModal';
+import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { inputClass } from '../utils/display';
@@ -161,6 +161,7 @@ export const ConfiguracoesPage = () => {
                         {tipoRespostaLabel(pergunta.tipoResposta)}
                         {pergunta.tipoResposta === 'selecao' && pergunta.opcoes?.length > 0 && ` • ${pergunta.opcoes.length} opções`}
                         {pergunta.secao && ` · ${pergunta.secao}`}
+                        {pergunta.trimestre && ` · ${trimestreLabel(pergunta.trimestre)}`}
                       </p>
                     </div>
                     <OrderButtons

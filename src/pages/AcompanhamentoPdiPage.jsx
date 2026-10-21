@@ -19,10 +19,14 @@ const TEAL = '#0f766e';
 
 const perguntaLabel = (pergunta) => (pergunta.pergunta.length > 60 ? `${pergunta.pergunta.slice(0, 60)}…` : pergunta.pergunta);
 
+// Habilidades do CRMG: lista dos códigos marcados (ou "Todas as habilidades").
+const habilidadesResumo = (registro) => (registro.todas ? 'Todas as habilidades' : (registro.habilidades || []).map(h => h.codigo).join(', ') || '—');
+
 const respostaResumo = (pergunta, registro) => {
   if (!registro) return null;
   if (pergunta.tipoResposta === 'marcacao') return registro.resposta ? 'Marcado' : 'Não marcado';
   if (pergunta.tipoResposta === 'selecao') return registro.complementarTexto ? `${registro.resposta} · ${registro.complementarTexto}` : registro.resposta;
+  if (pergunta.tipoResposta === 'habilidade_crmg') return habilidadesResumo(registro);
   return registro.resposta;
 };
 
@@ -34,6 +38,7 @@ const respostaEstruturadaValor = (pergunta, registro) => {
   if (!registro) return undefined;
   if (pergunta.tipoResposta === 'marcacao') return registro.resposta ? 'Marcado' : 'Não marcado';
   if (pergunta.tipoResposta === 'selecao') return registro.resposta;
+  if (pergunta.tipoResposta === 'habilidade_crmg') return habilidadesResumo(registro);
   return undefined;
 };
 

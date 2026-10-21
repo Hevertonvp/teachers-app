@@ -13,12 +13,24 @@ export const listarCorrecoesPdiReais = (filtros = {}) => {
 
 export const obterCorrecaoPdiReal = (fichaId) => apiFetch(`/api/correcoes-pdi/${fichaId}`);
 
-export const corrigirDiretamenteReal = (fichaId, respostas) => apiFetch(`/api/correcoes-pdi/${fichaId}/respostas`, {
+export const corrigirDiretamenteReal = (fichaId, respostas, baseUpdatedAt) => apiFetch(`/api/correcoes-pdi/${fichaId}/respostas`, {
   method: 'PUT',
-  body: { respostas },
+  body: { respostas, baseUpdatedAt },
 });
 
 export const devolverFichaPdiReal = (fichaId, observacao) => apiFetch(`/api/correcoes-pdi/${fichaId}/devolver`, {
+  method: 'POST',
+  body: { observacao },
+});
+
+// Bloco comum de perguntas padrão (compartilhado entre as disciplinas do mesmo Professor) — fluxo
+// SEPARADO do específico acima (nunca misturar, ver pdiModelos.ts/correcoesPdi.ts no backend).
+export const corrigirDiretamentePadraoReal = (fichaId, respostas, version) => apiFetch(`/api/correcoes-pdi/${fichaId}/respostas-padrao`, {
+  method: 'PUT',
+  body: { respostas, version },
+});
+
+export const devolverPadraoReal = (fichaId, observacao) => apiFetch(`/api/correcoes-pdi/${fichaId}/devolver-padrao`, {
   method: 'POST',
   body: { observacao },
 });

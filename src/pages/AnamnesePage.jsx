@@ -7,6 +7,9 @@ import { useData } from '../context/DataContext';
 import { inputClass } from '../utils/display';
 import { isSecretaria } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
+import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
+import { enfileirar, obterItemDaFila, chaveFila } from '../offline/syncQueue';
+import { SavingIndicator } from '../components/SavingIndicator';
 
 const STATUS_LABEL = { pendente: 'Pendente', em_andamento: 'Em preenchimento', concluida: 'Concluída' };
 const STATUS_VARIANT = { pendente: 'gray', em_andamento: 'blue', concluida: 'green' };
@@ -62,6 +65,9 @@ export const AnamnesePage = () => {
   const [versaoVisualizada, setVersaoVisualizada] = useState(null);
   const [mensagem, setMensagem] = useState('');
   const [mensagemErro, setMensagemErro] = useState('');
+  const [conflito, setConflito] = useState('');
+  const [statusLocal, setStatusLocal] = useState('idle');
+  const userId = user?.email?.toLowerCase();
 
   const carregarTudo = async () => {
     setCarregando(true);
@@ -74,8 +80,12 @@ export const AnamnesePage = () => {
     setHistorico(resultadoHistorico.historico);
     if (resultadoHistorico.atual) {
       setDetalheAtual(resultadoHistorico.atual);
-      setEstrutural(resultadoHistorico.atual.anamnese);
-      setAnswers(Object.fromEntries(resultadoHistorico.atual.perguntas.map(p => [p.id, respostaAtual(p, resultadoHistorico.atual.respostas)])));
+      const estruturalBase = resultadoHistorico.atual.anamnese;
+      const answersBase = Object.fromEntries(resultadoHistorico.atual.perguntas.map(p => [p.id, respostaAtual(p, resultadoHistorico.atual.respostas)]));
+      // Restaura rascunho local ainda não sincronizado (sobrevive a reload/fechamento).
+      const draft = await lerDraft(`${userId}::anamnese::${resultadoHistorico.atual.anamnese.id}`);
+      setEstrutural(draft?.estrutural ? { ...estruturalBase, ...draft.estrutural } : estruturalBase);
+      setAnswers(draft?.answers ? { ...answersBase, ...draft.answers } : answersBase);
     } else {
       setDetalheAtual(null);
     }
@@ -108,24 +118,90 @@ export const AnamnesePage = () => {
   const updateEstrutural = (payload) => setEstrutural(prev => ({ ...prev, ...payload }));
   const updateAnswer = (perguntaId, payload) => setAnswers(prev => ({ ...prev, [perguntaId]: { ...prev[perguntaId], ...payload } }));
 
+  const draftKeyAnamnese = detalheAtual ? `${userId}::anamnese::${detalheAtual.anamnese.id}` : null;
+  // Salvamento local com debounce leve (seção "Eficiência") — sobrevive a reload/fechamento;
+  // some quando o próprio salvarEstrutural/salvarResposta confirma com o servidor.
+  useEffect(() => {
+    if (!draftKeyAnamnese) return undefined;
+    const t = setTimeout(() => salvarDraft(draftKeyAnamnese, { userId, estrutural, answers, savedAt: Date.now() }), 500);
+    return () => clearTimeout(t);
+  }, [estrutural, answers, draftKeyAnamnese, userId]);
+
+  // Anamnese salva por campo, imediatamente (modelo já existente, nunca alterado aqui) — offline,
+  // em vez de cada campo falhar isolado, os campos ainda não enviados se ACUMULAM numa única
+  // entrada da fila (nunca uma por campo: evita "última edição apaga as anteriores" enquanto
+  // offline, seção "Eficiência"/"Fila offline" do pedido).
+  const enfileirarAnamnese = async (payloadParcial) => {
+    const key = chaveFila(userId, 'anamnese', detalheAtual.anamnese.id, 'respostas');
+    const existente = await obterItemDaFila(key);
+    const payload = {
+      estrutural: { ...(existente?.payload?.estrutural || {}), ...(payloadParcial.estrutural || {}) },
+      respostas: [
+        ...((existente?.payload?.respostas || []).filter((r) => !(payloadParcial.respostas || []).some((novo) => novo.perguntaAnamneseId === r.perguntaAnamneseId))),
+        ...(payloadParcial.respostas || []),
+      ],
+    };
+    await enfileirar({
+      userId, resourceType: 'anamnese', resourceId: detalheAtual.anamnese.id, operation: 'respostas',
+      endpoint: `/api/anamneses/${detalheAtual.anamnese.id}/respostas`, method: 'PUT',
+      payload, baseTokenField: 'baseUpdatedAt', baseToken: existente?.baseToken ?? detalheAtual.anamnese.updatedAt,
+    });
+  };
+
   const salvarEstrutural = async (payload) => {
     if (!detalheAtual) return;
     setSalvando(true);
+    setStatusLocal('saving');
     setMensagemErro('');
-    const resultado = await salvarAnamnese(detalheAtual.anamnese.id, { estrutural: payload });
+    setConflito('');
+    const resultado = await salvarAnamnese(detalheAtual.anamnese.id, { estrutural: payload, baseUpdatedAt: detalheAtual.anamnese.updatedAt });
     setSalvando(false);
-    if (!resultado.ok) { setMensagemErro(resultado.error); return; }
-    setDetalheAtual(resultado);
+    if (resultado.ok) {
+      setDetalheAtual(resultado);
+      if (draftKeyAnamnese) apagarDraft(draftKeyAnamnese);
+      setStatusLocal('saved');
+      return;
+    }
+    if (resultado.codigo === 'CONFLITO_VERSAO') {
+      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+      setStatusLocal('idle');
+      return;
+    }
+    if (!resultado.codigo && /conectar ao servidor/.test(resultado.error || '')) {
+      await enfileirarAnamnese({ estrutural: payload });
+      setStatusLocal('saved');
+      return;
+    }
+    setStatusLocal('idle');
+    setMensagemErro(resultado.error);
   };
 
   const salvarResposta = async (pergunta, valor) => {
     if (!detalheAtual) return;
     setSalvando(true);
+    setStatusLocal('saving');
     setMensagemErro('');
-    const resultado = await salvarAnamnese(detalheAtual.anamnese.id, { respostas: [{ perguntaAnamneseId: pergunta.id, valor }] });
+    setConflito('');
+    const resultado = await salvarAnamnese(detalheAtual.anamnese.id, { respostas: [{ perguntaAnamneseId: pergunta.id, valor }], baseUpdatedAt: detalheAtual.anamnese.updatedAt });
     setSalvando(false);
-    if (!resultado.ok) { setMensagemErro(resultado.error); return; }
-    setDetalheAtual(prev => ({ ...prev, anamnese: resultado.anamnese, respostas: resultado.respostas }));
+    if (resultado.ok) {
+      setDetalheAtual(prev => ({ ...prev, anamnese: resultado.anamnese, respostas: resultado.respostas }));
+      if (draftKeyAnamnese) apagarDraft(draftKeyAnamnese);
+      setStatusLocal('saved');
+      return;
+    }
+    if (resultado.codigo === 'CONFLITO_VERSAO') {
+      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+      setStatusLocal('idle');
+      return;
+    }
+    if (!resultado.codigo && /conectar ao servidor/.test(resultado.error || '')) {
+      await enfileirarAnamnese({ respostas: [{ perguntaAnamneseId: pergunta.id, valor }] });
+      setStatusLocal('saved');
+      return;
+    }
+    setStatusLocal('idle');
+    setMensagemErro(resultado.error);
   };
 
   const concluir = async () => {
@@ -232,10 +308,19 @@ export const AnamnesePage = () => {
       <div className="space-y-6">
         <div>
           <Link to={`/pdi/alunos/${aluno.id}`} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar para aluno</Link>
-          <h1 className="mt-3 text-3xl font-bold text-slate-950">Anamnese</h1>
+          <div className="mt-3 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-slate-950">Anamnese</h1>
+            <SavingIndicator estado={statusLocal} />
+          </div>
           <p className="mt-2 text-slate-600">{aluno.nome} · {aluno.turmaNome} · {aluno.escolaNome}</p>
         </div>
 
+        {conflito && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+            <span>{conflito}</span>
+            <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Recarregar</Button>
+          </div>
+        )}
         {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
         {mensagemErro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{mensagemErro}</div>}
 

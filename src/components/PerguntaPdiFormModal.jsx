@@ -12,11 +12,16 @@ export const TIPO_RESPOSTA_OPTIONS = [
   { value: 'marcacao', label: 'Marcação' },
   { value: 'numero', label: 'Número' },
   { value: 'orientacao', label: 'Informativa (sem resposta)' },
+  // Pergunta escrita normalmente; o Professor responde marcando habilidades do CRMG da disciplina.
+  { value: 'habilidade_crmg', label: 'Habilidades do CRMG' },
 ];
 
 export const tipoRespostaLabel = (value) => TIPO_RESPOSTA_OPTIONS.find(option => option.value === value)?.label || value;
 
-export const blankPerguntaPdi = (overrides = {}) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, status: 'ativa', ...overrides });
+// null/'' = a pergunta aparece em qualquer trimestre (comportamento de sempre).
+export const trimestreLabel = (trimestre) => (trimestre ? `Só no ${trimestre}º trimestre` : '');
+
+export const blankPerguntaPdi = (overrides = {}) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, status: 'ativa', trimestre: null, ...overrides });
 
 export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose, saving }) => {
   const changeTipoResposta = (tipoResposta) => {
@@ -24,7 +29,7 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
       ...value,
       tipoResposta,
       opcoes: tipoResposta === 'selecao' ? (value.opcoes?.length ? value.opcoes : ['', '']) : [],
-      complementar: (tipoResposta === 'texto' || tipoResposta === 'numero' || tipoResposta === 'orientacao') ? null : value.complementar,
+      complementar: (tipoResposta === 'texto' || tipoResposta === 'numero' || tipoResposta === 'orientacao' || tipoResposta === 'habilidade_crmg') ? null : value.complementar,
     });
   };
 
@@ -49,6 +54,12 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
         <FormField label={value.tipoResposta === 'orientacao' ? 'Conteúdo / orientação' : 'Pergunta / texto'}>
           <textarea className={inputClass} rows="4" spellCheck lang="pt-BR" value={value.pergunta} onChange={event => onChange({ ...value, pergunta: event.target.value })} onBlur={() => onChange({ ...value, pergunta: aplicarAutoCorrecao(value.pergunta) })} required />
         </FormField>
+
+        {value.tipoResposta === 'habilidade_crmg' && (
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Na Ficha, o Professor responde marcando uma ou várias habilidades do CRMG da disciplina (de qualquer ano), ou "Todas as habilidades".
+          </p>
+        )}
 
         {value.tipoResposta === 'selecao' && (
           <FormField label="Opções">
@@ -93,6 +104,15 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
         )}
 
         <FormField label="Seção (agrupamento no formulário)"><input className={inputClass} value={value.secao || ''} onChange={event => onChange({ ...value, secao: event.target.value })} placeholder="Ex.: Registro pedagógico" /></FormField>
+
+        <FormField label="Exibir em">
+          <select className={inputClass} value={value.trimestre ?? ''} onChange={event => onChange({ ...value, trimestre: event.target.value ? Number(event.target.value) : null })}>
+            <option value="">Todos os trimestres</option>
+            <option value="1">Só no 1º trimestre</option>
+            <option value="2">Só no 2º trimestre</option>
+            <option value="3">Só no 3º trimestre</option>
+          </select>
+        </FormField>
 
         <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></div>
       </form>

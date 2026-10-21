@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
+import { perguntaValeParaTrimestre, trimestreDaData } from '../../domain/trimestres.js';
 import { escolasPermitidas } from './pessoas.js';
 
 export const pdiAplicacoesRouter = Router();
@@ -30,6 +31,7 @@ function exigirLeituraAplicacoes(actor: Actor) {
 
 const formatarAplicacao = (aplicacao: {
   id: number; escolaId: number; nome: string | null; dataInicio: Date; dataFim: Date; status: string;
+  trimestre?: number | null;
   escola?: { nome: string };
   modelos?: { modeloIdOriginal: number; nome: string; disciplinaId: number; disciplinaNome: string }[];
   reaberturas?: { dataInicio: Date; dataFim: Date }[];
@@ -40,6 +42,7 @@ const formatarAplicacao = (aplicacao: {
   nome: aplicacao.nome,
   dataInicio: aplicacao.dataInicio,
   dataFim: aplicacao.dataFim,
+  trimestre: aplicacao.trimestre ?? null,
   // `status` (abaixo) é a VIGÊNCIA calculada (scheduled/active/expired, nunca persistida — ver
   // domain/pdiAplicacoes.ts). `statusRegistro` é o campo persistido novo (seção de remoção): só
   // 'ativa'/'inativa', nada a ver com vigência — uma Aplicação pode estar "active" por data e
@@ -341,7 +344,7 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
 
   const modelosAtivos = await prisma.modeloPdi.findMany({
     where: { status: 'ATIVA' },
-    include: { disciplina: true, perguntas: { where: { status: 'ATIVA' } } },
+    include: { disciplina: true, perguntas: { where: { status: 'ATIVA' }, include: { padraoOriginal: true } } },
   });
   if (modelosAtivos.length === 0) {
     throw new ValidationError('Não existe nenhum Modelo PDI ativo. Cadastre ao menos um modelo antes de criar uma Aplicação.');
@@ -360,6 +363,10 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
     }
   }
 
+  // Trimestre do calendário (Configurações > Trimestres) em que a Aplicação começa — decide quais
+  // perguntas específicas de trimestre entram no snapshot (ver domain/trimestres.ts).
+  const trimestre = await trimestreDaData(prisma, dados.dataInicio);
+
   // Timeout maior que o padrão (5s): o snapshot percorre todo Modelo+Pergunta ATIVA de uma vez
   // (dezenas de round-trips ao Neon), e o padrão estourava com o volume real de modelos.
   const criada = await prisma.$transaction(async (tx) => {
@@ -369,9 +376,16 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
         nome: dados.nome ?? null,
         dataInicio: dados.dataInicio,
         dataFim: dados.dataFim,
+        trimestre,
         createdBy: String(actor.id),
       },
     });
+
+    // Dedup de perguntas padrão compartilháveis DENTRO desta Aplicação: a mesma PerguntaPdiPadrao
+    // pode ter sido carregada por vários Modelos (disciplinas diferentes) — todos apontam pro
+    // MESMO snapshot AplicacaoPerguntaPadraoPdi, nunca um por disciplina (ver schema.prisma e
+        // domain/pdiBlocoPadrao.ts). `snapshotPadraoPorOriginal` garante isso dentro do loop abaixo.
+    const snapshotPadraoPorOriginal = new Map<number, number>(); // padraoOriginalId -> AplicacaoPerguntaPadraoPdi.id
 
     for (const modelo of modelosParaUsar) {
       const aplicacaoModelo = await tx.aplicacaoModeloPdi.create({
@@ -383,9 +397,13 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
           disciplinaNome: modelo.disciplina.nome,
         },
       });
-      if (modelo.perguntas.length > 0) {
+      const perguntasDoTrimestre = modelo.perguntas.filter((pergunta) => perguntaValeParaTrimestre(pergunta.trimestre, trimestre));
+      const perguntasEspecificas = perguntasDoTrimestre.filter((pergunta) => !pergunta.padraoOriginalId);
+      const perguntasPadrao = perguntasDoTrimestre.filter((pergunta) => pergunta.padraoOriginalId);
+
+      if (perguntasEspecificas.length > 0) {
         await tx.aplicacaoPerguntaPdi.createMany({
-          data: modelo.perguntas.map((pergunta) => ({
+          data: perguntasEspecificas.map((pergunta) => ({
             aplicacaoModeloId: aplicacaoModelo.id,
             perguntaIdOriginal: pergunta.id,
             secao: pergunta.secao,
@@ -399,6 +417,37 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
             complementar: pergunta.complementar ?? undefined,
             ordem: pergunta.ordem,
           })),
+        });
+      }
+
+      for (const pergunta of perguntasPadrao) {
+        let snapshotPadraoId = snapshotPadraoPorOriginal.get(pergunta.padraoOriginalId!);
+        if (snapshotPadraoId === undefined) {
+          // Conteúdo vem da cópia no Modelo (idêntico em todo Modelo que a carregou, já que
+          // perguntas padrão vinculadas não podem divergir — ver PUT /api/pdi-perguntas/:id);
+          // `ordem` vem do PADRÃO em si (nunca de um Modelo específico, que poderia ter reordenado
+          // só a própria cópia) — ordenação determinística da seção compartilhada.
+          const snapshotPadrao = await tx.aplicacaoPerguntaPadraoPdi.create({
+            data: {
+              aplicacaoId: aplicacao.id,
+              padraoOriginalId: pergunta.padraoOriginalId!,
+              secao: pergunta.secao,
+              subsecao: pergunta.subsecao,
+              codigo: pergunta.codigo,
+              texto: pergunta.texto,
+              indicador: pergunta.indicador,
+              origem: pergunta.origem,
+              tipoResposta: pergunta.tipoResposta,
+              opcoes: pergunta.opcoes ?? [],
+              complementar: pergunta.complementar ?? undefined,
+              ordem: pergunta.padraoOriginal?.ordem ?? pergunta.ordem,
+            },
+          });
+          snapshotPadraoId = snapshotPadrao.id;
+          snapshotPadraoPorOriginal.set(pergunta.padraoOriginalId!, snapshotPadraoId);
+        }
+        await tx.aplicacaoModeloPerguntaPadraoPdi.create({
+          data: { aplicacaoModeloId: aplicacaoModelo.id, aplicacaoPerguntaPadraoId: snapshotPadraoId },
         });
       }
     }

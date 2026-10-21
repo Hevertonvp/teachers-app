@@ -6,7 +6,7 @@ import { apiFetch } from './api';
 const STATUS_FROM_API = { ATIVA: 'ativa', INATIVA: 'inativa' };
 const ORIGEM_FROM_API = { ESTRUTURADA: 'estruturada', HABILIDADE: 'habilidade', ORIENTACAO: 'orientacao', QUALITATIVA: 'qualitativa', PERSONALIZADA: 'personalizada' };
 const ORIGEM_TO_API = Object.fromEntries(Object.entries(ORIGEM_FROM_API).map(([api, front]) => [front, api]));
-const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao' };
+const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao', HABILIDADE_CRMG: 'habilidade_crmg' };
 const TIPO_TO_API = Object.fromEntries(Object.entries(TIPO_FROM_API).map(([api, front]) => [front, api]));
 
 const normalizePergunta = ({ texto, ...pergunta }) => ({
@@ -27,6 +27,7 @@ const paraPayload = (payload) => ({
   tipoResposta: TIPO_TO_API[payload.tipoResposta] ?? payload.tipoResposta,
   opcoes: payload.opcoes || [],
   complementar: payload.complementar || null,
+  trimestre: payload.trimestre ? Number(payload.trimestre) : null, // null = qualquer trimestre
 });
 
 export const listarPdiPerguntasPadraoReais = async () => (await apiFetch('/api/pdi-perguntas-padrao')).map(normalizePergunta);

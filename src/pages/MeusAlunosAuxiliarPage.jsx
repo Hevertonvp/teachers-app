@@ -4,6 +4,7 @@ import { Badge, Button, Card, EmptyState } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { isAuxiliar } from '../utils/roles';
+import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
 
 // Alunos PDI das turmas em que o Auxiliar logado tem VinculoEscolar + AuxiliarTurma ATIVOS agora
@@ -20,6 +21,7 @@ export const MeusAlunosAuxiliarPage = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <FeedbackSistemaBanner />
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Auxiliar de Aprendizagem</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">Meus alunos</h1>

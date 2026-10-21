@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button, Card, EmptyState } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useEscola } from '../context/EscolaContext';
+import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
 
 export const DashboardGestor = () => {
@@ -19,6 +20,7 @@ export const DashboardGestor = () => {
   return (
     <MainLayout>
       <div className="space-y-7">
+        <FeedbackSistemaBanner />
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
