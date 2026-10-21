@@ -27,7 +27,7 @@ export const PdiPage = () => {
   const {
     pdiAlunosReais, pdiAlunosReaisLoading, pdiAlunosReaisError, loadPdiAlunosReais,
     createPdiAlunoReal, updatePdiAlunoReal, arquivarPdiAluno, reativarPdiAluno,
-    turmas, escolas,
+    iniciarAnamnese, turmas, escolas,
   } = useData();
   const { activeEscolaId, userEscolas, isExplicitBatchSelection } = useEscola();
 
@@ -42,6 +42,7 @@ export const PdiPage = () => {
   const [turma, setTurma] = useState('todos');
   const [status, setStatus] = useState('ativo');
   const [form, setForm] = useState(null);
+  const [iniciarAnamneseAoCriar, setIniciarAnamneseAoCriar] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState(null);
@@ -82,7 +83,20 @@ export const PdiPage = () => {
       setMessage('Selecione uma escola específica antes de criar um aluno PDI.');
       return;
     }
+    // Um aluno precisa de uma turma já cadastrada (o formulário exige turmaId) — sem isso a
+    // Secretaria/Gestor abriria um formulário com a Turma vazia e sem entender o motivo.
+    if (escolas.length === 0) {
+      setMessage('Nenhuma escola cadastrada ainda. Cadastre uma escola antes de criar um aluno.');
+      return;
+    }
+    if (turmasDaEscola.length === 0) {
+      setMessage(activeEscolaId === null
+        ? 'Nenhuma turma cadastrada ainda. Cadastre escolas e turmas antes de criar um aluno.'
+        : 'Esta escola ainda não tem turmas cadastradas. Cadastre as turmas antes de criar um aluno.');
+      return;
+    }
     setEditing(null);
+    setIniciarAnamneseAoCriar(false);
     setForm(blankAluno(activeEscolaId === null ? '' : turmasDaEscola[0]?.id, activeEscolaId));
   };
 
@@ -114,9 +128,22 @@ export const PdiPage = () => {
       setMessage(resultado.error);
       return;
     }
-    setMessage(editing ? 'Aluno atualizado com sucesso.' : 'Aluno criado com sucesso.');
     setForm(null);
     setEditing(null);
+
+    // Anamnese é sempre opcional (o aluno pode existir sem ela) — por isso a criação do aluno já
+    // é considerada concluída com sucesso aqui, independente do que acontecer a seguir. Marcar o
+    // checkbox só pula o passo de abrir o perfil do aluno e clicar em "Iniciar Anamnese" depois.
+    if (!editing && iniciarAnamneseAoCriar) {
+      const resultadoAnamnese = await iniciarAnamnese(resultado.aluno.id);
+      if (resultadoAnamnese.ok) {
+        navigate(`/pdi/alunos/${resultado.aluno.id}/anamnese`);
+        return;
+      }
+      setMessage(`Aluno criado com sucesso, mas não foi possível iniciar a Anamnese agora: ${resultadoAnamnese.error}`);
+      return;
+    }
+    setMessage(editing ? 'Aluno atualizado com sucesso.' : 'Aluno criado com sucesso.');
   };
 
   const confirmarArquivar = async () => {
@@ -231,6 +258,15 @@ export const PdiPage = () => {
                   <FormField label="Parentesco"><select className={inputClass} value={form.responsavelParentesco} onChange={event => setForm(prev => ({ ...prev, responsavelParentesco: event.target.value }))} required><option value="" disabled>Selecione</option>{parentescoOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FormField>
                   <FormField label="Telefone principal"><input className={inputClass} value={form.responsavelTelefone} onChange={event => setForm(prev => ({ ...prev, responsavelTelefone: event.target.value }))} required /></FormField>
                 </div>
+                {!editing && isSecretaria(user) && (
+                  <label className="md:col-span-2 flex items-start gap-2.5 rounded-lg border border-slate-200 p-4 text-sm">
+                    <input type="checkbox" className="mt-0.5" checked={iniciarAnamneseAoCriar} onChange={event => setIniciarAnamneseAoCriar(event.target.checked)} />
+                    <span>
+                      <span className="font-semibold text-slate-700">Também iniciar a Anamnese deste aluno agora</span>
+                      <span className="block text-slate-500">Opcional — o aluno pode existir sem Anamnese. Marcando, você já abre o formulário com as perguntas padrão para responder em seguida.</span>
+                    </span>
+                  </label>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-2"><Button type="button" variant="secondary" onClick={() => setForm(null)} disabled={salvando}>Cancelar</Button><Button type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button></div>
             </form>

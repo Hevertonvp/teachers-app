@@ -177,27 +177,57 @@ export const EmptyState = ({ title, description, children }) => (
 // Menu "..." de ações secundárias (editar/excluir/etc.) — mesmo padrão de dropdown já usado no
 // EscolaSelector (fecha ao clicar fora). Usado para tirar ações pouco frequentes da competição
 // visual direta com a ação principal de cada tela/cartão.
+const MENU_WIDTH = 208; // w-52
+
 export const ActionMenu = ({ items, label = 'Mais ações' }) => {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Posição calculada a partir do botão e o menu renderizado via portal pro <body> — a mesma
+  // razão do Modal (ver comentário ali): DataTable envolve as linhas com `overflow-hidden` (pra
+  // não vazar o conteúdo com o cantos arredondados da tabela), e isso cortava o menu sempre que
+  // ele abria perto do fim da tabela. `position: fixed` com coordenadas absolutas escapa disso.
+  const atualizarPosicao = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPosition({ top: rect.bottom + 4, left: Math.max(8, rect.right - MENU_WIDTH) });
+  };
+
+  const toggle = () => {
+    if (!open) atualizarPosicao();
+    setOpen(prev => !prev);
+  };
 
   useEffect(() => {
+    if (!open) return undefined;
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) setOpen(false);
+      if (buttonRef.current?.contains(event.target)) return;
+      if (menuRef.current?.contains(event.target)) return;
+      setOpen(false);
     };
+    const handleReposicionar = () => atualizarPosicao();
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('scroll', handleReposicionar, true);
+    window.addEventListener('resize', handleReposicionar);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleReposicionar, true);
+      window.removeEventListener('resize', handleReposicionar);
+    };
+  }, [open]);
 
   return (
-    <div ref={containerRef} className="relative shrink-0">
+    <>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen(prev => !prev)}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={label}
-        className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
           <circle cx="10" cy="4" r="1.6" />
@@ -205,28 +235,31 @@ export const ActionMenu = ({ items, label = 'Mais ações' }) => {
           <circle cx="10" cy="16" r="1.6" />
         </svg>
       </button>
-      <div
-        role="menu"
-        className={`absolute right-0 z-40 mt-1 w-52 origin-top-right rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg transition duration-150 ease-out ${
-          open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
-        }`}
-      >
-        {items.map(item => (
-          <button
-            key={item.label}
-            type="button"
-            role="menuitem"
-            disabled={item.disabled}
-            onClick={() => { setOpen(false); item.onClick(); }}
-            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              item.variant === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </div>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          style={{ top: position.top, left: position.left, width: MENU_WIDTH }}
+          className="fixed z-50 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+        >
+          {items.map(item => (
+            <button
+              key={item.label}
+              type="button"
+              role="menuitem"
+              disabled={item.disabled}
+              onClick={() => { setOpen(false); item.onClick(); }}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                item.variant === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </>
   );
 };
 
