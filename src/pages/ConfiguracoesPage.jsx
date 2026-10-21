@@ -136,7 +136,7 @@ export const ConfiguracoesPage = () => {
                 <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">PDI</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Perguntas padrão</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Template usado (opcionalmente) ao criar um novo Modelo PDI, em qualquer disciplina. Editar aqui não altera modelos já criados — só vale para os próximos.
+                  As perguntas criadas aqui são compartilhadas por todas as disciplinas e entram automaticamente em cada novo Modelo PDI. Não crie aqui perguntas específicas de uma disciplina (como Habilidades do CRMG) — essas devem ser adicionadas direto no Modelo PDI da disciplina correspondente.
                 </p>
               </div>
               <Button size="sm" onClick={() => setPerguntaPadraoForm(blankPerguntaPdi())}>+ Adicionar pergunta padrão</Button>

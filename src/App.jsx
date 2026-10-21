@@ -33,8 +33,7 @@ import { PerfilPage } from './pages/PerfilPage';
 import { EmConstrucaoPage } from './pages/EmConstrucaoPage';
 import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
 import { MensagensPage } from './pages/MensagensPage';
-import { NovoFeedbackPage } from './pages/NovoFeedbackPage';
-import { MeusFeedbacksPage } from './pages/MeusFeedbacksPage';
+import { FeedbackSistemaPage } from './pages/FeedbackSistemaPage';
 import { FeedbackSistemaDetalhePage } from './pages/FeedbackSistemaDetalhePage';
 import { FeedbacksSistemaListaPage } from './pages/FeedbacksSistemaListaPage';
 
@@ -89,8 +88,8 @@ const AppRoutes = () => <Routes>
   <Route path="/eventos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/noticias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/mensagens" element={<ProtectedRoute><MensagensPage /></ProtectedRoute>} />
-  <Route path="/feedback-sistema/novo" element={<ProtectedRoute><NovoFeedbackPage /></ProtectedRoute>} />
-  <Route path="/feedback-sistema/meus" element={<ProtectedRoute><MeusFeedbacksPage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema/novo" element={<ProtectedRoute><FeedbackSistemaPage /></ProtectedRoute>} />
+  <Route path="/feedback-sistema/meus" element={<ProtectedRoute><FeedbackSistemaPage /></ProtectedRoute>} />
   <Route path="/feedback-sistema/meus/:id" element={<ProtectedRoute><FeedbackSistemaDetalhePage /></ProtectedRoute>} />
   <Route path="/feedback-sistema" element={<ProtectedRoute><FeedbacksSistemaListaPage /></ProtectedRoute>} />
   <Route path="/feedback-sistema/:id" element={<ProtectedRoute><FeedbackSistemaDetalhePage /></ProtectedRoute>} />

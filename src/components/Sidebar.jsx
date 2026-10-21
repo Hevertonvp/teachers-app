@@ -106,12 +106,11 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   useEffect(() => { if (user) loadMensagensNaoLidas(); }, [user, loadMensagensNaoLidas]);
   useEffect(() => { if (user) loadNotificacoesNaoLidas(); }, [user, loadNotificacoesNaoLidas]);
 
-  // Novo feedback/Meus feedbacks (seção 23 do pedido de Feedback do Sistema) — item comum a
-  // todos os perfis pedagógicos, nunca ao Suporte (que tem sua própria caixa, ver menuSuporte).
-  const itensFeedback = [
-    { name: 'Novo feedback', path: '/feedback-sistema/novo', icon: 'feedback' },
-    { name: 'Meus feedbacks', path: '/feedback-sistema/meus', icon: 'feedback' },
-  ];
+  // Feedback (seção 23 do pedido de Feedback do Sistema) — um único item de menu, levando a uma
+  // única página ("Feedback") que por dentro tem as abas "Meus feedbacks"/"Novo feedback" (ver
+  // FeedbackSistemaPage.jsx); nunca dois itens soltos no menu para a mesma funcionalidade.
+  // Comum a todos os perfis pedagógicos, nunca ao Suporte (que tem sua própria caixa, ver menuSuporte).
+  const itemFeedback = { name: 'Feedback', path: '/feedback-sistema/meus', icon: 'feedback' };
 
   const menuProfessor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
@@ -121,7 +120,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
-    ...itensFeedback,
+    itemFeedback,
   ];
 
   const menuGestor = [
@@ -133,7 +132,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
-    ...itensFeedback,
+    itemFeedback,
   ];
 
   const menuSecretaria = [
@@ -148,14 +147,14 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
-    ...itensFeedback,
+    itemFeedback,
   ];
 
   const menuDiretora = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
-    ...itensFeedback,
+    itemFeedback,
   ];
 
   // Etapa inicial do perfil Auxiliar: só a lista dos alunos que acompanha — sem módulos
@@ -163,7 +162,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const menuAuxiliar = [
     { name: 'Meus alunos', path: '/meus-alunos', icon: 'pessoas' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
-    ...itensFeedback,
+    itemFeedback,
   ];
 
   // Suporte do Sistema (Feedback do Sistema) — fora da hierarquia pedagógica, só a própria caixa
@@ -202,6 +201,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
       </Link>
     );
   };
+
 
   return (
     <>
