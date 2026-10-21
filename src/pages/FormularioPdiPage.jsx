@@ -9,6 +9,7 @@ import { inputClass } from '../utils/display';
 import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
 import { canViewAplicacoesPdi, isSecretaria } from '../utils/roles';
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
+import { getTrimestreAtual, trimestres } from '../utils/trimestres';
 
 const SOLICITADO_POR_OPTIONS = [
   { value: 'secretaria', label: 'Secretaria' },
@@ -62,7 +63,7 @@ export const FormularioPdiPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
-    disciplinasReais, escolas,
+    disciplinasReais, escolas, trimestrePeriods,
     pdiModelosReais, pdiModelosReaisLoading, pdiModelosReaisError, loadPdiModelosReais,
     createPdiModeloReal, inativarPdiModelo, reativarPdiModeloReal,
     createPdiModeloPerguntaReal, updatePdiModeloPerguntaReal, inativarPdiPergunta, reativarPdiPergunta, reorderPdiModeloPerguntaReal, excluirPdiModelo,
@@ -70,6 +71,12 @@ export const FormularioPdiPage = () => {
     pdiAplicacoesReais, pdiAplicacoesReaisLoading, pdiAplicacoesReaisError, loadPdiAplicacoesReais,
     createPdiAplicacaoReal, updatePdiAplicacaoReal, removePdiAplicacaoReal, listarReaberturasPdiAplicacao, criarReaberturaPdiAplicacao,
   } = useData();
+
+  // Pergunta nova criada aqui sempre vale só pro trimestre vigente hoje (nunca um seletor manual,
+  // decisão explícita do usuário) — calculado a partir do mesmo calendário de Configurações >
+  // Trimestres que o backend usa pra filtrar perguntas por Aplicação.
+  const trimestreVigenteLabel = getTrimestreAtual(trimestrePeriods, hojeISO());
+  const trimestreVigenteNumero = trimestreVigenteLabel ? trimestres.indexOf(trimestreVigenteLabel) + 1 : null;
 
   const souSecretaria = isSecretaria(user);
   // Gerenciar (criar/editar/reabrir) Aplicações é exclusivo da Secretaria — Gestor e Diretora só
@@ -419,7 +426,7 @@ export const FormularioPdiPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={modeloSelecionado.status === 'ativa' ? 'green' : 'gray'}>{modeloSelecionado.status === 'ativa' ? 'Ativo' : 'Inativo'}</Badge>
-                    <Button size="sm" onClick={() => setPerguntaForm(blankPerguntaPdi())}>+ Adicionar item</Button>
+                    <Button size="sm" onClick={() => setPerguntaForm(blankPerguntaPdi({ trimestre: trimestreVigenteNumero }))}>+ Adicionar item</Button>
                     <ActionMenu items={[
                       modeloSelecionado.status === 'ativa'
                         ? { label: 'Excluir modelo', variant: 'danger', onClick: () => setExcluindoModelo(modeloSelecionado) }
@@ -671,6 +678,8 @@ export const FormularioPdiPage = () => {
             onSubmit={salvarPergunta}
             onClose={() => setPerguntaForm(null)}
             saving={salvandoPergunta}
+            ocultarTrimestre
+            trimestreInfo={trimestreVigenteLabel ? `Esta pergunta aparecerá apenas no ${trimestreVigenteLabel} (período vigente hoje).` : 'Nenhum trimestre vigente configurado hoje — esta pergunta aparecerá em qualquer Aplicação.'}
           />
         )}
 

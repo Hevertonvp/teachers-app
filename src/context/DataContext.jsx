@@ -143,8 +143,8 @@ export const DataProvider = ({ children }) => {
   const [pdiAplicacoesReaisLoading, setPdiAplicacoesReaisLoading] = useState(true);
   const [pdiAplicacoesReaisError, setPdiAplicacoesReaisError] = useState(null);
   const [professores, setProfessores] = useState(professoresIniciais);
-  const [gestores, setGestores] = useState(gestoresIniciais);
-  const [diretores, setDiretores] = useState(diretoresIniciais);
+  const [gestores] = useState(gestoresIniciais);
+  const [diretores] = useState(diretoresIniciais);
   // Sem CRUD de Auxiliares nesta etapa (só o vínculo com aluno é gerenciável) — lista fixa.
   const [auxiliares] = useState(auxiliaresIniciais);
   // Mensagens real (Neon) — a lista de conversas em si não vive aqui (cada tela busca sob
@@ -1293,10 +1293,6 @@ export const DataProvider = ({ children }) => {
     desvincularEscola,
     createProfessor: createItem(setProfessores),
     updateProfessor: updateItem(setProfessores),
-    createGestor: createItem(setGestores),
-    updateGestor: updateItem(setGestores),
-    createDiretor: createItem(setDiretores),
-    updateDiretor: updateItem(setDiretores),
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

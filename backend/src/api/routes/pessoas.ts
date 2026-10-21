@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
@@ -24,6 +24,14 @@ export async function escolasPermitidas(actor: Actor): Promise<number[] | null> 
 export function exigirSecretariaOuDiretora(actor: Actor) {
   if (actor.perfil !== 'SECRETARIA' && actor.perfil !== 'DIRETORA') {
     throw new ForbiddenError('Você não tem permissão para gerenciar professores.');
+  }
+}
+
+// Gestor, Diretora e Auxiliar são administrados só pela Secretaria (mais restrito que Professor,
+// que também aceita Diretora) — decisão explícita do usuário.
+function exigirSecretaria(actor: Actor) {
+  if (actor.perfil !== 'SECRETARIA') {
+    throw new ForbiddenError('Apenas a Secretaria pode gerenciar esta conta.');
   }
 }
 
@@ -214,19 +222,21 @@ pessoasRouter.post('/professores/:id/reativar', async (req, res) => {
 });
 
 // Lista de Auxiliares pra popular o seletor de "vincular Auxiliar à turma/escola" (ver
-// auxiliarTurma.ts e vinculosEscolares.ts). NÃO é filtrada pelo escopo de quem pergunta — ao
-// contrário de Professor (que tem um fluxo de "cadastrar por e-mail" para o primeiro vínculo),
-// um Auxiliar já existente sem vínculo escolar nenhum ainda precisa aparecer aqui pra alguém
-// poder dar a ele o primeiro VinculoEscolar. O que É escopado é a lista de `escolas` de cada um
-// (nunca mostra vínculos de escolas fora do escopo de quem está vendo, mesma regra de
-// privacidade já aplicada a /professores).
+// auxiliarTurma.ts e vinculosEscolares.ts). Escopada igual a /professores desde que o cadastro
+// real de Auxiliar existe (POST /auxiliares abaixo sempre cria com pelo menos 1 VinculoEscolar,
+// então não há mais o caso de "auxiliar sem vínculo nenhum" que justificava a lista irrestrita
+// de antes).
 pessoasRouter.get('/auxiliares', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretariaOuDiretora(actor);
   const permitidas = await escolasPermitidas(actor);
 
   const auxiliares = await prisma.pessoa.findMany({
-    where: { perfil: 'AUXILIAR', status: 'ATIVO' },
+    where: {
+      perfil: 'AUXILIAR',
+      status: 'ATIVO',
+      ...(permitidas ? { vinculosEscolares: { some: { status: 'ATIVO', escolaId: { in: permitidas } } } } : {}),
+    },
     orderBy: { nome: 'asc' },
     include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } } },
   });
@@ -238,3 +248,198 @@ pessoasRouter.get('/auxiliares', async (req, res) => {
       .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome })),
   })));
 });
+
+// --- Gestor / Diretora / Auxiliar: CRUD real (sempre Secretaria) -----------------------------
+//
+// Mesmo padrão de criar-ou-vincular já usado em /professores (ver linhas acima), só parametrizado
+// por perfil — nunca chama nem altera o código do Professor. Diretora tem uma regra adicional:
+// é limitada a exatamente 1 escola (cargo real, uma diretora por escola), então uma Diretora já
+// existente que já tenha uma escola ativa não pode ser vinculada a uma segunda — vira conflito,
+// nunca um vínculo extra silencioso.
+type PerfilGerenciavel = 'GESTOR' | 'DIRETORA' | 'AUXILIAR';
+
+async function criarOuVincularPessoaComLogin(
+  actor: Actor,
+  perfil: PerfilGerenciavel,
+  { nome, email, escolaIds }: { nome?: string; email: string; escolaIds: number[] },
+) {
+  const emailNormalizado = email.toLowerCase();
+  const existente = await prisma.pessoa.findUnique({ where: { email: emailNormalizado } });
+
+  if (existente && existente.perfil !== perfil) {
+    throw new ConflictError('Já existe uma conta com este e-mail, de outro perfil. Procure a Secretaria.');
+  }
+
+  if (existente) {
+    const vinculosAtivos = await prisma.vinculoEscolar.findMany({
+      where: { pessoaId: existente.id, status: 'ATIVO' },
+      select: { escolaId: true },
+    });
+    if (perfil === 'DIRETORA' && vinculosAtivos.length > 0) {
+      throw new ConflictError('Esta diretora já administra outra escola. Encerre o vínculo atual antes de vincular a uma nova.');
+    }
+    const jaVinculadas = new Set(vinculosAtivos.map((v) => v.escolaId));
+    const novasEscolas = escolaIds.filter((id) => !jaVinculadas.has(id));
+
+    if (novasEscolas.length === 0) {
+      return { status: 200 as const, body: { pessoa: formatarPessoa(existente), senhaTemporaria: null, mensagem: 'Esta pessoa já está vinculada a todas as escolas selecionadas.' } };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (const escolaId of novasEscolas) {
+        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+        await tx.pessoaEvento.create({ data: { pessoaId: existente.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
+      }
+    });
+
+    return { status: 201 as const, body: { pessoa: formatarPessoa(existente), senhaTemporaria: null, mensagem: 'Pessoa já existente vinculada com sucesso.' } };
+  }
+
+  if (!nome) throw new ValidationError('Nome é obrigatório para cadastrar uma nova pessoa.');
+
+  const senhaTemporariaTexto = gerarSenhaTemporaria();
+  const senhaHash = await bcrypt.hash(senhaTemporariaTexto, 10);
+  const senhaTemporariaExpiraEm = calcularExpiracaoSenhaTemporaria();
+
+  const criado = await prisma.$transaction(async (tx) => {
+    const pessoa = await tx.pessoa.create({
+      data: {
+        nome, email: emailNormalizado, perfil, status: 'ATIVO',
+        senhaHash, senhaTemporaria: true, senhaTemporariaExpiraEm,
+        createdBy: String(actor.id),
+      },
+    });
+    await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'CRIACAO', autorId: actor.id } });
+    for (const escolaId of escolaIds) {
+      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+      await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
+    }
+    return pessoa;
+  });
+
+  return { status: 201 as const, body: { pessoa: formatarPessoa(criado), senhaTemporaria: senhaTemporariaTexto } };
+}
+
+async function buscarPessoaNoEscopo(perfil: PerfilGerenciavel, id: number) {
+  const pessoa = await prisma.pessoa.findUnique({ where: { id } });
+  if (!pessoa || pessoa.perfil !== perfil) throw new NotFoundError('Pessoa não encontrada.');
+  return pessoa;
+}
+
+async function mudarStatusPessoa(actor: Actor, perfil: PerfilGerenciavel, id: number, status: 'ATIVO' | 'INATIVO') {
+  await buscarPessoaNoEscopo(perfil, id);
+  await prisma.$transaction(async (tx) => {
+    await tx.pessoa.update({
+      where: { id },
+      data: status === 'INATIVO' ? { status, authVersion: { increment: 1 } } : { status },
+    });
+    await tx.pessoaEvento.create({ data: { pessoaId: id, tipo: status === 'INATIVO' ? 'INATIVACAO' : 'REATIVACAO', autorId: actor.id } });
+  });
+}
+
+async function resetarSenhaPessoa(actor: Actor, perfil: PerfilGerenciavel, id: number) {
+  await buscarPessoaNoEscopo(perfil, id);
+  const senhaTemporariaTexto = gerarSenhaTemporaria();
+  const senhaHash = await bcrypt.hash(senhaTemporariaTexto, 10);
+  const senhaTemporariaExpiraEm = calcularExpiracaoSenhaTemporaria();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.pessoa.update({
+      where: { id },
+      data: { senhaHash, senhaTemporaria: true, senhaTemporariaExpiraEm, authVersion: { increment: 1 } },
+    });
+    await tx.pessoaEvento.create({ data: { pessoaId: id, tipo: 'RESET_SENHA', autorId: actor.id } });
+  });
+
+  return senhaTemporariaTexto;
+}
+
+function listarPessoasPorPerfil(perfil: PerfilGerenciavel) {
+  return async (_req: Request, res: Response) => {
+    const actor = res.locals.pessoa as Actor;
+    exigirSecretaria(actor);
+    const permitidas = await escolasPermitidas(actor);
+
+    const pessoas = await prisma.pessoa.findMany({
+      where: { perfil },
+      orderBy: { nome: 'asc' },
+      include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } } },
+    });
+
+    res.json(pessoas.map((pessoa) => ({
+      ...formatarPessoa(pessoa),
+      senhaTemporaria: pessoa.senhaTemporaria,
+      escolas: pessoa.vinculosEscolares
+        .filter((vinculo) => !permitidas || permitidas.includes(vinculo.escolaId))
+        .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome })),
+    })));
+  };
+}
+
+const criarOuVincularGestorSchema = z.object({
+  nome: z.string().trim().min(1).optional(),
+  email: z.string().trim().email('E-mail inválido.'),
+  escolaIds: z.array(z.number().int().positive()).min(1, 'Selecione ao menos uma escola.'),
+});
+
+const criarOuVincularDiretoraSchema = z.object({
+  nome: z.string().trim().min(1).optional(),
+  email: z.string().trim().email('E-mail inválido.'),
+  escolaIds: z.array(z.number().int().positive()).length(1, 'Diretora deve ter exatamente uma escola.'),
+});
+
+const criarOuVincularAuxiliarSchema = z.object({
+  nome: z.string().trim().min(1).optional(),
+  email: z.string().trim().email('E-mail inválido.'),
+  escolaIds: z.array(z.number().int().positive()).min(1, 'Selecione ao menos uma escola.'),
+});
+
+pessoasRouter.get('/gestores', listarPessoasPorPerfil('GESTOR'));
+pessoasRouter.get('/diretoras', listarPessoasPorPerfil('DIRETORA'));
+
+pessoasRouter.post('/gestores', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const dados = criarOuVincularGestorSchema.parse(req.body);
+  const resultado = await criarOuVincularPessoaComLogin(actor, 'GESTOR', dados);
+  res.status(resultado.status).json(resultado.body);
+});
+
+pessoasRouter.post('/diretoras', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const dados = criarOuVincularDiretoraSchema.parse(req.body);
+  const resultado = await criarOuVincularPessoaComLogin(actor, 'DIRETORA', dados);
+  res.status(resultado.status).json(resultado.body);
+});
+
+pessoasRouter.post('/auxiliares', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const dados = criarOuVincularAuxiliarSchema.parse(req.body);
+  const resultado = await criarOuVincularPessoaComLogin(actor, 'AUXILIAR', dados);
+  res.status(resultado.status).json(resultado.body);
+});
+
+for (const [caminho, perfil] of [['gestores', 'GESTOR'], ['diretoras', 'DIRETORA'], ['auxiliares', 'AUXILIAR']] as const) {
+  pessoasRouter.post(`/${caminho}/:id/resetar-senha`, async (req, res) => {
+    const actor = res.locals.pessoa as Actor;
+    exigirSecretaria(actor);
+    const senhaTemporaria = await resetarSenhaPessoa(actor, perfil, Number(req.params.id));
+    res.json({ senhaTemporaria });
+  });
+
+  pessoasRouter.post(`/${caminho}/:id/inativar`, async (req, res) => {
+    const actor = res.locals.pessoa as Actor;
+    exigirSecretaria(actor);
+    await mudarStatusPessoa(actor, perfil, Number(req.params.id), 'INATIVO');
+    res.json({ ok: true });
+  });
+
+  pessoasRouter.post(`/${caminho}/:id/reativar`, async (req, res) => {
+    const actor = res.locals.pessoa as Actor;
+    exigirSecretaria(actor);
+    await mudarStatusPessoa(actor, perfil, Number(req.params.id), 'ATIVO');
+    res.json({ ok: true });
+  });
+}

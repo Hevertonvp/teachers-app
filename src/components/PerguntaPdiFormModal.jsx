@@ -23,7 +23,7 @@ export const trimestreLabel = (trimestre) => (trimestre ? `Só no ${trimestre}º
 
 export const blankPerguntaPdi = (overrides = {}) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, status: 'ativa', trimestre: null, ...overrides });
 
-export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose, saving }) => {
+export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose, saving, ocultarTrimestre = false, trimestreInfo }) => {
   const changeTipoResposta = (tipoResposta) => {
     onChange({
       ...value,
@@ -105,14 +105,18 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
 
         <FormField label="Seção (agrupamento no formulário)"><input className={inputClass} value={value.secao || ''} onChange={event => onChange({ ...value, secao: event.target.value })} placeholder="Ex.: Registro pedagógico" /></FormField>
 
-        <FormField label="Exibir em">
-          <select className={inputClass} value={value.trimestre ?? ''} onChange={event => onChange({ ...value, trimestre: event.target.value ? Number(event.target.value) : null })}>
-            <option value="">Todos os trimestres</option>
-            <option value="1">Só no 1º trimestre</option>
-            <option value="2">Só no 2º trimestre</option>
-            <option value="3">Só no 3º trimestre</option>
-          </select>
-        </FormField>
+        {ocultarTrimestre ? (
+          trimestreInfo && <p className="text-sm text-slate-500">{trimestreInfo}</p>
+        ) : (
+          <FormField label="Exibir em">
+            <select className={inputClass} value={value.trimestre ?? ''} onChange={event => onChange({ ...value, trimestre: event.target.value ? Number(event.target.value) : null })}>
+              <option value="">Todos os trimestres</option>
+              <option value="1">Só no 1º trimestre</option>
+              <option value="2">Só no 2º trimestre</option>
+              <option value="3">Só no 3º trimestre</option>
+            </select>
+          </FormField>
+        )}
 
         <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></div>
       </form>

@@ -12,6 +12,7 @@ import {
 } from '../utils/turmas';
 
 const ANO_LETIVO_PADRAO = 2026;
+const TURMAS_POR_PAGINA = 15;
 
 const blankTurma = (escolaId) => ({
   escolaId: escolaId ?? '',
@@ -42,6 +43,7 @@ export const GestaoTurmas = () => {
   const [inativandoTurma, setInativandoTurma] = useState(null);
   const [reativandoTurma, setReativandoTurma] = useState(null);
   const [message, setMessage] = useState('');
+  const [paginaTurmas, setPaginaTurmas] = useState(1);
 
   if (!canManageTurmas(user)) {
     return <Navigate to="/dashboard" replace />;
@@ -56,6 +58,10 @@ export const GestaoTurmas = () => {
     .filter(turma => filtroEtapa === 'todas' || turma.etapa === filtroEtapa)
     .filter(turma => filtroStatus === 'todas' || turma.status === filtroStatus)
     .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+  const totalPaginasTurmas = Math.max(1, Math.ceil(turmasFiltradas.length / TURMAS_POR_PAGINA));
+  const paginaAtualTurmas = Math.min(paginaTurmas, totalPaginasTurmas);
+  const turmasPaginadas = turmasFiltradas.slice((paginaAtualTurmas - 1) * TURMAS_POR_PAGINA, paginaAtualTurmas * TURMAS_POR_PAGINA);
 
   const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(blankTurma(escolasOrdenadas[0]?.id)); };
   // Turmas legadas sem turno/identificador definidos (ver mockData.js) recebem aqui um valor de
@@ -138,25 +144,25 @@ export const GestaoTurmas = () => {
         <Card>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <FormField label="Escola">
-              <select className={inputClass} value={filtroEscolaId} onChange={event => setFiltroEscolaId(event.target.value)}>
+              <select className={inputClass} value={filtroEscolaId} onChange={event => { setFiltroEscolaId(event.target.value); setPaginaTurmas(1); }}>
                 <option value="todas">Todas as escolas</option>
                 {escolasOrdenadas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
               </select>
             </FormField>
             <FormField label="Ano letivo">
-              <select className={inputClass} value={filtroAnoLetivo} onChange={event => setFiltroAnoLetivo(event.target.value)}>
+              <select className={inputClass} value={filtroAnoLetivo} onChange={event => { setFiltroAnoLetivo(event.target.value); setPaginaTurmas(1); }}>
                 <option value="todos">Todos</option>
                 {anosLetivos.map(ano => <option key={ano} value={ano}>{ano}</option>)}
               </select>
             </FormField>
             <FormField label="Etapa">
-              <select className={inputClass} value={filtroEtapa} onChange={event => setFiltroEtapa(event.target.value)}>
+              <select className={inputClass} value={filtroEtapa} onChange={event => { setFiltroEtapa(event.target.value); setPaginaTurmas(1); }}>
                 <option value="todas">Todas</option>
                 {ETAPAS.map(etapa => <option key={etapa.value} value={etapa.value}>{etapa.label}</option>)}
               </select>
             </FormField>
             <FormField label="Status">
-              <select className={inputClass} value={filtroStatus} onChange={event => setFiltroStatus(event.target.value)}>
+              <select className={inputClass} value={filtroStatus} onChange={event => { setFiltroStatus(event.target.value); setPaginaTurmas(1); }}>
                 <option value="ativa">Ativas</option>
                 <option value="inativa">Inativas</option>
                 <option value="todas">Todas</option>
@@ -180,7 +186,7 @@ export const GestaoTurmas = () => {
         ) : (
           <Card className="p-0">
             <div className="divide-y divide-slate-200">
-              {turmasFiltradas.map(turma => {
+              {turmasPaginadas.map(turma => {
                 const vinculos = vinculosDaTurma(turma.id, { turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos });
                 return (
                   <div key={turma.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
@@ -204,6 +210,13 @@ export const GestaoTurmas = () => {
                 );
               })}
             </div>
+            {turmasFiltradas.length > TURMAS_POR_PAGINA && (
+              <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm">
+                <Button size="sm" variant="outline" disabled={paginaAtualTurmas === 1} onClick={() => setPaginaTurmas(p => Math.max(1, p - 1))}>Anterior</Button>
+                <span className="font-semibold text-slate-600">Página {paginaAtualTurmas} de {totalPaginasTurmas}</span>
+                <Button size="sm" variant="outline" disabled={paginaAtualTurmas === totalPaginasTurmas} onClick={() => setPaginaTurmas(p => Math.min(totalPaginasTurmas, p + 1))}>Próxima</Button>
+              </div>
+            )}
           </Card>
         )}
 

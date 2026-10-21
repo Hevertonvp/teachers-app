@@ -44,7 +44,6 @@ export const PdiPage = () => {
   const [form, setForm] = useState(null);
   const [iniciarAnamneseAoCriar, setIniciarAnamneseAoCriar] = useState(false);
   const [salvando, setSalvando] = useState(false);
-  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState(null);
   const [archiving, setArchiving] = useState(null);
   const [reactivating, setReactivating] = useState(null);
@@ -160,9 +159,6 @@ export const PdiPage = () => {
     setMessage(resultado.ok ? 'Aluno reativado com sucesso.' : resultado.error);
   };
 
-  const paginatedAlunos = alunos.slice((page - 1) * 10, page * 10);
-  const totalPages = Math.max(1, Math.ceil(alunos.length / 10));
-
   const columns = [
     { key: 'nome', header: 'Aluno', render: row => <button className="font-semibold text-teal-700 hover:underline" onClick={event => { event.stopPropagation(); navigate(`/pdi/alunos/${row.id}`); }}>{row.nome}</button> },
     { key: 'turma', header: 'Turma', render: row => turmaName(turmas, row.turmaId) },
@@ -218,27 +214,16 @@ export const PdiPage = () => {
 
         <Card>
           <div className="grid gap-3 md:grid-cols-3">
-            <FormField label="Busca por nome"><input className={inputClass} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar aluno" /></FormField>
-            <FormField label="Turma"><select className={inputClass} value={turma} onChange={event => { setTurma(event.target.value); setPage(1); }}><option value="todos">Todas</option>{turmasDaEscola.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
-            <FormField label="Ativos e arquivados"><select className={inputClass} value={status} onChange={event => { setStatus(event.target.value); setPage(1); }}><option value="ativo">Ativos</option><option value="arquivado">Arquivados</option><option value="todos">Todos</option></select></FormField>
+            <FormField label="Busca por nome"><input className={inputClass} value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar aluno" /></FormField>
+            <FormField label="Turma"><select className={inputClass} value={turma} onChange={event => setTurma(event.target.value)}><option value="todos">Todas</option>{turmasDaEscola.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
+            <FormField label="Ativos e arquivados"><select className={inputClass} value={status} onChange={event => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="arquivado">Arquivados</option><option value="todos">Todos</option></select></FormField>
           </div>
         </Card>
 
         {pdiAlunosReaisLoading ? (
           <Card><p className="text-center text-slate-500">Carregando alunos...</p></Card>
         ) : (
-          <>
-            <DataTable columns={columns} rows={paginatedAlunos} onRowClick={row => navigate(`/pdi/alunos/${row.id}`)} emptyMessage="Nenhum aluno encontrado" />
-
-            <div className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 sm:flex-row sm:items-center">
-              <span>Exibindo {paginatedAlunos.length} de {alunos.length} alunos</span>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(prev => Math.max(1, prev - 1))}>Anterior</Button>
-                <span className="font-semibold text-slate-800">Página {page} de {totalPages}</span>
-                <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>Próxima</Button>
-              </div>
-            </div>
-          </>
+          <DataTable columns={columns} rows={alunos} onRowClick={row => navigate(`/pdi/alunos/${row.id}`)} emptyMessage="Nenhum aluno encontrado" />
         )}
 
         {form && (

@@ -102,26 +102,46 @@ export const ProgressRing = ({ value, label }) => {
   );
 };
 
-export const DataTable = ({ columns, rows, emptyMessage = 'Nenhum registro encontrado', onRowClick }) => (
-  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-    <div className="overflow-hidden">
-      <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-        <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          <tr>{columns.map(column => <th key={column.key} className="px-4 py-3">{column.header}</th>)}</tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.length === 0 ? (
-            <tr><td colSpan={columns.length} className="px-4 py-10 text-center text-slate-500">{emptyMessage}</td></tr>
-          ) : rows.map(row => (
-            <tr key={row.id} onClick={() => onRowClick?.(row)} className={onRowClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50'}>
-              {columns.map(column => <td key={column.key} data-label={column.header} className="px-4 py-3 align-top text-slate-700">{column.render ? column.render(row) : row[column.key]}</td>)}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+// Paginação embutida (15 por página por padrão) — qualquer tela que use DataTable ganha isso de
+// graça, sem precisar implementar nada própria. A página volta pra 1 sempre que a quantidade de
+// linhas muda (filtro/busca aplicados por quem chama) — nunca fica "presa" numa página vazia.
+export const DataTable = ({ columns, rows, emptyMessage = 'Nenhum registro encontrado', onRowClick, pageSize = 15 }) => {
+  const [pagina, setPagina] = useState(1);
+  const totalPaginas = Math.max(1, Math.ceil(rows.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+
+  useEffect(() => { setPagina(1); }, [rows.length, pageSize]);
+
+  const linhasExibidas = rows.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+          <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr>{columns.map(column => <th key={column.key} className="px-4 py-3">{column.header}</th>)}</tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.length === 0 ? (
+              <tr><td colSpan={columns.length} className="px-4 py-10 text-center text-slate-500">{emptyMessage}</td></tr>
+            ) : linhasExibidas.map(row => (
+              <tr key={row.id} onClick={() => onRowClick?.(row)} className={onRowClick ? 'cursor-pointer hover:bg-slate-50' : 'hover:bg-slate-50'}>
+                {columns.map(column => <td key={column.key} data-label={column.header} className="px-4 py-3 align-top text-slate-700">{column.render ? column.render(row) : row[column.key]}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows.length > pageSize && (
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm">
+          <Button size="sm" variant="outline" disabled={paginaAtual === 1} onClick={() => setPagina(p => Math.max(1, p - 1))}>Anterior</Button>
+          <span className="font-semibold text-slate-600">Página {paginaAtual} de {totalPaginas}</span>
+          <Button size="sm" variant="outline" disabled={paginaAtual === totalPaginas} onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}>Próxima</Button>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // Fecha clicando fora do cartão (no fundo escurecido) ou com Esc, além do botão × — sem isso, um
 // modal sem essas saídas óbvias é facilmente percebido como "travado" pelo usuário.
