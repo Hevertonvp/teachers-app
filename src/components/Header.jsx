@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext';
 import { useTheme } from '../context/ThemeContext';
 import { isProfessor } from '../utils/roles';
 import { EscolaSelector } from './EscolaSelector';
-import { ProfessorName } from './ProfessorName';
+import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { NotificacoesBell } from './NotificacoesBell';
 import { InstalarAppModal } from './InstalarAppModal';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,28 @@ const TIPO_LABEL = {
   diretora: 'Diretor(a)',
   secretaria: 'Secretaria',
   auxiliar: 'Auxiliar',
+};
+
+// Nome + disciplinas do Professor logado a partir dos vínculos REAIS (ProfessorTurmaDisciplina
+// ativos) — o ProfessorName genérico lê `professor.disciplinas` do mock antigo, que nunca existe
+// para um Professor cadastrado de verdade (aparecia sempre "Disciplina não informada").
+const ProfessorLogado = ({ user }) => {
+  const [disciplinas, setDisciplinas] = useState(null);
+  useEffect(() => {
+    listarVinculosProfessorTurmaDisciplina()
+      .then(vinculos => setDisciplinas([...new Set(vinculos.filter(v => v.status === 'ATIVO').map(v => v.disciplinaNome))].sort((a, b) => a.localeCompare(b, 'pt-BR'))))
+      .catch(() => setDisciplinas([]));
+  }, [user?.id]);
+  return (
+    <span className="inline-flex flex-col leading-tight">
+      <span className="text-sm font-semibold text-slate-800">{user?.nome}</span>
+      {disciplinas !== null && (
+        <span className="max-w-64 truncate text-[10px] font-medium uppercase tracking-wide text-slate-400" title={disciplinas.join(' · ')}>
+          {disciplinas.length ? `Prof(a). ${disciplinas.join(' · ')}` : 'Nenhuma disciplina vinculada'}
+        </span>
+      )}
+    </span>
+  );
 };
 
 export const Header = ({ onMenuClick }) => {
@@ -102,7 +124,7 @@ export const Header = ({ onMenuClick }) => {
           </button>
           <div className="hidden text-right sm:block">
             {isProfessor(user) ? (
-              <ProfessorName professor={user} nameClassName="text-sm font-semibold text-slate-800" disciplineClassName="text-[10px] font-medium uppercase tracking-wide text-slate-400" />
+              <ProfessorLogado user={user} />
             ) : (
               <p className="text-sm font-semibold text-slate-800">{user?.nome}</p>
             )}
