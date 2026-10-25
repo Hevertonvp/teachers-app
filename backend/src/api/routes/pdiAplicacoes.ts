@@ -525,9 +525,13 @@ pdiAplicacoesRouter.delete('/:id', async (req, res) => {
     return res.json({ removida: true, modo: 'ja_estava_inativa', aplicacao: formatarAplicacao(aplicacao) });
   }
 
-  const algumaResposta = await prisma.respostaPdi.findFirst({ where: { ficha: { aplicacaoId: id } } });
+  // "Já foi preenchida" inclui resposta do bloco comum (RespostaPadraoPdi), não só de Ficha.
+  const [algumaResposta, algumaRespostaPadrao] = await Promise.all([
+    prisma.respostaPdi.findFirst({ where: { ficha: { aplicacaoId: id } } }),
+    prisma.respostaPadraoPdi.findFirst({ where: { bloco: { aplicacaoId: id } } }),
+  ]);
 
-  if (algumaResposta) {
+  if (algumaResposta || algumaRespostaPadrao) {
     const inativada = await prisma.aplicacaoPdi.update({
       where: { id },
       data: { status: 'INATIVA', updatedBy: String(actor.id) },
@@ -538,6 +542,12 @@ pdiAplicacoesRouter.delete('/:id', async (req, res) => {
 
   await prisma.$transaction(async (tx) => {
     await tx.fichaPdi.deleteMany({ where: { aplicacaoId: id } });
+    // Bloco comum: blocos sem nenhuma resposta (nunca há correção/histórico sem resposta) e o
+    // snapshot das perguntas padrão — sem isto a FK Restrict impedia remover qualquer Aplicação
+    // criada depois do bloco compartilhado.
+    await tx.blocoRespostasPadraoPdi.deleteMany({ where: { aplicacaoId: id } });
+    await tx.aplicacaoModeloPerguntaPadraoPdi.deleteMany({ where: { aplicacaoModelo: { aplicacaoId: id } } });
+    await tx.aplicacaoPerguntaPadraoPdi.deleteMany({ where: { aplicacaoId: id } });
     await tx.aplicacaoPerguntaPdi.deleteMany({ where: { aplicacaoModelo: { aplicacaoId: id } } });
     await tx.aplicacaoModeloPdi.deleteMany({ where: { aplicacaoId: id } });
     await tx.reaberturaPdi.deleteMany({ where: { aplicacaoId: id } });
