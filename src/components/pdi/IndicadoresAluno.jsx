@@ -105,9 +105,9 @@ const VisaoGeral = ({ dados, categorias }) => {
         </Kpi>
       </div>
 
-      <Bloco titulo="Perguntas comuns" descricao={`Média entre os professores do aluno · ${escalaMax} = mais autonomia, 1 = mais necessidade de suporte`}>
+      <Bloco titulo="Perguntas comuns" descricao={`Média dos professores · ${escalaMax} = mais autonomia, 1 = mais suporte`}>
         {!temComuns ? (
-          <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Ainda não há respostas às perguntas comuns para este aluno.</p>
+          <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Sem respostas ainda.</p>
         ) : (
           <>
             <Figura
@@ -116,7 +116,7 @@ const VisaoGeral = ({ dados, categorias }) => {
             >
               <GraficoLinha categorias={categorias} series={series} dominio={{ min: 1, max: escalaMax }} ticks={ticks} formatarValor={v => formatarNumero(v, 2)} rotulo="Evolução das perguntas comuns" />
             </Figura>
-            {categorias.length === 1 && <p className="mt-2 text-xs text-slate-500">A linha de evolução aparece a partir do segundo período registrado.</p>}
+            {categorias.length === 1 && <p className="mt-2 text-xs text-slate-500">A evolução aparece a partir do 2º período.</p>}
             <ChavePerguntas perguntas={perguntasComuns.slice(0, 3)} cores={cores} />
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {series.map((s, i) => {
@@ -134,7 +134,7 @@ const VisaoGeral = ({ dados, categorias }) => {
         )}
       </Bloco>
 
-      <Bloco titulo="Notas por disciplina" descricao="Nota registrada no período mais recente de cada disciplina">
+      <Bloco titulo="Notas por disciplina" descricao="Último período">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
@@ -206,9 +206,9 @@ const Disciplina = ({ dados, disciplina, categoriasTodas }) => {
         </Kpi>
       </div>
 
-      <Bloco titulo="Nota" descricao={ultimo.perguntaNota || 'Nota registrada pelo professor em cada período'}>
+      <Bloco titulo="Nota" descricao={ultimo.perguntaNota || 'Por período'}>
         {notasValidas.length === 0 ? (
-          <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Nenhuma nota registrada ainda.</p>
+          <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Sem notas ainda.</p>
         ) : (
           <Figura tabela={<TabelaDados categorias={categorias} series={[{ id: 'nota', nome: 'Nota', valores: notas }]} />}>
             <GraficoLinha
@@ -223,9 +223,9 @@ const Disciplina = ({ dados, disciplina, categoriasTodas }) => {
       </Bloco>
 
       {seriesCrmg.length > 0 && (
-        <Bloco titulo="Habilidades do CRMG" descricao="Quantidade de habilidades marcadas pelo professor em cada período">
+        <Bloco titulo="Habilidades do CRMG" descricao="Habilidades marcadas por período">
           {!temCrmg ? (
-            <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Nenhuma habilidade registrada ainda.</p>
+            <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Sem habilidades ainda.</p>
           ) : (
             <Figura
               legenda={seriesCrmg.length > 1 ? seriesCrmg.map(s => ({ id: s.id, nome: s.nome, cor: s.cor })) : null}
@@ -239,7 +239,7 @@ const Disciplina = ({ dados, disciplina, categoriasTodas }) => {
       )}
 
       {perguntasComuns.length > 0 && (
-        <Bloco titulo="Perguntas comuns — professor desta disciplina" descricao={`Resposta do professor responsável · ${escalaMax} = mais autonomia, 1 = mais suporte`}>
+        <Bloco titulo="Perguntas comuns" descricao={`${escalaMax} = mais autonomia, 1 = mais suporte`}>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
@@ -274,7 +274,7 @@ const Disciplina = ({ dados, disciplina, categoriasTodas }) => {
         </Bloco>
       )}
 
-      <Bloco titulo="Registros do professor" descricao="Respostas escritas, incluindo a pergunta do trimestre">
+      <Bloco titulo="Registros">
         <div className="space-y-2">
           {[...pontos].reverse().map((ponto, i) => {
             const categoria = categorias[categorias.length - 1 - i];
@@ -327,7 +327,6 @@ export const IndicadoresAluno = ({ alunoId }) => {
     <div>
       <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Desenvolvimento do aluno</p>
       <h3 className="mt-1 text-xl font-bold text-slate-950">Indicadores do PDI</h3>
-      <p className="mt-1 text-sm text-slate-500">A partir das Fichas PDI registradas pelos professores em cada período.</p>
     </div>
   );
 
@@ -349,7 +348,7 @@ export const IndicadoresAluno = ({ alunoId }) => {
         {cabecalho}
         <div className="mt-5 rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-center">
           <p className="font-semibold text-slate-800">Ainda não há Fichas PDI para este aluno</p>
-          <p className="mt-1 text-sm text-slate-500">Os indicadores aparecem assim que os professores começarem a preencher.</p>
+          <p className="mt-1 text-sm text-slate-500">Aparecem quando os professores preencherem.</p>
         </div>
       </div>
     );

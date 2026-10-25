@@ -474,9 +474,9 @@ export const FormularioPdiPage = () => {
                         {pergunta.padraoOriginalId && (
                           <p className="mt-1 text-xs text-slate-500">
                             {padraoNaoCompartilhada(pergunta)
-                              ? 'Vem da pergunta padrão, mas cada disciplina tem a sua própria resposta.'
-                              : 'Respondida uma vez e reaproveitada em todas as disciplinas do mesmo Professor.'}
-                            {' '}Para alterar o texto/opções, edite a pergunta padrão em Configurações.
+                              ? 'Cada disciplina responde.'
+                              : 'Uma resposta para todas as disciplinas.'}
+                            {' '}Edite em Configurações.
                           </p>
                         )}
                       </div>

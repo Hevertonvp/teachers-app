@@ -82,7 +82,7 @@ export const ConfiguracoesPage = () => {
     const resultado = await salvarCalendarioTrimestresDoAno(anoCalendario, preenchidos);
     setSalvandoCalendario(false);
     setCalendarioMensagem(resultado.ok
-      ? { tipo: 'ok', texto: `Calendário de ${anoCalendario} salvo com sucesso.` }
+      ? { tipo: 'ok', texto: 'Calendário salvo.' }
       : { tipo: 'erro', texto: resultado.error });
   };
 
@@ -154,14 +154,14 @@ export const ConfiguracoesPage = () => {
           </div>
           <p className="mt-1 text-sm text-slate-600">
             {podeConfigurar
-              ? 'Defina o início e o encerramento de cada trimestre do ano letivo. Uma Aplicação PDI só pode ser criada quando o 1º, 2º e 3º trimestre do ano dela estão configurados — e recebe automaticamente o trimestre em que começa.'
-              : 'Período de cada trimestre do ano letivo, definido pela Secretaria de Educação. Cada Aplicação PDI recebe automaticamente o trimestre em que começa.'}
+              ? 'Aplicações PDI exigem os 3 trimestres do ano configurados.'
+              : 'Definido pela Secretaria de Educação.'}
           </p>
 
           <div className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${trimestresFaltando.length === 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
             {trimestresFaltando.length === 0
-              ? `Calendário de ${anoCalendario} completo.`
-              : `Calendário de ${anoCalendario} incompleto — falta configurar: ${trimestresFaltando.join(', ')}.`}
+              ? 'Calendário completo.'
+              : `Falta: ${trimestresFaltando.join(', ')}.`}
           </div>
 
           {calendarioMensagem && (
@@ -215,7 +215,7 @@ export const ConfiguracoesPage = () => {
                 <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">PDI</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Perguntas padrão</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  As perguntas criadas aqui entram automaticamente em cada novo Modelo PDI. <strong>Compartilhada</strong>: o Professor responde uma única vez para todas as disciplinas que leciona ao aluno. <strong>Por disciplina</strong>: cada disciplina tem a sua resposta (ex.: nota, Habilidades do CRMG, pergunta do trimestre). A escolha vale a partir da próxima Aplicação criada.
+                  Entram em todo Modelo novo. <strong>Compartilhada</strong>: uma resposta para todas as disciplinas. <strong>Por disciplina</strong>: cada disciplina responde.
                 </p>
               </div>
               <Button size="sm" onClick={() => setPerguntaPadraoForm(blankPerguntaPdi())}>+ Adicionar pergunta padrão</Button>

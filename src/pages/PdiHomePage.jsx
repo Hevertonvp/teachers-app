@@ -114,7 +114,7 @@ const EntregaGestao = ({ activeEscolaId }) => {
       </Card>
     );
   }
-  if (!indicadores) return <Card><p className="text-sm text-slate-500">Carregando entrega do PDI...</p></Card>;
+  if (!indicadores) return <Card><p className="text-sm text-slate-500">Carregando...</p></Card>;
 
   const escopo = activeEscolaId === null ? indicadores : indicadores.filter(item => item.escolaId === activeEscolaId);
   const comAplicacao = escopo.filter(item => item.aplicacaoId !== null);
@@ -143,13 +143,13 @@ const EntregaGestao = ({ activeEscolaId }) => {
       titulo="Entrega do PDI"
       descricao={grupos.length === 1
         ? `${grupos[0].nome}${grupos[0].detalhe ? ` · ${grupos[0].detalhe}` : ''}`
-        : activeEscolaId === null ? 'Aplicações vigentes agora, em todas as escolas do seu acesso' : 'Aplicação vigente agora na escola selecionada'}
+        : activeEscolaId === null ? 'Aplicações vigentes' : 'Aplicação vigente'}
       totais={totais}
       grupos={grupos.length > 1 ? grupos : []}
-      vazio="Nenhuma Aplicação PDI vigente agora — a entrega aparece aqui assim que uma Aplicação estiver aberta."
+      vazio="Nenhuma Aplicação vigente."
       rodape={[
-        semAplicacao > 0 ? `${semAplicacao} ${semAplicacao === 1 ? 'escola sem Aplicação vigente agora' : 'escolas sem Aplicação vigente agora'}.` : null,
-        semFichasEsperadas > 0 ? `${semFichasEsperadas} ${semFichasEsperadas === 1 ? 'escola com Aplicação aberta, mas sem professor/aluno vinculado às disciplinas dela' : 'escolas com Aplicação aberta, mas sem professor/aluno vinculado às disciplinas delas'}.` : null,
+        semAplicacao > 0 ? `${semAplicacao} ${semAplicacao === 1 ? 'escola sem Aplicação vigente' : 'escolas sem Aplicação vigente'}.` : null,
+        semFichasEsperadas > 0 ? `${semFichasEsperadas} ${semFichasEsperadas === 1 ? 'escola com Aplicação, sem professor/aluno vinculado' : 'escolas com Aplicação, sem professor/aluno vinculado'}.` : null,
       ].filter(Boolean).join(' ') || null}
     />
   );
@@ -158,7 +158,7 @@ const EntregaGestao = ({ activeEscolaId }) => {
 const EntregaProfessor = () => {
   const { meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
   useEffect(() => { loadMeusPdisReais(); }, [loadMeusPdisReais]);
-  if (meusPdisReaisLoading) return <Card><p className="text-sm text-slate-500">Carregando suas fichas...</p></Card>;
+  if (meusPdisReaisLoading) return <Card><p className="text-sm text-slate-500">Carregando...</p></Card>;
 
   const vigentes = meusPdisReais.filter(item => item.statusVigencia === 'active' || item.editavelAgora);
   const agendadas = meusPdisReais.filter(item => item.statusVisual === 'agendado').length;
@@ -176,11 +176,11 @@ const EntregaProfessor = () => {
   return (
     <PainelEntrega
       titulo="Minhas fichas"
-      descricao={vigentes.length ? `${alunos} ${alunos === 1 ? 'aluno' : 'alunos'} nas Aplicações vigentes${prazoMaisProximo ? ` · ${textoPrazo(prazoMaisProximo)}` : ''}` : 'Fichas das disciplinas que você leciona'}
+      descricao={vigentes.length ? `${alunos} ${alunos === 1 ? 'aluno' : 'alunos'}${prazoMaisProximo ? ` · ${textoPrazo(prazoMaisProximo)}` : ''}` : null}
       totais={contar(vigentes)}
       grupos={porDisciplina.length > 1 ? porDisciplina : []}
-      vazio="Nenhuma Aplicação PDI aberta agora para as suas turmas."
-      rodape={agendadas > 0 ? `${agendadas} ${agendadas === 1 ? 'ficha agendada' : 'fichas agendadas'} para Aplicações que ainda vão começar.` : null}
+      vazio="Nenhuma Aplicação aberta."
+      rodape={agendadas > 0 ? `${agendadas} ${agendadas === 1 ? 'ficha agendada' : 'fichas agendadas'}.` : null}
     />
   );
 };
@@ -220,7 +220,6 @@ export const PdiHomePage = () => {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Módulo PDI</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Plano de Desenvolvimento Individual</h1>
-            <p className="mt-2 max-w-2xl text-slate-600">{isProfessorUser ? 'Acompanhe o preenchimento das suas fichas e abra o formulário de cada aluno.' : 'Acompanhe a entrega das fichas e o desenvolvimento dos alunos.'}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {isProfessorUser && <Link to="/pdi/meus-pdis"><Button>Meus PDIs</Button></Link>}
@@ -233,14 +232,14 @@ export const PdiHomePage = () => {
         {isProfessorUser && <EntregaProfessor />}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Atalho eyebrow={isGestor ? 'Modelos e aplicações' : 'PDI por disciplina'} titulo="Formulário PDI" descricao={isGestor ? 'Crie modelos por disciplina, gerencie as perguntas e abra Aplicações PDI para cada escola.' : 'Preencha num único formulário todas as disciplinas que você leciona para cada aluno.'}>
+          <Atalho eyebrow={isGestor ? 'Modelos e aplicações' : 'PDI por disciplina'} titulo="Formulário PDI" descricao={isGestor ? 'Modelos, perguntas e Aplicações.' : 'Preencha as fichas dos seus alunos.'}>
             {isGestor ? <Link to="/pdi/formulario"><Button size="sm" variant="outline">Gerenciar formulário</Button></Link> : <Link to="/pdi/meus-pdis"><Button size="sm" variant="outline">Meus PDIs</Button></Link>}
           </Atalho>
-          <Atalho eyebrow="Acompanhamento pedagógico" titulo="Alunos PDI" descricao={isProfessorUser ? 'Consulte os alunos PDI das turmas em que você leciona.' : 'Indicadores de desenvolvimento de cada aluno, por disciplina e por período.'}>
+          <Atalho eyebrow="Acompanhamento pedagógico" titulo="Alunos PDI" descricao={isProfessorUser ? 'Seus alunos PDI.' : 'Indicadores de cada aluno.'}>
             <Link to={isProfessorUser ? '/pdi/meus-pdis' : '/pdi/alunos'}><Button size="sm" variant="outline">Ver alunos</Button></Link>
           </Atalho>
           {souSecretaria && (
-            <Atalho eyebrow="Perfil inicial do aluno" titulo="Anamnese" descricao="Configure o modelo de Anamnese ou veja quais alunos da escola selecionada ainda não concluíram a deles.">
+            <Atalho eyebrow="Perfil inicial do aluno" titulo="Anamnese" descricao="Modelo e anamneses pendentes.">
               <Link to="/pdi/anamnese-modelo"><Button size="sm" variant="outline">Configurar modelo</Button></Link>
               <Link to="/pdi/anamnese/pendentes"><Button size="sm">Preencher anamnese</Button></Link>
             </Atalho>
@@ -249,7 +248,7 @@ export const PdiHomePage = () => {
 
         {isGestor && aplicacoesDaEscola.length > 0 && <Card>
           <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div><h2 className="text-xl font-bold text-slate-950">Aplicações PDI desta escola</h2><p className="mt-1 text-sm text-slate-600">Pode haver mais de uma aplicação ao mesmo tempo, inclusive com vigências sobrepostas.</p></div>
+            <div><h2 className="text-xl font-bold text-slate-950">Aplicações PDI desta escola</h2></div>
             <Link to="/pdi/formulario"><Button size="sm" variant="outline">Gerenciar formulário</Button></Link>
           </div>
           <div className="space-y-3">

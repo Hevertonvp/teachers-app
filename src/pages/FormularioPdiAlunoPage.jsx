@@ -322,7 +322,7 @@ export const FormularioPdiAlunoPage = () => {
         continue;
       }
       if (resultado.codigo === 'CONFLITO_VERSAO') {
-        atualizarBloco(chave, b => ({ ...b, salvar: { estado: 'conflito', mensagem: 'As perguntas comuns foram alteradas em outra aba/sessão enquanto você editava. Suas respostas continuam guardadas neste aparelho — recarregue a página para revisar antes de salvar de novo.' } }));
+        atualizarBloco(chave, b => ({ ...b, salvar: { estado: 'conflito', mensagem: 'Alterado em outra aba. Suas respostas estão guardadas; recarregue a página.' } }));
         return { ok: false };
       }
       if (ehFalhaDeRede(resultado)) {
@@ -331,7 +331,7 @@ export const FormularioPdiAlunoPage = () => {
           endpoint: `/api/pdi-fichas/${fichaId}/respostas-padrao`, method: 'PUT',
           payload: { respostas }, baseTokenField: 'version', baseToken: version,
         });
-        atualizarBloco(chave, b => ({ ...b, touched: new Set([...b.touched].filter(id => !ids.includes(id))), salvar: { estado: 'fila', mensagem: 'Sem conexão: as perguntas comuns ficaram guardadas e serão enviadas quando a conexão voltar.' } }));
+        atualizarBloco(chave, b => ({ ...b, touched: new Set([...b.touched].filter(id => !ids.includes(id))), salvar: { estado: 'fila', mensagem: 'Sem conexão. Será enviado quando a conexão voltar.' } }));
         return { ok: true, fila: true };
       }
       atualizarBloco(chave, b => ({ ...b, salvar: { estado: 'erro', mensagem: resultado.error } }));
@@ -360,7 +360,7 @@ export const FormularioPdiAlunoPage = () => {
       return { ok: true };
     }
     if (resultado.codigo === 'CONFLITO_VERSAO') {
-      atualizarFicha(disciplinaId, atual => ({ ...atual, salvar: { estado: 'conflito', mensagem: `A Ficha de ${atual.disciplinaNome} foi alterada em outra aba/sessão enquanto você editava. Suas respostas continuam guardadas neste aparelho — recarregue a página para revisar antes de salvar de novo.` } }));
+      atualizarFicha(disciplinaId, atual => ({ ...atual, salvar: { estado: 'conflito', mensagem: 'Alterado em outra aba. Suas respostas estão guardadas; recarregue a página.' } }));
       return { ok: false };
     }
     if (ehFalhaDeRede(resultado)) {
@@ -369,7 +369,7 @@ export const FormularioPdiAlunoPage = () => {
         endpoint: `/api/pdi-fichas/${ficha.id}/respostas`, method: 'PUT',
         payload: { respostas }, baseTokenField: 'baseUpdatedAt', baseToken: ficha.updatedAt,
       });
-      atualizarFicha(disciplinaId, atual => ({ ...atual, touched: new Set(), salvar: { estado: 'fila', mensagem: 'Sem conexão: respostas guardadas, serão enviadas quando a conexão voltar.' } }));
+      atualizarFicha(disciplinaId, atual => ({ ...atual, touched: new Set(), salvar: { estado: 'fila', mensagem: 'Sem conexão. Será enviado quando a conexão voltar.' } }));
       return { ok: true, fila: true };
     }
     atualizarFicha(disciplinaId, atual => ({ ...atual, salvar: { estado: 'erro', mensagem: resultado.error } }));
@@ -402,7 +402,7 @@ export const FormularioPdiAlunoPage = () => {
     const falhas = await salvarTudo();
     setOcupado(null);
     setStatusLocal(falhas.length ? 'idle' : 'saved');
-    if (falhas.length) setMensagemErro('Algumas partes não foram salvas — veja os avisos em vermelho abaixo. O que foi salvo nas outras disciplinas continua salvo; clique em "Salvar" para reenviar.');
+    if (falhas.length) setMensagemErro('Algumas partes não foram salvas. Veja os avisos abaixo.');
   };
 
   const handleVoltar = async () => {
@@ -414,7 +414,7 @@ export const FormularioPdiAlunoPage = () => {
     setOcupado(null);
     if (falhas.length) {
       setStatusLocal('idle');
-      setMensagemErro('Algumas partes não foram salvas — veja os avisos em vermelho abaixo. Nada foi perdido: corrija/reenvie antes de sair.');
+      setMensagemErro('Algumas partes não foram salvas. Veja os avisos abaixo.');
       return;
     }
     navigate('/pdi/meus-pdis');
@@ -441,7 +441,7 @@ export const FormularioPdiAlunoPage = () => {
       setOcupado('salvando');
       await salvarTudo();
       setOcupado(null);
-      setMensagemErro('Para concluir, é necessário estar conectado. Suas respostas estão protegidas e poderão ser concluídas assim que a conexão voltar.');
+      setMensagemErro('Conecte-se para concluir. Suas respostas estão guardadas.');
       return;
     }
     setOcupado('concluindo');
@@ -452,7 +452,7 @@ export const FormularioPdiAlunoPage = () => {
       const bloco = Object.values(blocosRef.current).find(b => b.fichaIds.includes(f.dados.ficha.id));
       const falhouAoSalvar = falhas.some(item => item.disciplinaId === disciplinaId || (bloco && item.bloco === bloco.chave));
       if (falhouAoSalvar) {
-        resultados.push({ disciplinaNome: f.disciplinaNome, ok: false, mensagem: 'não concluída: há respostas desta disciplina (ou das perguntas comuns) que não foram salvas.' });
+        resultados.push({ disciplinaNome: f.disciplinaNome, ok: false, mensagem: 'não concluída: respostas não salvas.' });
         continue;
       }
       const r = await concluirUma(disciplinaId);
@@ -466,7 +466,7 @@ export const FormularioPdiAlunoPage = () => {
   const disciplinasConcluiveis = Object.values(fichas).filter(f => f.dados?.editavelAgora && f.dados.ficha.status !== 'concluida').map(f => f.disciplinaId);
 
   if (carregando) {
-    return <MainLayout><Card className="py-12 text-center"><p className="text-slate-500">Carregando formulário do aluno...</p></Card></MainLayout>;
+    return <MainLayout><Card className="py-12 text-center"><p className="text-slate-500">Carregando...</p></Card></MainLayout>;
   }
   if (erro) {
     return <MainLayout><Card className="py-12 text-center"><p className="font-semibold text-slate-800">{erro}</p><Button className="mt-4" onClick={() => navigate('/pdi/meus-pdis')}>Voltar</Button></Card></MainLayout>;
@@ -474,7 +474,7 @@ export const FormularioPdiAlunoPage = () => {
   if (linhas.length === 0) {
     return (
       <MainLayout>
-        <EmptyState title="Nenhuma disciplina disponível" description="Você não leciona, hoje, nenhuma disciplina com PDI nesta Aplicação para este aluno." />
+        <EmptyState title="Nenhuma disciplina disponível" description="Nenhuma disciplina sua com PDI para este aluno." />
         <div className="mt-4 text-center"><Button onClick={() => navigate('/pdi/meus-pdis')}>Voltar para Meus PDIs</Button></div>
       </MainLayout>
     );
@@ -543,10 +543,10 @@ export const FormularioPdiAlunoPage = () => {
               <Badge variant={bloco.editavelAgora ? 'green' : 'gray'}>{bloco.editavelAgora ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Respondidas uma única vez{bloco.disciplinas.length > 1 ? ` para: ${bloco.disciplinas.join(', ')}` : ''}. Cada disciplina continua com seu próprio status e conclusão.
+              {bloco.disciplinas.length > 1 ? `Valem para: ${bloco.disciplinas.join(', ')}.` : 'Resposta única.'}
             </p>
             {Object.keys(blocos).length > 1 && (
-              <p className="mt-1 text-xs font-semibold text-amber-700">O professor responsável mudou durante esta Aplicação: estas disciplinas têm um bloco comum separado.</p>
+              <p className="mt-1 text-xs font-semibold text-amber-700">Professor responsável mudou nesta Aplicação: bloco comum separado.</p>
             )}
             {renderAvisoSalvar(bloco.salvar, handleSalvar)}
             <div className="mt-3">
@@ -583,11 +583,11 @@ export const FormularioPdiAlunoPage = () => {
                 </div>
               </div>
               {!concluida && editavelAgora && (
-                <p className="mt-1 text-xs font-semibold text-slate-500">{faltando === 0 ? 'Tudo respondido — pode concluir.' : `Faltam ${faltando} ${faltando === 1 ? 'pergunta' : 'perguntas'} (incluindo as comuns) para concluir.`}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{faltando === 0 ? 'Pronto para concluir.' : `Faltam ${faltando} ${faltando === 1 ? 'pergunta' : 'perguntas'}.`}</p>
               )}
               {renderAvisoSalvar(f.salvar, handleSalvar)}
               {perguntas.length === 0 ? (
-                <p className="mt-3 text-sm text-slate-500">Nenhuma pergunta específica desta disciplina — só as perguntas comuns acima.</p>
+                <p className="mt-3 text-sm text-slate-500">Só perguntas comuns.</p>
               ) : agruparPorSecao(perguntas).map(secao => (
                 <div key={secao.nome} className="mt-4">
                   <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{secao.nome}</p>

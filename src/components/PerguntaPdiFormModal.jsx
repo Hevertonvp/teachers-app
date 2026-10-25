@@ -129,10 +129,10 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
                 Resposta compartilhada entre as disciplinas
                 <span className="mt-1 block text-xs font-normal text-slate-500">
                   {value.tipoResposta === 'habilidade_crmg'
-                    ? 'Habilidades do CRMG são sempre respondidas separadamente em cada disciplina.'
+                    ? 'CRMG é sempre por disciplina.'
                     : value.compartilhada !== false
-                      ? 'O Professor responde uma única vez para todas as disciplinas que leciona ao aluno (bloco comum).'
-                      : 'Entra em todo Modelo, mas cada disciplina tem a sua própria resposta (ex.: nota, pergunta do trimestre).'}
+                      ? 'Uma resposta para todas as disciplinas.'
+                      : 'Cada disciplina responde.'}
                 </span>
               </span>
             </label>

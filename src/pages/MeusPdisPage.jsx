@@ -84,8 +84,7 @@ export const MeusPdisPage = () => {
         <div>
           <BackButton />
           <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">PDI por disciplina</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">Meus PDIs</h1>
-          <p className="mt-2 max-w-3xl text-slate-600">Seus alunos com PDI, em qualquer escola ou turma. Ao abrir um aluno, você preenche num único formulário todas as disciplinas que leciona para ele.</p>
+          <h1 className="mt-2 text-3xl font-bold text-slate-950">Meus PDIs</h1>
         </div>
 
         {meusPdisReaisError && (

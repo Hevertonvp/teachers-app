@@ -90,7 +90,7 @@ export async function resolverTrimestreObrigatorio(db: Db, dataInicio: Date): Pr
     periodos = validarPeriodosDoAno(ano, linhas.map((l) => ({ trimestre: l.trimestre, dataInicio: paraDataIso(l.dataInicio), dataFim: paraDataIso(l.dataFim) })));
   } catch (err) {
     if (err instanceof ValidationError) {
-      throw new CalendarioTrimestresError(`Calendário de trimestres de ${ano} inválido: ${err.message} Corrija em Configurações > Trimestres antes de criar uma Aplicação PDI.`, 'CALENDARIO_TRIMESTRES_INVALIDO');
+      throw new CalendarioTrimestresError(`Calendário de trimestres de ${ano} inválido: ${err.message}`, 'CALENDARIO_TRIMESTRES_INVALIDO');
     }
     throw err;
   }
@@ -99,7 +99,7 @@ export async function resolverTrimestreObrigatorio(db: Db, dataInicio: Date): Pr
   const periodo = periodos.find((p) => p.dataInicio <= dia && dia <= p.dataFim);
   if (!periodo) {
     throw new CalendarioTrimestresError(
-      `A data de início (${formatarDataBr(dia)}) não pertence a nenhum trimestre do calendário de ${ano}. Ajuste a data da Aplicação ou o calendário em Configurações > Trimestres.`,
+      `A data de início (${formatarDataBr(dia)}) não está em nenhum trimestre de ${ano}.`,
       'DATA_FORA_DO_CALENDARIO',
     );
   }
