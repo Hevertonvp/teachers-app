@@ -93,6 +93,17 @@ export const AnamnesePage = () => {
 
   useEffect(() => { carregarTudo(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const draftKeyAnamnese = detalheAtual ? `${userId}::anamnese::${detalheAtual.anamnese.id}` : null;
+  // Salvamento local com debounce leve (seção "Eficiência") — sobrevive a reload/fechamento;
+  // some quando o próprio salvarEstrutural/salvarResposta confirma com o servidor. Fica ANTES dos
+  // returns antecipados abaixo: hook depois de um return condicional muda a quantidade de hooks
+  // entre renderizações e o React derruba a página inteira ao terminar de carregar.
+  useEffect(() => {
+    if (!draftKeyAnamnese) return undefined;
+    const t = setTimeout(() => salvarDraft(draftKeyAnamnese, { userId, estrutural, answers, savedAt: Date.now() }), 500);
+    return () => clearTimeout(t);
+  }, [estrutural, answers, draftKeyAnamnese, userId]);
+
   if (carregando) return <MainLayout><Card className="py-12 text-center"><p className="text-slate-500">Carregando...</p></Card></MainLayout>;
 
   if (erro || !aluno) {
@@ -117,15 +128,6 @@ export const AnamnesePage = () => {
 
   const updateEstrutural = (payload) => setEstrutural(prev => ({ ...prev, ...payload }));
   const updateAnswer = (perguntaId, payload) => setAnswers(prev => ({ ...prev, [perguntaId]: { ...prev[perguntaId], ...payload } }));
-
-  const draftKeyAnamnese = detalheAtual ? `${userId}::anamnese::${detalheAtual.anamnese.id}` : null;
-  // Salvamento local com debounce leve (seção "Eficiência") — sobrevive a reload/fechamento;
-  // some quando o próprio salvarEstrutural/salvarResposta confirma com o servidor.
-  useEffect(() => {
-    if (!draftKeyAnamnese) return undefined;
-    const t = setTimeout(() => salvarDraft(draftKeyAnamnese, { userId, estrutural, answers, savedAt: Date.now() }), 500);
-    return () => clearTimeout(t);
-  }, [estrutural, answers, draftKeyAnamnese, userId]);
 
   // Anamnese salva por campo, imediatamente (modelo já existente, nunca alterado aqui) — offline,
   // em vez de cada campo falhar isolado, os campos ainda não enviados se ACUMULAM numa única
