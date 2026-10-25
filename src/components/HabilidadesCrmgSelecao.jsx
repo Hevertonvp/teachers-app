@@ -57,6 +57,8 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
   const adicionar = (habilidade) => {
     if (selecionadosIds.has(habilidade.id)) return;
     onChange({ todas: false, habilidades: [...atual.habilidades, { id: habilidade.id, codigo: habilidade.codigo, descricaoOficial: habilidade.descricaoOficial }] });
+    // Marcou: limpa a busca (a lista fecha) — cada habilidade nova é uma pesquisa nova.
+    setBusca('');
   };
   const remover = (id) => onChange({ todas: false, habilidades: atual.habilidades.filter(h => h.id !== id) });
 
