@@ -2,7 +2,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, ConfirmDialog, FormField, Modal } from '../components/Common';
 import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
-import { DesempenhoPdiChartMock } from '../components/DesempenhoPdiChartMock';
+import { IndicadoresAluno } from '../components/pdi/IndicadoresAluno';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
@@ -217,7 +217,7 @@ export const PdiAlunoPerfil = () => {
         )}
 
         <Card>
-          <DesempenhoPdiChartMock />
+          <IndicadoresAluno alunoId={aluno.id} />
         </Card>
 
         <Card>

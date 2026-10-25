@@ -14,7 +14,8 @@ export const pdiFichaAnualRouter = Router();
 // ProfessorTurmaDisciplina ATIVO na turma ATUAL do aluno) — ele só vê, dentro da Ficha Anual, as
 // próprias disciplinas; as de outros professores ficam ocultas pra ele, nunca um 403 na tela
 // inteira. `null` = sem filtro de disciplina (demais perfis veem tudo do aluno).
-async function resolverAcessoAluno(actor: Actor, alunoId: number) {
+// Exportada: reaproveitada pelos indicadores do aluno (routes/pdiIndicadores.ts) — mesma regra.
+export async function resolverAcessoAluno(actor: Actor, alunoId: number) {
   const aluno = await prisma.alunoPdi.findUnique({ where: { id: alunoId }, include: { turma: { include: { escola: true } } } });
   if (!aluno) throw new NotFoundError('Aluno não encontrado.');
   const escolaId = aluno.turma.escolaId;

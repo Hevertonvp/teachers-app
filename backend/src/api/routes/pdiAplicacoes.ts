@@ -179,8 +179,11 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
   }
   const escolasComAplicacaoAtiva = [...aplicacaoAtivaPorEscola.keys()];
 
+  // `emAndamento`, `aplicacaoDataInicio` e `aplicacaoDataFim` foram acrescentados para o painel da
+  // página principal do PDI — campos novos, os antigos continuam iguais (painel da Secretaria).
+  const semAplicacao = (escola: { id: number; nome: string }) => ({ escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: null, aplicacaoNome: null, aplicacaoDataInicio: null, aplicacaoDataFim: null, totalEsperado: 0, concluidas: 0, emAndamento: 0 });
   if (escolasComAplicacaoAtiva.length === 0) {
-    return res.json(escolas.map((escola) => ({ escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: null, aplicacaoNome: null, totalEsperado: 0, concluidas: 0 })));
+    return res.json(escolas.map(semAplicacao));
   }
 
   const aplicacaoIdsAtivas = [...aplicacaoAtivaPorEscola.values()].map((a) => a.id);
@@ -190,14 +193,14 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
   // memória no passo 4) — e, em paralelo, todas as Fichas CONCLUIDA dessas Aplicações: nenhuma
   // depende da outra, então não precisam esperar em sequência (cada round-trip até o Neon custa
   // uns 100-500ms+ daqui; evitar encadear os independentes economiza isso de verdade).
-  const [ptds, fichasConcluidas] = await Promise.all([
+  const [ptds, fichasComProgresso] = await Promise.all([
     prisma.professorTurmaDisciplina.findMany({
       where: { status: 'ATIVO', turma: { escolaId: { in: escolasComAplicacaoAtiva }, status: 'ATIVA' } },
       select: { turmaId: true, disciplinaId: true, turma: { select: { escolaId: true } } },
     }),
     prisma.fichaPdi.findMany({
-      where: { aplicacaoId: { in: aplicacaoIdsAtivas }, status: 'CONCLUIDA' },
-      select: { aplicacaoId: true, alunoId: true, disciplinaId: true },
+      where: { aplicacaoId: { in: aplicacaoIdsAtivas }, status: { in: ['CONCLUIDA', 'EM_ANDAMENTO'] } },
+      select: { aplicacaoId: true, alunoId: true, disciplinaId: true, status: true },
     }),
   ]);
   const turmaIds = [...new Set(ptds.map((p) => p.turmaId))];
@@ -227,23 +230,34 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
     }
   }
 
-  // 5) Agrupa as Fichas CONCLUIDA buscadas no passo 2 por Aplicação.
+  // 5) Agrupa as Fichas CONCLUIDA / EM_ANDAMENTO buscadas no passo 2 por Aplicação.
   const concluidasPorAplicacao = new Map<number, Set<string>>();
-  for (const ficha of fichasConcluidas) {
-    if (!concluidasPorAplicacao.has(ficha.aplicacaoId)) concluidasPorAplicacao.set(ficha.aplicacaoId, new Set());
-    concluidasPorAplicacao.get(ficha.aplicacaoId)!.add(`${ficha.alunoId}-${ficha.disciplinaId}`);
+  const emAndamentoPorAplicacao = new Map<number, Set<string>>();
+  for (const ficha of fichasComProgresso) {
+    const alvo = ficha.status === 'CONCLUIDA' ? concluidasPorAplicacao : emAndamentoPorAplicacao;
+    if (!alvo.has(ficha.aplicacaoId)) alvo.set(ficha.aplicacaoId, new Set());
+    alvo.get(ficha.aplicacaoId)!.add(`${ficha.alunoId}-${ficha.disciplinaId}`);
   }
 
   const resultado = escolas.map((escola) => {
     const ativa = aplicacaoAtivaPorEscola.get(escola.id);
-    if (!ativa) return { escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: null, aplicacaoNome: null, totalEsperado: 0, concluidas: 0 };
+    if (!ativa) return semAplicacao(escola);
 
     const candidatos = candidatosPorEscola.get(escola.id) ?? new Set<string>();
     const concluidasDaAplicacao = concluidasPorAplicacao.get(ativa.id) ?? new Set<string>();
+    const emAndamentoDaAplicacao = emAndamentoPorAplicacao.get(ativa.id) ?? new Set<string>();
     let concluidas = 0;
-    for (const chave of candidatos) if (concluidasDaAplicacao.has(chave)) concluidas++;
+    let emAndamento = 0;
+    for (const chave of candidatos) {
+      if (concluidasDaAplicacao.has(chave)) concluidas++;
+      else if (emAndamentoDaAplicacao.has(chave)) emAndamento++;
+    }
 
-    return { escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: ativa.id, aplicacaoNome: ativa.nome, totalEsperado: candidatos.size, concluidas };
+    return {
+      escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: ativa.id, aplicacaoNome: ativa.nome,
+      aplicacaoDataInicio: ativa.dataInicio, aplicacaoDataFim: ativa.dataFim,
+      totalEsperado: candidatos.size, concluidas, emAndamento,
+    };
   });
 
   res.json(resultado);

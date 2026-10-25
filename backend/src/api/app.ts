@@ -26,6 +26,7 @@ import { notificacoesRouter } from './routes/notificacoes.js';
 import { feedbackSistemaRouter } from './routes/feedbackSistema.js';
 import { habilidadesCurricularesRouter } from './routes/habilidadesCurriculares.js';
 import { trimestresRouter } from './routes/trimestres.js';
+import { pdiIndicadoresRouter } from './routes/pdiIndicadores.js';
 
 export function createApp() {
   const app = express();
@@ -97,6 +98,7 @@ export function createApp() {
   app.use('/api/feedback-sistema', feedbackSistemaRouter);
   app.use('/api/habilidades-curriculares', habilidadesCurricularesRouter);
   app.use('/api/trimestres', trimestresRouter);
+  app.use('/api/pdi-indicadores', pdiIndicadoresRouter);
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 
