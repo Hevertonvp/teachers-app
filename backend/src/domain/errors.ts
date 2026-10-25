@@ -46,6 +46,18 @@ export class SenhaTemporariaPendenteError extends Error {
   }
 }
 
+// 400 com código de máquina: a criação de uma Aplicação PDI esbarrou no calendário de trimestres
+// (incompleto, inválido ou data fora de todo trimestre) — o frontend usa `codigo` pra oferecer o
+// atalho direto pra Configurações > Trimestres (ver domain/trimestres.ts).
+export class CalendarioTrimestresError extends Error {
+  codigo: 'CALENDARIO_TRIMESTRES_INCOMPLETO' | 'CALENDARIO_TRIMESTRES_INVALIDO' | 'DATA_FORA_DO_CALENDARIO';
+  constructor(message: string, codigo: CalendarioTrimestresError['codigo']) {
+    super(message);
+    this.name = 'CalendarioTrimestresError';
+    this.codigo = codigo;
+  }
+}
+
 // 409 com código de máquina (infraestrutura offline/conflito — ver api/app.ts): o cliente enviou
 // `baseUpdatedAt`/`baseVersion` desatualizado — alguém (ou outra aba/dispositivo do mesmo usuário)
 // já salvou uma versão mais nova deste recurso enquanto este estava offline/editando. NUNCA

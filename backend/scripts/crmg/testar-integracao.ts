@@ -77,7 +77,7 @@ const tProf = assinarToken(professor);
 const hMA6 = await prisma.habilidadeCurricular.findFirstOrThrow({ where: { componente: 'MATEMATICA', codigo: { startsWith: 'EF06MA' } } });
 const hMA9 = await prisma.habilidadeCurricular.findFirstOrThrow({ where: { componente: 'MATEMATICA', codigo: { startsWith: 'EF09MA' } } });
 const hLI = await prisma.habilidadeCurricular.findFirstOrThrow({ where: { codigo: 'EF06LI11' } });
-const periodosOriginais = await prisma.periodoTrimestre.findMany({ orderBy: { trimestre: 'asc' } });
+const periodosOriginais = await prisma.periodoTrimestre.findMany({ where: { ano: Number(hoje.slice(0, 4)) }, orderBy: { trimestre: 'asc' } });
 
 try {
   secao('1. Busca de habilidades — isolamento por disciplina, código, texto, acentos, limite');
@@ -144,9 +144,9 @@ try {
   await api(tSec, 'DELETE', `/api/pdi-modelos/${vazio.data.id}`);
 
   secao('4. Trimestre — configurado em Configurações, aplicado na geração do formulário');
-  const tri = await api(tProf, 'GET', '/api/trimestres');
+  const tri = await api(tProf, 'GET', `/api/trimestres?ano=${hoje.slice(0, 4)}`);
   ok(tri.status === 200 && tri.data.length === 3, 'calendário de trimestres disponível');
-  const profAltera = await api(tProf, 'PUT', '/api/trimestres/1', { dataInicio: '2026-01-01' });
+  const profAltera = await api(tProf, 'PUT', `/api/trimestres/${hoje.slice(0, 4)}`, { periodos: [{ trimestre: 1, dataInicio: '2026-01-01', dataFim: '2026-01-02' }] });
   ok(profAltera.status === 403, 'Professor não altera o calendário (403)');
   const triAtual = tri.data.find((p: any) => p.dataInicio <= hoje && hoje <= p.dataFim)?.trimestre ?? null;
   const aplic = await api(tSec, 'POST', '/api/pdi-aplicacoes', { escolaId: escola.id, dataInicio: hoje, dataFim: '2026-12-31', modeloIds: [modeloIngles.id, modeloMat.data.id] });
@@ -154,12 +154,17 @@ try {
   const snapMat = await prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModelo: { aplicacaoId: aplic.data.id, disciplinaId: matematica.id } }, include: { perguntaOriginal: true } });
   ok(snapMat.length === 8 && snapMat.every((s) => s.perguntaOriginal.trimestre === null || s.perguntaOriginal.trimestre === triAtual), `snapshot: 6 perguntas gerais + "Objetivo" e discursiva só do ${triAtual}º trimestre (${snapMat.length})`);
   // Outra configuração: hoje dentro do 1º trimestre → a Aplicação seguinte recebe as do 1º.
-  await api(tSec, 'PUT', '/api/trimestres/1', { dataInicio: '2026-01-01', dataFim: '2026-12-31' });
-  for (const t of [2, 3]) await api(tSec, 'PUT', `/api/trimestres/${t}`, { dataInicio: '2027-01-01', dataFim: '2027-01-02' });
+  // Calendário por ano: 1º cobre de 01/01 até 29/12, 2º e 3º espremidos nos dois últimos dias
+  // (precisa continuar completo e sem sobreposição — regra obrigatória pra criar Aplicação).
+  await api(tSec, 'PUT', '/api/trimestres/2026', { periodos: [
+    { trimestre: 2, dataInicio: '2026-12-30', dataFim: '2026-12-30' },
+    { trimestre: 3, dataInicio: '2026-12-31', dataFim: '2026-12-31' },
+  ] });
+  await api(tSec, 'PUT', '/api/trimestres/2026', { periodos: [{ trimestre: 1, dataInicio: '2026-01-01', dataFim: '2026-12-29' }] });
   const aplic2 = await api(tSec, 'POST', '/api/pdi-aplicacoes', { escolaId: escola2.id, dataInicio: hoje, dataFim: '2026-12-31', modeloIds: [modeloMat.data.id] });
   const snap2 = await prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModelo: { aplicacaoId: aplic2.data.id } }, include: { perguntaOriginal: true } });
   ok(aplic2.data.trimestre === 1 && snap2.length === 8 && snap2.filter((s) => s.perguntaOriginal.trimestre !== null).every((s) => s.perguntaOriginal.trimestre === 1), 'após mudar o calendário, nova Aplicação recebe as perguntas do 1º trimestre');
-  for (const p of periodosOriginais) await prisma.periodoTrimestre.update({ where: { trimestre: p.trimestre }, data: { dataInicio: p.dataInicio, dataFim: p.dataFim } });
+  for (const p of periodosOriginais) await prisma.periodoTrimestre.update({ where: { ano_trimestre: { ano: p.ano, trimestre: p.trimestre } }, data: { dataInicio: p.dataInicio, dataFim: p.dataFim } });
   const snapIng = await prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModelo: { aplicacaoId: aplic.data.id, disciplinaId: ingles.id } } });
   ok(snapIng.some((s) => s.perguntaIdOriginal === pCrmg.data.id && s.tipoResposta === 'HABILIDADE_CRMG' && s.texto === 'Quais habilidades foram trabalhadas?'), 'Modelo antigo de Inglês: pergunta nova entra no snapshot normalmente');
 
@@ -228,7 +233,7 @@ try {
   secao('10. Dados que já existiam continuam iguais');
   ok((await fotoAntiga()) === antes, 'perguntas, snapshots e respostas pré-existentes byte a byte iguais');
 } finally {
-  for (const p of periodosOriginais) await prisma.periodoTrimestre.update({ where: { trimestre: p.trimestre }, data: { dataInicio: p.dataInicio, dataFim: p.dataFim } }).catch(() => {});
+  for (const p of periodosOriginais) await prisma.periodoTrimestre.update({ where: { ano_trimestre: { ano: p.ano, trimestre: p.trimestre } }, data: { dataInicio: p.dataInicio, dataFim: p.dataFim } }).catch(() => {});
   server.close();
   await prisma.$disconnect();
   console.log(`\n${total - falhas}/${total} verificações OK${falhas ? ` — ${falhas} FALHA(S)` : ''}`);

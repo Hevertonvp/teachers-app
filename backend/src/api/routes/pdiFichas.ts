@@ -755,7 +755,9 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
       const respondidasPadraoIds = bloco
         ? new Set((await prisma.respostaPadraoPdi.findMany({ where: { blocoId: bloco.id }, select: { aplicacaoPerguntaPadraoId: true } })).map((r) => r.aplicacaoPerguntaPadraoId))
         : new Set<number>();
-      faltandoPadrao = perguntasPadrao.filter((p) => !respondidasPadraoIds.has(p.id)).length;
+      // ORIENTACAO é só texto informativo (nunca recebe resposta) — mesma regra das perguntas
+      // específicas logo acima. Sem isto, um bloco com "Objetivo: …" nunca deixava concluir.
+      faltandoPadrao = perguntasPadrao.filter((p) => p.tipoResposta !== 'ORIENTACAO' && !respondidasPadraoIds.has(p.id)).length;
     }
 
     const faltando = faltandoEspecificas + faltandoPadrao;

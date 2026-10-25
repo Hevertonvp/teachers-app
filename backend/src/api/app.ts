@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
-import { ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
+import { CalendarioTrimestresError, ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
 import { bloquearSenhaTemporariaPendente, requireAuth } from './middleware/auth.js';
 import { authProtectedRouter, authRouter } from './routes/auth.js';
 import { escolasRouter } from './routes/escolas.js';
@@ -111,6 +111,7 @@ export function createApp() {
     if (err instanceof SenhaTemporariaPendenteError) return res.status(403).json({ message: err.message, codigo: 'SENHA_TEMPORARIA_PENDENTE' });
     if (err instanceof ForbiddenError) return res.status(403).json({ message: err.message });
     if (err instanceof ValidationError) return res.status(400).json({ message: err.message });
+    if (err instanceof CalendarioTrimestresError) return res.status(400).json({ message: err.message, codigo: err.codigo });
     if (err instanceof NotFoundError) return res.status(404).json({ message: err.message });
     if (err instanceof ConflitoVersaoError) return res.status(409).json({ message: err.message, codigo: 'CONFLITO_VERSAO', dadosAtuais: err.dadosAtuais });
     if (err instanceof ConflictError) return res.status(409).json({ message: err.message });

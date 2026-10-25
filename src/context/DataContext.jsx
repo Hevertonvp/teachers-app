@@ -12,7 +12,7 @@ import {
   criarPdiPerguntaPadraoReal, editarPdiPerguntaPadraoReal, excluirPdiPerguntaPadraoReal, inativarPdiPerguntaPadraoReal,
   listarPdiPerguntasPadraoReais, reativarPdiPerguntaPadraoReal, reordenarPdiPerguntasPadraoReais,
 } from '../services/pdiPerguntasPadrao';
-import { atualizarTrimestre, listarTrimestres } from '../services/trimestres';
+import { listarTrimestres, salvarCalendarioTrimestres } from '../services/trimestres';
 import {
   criarPdiAplicacaoReal, criarReaberturaPdiReal, editarPdiAplicacaoReal, listarPdiAplicacoesReais,
   listarReaberturasPdiReais, obterSnapshotPdiAplicacaoReal, removerPdiAplicacaoReal,
@@ -36,7 +36,6 @@ import {
   pdis as pdisIniciais,
   professores as professoresIniciais,
   secretarias as secretariasIniciais,
-  trimestrePeriodsIniciais,
   turmaProfessores as turmaProfessoresIniciais,
   vinculosEscolares as vinculosEscolaresIniciais,
 } from '../data/mockData';
@@ -86,7 +85,8 @@ export const DataProvider = ({ children }) => {
   const [pdiPerguntas, setPdiPerguntas] = useState(pdiPerguntasFormulario);
   const [pdiRespostas, setPdiRespostas] = useState(pdiRespostasAcompanhamento);
   const [pdiAuxiliaresVinculos] = useState(pdiAuxiliaresVinculosIniciais);
-  const [trimestrePeriods, setTrimestrePeriods] = useState(trimestrePeriodsIniciais);
+  // Começa vazio (nunca um calendário de exemplo): só existe o que a Secretaria salvou no backend.
+  const [trimestrePeriods, setTrimestrePeriods] = useState([]);
   const [formPeriods, setFormPeriods] = useState(formulariosPrazos);
   // Escolas é o piloto de integração real com o backend (Node/Express/Prisma/Neon) — todas as
   // outras coleções deste contexto continuam mockadas. Ver README do backend e o resumo da
@@ -535,7 +535,9 @@ export const DataProvider = ({ children }) => {
       setPdiAplicacoesReais(prev => [aplicacao, ...prev]);
       return { ok: true, aplicacao };
     } catch (error) {
-      return { ok: false, error: error.message };
+      // `codigo` (ex.: CALENDARIO_TRIMESTRES_INCOMPLETO) deixa a tela oferecer o atalho pra
+      // Configurações > Trimestres.
+      return { ok: false, error: error.message, codigo: error.codigo };
     }
   };
 
@@ -958,23 +960,24 @@ export const DataProvider = ({ children }) => {
     )));
   };
 
-  // Mesmo comportamento de sempre na tela (atualiza na hora), agora também salvo no backend — é de
-  // lá que a criação de uma Aplicação PDI descobre o trimestre. Se o servidor recusar, volta ao
-  // valor anterior.
-  const updateTrimestrePeriod = (trimestre, payload) => {
-    const anterior = trimestrePeriods.find(item => item.trimestre === trimestre);
-    setTrimestrePeriods(prev => prev.map(item => item.trimestre === trimestre ? { ...item, ...payload } : item));
-    atualizarTrimestre(trimestre, payload).catch(() => {
-      if (anterior) setTrimestrePeriods(prev => prev.map(item => item.trimestre === trimestre ? anterior : item));
-    });
+  // Salva o calendário de UM ano (só depois do servidor aceitar — nunca otimista: a validação de
+  // datas/sobreposição é do backend, e é de lá que a criação de uma Aplicação PDI descobre o
+  // trimestre). Substitui só as linhas daquele ano no estado local.
+  const salvarCalendarioTrimestresDoAno = async (ano, periodos) => {
+    try {
+      const salvos = await salvarCalendarioTrimestres(ano, periodos);
+      setTrimestrePeriods(prev => [...prev.filter(item => item.ano !== ano), ...salvos]);
+      return { ok: true, periodos: salvos };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
   };
 
   const loadTrimestres = useCallback(async () => {
     try {
-      const periodos = await listarTrimestres();
-      if (periodos.length) setTrimestrePeriods(periodos);
+      setTrimestrePeriods(await listarTrimestres());
     } catch {
-      // Sem conexão: mantém os períodos padrão da tela (comportamento anterior).
+      // Sem conexão: mantém o que já estava carregado.
     }
   }, []);
 
@@ -1237,7 +1240,7 @@ export const DataProvider = ({ children }) => {
     encerrarVinculoProfessorTurma,
     trimestrePeriods,
     loadTrimestres,
-    updateTrimestrePeriod,
+    salvarCalendarioTrimestresDoAno,
     pendencias,
     indicadores,
     atividadesRecentes,

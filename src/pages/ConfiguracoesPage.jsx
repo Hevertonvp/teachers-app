@@ -1,12 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
-import { ActionMenu, Button, Card, ConfirmDialog, FormField, OrderButtons, StatusBadge } from '../components/Common';
+import { ActionMenu, Badge, Button, Card, ConfirmDialog, FormField, OrderButtons, StatusBadge } from '../components/Common';
 import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { inputClass } from '../utils/display';
 import { formatDate } from '../utils/pdi';
 import { isSecretaria } from '../utils/roles';
+import { trimestres } from '../utils/trimestres';
+
+const ANO_ATUAL = new Date().getFullYear();
+
+// Formulário local de UM ano: sempre os 3 trimestres, com o que já está salvo (ou vazio).
+const formularioDoAno = (trimestrePeriods, ano) => trimestres.map(rotulo => {
+  const salvo = trimestrePeriods.find(item => item.ano === ano && item.trimestre === rotulo);
+  return { trimestre: rotulo, startDate: salvo?.startDate || '', endDate: salvo?.endDate || '' };
+});
 
 // Troca a `ordem` entre a pergunta e a vizinha (-1 sobe, +1 desce) — mesmo padrão de
 // FormularioPdiPage.jsx, mas sobre a lista de perguntas padrão (ATIVAS, sem escopo de modelo).
@@ -21,7 +31,7 @@ const calcularReordenacao = (perguntasOrdenadas, perguntaId, direction) => {
 export const ConfiguracoesPage = () => {
   const { user } = useAuth();
   const {
-    trimestrePeriods, updateTrimestrePeriod,
+    trimestrePeriods, salvarCalendarioTrimestresDoAno,
     pdiPerguntasPadraoReais, pdiPerguntasPadraoReaisLoading, pdiPerguntasPadraoReaisError, loadPdiPerguntasPadraoReais,
     criarPdiPerguntaPadrao, editarPdiPerguntaPadrao, inativarPdiPerguntaPadrao, reativarPdiPerguntaPadrao,
     excluirPdiPerguntaPadrao, reordenarPdiPerguntasPadrao,
@@ -39,9 +49,41 @@ export const ConfiguracoesPage = () => {
   const perguntasPadraoAtivas = [...pdiPerguntasPadraoReais].filter(p => p.status === 'ativa').sort((a, b) => a.ordem - b.ordem);
   const perguntasPadraoInativas = pdiPerguntasPadraoReais.filter(p => p.status === 'inativa');
 
-  const salvarPeriodo = (trimestre, payload) => {
-    updateTrimestrePeriod(trimestre, payload);
-    setMessage('Período do trimestre atualizado com sucesso.');
+  // --- Calendário de trimestres (por ano letivo) ---------------------------------------------
+  const location = useLocation();
+  const trimestresRef = useRef(null);
+  const [anoCalendario, setAnoCalendario] = useState(ANO_ATUAL);
+  const [calendarioForm, setCalendarioForm] = useState(() => formularioDoAno(trimestrePeriods, ANO_ATUAL));
+  const [salvandoCalendario, setSalvandoCalendario] = useState(false);
+  const [calendarioMensagem, setCalendarioMensagem] = useState(null); // { tipo: 'ok' | 'erro', texto }
+
+  // Recarrega o formulário quando muda o ano escolhido ou chega o calendário do backend.
+  useEffect(() => { setCalendarioForm(formularioDoAno(trimestrePeriods, anoCalendario)); }, [trimestrePeriods, anoCalendario]);
+
+  // Atalho "Ir para Configurações > Trimestres" (ver FormularioPdiPage.jsx) chega com #trimestres.
+  useEffect(() => {
+    if (location.hash === '#trimestres') trimestresRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.hash]);
+
+  const anosDisponiveis = [...new Set([ANO_ATUAL - 1, ANO_ATUAL, ANO_ATUAL + 1, ...trimestrePeriods.map(item => item.ano)])].sort((a, b) => a - b);
+  const trimestresFaltando = trimestres.filter(rotulo => !trimestrePeriods.some(item => item.ano === anoCalendario && item.trimestre === rotulo));
+
+  const salvarCalendario = async (event) => {
+    event.preventDefault();
+    // Trimestre com os dois campos vazios = ainda não configurado (não vai no envio); com só um
+    // preenchido vai assim mesmo — o backend recusa dizendo qual data falta.
+    const preenchidos = calendarioForm.filter(item => item.startDate || item.endDate);
+    if (preenchidos.length === 0) {
+      setCalendarioMensagem({ tipo: 'erro', texto: 'Preencha as datas de ao menos um trimestre.' });
+      return;
+    }
+    setSalvandoCalendario(true);
+    setCalendarioMensagem(null);
+    const resultado = await salvarCalendarioTrimestresDoAno(anoCalendario, preenchidos);
+    setSalvandoCalendario(false);
+    setCalendarioMensagem(resultado.ok
+      ? { tipo: 'ok', texto: `Calendário de ${anoCalendario} salvo com sucesso.` }
+      : { tipo: 'erro', texto: resultado.error });
   };
 
   const salvarPerguntaPadrao = async (event) => {
@@ -97,37 +139,74 @@ export const ConfiguracoesPage = () => {
           </Card>
         </div>
 
+        <div ref={trimestresRef} id="trimestres" className="scroll-mt-24">
         <Card>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Calendário letivo</p>
-          <h2 className="mt-1 text-xl font-bold text-slate-950">Trimestres</h2>
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Calendário letivo</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-950">Trimestres</h2>
+            </div>
+            <FormField label="Ano letivo">
+              <select className={inputClass} value={anoCalendario} onChange={event => { setAnoCalendario(Number(event.target.value)); setCalendarioMensagem(null); }}>
+                {anosDisponiveis.map(ano => <option key={ano} value={ano}>{ano}</option>)}
+              </select>
+            </FormField>
+          </div>
           <p className="mt-1 text-sm text-slate-600">
             {podeConfigurar
-              ? 'Defina o período de início e encerramento de cada trimestre do ano letivo. Esse calendário é compartilhado entre os módulos do sistema — hoje, o PDI usa automaticamente o trimestre vigente na data atual.'
-              : 'Período de cada trimestre do ano letivo, definido pela Secretaria de Educação. O PDI, por exemplo, usa automaticamente o trimestre vigente na data atual.'}
+              ? 'Defina o início e o encerramento de cada trimestre do ano letivo. Uma Aplicação PDI só pode ser criada quando o 1º, 2º e 3º trimestre do ano dela estão configurados — e recebe automaticamente o trimestre em que começa.'
+              : 'Período de cada trimestre do ano letivo, definido pela Secretaria de Educação. Cada Aplicação PDI recebe automaticamente o trimestre em que começa.'}
           </p>
 
-          {message && <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
-
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {trimestrePeriods.map(periodo => (
-              <div key={periodo.trimestre} className="rounded-xl border border-slate-200 p-4">
-                <p className="font-semibold text-slate-900">{periodo.trimestre}</p>
-                {podeConfigurar ? (
-                  <div className="mt-3 space-y-3">
-                    <FormField label="Início">
-                      <input className={inputClass} type="date" value={periodo.startDate} onChange={event => salvarPeriodo(periodo.trimestre, { startDate: event.target.value })} />
-                    </FormField>
-                    <FormField label="Encerramento">
-                      <input className={inputClass} type="date" value={periodo.endDate} onChange={event => salvarPeriodo(periodo.trimestre, { endDate: event.target.value })} />
-                    </FormField>
-                  </div>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-600">{formatDate(periodo.startDate)} a {formatDate(periodo.endDate)}</p>
-                )}
-              </div>
-            ))}
+          <div className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${trimestresFaltando.length === 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+            {trimestresFaltando.length === 0
+              ? `Calendário de ${anoCalendario} completo.`
+              : `Calendário de ${anoCalendario} incompleto — falta configurar: ${trimestresFaltando.join(', ')}.`}
           </div>
+
+          {calendarioMensagem && (
+            <div className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${calendarioMensagem.tipo === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
+              {calendarioMensagem.texto}
+            </div>
+          )}
+
+          {podeConfigurar ? (
+            <form onSubmit={salvarCalendario}>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                {calendarioForm.map((periodo, index) => (
+                  <div key={periodo.trimestre} className="rounded-xl border border-slate-200 p-4">
+                    <p className="font-semibold text-slate-900">{periodo.trimestre}</p>
+                    <div className="mt-3 space-y-3">
+                      <FormField label="Início">
+                        <input className={inputClass} type="date" min={`${anoCalendario}-01-01`} max={`${anoCalendario}-12-31`} value={periodo.startDate} onChange={event => setCalendarioForm(prev => prev.map((item, i) => (i === index ? { ...item, startDate: event.target.value } : item)))} />
+                      </FormField>
+                      <FormField label="Encerramento">
+                        <input className={inputClass} type="date" min={`${anoCalendario}-01-01`} max={`${anoCalendario}-12-31`} value={periodo.endDate} onChange={event => setCalendarioForm(prev => prev.map((item, i) => (i === index ? { ...item, endDate: event.target.value } : item)))} />
+                      </FormField>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button type="submit" disabled={salvandoCalendario}>{salvandoCalendario ? 'Salvando...' : `Salvar calendário de ${anoCalendario}`}</Button>
+              </div>
+            </form>
+          ) : (
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {calendarioForm.map(periodo => (
+                <div key={periodo.trimestre} className="rounded-xl border border-slate-200 p-4">
+                  <p className="font-semibold text-slate-900">{periodo.trimestre}</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {periodo.startDate && periodo.endDate ? `${formatDate(periodo.startDate)} a ${formatDate(periodo.endDate)}` : 'Não configurado'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
+        </div>
+
+        {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
 
         {podeConfigurar && (
           <Card>
@@ -136,7 +215,7 @@ export const ConfiguracoesPage = () => {
                 <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">PDI</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Perguntas padrão</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  As perguntas criadas aqui são compartilhadas por todas as disciplinas e entram automaticamente em cada novo Modelo PDI. Não crie aqui perguntas específicas de uma disciplina (como Habilidades do CRMG) — essas devem ser adicionadas direto no Modelo PDI da disciplina correspondente.
+                  As perguntas criadas aqui entram automaticamente em cada novo Modelo PDI. <strong>Compartilhada</strong>: o Professor responde uma única vez para todas as disciplinas que leciona ao aluno. <strong>Por disciplina</strong>: cada disciplina tem a sua resposta (ex.: nota, Habilidades do CRMG, pergunta do trimestre). A escolha vale a partir da próxima Aplicação criada.
                 </p>
               </div>
               <Button size="sm" onClick={() => setPerguntaPadraoForm(blankPerguntaPdi())}>+ Adicionar pergunta padrão</Button>
@@ -164,6 +243,7 @@ export const ConfiguracoesPage = () => {
                         {pergunta.trimestre && ` · ${trimestreLabel(pergunta.trimestre)}`}
                       </p>
                     </div>
+                    <Badge variant={pergunta.compartilhada === false ? 'gray' : 'blue'}>{pergunta.compartilhada === false ? 'Por disciplina' : 'Compartilhada'}</Badge>
                     <OrderButtons
                       onUp={() => reordenarPdiPerguntasPadrao(calcularReordenacao(perguntasPadraoAtivas, pergunta.id, -1))}
                       onDown={() => reordenarPdiPerguntasPadrao(calcularReordenacao(perguntasPadraoAtivas, pergunta.id, 1))}
@@ -212,6 +292,7 @@ export const ConfiguracoesPage = () => {
           onSubmit={salvarPerguntaPadrao}
           onClose={() => setPerguntaPadraoForm(null)}
           saving={salvandoPerguntaPadrao}
+          mostrarCompartilhada
         />
       )}
 

@@ -41,18 +41,41 @@ export const MeusPdisPage = () => {
     && (filtroStatus === 'todos' || item.statusVisual === filtroStatus)
   ));
 
+  // Uma linha por aluno+Aplicação (nunca uma por disciplina): clicar abre o formulário único do
+  // aluno com todas as disciplinas que o Professor leciona para ele — por baixo, as Fichas
+  // continuam separadas por disciplina (ver FormularioPdiAlunoPage.jsx).
+  const grupos = [];
+  itensFiltrados.forEach(item => {
+    const id = `${item.aplicacaoId}-${item.alunoId}`;
+    let grupo = grupos.find(g => g.id === id);
+    if (!grupo) {
+      grupo = { id, aplicacaoId: item.aplicacaoId, alunoId: item.alunoId, alunoNome: item.alunoNome, escolaNome: item.escolaNome, turmaNome: item.turmaNome, dataInicio: item.dataInicio, dataFim: item.dataFim, statusVigencia: item.statusVigencia, disciplinas: [] };
+      grupos.push(grupo);
+    }
+    grupo.disciplinas.push(item);
+  });
+  grupos.forEach(grupo => grupo.disciplinas.sort((a, b) => a.disciplinaNome.localeCompare(b.disciplinaNome, 'pt-BR')));
+
   const columns = [
-    { key: 'aluno', header: 'Aluno', render: row => row.alunoNome },
+    { key: 'aluno', header: 'Aluno', render: row => <span className="font-semibold text-slate-900">{row.alunoNome}</span> },
     { key: 'escola', header: 'Escola', render: row => row.escolaNome },
     { key: 'turma', header: 'Turma', render: row => row.turmaNome },
-    { key: 'disciplina', header: 'Disciplina', render: row => row.disciplinaNome },
+    { key: 'disciplinas', header: 'Disciplinas', render: row => (
+      <div className="flex flex-col gap-1">
+        {row.disciplinas.map(item => (
+          <span key={item.disciplinaId} className="flex flex-wrap items-center gap-2">
+            <span>{item.disciplinaNome}</span>
+            <Badge variant={STATUS_VISUAL_VARIANT[item.statusVisual]}>{STATUS_VISUAL_LABEL[item.statusVisual]}</Badge>
+          </span>
+        ))}
+      </div>
+    ) },
     { key: 'vigencia', header: 'Vigência', render: row => (
       <div className="flex flex-col gap-1">
         <span>{formatFullDate(row.dataInicio)} a {formatFullDate(row.dataFim)}</span>
         <span className={`w-fit rounded-full border px-2 py-0.5 text-xs font-semibold ${formStatusClasses(row.statusVigencia)}`}>{formStatusLabel(row.statusVigencia)}</span>
       </div>
     ) },
-    { key: 'status', header: 'Status', render: row => <Badge variant={STATUS_VISUAL_VARIANT[row.statusVisual]}>{STATUS_VISUAL_LABEL[row.statusVisual]}</Badge> },
   ];
 
   return (
@@ -62,7 +85,7 @@ export const MeusPdisPage = () => {
           <BackButton />
           <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">PDI por disciplina</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">Meus PDIs</h1>
-          <p className="mt-2 max-w-3xl text-slate-600">Todas as fichas PDI das disciplinas que você leciona, em qualquer escola ou turma — sem precisar selecionar uma escola primeiro.</p>
+          <p className="mt-2 max-w-3xl text-slate-600">Seus alunos com PDI, em qualquer escola ou turma. Ao abrir um aluno, você preenche num único formulário todas as disciplinas que leciona para ele.</p>
         </div>
 
         {meusPdisReaisError && (
@@ -94,8 +117,8 @@ export const MeusPdisPage = () => {
             ) : (
               <DataTable
                 columns={columns}
-                rows={itensFiltrados}
-                onRowClick={row => navigate(`/pdi/fichas/${row.aplicacaoId}/${row.disciplinaId}/${row.alunoId}`)}
+                rows={grupos}
+                onRowClick={row => navigate(`/pdi/aluno/${row.aplicacaoId}/${row.alunoId}`)}
                 emptyMessage="Nenhum PDI encontrado com os filtros selecionados"
               />
             )}

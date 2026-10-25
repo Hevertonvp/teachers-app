@@ -28,6 +28,8 @@ const paraPayload = (payload) => ({
   opcoes: payload.opcoes || [],
   complementar: payload.complementar || null,
   trimestre: payload.trimestre ? Number(payload.trimestre) : null, // null = qualquer trimestre
+  // Ausente (pergunta padrão nova) = backend assume compartilhada, comportamento de sempre.
+  ...(payload.compartilhada !== undefined ? { compartilhada: payload.compartilhada } : {}),
 });
 
 export const listarPdiPerguntasPadraoReais = async () => (await apiFetch('/api/pdi-perguntas-padrao')).map(normalizePergunta);

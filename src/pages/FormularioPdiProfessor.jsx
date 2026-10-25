@@ -15,37 +15,11 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 import { enfileirar } from '../offline/syncQueue';
 import { SavingIndicator } from '../components/SavingIndicator';
+import { agruparPorSecao, answerFromResposta } from '../utils/pdiFicha';
 
 const STATUS_LABEL = { pendente: 'Pendente', em_andamento: 'Em preenchimento', concluida: 'Concluído' };
 const STATUS_VARIANT = { pendente: 'gray', em_andamento: 'blue', concluida: 'green' };
 
-const answerFromResposta = (question, respostaRow) => {
-  const valor = respostaRow?.valor || {};
-  if (question.tipoResposta === 'numero') {
-    return { valor: valor.resposta === undefined || valor.resposta === null || valor.resposta === '' ? '' : String(valor.resposta) };
-  }
-  if (question.tipoResposta === 'selecao') return { opcao: valor.resposta || '', complementar: valor.complementarTexto || '' };
-  // Habilidades do CRMG: o valor salvo já traz código/descrição congelados das marcadas.
-  if (question.tipoResposta === 'habilidade_crmg') return { todas: !!valor.todas, habilidades: valor.habilidades || [], componenteNome: valor.componenteNome };
-  if (question.tipoResposta === 'marcacao') return { marcado: !!valor.resposta, complementar: valor.complementarTexto || '' };
-  return { texto: valor.resposta || '', complementar: '' };
-};
-
-// Agrupa as perguntas por seção/subseção preservando a ordem em que aparecem no snapshot —
-// genérico para qualquer disciplina, não assume nenhuma seção específica.
-const agruparPorSecao = (questions) => {
-  const secoes = [];
-  questions.forEach(question => {
-    const secaoNome = question.secao || 'Perguntas';
-    let secao = secoes.find(item => item.nome === secaoNome);
-    if (!secao) { secao = { nome: secaoNome, subsecoes: [] }; secoes.push(secao); }
-    const subsecaoNome = question.subsecao || null;
-    let subsecao = secao.subsecoes.find(item => item.nome === subsecaoNome);
-    if (!subsecao) { subsecao = { nome: subsecaoNome, questions: [] }; secao.subsecoes.push(subsecao); }
-    subsecao.questions.push(question);
-  });
-  return secoes;
-};
 
 export const FormularioPdiProfessor = () => {
   const { aplicacaoId, disciplinaId, alunoId } = useParams();
@@ -191,6 +165,7 @@ export const FormularioPdiProfessor = () => {
   const questions = [...perguntas];
   const secoes = agruparPorSecao(questions);
   const questionsPadrao = blocoPadrao?.perguntas || [];
+  const perguntasPadraoObrigatorias = questionsPadrao.filter(question => question.tipoResposta !== 'orientacao');
 
   // "Respondida" pra fins de exibição/validação no frontend = já estava salva (veio do servidor
   // no load) OU foi tocada agora nesta visita (ainda não enviada, mas já preenchida na tela) —
@@ -201,9 +176,10 @@ export const FormularioPdiProfessor = () => {
   const perguntasFaltandoEspecificas = perguntasObrigatorias.filter(question => !idsJaSalvos.has(question.id) && !touchedIds.has(question.id)).length;
 
   // Mesmo critério, só que para as perguntas do bloco comum (seção 11 do pedido: concluir exige
-  // as duas — específicas E padrão) — nenhuma pergunta padrão é ORIENTACAO (bloqueado no backend).
+  // as duas — específicas E padrão). ORIENTACAO também pode estar no bloco ("Objetivo: …") e,
+  // como nas específicas, nunca conta: é só texto, nunca recebe resposta.
   const idsPadraoJaSalvos = new Set((blocoPadrao?.respostas || []).map(resposta => resposta.aplicacaoPerguntaPadraoId));
-  const perguntasFaltandoPadrao = questionsPadrao.filter(question => !idsPadraoJaSalvos.has(question.id) && !blocoTouchedIds.has(question.id)).length;
+  const perguntasFaltandoPadrao = questionsPadrao.filter(question => question.tipoResposta !== 'orientacao' && !idsPadraoJaSalvos.has(question.id) && !blocoTouchedIds.has(question.id)).length;
   const perguntasFaltando = perguntasFaltandoEspecificas + perguntasFaltandoPadrao;
 
   const bloqueado = salvandoSaida || concluindo;
@@ -508,9 +484,9 @@ export const FormularioPdiProfessor = () => {
               <Badge variant={STATUS_VARIANT[ficha.status]}>{STATUS_LABEL[ficha.status]}</Badge>
               <Badge variant={podePreencher ? 'green' : 'gray'}>{podePreencher ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
             </div>
-            {(perguntasObrigatorias.length + questionsPadrao.length) > 0 && (
+            {(perguntasObrigatorias.length + perguntasPadraoObrigatorias.length) > 0 && (
               <p className="text-xs font-semibold text-slate-500">
-                {(perguntasObrigatorias.length + questionsPadrao.length) - perguntasFaltando}/{perguntasObrigatorias.length + questionsPadrao.length} perguntas respondidas
+                {(perguntasObrigatorias.length + perguntasPadraoObrigatorias.length) - perguntasFaltando}/{perguntasObrigatorias.length + perguntasPadraoObrigatorias.length} perguntas respondidas
               </p>
             )}
           </div>

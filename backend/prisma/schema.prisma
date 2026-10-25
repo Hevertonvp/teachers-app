@@ -471,6 +471,12 @@ model PerguntaPdiPadrao {
   ordem        Int
   status       StatusRegistro    @default(ATIVA)
   trimestre    Int? // mesmo significado de PerguntaPdi.trimestre — copiado para o Modelo na criação
+  // "Padrão" (entra automaticamente em todo Modelo novo) e "compartilhada" (UMA resposta no bloco
+  // comum do Professor, reaproveitada entre as disciplinas) são coisas diferentes: false = nasce em
+  // todo Modelo, mas cada disciplina responde a sua (nota, CRMG, pergunta do trimestre…). Decidido
+  // na criação da Aplicação (snapshot), nunca na cópia pro Modelo. HABILIDADE_CRMG nunca é
+  // compartilhada (CHECK no banco).
+  compartilhada Boolean          @default(true)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -793,15 +799,19 @@ model DisciplinaComponenteCurricular {
 
 // Calendário de trimestres do ano letivo (tela Configurações > Trimestres). Antes vivia só no
 // estado do frontend; persistido aqui para que a criação de uma Aplicação saiba em qual trimestre
-// ela cai e inclua só as perguntas daquele trimestre (PerguntaPdi.trimestre).
+// ela cai e inclua só as perguntas daquele trimestre (PerguntaPdi.trimestre). Um calendário por
+// ano letivo: uma linha por (ano, trimestre) — nunca duplicada (chave primária composta). As duas
+// datas são obrigatórias e sempre dentro do próprio `ano` (CHECK no banco, ver migration).
 model PeriodoTrimestre {
-  trimestre  Int      @id // 1, 2 ou 3
+  ano        Int
+  trimestre  Int // 1, 2 ou 3
   dataInicio DateTime @db.Date
   dataFim    DateTime @db.Date
 
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
 
+  @@id([ano, trimestre])
   @@map("periodos_trimestre")
 }
 

@@ -57,6 +57,10 @@ const GRUPOS_APLICACAO_OPERACIONAIS = [
   { status: 'expired', titulo: 'Reabertas' },
 ];
 
+// Erros de criação de Aplicação causados pelo calendário de trimestres (ver CalendarioTrimestresError
+// no backend) — mostram o atalho pra Configurações > Trimestres.
+const CODIGOS_CALENDARIO = ['CALENDARIO_TRIMESTRES_INCOMPLETO', 'CALENDARIO_TRIMESTRES_INVALIDO', 'DATA_FORA_DO_CALENDARIO'];
+
 const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
 export const FormularioPdiPage = () => {
@@ -108,6 +112,7 @@ export const FormularioPdiPage = () => {
   const [editingAplicacao, setEditingAplicacao] = useState(null);
   const [removendoAplicacao, setRemovendoAplicacao] = useState(null);
   const [aplicacaoError, setAplicacaoError] = useState('');
+  const [aplicacaoErroCalendario, setAplicacaoErroCalendario] = useState(false);
   const [salvandoAplicacao, setSalvandoAplicacao] = useState(false);
   const [reaberturaForm, setReaberturaForm] = useState(null);
   const [reaberturaError, setReaberturaError] = useState('');
@@ -125,6 +130,9 @@ export const FormularioPdiPage = () => {
   // Catálogo de perguntas padrão (Configurações) — carregado aqui também pra alimentar o picker
   // de reconciliação manual do legado, sem duplicar a chamada se a Secretaria já visitou Configurações.
   useEffect(() => { if (souSecretaria) loadPdiPerguntasPadraoReais(); }, [souSecretaria, loadPdiPerguntasPadraoReais]);
+  // Cópia de pergunta padrão marcada como "por disciplina" (nota, CRMG, trimestre…): continua
+  // vinculada (mesmo texto em todo Modelo), mas não vai pro bloco comum — ver pdiAplicacoes.ts.
+  const padraoNaoCompartilhada = (pergunta) => pdiPerguntasPadraoReais.find(padrao => padrao.id === pergunta.padraoOriginalId)?.compartilhada === false;
   // Aplicações é carregado para todo mundo com acesso a esta tela (Secretaria/Gestor/Diretora).
   useEffect(() => { loadPdiAplicacoesReais(); }, [loadPdiAplicacoesReais]);
 
@@ -259,6 +267,7 @@ export const FormularioPdiPage = () => {
   const salvarAplicacao = async (event) => {
     event.preventDefault();
     setAplicacaoError('');
+    setAplicacaoErroCalendario(false);
     if (aplicacaoForm.dataFim < aplicacaoForm.dataInicio) {
       setAplicacaoError('A data de encerramento não pode ser anterior à data de início.');
       return;
@@ -305,7 +314,16 @@ export const FormularioPdiPage = () => {
 
     const sucesso = resultados.filter(item => item.ok);
     const falha = resultados.filter(item => !item.ok);
+    // O calendário de trimestres é um só para todas as escolas — se foi ele que bloqueou, a mesma
+    // mensagem repetida por escola não ajuda: mostra uma vez, com o atalho pra configurar.
+    const falhasDeCalendario = falha.filter(item => CODIGOS_CALENDARIO.includes(item.codigo));
+    if (sucesso.length === 0 && falha.length > 0 && falhasDeCalendario.length === falha.length && new Set(falha.map(item => item.error)).size === 1) {
+      setAplicacaoError(falha[0].error);
+      setAplicacaoErroCalendario(true);
+      return;
+    }
     if (falha.length > 0) {
+      setAplicacaoErroCalendario(falhasDeCalendario.length > 0);
       const detalhes = falha.map(item => `${escolas.find(escola => escola.id === item.escolaId)?.nome || `Escola #${item.escolaId}`}: ${item.error}`);
       setAplicacaoError(sucesso.length > 0
         ? `Criada para ${sucesso.length} ${sucesso.length === 1 ? 'escola' : 'escolas'}, mas falhou para: ${detalhes.join('; ')}`
@@ -442,7 +460,9 @@ export const FormularioPdiPage = () => {
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-900">
                           {pergunta.codigo ? `${pergunta.codigo} — ${pergunta.pergunta}` : pergunta.pergunta}
-                          {pergunta.padraoOriginalId && <Badge variant="blue" className="ml-2 align-middle">Padrão compartilhada</Badge>}
+                          {pergunta.padraoOriginalId && (padraoNaoCompartilhada(pergunta)
+                            ? <Badge variant="gray" className="ml-2 align-middle">Padrão · por disciplina</Badge>
+                            : <Badge variant="blue" className="ml-2 align-middle">Padrão compartilhada</Badge>)}
                         </p>
                         <p className="mt-1 truncate text-xs text-slate-500">
                           {tipoRespostaLabel(pergunta.tipoResposta)}
@@ -452,7 +472,12 @@ export const FormularioPdiPage = () => {
                           {pergunta.status !== 'ativa' && ' · Inativa'}
                         </p>
                         {pergunta.padraoOriginalId && (
-                          <p className="mt-1 text-xs text-slate-500">Respondida uma vez e reaproveitada em todas as disciplinas do mesmo Professor. Para alterar o texto/opções, edite a pergunta padrão em Configurações.</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {padraoNaoCompartilhada(pergunta)
+                              ? 'Vem da pergunta padrão, mas cada disciplina tem a sua própria resposta.'
+                              : 'Respondida uma vez e reaproveitada em todas as disciplinas do mesmo Professor.'}
+                            {' '}Para alterar o texto/opções, edite a pergunta padrão em Configurações.
+                          </p>
                         )}
                       </div>
                       <OrderButtons
@@ -739,7 +764,16 @@ export const FormularioPdiPage = () => {
         {aplicacaoForm && (
           <Modal title={editingAplicacao ? 'Editar vigência da aplicação' : 'Nova aplicação PDI'} onClose={() => { setAplicacaoForm(null); setEditingAplicacao(null); setAplicacaoError(''); }}>
             <form onSubmit={salvarAplicacao} className="space-y-4">
-              {aplicacaoError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{aplicacaoError}</div>}
+              {aplicacaoError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                  {aplicacaoError}
+                  {aplicacaoErroCalendario && (
+                    <div className="mt-3">
+                      <Button type="button" size="sm" variant="outline" onClick={() => navigate('/configuracoes#trimestres')}>Ir para Configurações › Trimestres</Button>
+                    </div>
+                  )}
+                </div>
+              )}
               {!editingAplicacao && (
                 <p className="text-sm text-slate-600">Durante esta vigência, os professores da escola terão acesso aos formulários PDI correspondentes às disciplinas que lecionam e que possuem modelo configurado.</p>
               )}

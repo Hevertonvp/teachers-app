@@ -18,6 +18,7 @@ import { PdiHomePage } from './pages/PdiHomePage';
 import { MeusPdisPage } from './pages/MeusPdisPage';
 import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
+import { FormularioPdiAlunoPage } from './pages/FormularioPdiAlunoPage';
 import { PdiPage } from './pages/PdiPage';
 import { PdiAlunoPerfil } from './pages/PdiAlunoPerfil';
 import { FichaAnualPdiPage } from './pages/FichaAnualPdiPage';
@@ -65,6 +66,7 @@ const AppRoutes = () => <Routes>
   <Route path="/pdi/alunos" element={<ProtectedRoute><PdiPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id" element={<ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute>} />
   <Route path="/pdi/fichas/:aplicacaoId/:disciplinaId/:alunoId" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
+  <Route path="/pdi/aluno/:aplicacaoId/:alunoId" element={<ProtectedRoute><FormularioPdiAlunoPage /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id/anamnese" element={<ProtectedRoute><AnamnesePage /></ProtectedRoute>} />
   <Route path="/pdi/alunos/:id/ficha-anual" element={<ProtectedRoute><FichaAnualPdiPage /></ProtectedRoute>} />
   <Route path="/pdi/anamnese-modelo" element={<ProtectedRoute><AnamneseModeloPage /></ProtectedRoute>} />

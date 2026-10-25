@@ -21,7 +21,7 @@ function exigirSecretaria(actor: Actor) {
 const formatarPerguntaPadrao = (p: {
   id: number; secao: string; subsecao: string | null; codigo: string | null; texto: string;
   indicador: string | null; origem: string; tipoResposta: string; opcoes: unknown;
-  complementar: unknown; ordem: number; status: string; trimestre: number | null; createdAt: Date; updatedAt: Date | null;
+  complementar: unknown; ordem: number; status: string; trimestre: number | null; compartilhada: boolean; createdAt: Date; updatedAt: Date | null;
 }) => ({
   id: p.id,
   secao: p.secao,
@@ -36,6 +36,7 @@ const formatarPerguntaPadrao = (p: {
   ordem: p.ordem,
   status: p.status,
   trimestre: p.trimestre,
+  compartilhada: p.compartilhada,
   createdAt: p.createdAt,
   updatedAt: p.updatedAt,
 });
@@ -54,27 +55,30 @@ const dadosPerguntaSchema = z.object({
   texto: z.string().trim().min(1, 'Informe o texto da pergunta.'),
   indicador: z.string().trim().nullish(),
   origem: z.enum(['ESTRUTURADA', 'HABILIDADE', 'ORIENTACAO', 'QUALITATIVA', 'PERSONALIZADA']).default('PERSONALIZADA'),
-  // HABILIDADE_CRMG continua aceito aqui (não quebrar edição de perguntas padrão antigas que já
-  // tinham esse tipo) — o bloqueio de CRIAR uma NOVA é feito explicitamente no POST abaixo, nunca
-  // aqui no schema, porque PUT precisa continuar aceitando salvar as que já existem.
   tipoResposta: z.enum(['TEXTO', 'SELECAO', 'MARCACAO', 'NUMERO', 'ORIENTACAO', 'HABILIDADE_CRMG']),
   opcoes: z.array(z.string()).default([]),
   complementar: z.object({ gatilho: z.union([z.string(), z.boolean()]), label: z.string() }).nullish(),
   trimestre: z.number().int().min(1).max(3).nullish(), // null = qualquer trimestre
+  // Omitido = criar: true (comportamento de sempre); editar: mantém o valor atual — nunca reclassifica
+  // em silêncio uma pergunta só porque um cliente antigo não mandou o campo.
+  compartilhada: z.boolean().optional(),
 });
+
+// HABILIDADE_CRMG pode ser pergunta padrão (nasce em todo Modelo), mas NUNCA compartilhada: é
+// sempre isolada por disciplina (componente curricular da Ficha) — compartilhar entre disciplinas
+// quebraria esse isolamento. Mesma regra repetida como CHECK no banco.
+function exigirCrmgNaoCompartilhada(tipoResposta: string, compartilhada: boolean) {
+  if (tipoResposta === 'HABILIDADE_CRMG' && compartilhada) {
+    throw new ValidationError('Habilidades do CRMG são sempre específicas de cada disciplina: podem ser pergunta padrão, mas nunca com resposta compartilhada entre disciplinas.');
+  }
+}
 
 pdiPerguntasPadraoRouter.post('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
   const dados = dadosPerguntaSchema.parse(req.body);
-  // HABILIDADE_CRMG NUNCA pode ser uma NOVA pergunta padrão (bloco de respostas padrão
-  // compartilhado, seção 9 do pedido): ela é sempre isolada por disciplina (componente curricular
-  // da Ficha), e compartilhar entre disciplinas quebraria esse isolamento. Duas perguntas padrão
-  // antigas já têm esse tipo (nunca chegaram a ser usadas em nenhum Modelo real) — continuam
-  // editáveis, só não dá mais pra criar uma nova assim.
-  if (dados.tipoResposta === 'HABILIDADE_CRMG') {
-    throw new ValidationError('Habilidades do CRMG são sempre específicas de uma disciplina e não podem ser uma nova pergunta padrão compartilhada. Crie esta pergunta diretamente no Modelo PDI da disciplina desejada.');
-  }
+  const compartilhada = dados.compartilhada ?? true;
+  exigirCrmgNaoCompartilhada(dados.tipoResposta, compartilhada);
 
   const ultima = await prisma.perguntaPdiPadrao.findFirst({ orderBy: { ordem: 'desc' } });
   const criada = await prisma.perguntaPdiPadrao.create({
@@ -89,6 +93,7 @@ pdiPerguntasPadraoRouter.post('/', async (req, res) => {
       opcoes: dados.opcoes,
       complementar: dados.complementar ?? undefined,
       trimestre: dados.trimestre ?? null,
+      compartilhada,
       ordem: (ultima?.ordem ?? 0) + 1,
       status: 'ATIVA',
       createdBy: String(actor.id),
@@ -109,12 +114,10 @@ pdiPerguntasPadraoRouter.put('/:id', async (req, res) => {
   const id = Number(req.params.id);
   const atual = await buscarPerguntaPadrao(id);
   const dados = dadosPerguntaSchema.parse(req.body);
-  // Mesmo bloqueio do POST, só que como TRANSIÇÃO: uma pergunta padrão que já é HABILIDADE_CRMG
-  // continua podendo ser salva (nunca quebra o que já existe), mas nenhuma outra pode passar a
-  // ser HABILIDADE_CRMG depois de criada.
-  if (dados.tipoResposta === 'HABILIDADE_CRMG' && atual.tipoResposta !== 'HABILIDADE_CRMG') {
-    throw new ValidationError('Habilidades do CRMG são sempre específicas de uma disciplina e não podem se tornar uma pergunta padrão compartilhada. Crie uma pergunta nova diretamente no Modelo PDI da disciplina desejada.');
-  }
+  // Vale a partir da PRÓXIMA Aplicação criada (o snapshot decide bloco comum x disciplina) —
+  // Aplicações já criadas continuam como foram congeladas.
+  const compartilhada = dados.compartilhada ?? atual.compartilhada;
+  exigirCrmgNaoCompartilhada(dados.tipoResposta, compartilhada);
 
   const atualizada = await prisma.perguntaPdiPadrao.update({
     where: { id },
@@ -129,6 +132,7 @@ pdiPerguntasPadraoRouter.put('/:id', async (req, res) => {
       opcoes: dados.opcoes,
       complementar: dados.complementar ?? undefined,
       trimestre: dados.trimestre ?? null,
+      compartilhada,
       updatedBy: String(actor.id),
     },
   });

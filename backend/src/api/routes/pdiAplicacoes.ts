@@ -1,14 +1,19 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
-import { perguntaValeParaTrimestre, trimestreDaData } from '../../domain/trimestres.js';
+import { perguntaValeParaTrimestre, resolverTrimestreObrigatorio, travarCalendarioDoAno } from '../../domain/trimestres.js';
 import { escolasPermitidas } from './pessoas.js';
 
 export const pdiAplicacoesRouter = Router();
 
 type Actor = { id: number; perfil: string };
+
+// Namespace do pg_advisory_xact_lock por escola na criação de Aplicação (o do calendário de
+// trimestres é outro — ver domain/trimestres.ts).
+const NAMESPACE_LOCK_APLICACAO_ESCOLA = 7302;
 
 // Gerenciar (criar/editar/reabrir) é exclusivo da Secretaria — Gestor e Diretora só consultam
 // dentro do próprio escopo de escola, Professor/Auxiliar nem isso ainda (seção 1 do pedido,
@@ -298,8 +303,8 @@ function exigirInicioNaoNoPassado(dataInicio: Date) {
 // (dataFim no passado) nem contra uma REMOVIDA (status INATIVA, ver DELETE /:id). As duas saem do
 // conjunto considerado; só uma Aplicação com status ATIVA e ainda dentro (ou no futuro) da própria
 // vigência pode gerar conflito.
-async function validarSemSobreposicao(escolaId: number, periodo: { dataInicio: Date; dataFim: Date }, ignorarId?: number) {
-  const existentes = await prisma.aplicacaoPdi.findMany({
+async function validarSemSobreposicao(escolaId: number, periodo: { dataInicio: Date; dataFim: Date }, ignorarId?: number, client: Prisma.TransactionClient | typeof prisma = prisma) {
+  const existentes = await client.aplicacaoPdi.findMany({
     where: { escolaId, status: 'ATIVA', dataFim: { gte: hojeComoData() }, ...(ignorarId ? { id: { not: ignorarId } } : {}) },
     select: { id: true, dataInicio: true, dataFim: true },
   });
@@ -363,13 +368,22 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
     }
   }
 
-  // Trimestre do calendário (Configurações > Trimestres) em que a Aplicação começa — decide quais
-  // perguntas específicas de trimestre entram no snapshot (ver domain/trimestres.ts).
-  const trimestre = await trimestreDaData(prisma, dados.dataInicio);
-
   // Timeout maior que o padrão (5s): o snapshot percorre todo Modelo+Pergunta ATIVA de uma vez
   // (dezenas de round-trips ao Neon), e o padrão estourava com o volume real de modelos.
   const criada = await prisma.$transaction(async (tx) => {
+    // Lock por escola: a checagem de sobreposição feita antes da transação (acima, resposta rápida
+    // pro caso comum) é refeita aqui dentro, serializada — duas criações simultâneas pra mesma
+    // escola nunca passam as duas pela checagem antes de qualquer uma gravar.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${NAMESPACE_LOCK_APLICACAO_ESCOLA}::int, ${dados.escolaId}::int)`;
+    await validarSemSobreposicao(dados.escolaId, dados, undefined, tx);
+
+    // Trimestre do calendário do ANO da data de início (Configurações > Trimestres) — obrigatório:
+    // calendário incompleto/inválido ou data fora de todo trimestre bloqueia a criação (nunca mais
+    // trimestre null com as três perguntas trimestrais, ver domain/trimestres.ts). Lock
+    // compartilhado: nunca resolve no meio de uma edição do calendário daquele ano.
+    await travarCalendarioDoAno(tx, dados.dataInicio.getUTCFullYear(), 'compartilhado');
+    const trimestre = await resolverTrimestreObrigatorio(tx, dados.dataInicio);
+
     const aplicacao = await tx.aplicacaoPdi.create({
       data: {
         escolaId: dados.escolaId,
@@ -398,8 +412,12 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
         },
       });
       const perguntasDoTrimestre = modelo.perguntas.filter((pergunta) => perguntaValeParaTrimestre(pergunta.trimestre, trimestre));
-      const perguntasEspecificas = perguntasDoTrimestre.filter((pergunta) => !pergunta.padraoOriginalId);
-      const perguntasPadrao = perguntasDoTrimestre.filter((pergunta) => pergunta.padraoOriginalId);
+      // Bloco comum = só cópia de pergunta padrão marcada como COMPARTILHADA. Cópia de padrão não
+      // compartilhada (nota, CRMG, pergunta do trimestre…) entra como pergunta da disciplina, com
+      // resposta própria na Ficha — mesmo que o Modelo tenha sido criado antes desta distinção.
+      const ehCompartilhada = (pergunta: (typeof perguntasDoTrimestre)[number]) => !!pergunta.padraoOriginalId && pergunta.padraoOriginal?.compartilhada === true;
+      const perguntasEspecificas = perguntasDoTrimestre.filter((pergunta) => !ehCompartilhada(pergunta));
+      const perguntasPadrao = perguntasDoTrimestre.filter(ehCompartilhada);
 
       if (perguntasEspecificas.length > 0) {
         await tx.aplicacaoPerguntaPdi.createMany({

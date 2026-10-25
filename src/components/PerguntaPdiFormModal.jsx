@@ -23,11 +23,14 @@ export const trimestreLabel = (trimestre) => (trimestre ? `Só no ${trimestre}º
 
 export const blankPerguntaPdi = (overrides = {}) => ({ secao: 'Registro pedagógico', pergunta: '', tipoResposta: 'texto', opcoes: [], complementar: null, status: 'ativa', trimestre: null, ...overrides });
 
-export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose, saving, ocultarTrimestre = false, trimestreInfo }) => {
+// `mostrarCompartilhada`: só para perguntas padrão (Configurações) — "entra em todo Modelo" e
+// "resposta única entre as disciplinas" são escolhas separadas. CRMG nunca é compartilhada.
+export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose, saving, ocultarTrimestre = false, trimestreInfo, mostrarCompartilhada = false }) => {
   const changeTipoResposta = (tipoResposta) => {
     onChange({
       ...value,
       tipoResposta,
+      ...(tipoResposta === 'habilidade_crmg' ? { compartilhada: false } : {}),
       opcoes: tipoResposta === 'selecao' ? (value.opcoes?.length ? value.opcoes : ['', '']) : [],
       complementar: (tipoResposta === 'texto' || tipoResposta === 'numero' || tipoResposta === 'orientacao' || tipoResposta === 'habilidade_crmg') ? null : value.complementar,
     });
@@ -116,6 +119,24 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
               <option value="3">Só no 3º trimestre</option>
             </select>
           </FormField>
+        )}
+
+        {mostrarCompartilhada && (
+          <div className="rounded-lg border border-slate-200 p-4">
+            <label className="flex items-start gap-2 text-sm font-semibold text-slate-700">
+              <input type="checkbox" className="mt-0.5" checked={value.compartilhada !== false} disabled={value.tipoResposta === 'habilidade_crmg'} onChange={event => onChange({ ...value, compartilhada: event.target.checked })} />
+              <span>
+                Resposta compartilhada entre as disciplinas
+                <span className="mt-1 block text-xs font-normal text-slate-500">
+                  {value.tipoResposta === 'habilidade_crmg'
+                    ? 'Habilidades do CRMG são sempre respondidas separadamente em cada disciplina.'
+                    : value.compartilhada !== false
+                      ? 'O Professor responde uma única vez para todas as disciplinas que leciona ao aluno (bloco comum).'
+                      : 'Entra em todo Modelo, mas cada disciplina tem a sua própria resposta (ex.: nota, pergunta do trimestre).'}
+                </span>
+              </span>
+            </label>
+          </div>
         )}
 
         <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></div>
