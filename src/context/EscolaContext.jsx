@@ -53,6 +53,13 @@ export const EscolaProvider = ({ children }) => {
       setVinculosLoading(false);
       return;
     }
+    // Com senha temporária pendente o backend recusa (403) tudo que não seja trocar a senha: nem
+    // pede agora — o efeito roda de novo sozinho quando `user.senhaTemporaria` virar false.
+    if (user.senhaTemporaria) {
+      requisicaoAtual.current += 1;
+      setVinculosLoading(false);
+      return;
+    }
     if (getAuthToken()) loadVinculosReais();
   }, [user, loadVinculosReais]);
 

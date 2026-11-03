@@ -29,6 +29,20 @@ export const AuthProvider = ({ children }) => {
   // DataProvider (ver App.jsx).
   const { professores, gestores, diretores, secretarias, auxiliares, loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais, loadTrimestres } = useData();
 
+  // Carga inicial de dados reais depois que a sessão está liberada. Com senha temporária pendente o
+  // backend recusa TODAS estas chamadas (403), então só roda no login normal e, no primeiro acesso,
+  // logo depois de a senha ser trocada (ver trocarSenha) — senão o painel abriria sem escolas,
+  // turmas, disciplinas e trimestres até alguém recarregar a página.
+  const carregarDadosIniciais = (perfil) => {
+    loadEscolas();
+    loadTurmas();
+    loadDisciplinasReais();
+    loadTrimestres();
+    // GET /api/pdi-alunos é exclusivo de Secretaria/Gestor/Diretora (ver exigirLeitura em
+    // pdiAlunos.ts) — Professor e Auxiliar sempre recebiam 403 aqui à toa.
+    if (['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(perfil)) loadPdiAlunosReais();
+  };
+
   // Login REAL: quem valida e-mail/senha é o backend (bcrypt + JWT). O array `usuarios` do mock
   // continua servindo só para ligar a conta ao perfil detalhado (turmas, disciplinas, avatar...)
   // que ainda vive no DataContext mockado — a autenticação em si não depende mais dele.
@@ -92,13 +106,7 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(token);
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
-    loadEscolas();
-    loadTurmas();
-    loadDisciplinasReais();
-    loadTrimestres();
-    // GET /api/pdi-alunos é exclusivo de Secretaria/Gestor/Diretora (ver exigirLeitura em
-    // pdiAlunos.ts) — Professor e Auxiliar sempre recebiam 403 aqui à toa.
-    if (['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(pessoa.perfil)) loadPdiAlunosReais();
+    if (!pessoa.senhaTemporaria) carregarDadosIniciais(pessoa.perfil);
     return { ok: true };
   };
 
@@ -108,6 +116,9 @@ export const AuthProvider = ({ children }) => {
   const marcarSenhaTemporaria = (pendente) => {
     setUser(prev => {
       if (!prev) return prev;
+      // Sem mudança real, devolve o MESMO objeto: um objeto novo a cada 403 refazia os efeitos que
+      // dependem de `user` (ex.: EscolaContext), que pediam de novo, recebiam 403 de novo... em laço.
+      if (!!prev.senhaTemporaria === pendente) return prev;
       const atualizado = { ...prev, senhaTemporaria: pendente };
       localStorage.setItem('user', JSON.stringify(atualizado));
       return atualizado;
@@ -119,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       const { token } = await apiFetch('/api/auth/trocar-senha', { method: 'POST', body: { novaSenha, confirmarNovaSenha } });
       setAuthToken(token);
       marcarSenhaTemporaria(false);
+      carregarDadosIniciais(user?.tipo?.toUpperCase());
       return { ok: true };
     } catch (error) {
       return { ok: false, error: error.message };

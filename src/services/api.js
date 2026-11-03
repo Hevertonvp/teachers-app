@@ -78,7 +78,10 @@ export async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401 && tokenEnviado && tokenEnviado === authToken) onUnauthorized?.();
-    if (response.status === 403 && data?.codigo === 'SENHA_TEMPORARIA_PENDENTE') onSenhaTemporariaPendente?.();
+    // Mesma trava do 401: só vale se o pedido foi feito com o token ATUAL. Uma resposta 403 atrasada,
+    // de um pedido feito com o token temporário antes da troca de senha, não pode reabrir o estado
+    // "senha pendente" depois que a troca já deu certo (a tela voltava para "Crie sua senha").
+    if (response.status === 403 && data?.codigo === 'SENHA_TEMPORARIA_PENDENTE' && tokenEnviado === authToken) onSenhaTemporariaPendente?.();
     const erro = new Error(data?.message || 'Ocorreu um erro inesperado ao comunicar com o servidor.');
     // Infra offline (seção "Conflitos"): quem chamou decide o que fazer com o conflito — nunca
     // tratado genericamente aqui, cada tela sabe como preservar o próprio rascunho local.
