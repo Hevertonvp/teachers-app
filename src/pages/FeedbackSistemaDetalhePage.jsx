@@ -17,7 +17,7 @@ const formatarDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') :
 const EVENTO_TEXTO = {
   CRIACAO: () => 'Feedback criado',
   MUDANCA_STATUS: (e) => `Status alterado para "${STATUS_LABEL[e.statusNovo] ?? e.statusNovo}"`,
-  REABERTURA_AUTOMATICA: () => 'Reaberto automaticamente (nova mensagem após estar resolvido)',
+  REABERTURA_AUTOMATICA: () => 'Reaberto por nova mensagem',
 };
 
 // Detalhe de UM feedback — usado tanto por quem enviou ("Meus feedbacks") quanto por
@@ -88,7 +88,7 @@ export const FeedbackSistemaDetalhePage = () => {
         });
         setResposta('');
         apagarDraft(draftKey);
-        setMensagem('Sem conexão — sua resposta foi protegida e será enviada automaticamente quando a conexão voltar.');
+        setMensagem('Sem conexão. Sua resposta será enviada quando a conexão voltar.');
         return;
       }
       setErro(error.message);

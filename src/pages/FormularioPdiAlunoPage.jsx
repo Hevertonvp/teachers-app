@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Badge, Button, Card, EmptyState, FormField } from '../components/Common';
+import { Badge, Button, Card, EmptyState, FormField, LoadingBlock, Spinner } from '../components/Common';
 import { SegmentedToggle } from '../components/AnamneseFields';
 import { HabilidadesCrmgSelecao } from '../components/HabilidadesCrmgSelecao';
 import { SavingIndicator } from '../components/SavingIndicator';
@@ -466,7 +466,7 @@ export const FormularioPdiAlunoPage = () => {
   const disciplinasConcluiveis = Object.values(fichas).filter(f => f.dados?.editavelAgora && f.dados.ficha.status !== 'concluida').map(f => f.disciplinaId);
 
   if (carregando) {
-    return <MainLayout><Card className="py-12 text-center"><p className="text-slate-500">Carregando...</p></Card></MainLayout>;
+    return <MainLayout><Card><LoadingBlock text="Carregando formulário do aluno..." className="py-12" /></Card></MainLayout>;
   }
   if (erro) {
     return <MainLayout><Card className="py-12 text-center"><p className="font-semibold text-slate-800">{erro}</p><Button className="mt-4" onClick={() => navigate('/pdi/meus-pdis')}>Voltar</Button></Card></MainLayout>;
@@ -501,7 +501,7 @@ export const FormularioPdiAlunoPage = () => {
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={handleVoltar} disabled={bloqueado} className="text-sm font-semibold text-teal-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">{ocupado === 'salvando' ? 'Salvando...' : '← Voltar'}</button>
+              <button type="button" onClick={handleVoltar} disabled={bloqueado} className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">{ocupado === 'salvando' ? <><Spinner className="h-3.5 w-3.5" />Salvando...</> : '← Voltar'}</button>
               <SavingIndicator estado={statusLocal} />
             </div>
             <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">PDI do aluno</p>
@@ -542,11 +542,8 @@ export const FormularioPdiAlunoPage = () => {
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Perguntas comuns</p>
               <Badge variant={bloco.editavelAgora ? 'green' : 'gray'}>{bloco.editavelAgora ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              {bloco.disciplinas.length > 1 ? `Valem para: ${bloco.disciplinas.join(', ')}.` : 'Resposta única.'}
-            </p>
-            {Object.keys(blocos).length > 1 && (
-              <p className="mt-1 text-xs font-semibold text-amber-700">Professor responsável mudou nesta Aplicação: bloco comum separado.</p>
+            {bloco.disciplinas.length > 1 && (
+              <p className="mt-1 text-xs text-slate-500">Vale para: {bloco.disciplinas.join(', ')}.</p>
             )}
             {renderAvisoSalvar(bloco.salvar, handleSalvar)}
             <div className="mt-3">
@@ -558,7 +555,7 @@ export const FormularioPdiAlunoPage = () => {
         ))}
 
         {Object.values(fichas).map(f => {
-          if (f.carregando) return <Card key={f.disciplinaId}><p className="text-slate-500">Carregando {f.disciplinaNome}...</p></Card>;
+          if (f.carregando) return <Card key={f.disciplinaId}><LoadingBlock text={`Carregando ${f.disciplinaNome}...`} className="py-4" /></Card>;
           if (!f.dados) {
             return (
               <Card key={f.disciplinaId}>
@@ -611,9 +608,9 @@ export const FormularioPdiAlunoPage = () => {
         })}
 
         <div className="flex flex-wrap justify-end gap-3">
-          <Button variant="outline" onClick={handleSalvar} disabled={bloqueado}>{ocupado === 'salvando' ? 'Salvando...' : 'Salvar'}</Button>
+          <Button variant="outline" onClick={handleSalvar} loading={ocupado === 'salvando'} disabled={bloqueado}>{ocupado === 'salvando' ? 'Salvando...' : 'Salvar'}</Button>
           {disciplinasConcluiveis.length > 1 && (
-            <Button onClick={() => concluir(disciplinasConcluiveis)} disabled={bloqueado}>{ocupado === 'concluindo' ? 'Concluindo...' : 'Concluir todas as disciplinas'}</Button>
+            <Button onClick={() => concluir(disciplinasConcluiveis)} loading={ocupado === 'concluindo'} disabled={bloqueado}>{ocupado === 'concluindo' ? 'Concluindo...' : 'Concluir todas as disciplinas'}</Button>
           )}
         </div>
       </div>

@@ -107,7 +107,7 @@ const AbaNovoFeedback = ({ user, navigate }) => {
     try {
       const criado = await criarFeedbackSistemaReal(form);
       apagarDraft(draftKey);
-      navigate(`/feedback-sistema/meus/${criado.id}`, { state: { mensagemSucesso: 'Feedback enviado com sucesso. Você pode acompanhar a resposta aqui.' } });
+      navigate(`/feedback-sistema/meus/${criado.id}`, { state: { mensagemSucesso: 'Feedback enviado.' } });
     } catch (error) {
       if (!error.codigo && /conectar ao servidor/.test(error.message || '')) {
         await enfileirar({
@@ -117,7 +117,7 @@ const AbaNovoFeedback = ({ user, navigate }) => {
         });
         apagarDraft(draftKey);
         setForm(formVazio);
-        navigate('/feedback-sistema/meus', { state: { mensagemSucesso: 'Sem conexão — seu feedback foi protegido neste dispositivo e será enviado automaticamente quando a conexão voltar.' } });
+        navigate('/feedback-sistema/meus', { state: { mensagemSucesso: 'Sem conexão. Seu feedback será enviado quando a conexão voltar.' } });
         return;
       }
       setErro(error.message);
@@ -129,8 +129,7 @@ const AbaNovoFeedback = ({ user, navigate }) => {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:px-5 sm:py-4">
-        Este canal é destinado exclusivamente a problemas, dificuldades e sugestões relacionados ao funcionamento do sistema.
-        Sua mensagem será enviada diretamente ao desenvolvedor.
+        Use este canal para problemas e sugestões sobre o funcionamento do sistema. A mensagem vai direto ao desenvolvedor.
       </div>
 
       <Card>
@@ -149,15 +148,8 @@ const AbaNovoFeedback = ({ user, navigate }) => {
           </FormField>
 
           <FormField label="Descrição">
-            <textarea className={`${inputClass} resize-none`} rows="6" value={form.descricao} onChange={(event) => setForm((prev) => ({ ...prev, descricao: event.target.value }))} placeholder="Descreva o que aconteceu, onde, e o que você esperava que acontecesse." required />
+            <textarea className={`${inputClass} resize-none`} rows="6" value={form.descricao} onChange={(event) => setForm((prev) => ({ ...prev, descricao: event.target.value }))} placeholder="Descreva o que aconteceu." required />
           </FormField>
-
-          <div>
-            <span className="mb-1.5 block text-sm font-semibold text-slate-700">Anexo</span>
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-              Anexos em desenvolvimento
-            </div>
-          </div>
 
           <div className="flex justify-end gap-3">
             <Link to="/feedback-sistema/meus"><Button type="button" variant="secondary" disabled={salvando}>Cancelar</Button></Link>

@@ -122,7 +122,6 @@ export const AuxiliarAlunoPerfilPage = () => {
         <Card>
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">PDI por disciplina</p>
           <h2 className="mt-1 text-xl font-bold text-slate-950">Consulta</h2>
-          <p className="mt-1 text-sm text-slate-600">Somente consulta — abrir uma Ficha aqui nunca cria um registro novo.</p>
           {carregandoPdi ? (
             <p className="mt-4 text-sm text-slate-500">Carregando...</p>
           ) : itensPdi.length === 0 ? (

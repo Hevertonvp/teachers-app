@@ -23,7 +23,6 @@ export const PerfilPage = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Perfil</h1>
-          <p className="mt-2 text-slate-600">Dados da sua conta e das escolas vinculadas.</p>
         </div>
         <Card>
           <div className="flex flex-col gap-6 md:flex-row md:items-center">

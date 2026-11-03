@@ -165,7 +165,7 @@ export const AnamnesePage = () => {
       return;
     }
     if (resultado.codigo === 'CONFLITO_VERSAO') {
-      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações foram guardadas.');
       setStatusLocal('idle');
       return;
     }
@@ -193,7 +193,7 @@ export const AnamnesePage = () => {
       return;
     }
     if (resultado.codigo === 'CONFLITO_VERSAO') {
-      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações foram guardadas.');
       setStatusLocal('idle');
       return;
     }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { BackButton, Badge, Button, Card, DataTable, EmptyState, FormField } from '../components/Common';
+import { BackButton, Badge, Button, Card, DataTable, EmptyState, FormField, LoadingBlock } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { MainLayout } from '../layouts/Layouts';
@@ -84,7 +84,7 @@ export const MeusPdisPage = () => {
         <div>
           <BackButton />
           <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">PDI por disciplina</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">Meus PDIs</h1>
+          <h1 className="mt-2 text-3xl font-bold text-slate-950">Meus PDIs</h1>
         </div>
 
         {meusPdisReaisError && (
@@ -95,7 +95,7 @@ export const MeusPdisPage = () => {
         )}
 
         {meusPdisReaisLoading ? (
-          <Card className="py-12 text-center"><p className="text-slate-500">Carregando...</p></Card>
+          <Card><LoadingBlock text="Carregando seus PDIs..." className="py-12" /></Card>
         ) : (
           <>
             <Card>

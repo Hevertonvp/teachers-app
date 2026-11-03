@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal } from '../components/Common';
+import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { MainLayout } from '../layouts/Layouts';
@@ -126,8 +126,6 @@ export const GestaoTurmas = () => {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Turmas</h1>
-            <p className="mt-2 max-w-2xl text-slate-600">Educação Infantil e Ensino Fundamental, período regular (manhã/tarde).</p>
-            <p className="mt-1 text-xs text-slate-500">Turmas de período integral ainda não fazem parte do módulo PDI.</p>
           </div>
           <Button onClick={abrirNovaTurma} disabled={escolasOrdenadas.length === 0 || turmasLoading}>+ Nova turma</Button>
         </div>
@@ -172,7 +170,7 @@ export const GestaoTurmas = () => {
         </Card>
 
         {turmasLoading ? (
-          <Card><p className="text-center text-slate-500">Carregando turmas...</p></Card>
+          <Card><LoadingBlock text="Carregando turmas..." /></Card>
         ) : turmasFiltradas.length === 0 ? (
           turmas.length === 0 ? (
             !turmasError && (
@@ -289,7 +287,7 @@ export const GestaoTurmas = () => {
 
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="secondary" onClick={fecharModal} disabled={salvando}>Cancelar</Button>
-                <Button type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
+                <Button type="submit" loading={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
               </div>
             </form>
           </Modal>

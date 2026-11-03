@@ -57,7 +57,6 @@ export const DashboardProfessor = () => {
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Minha rotina pedagógica</p>
               <h1 className="mt-2 text-3xl font-bold text-slate-950">Bem-vindo, {user?.nome}</h1>
-              <p className="mt-2 max-w-2xl text-slate-600">Esta primeira entrega disponibiliza só o módulo PDI — os demais indicadores serão liberados nas próximas etapas.</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard label="Minhas turmas" value={totalTurmasUnicas} description="turmas vinculadas" />
@@ -71,7 +70,6 @@ export const DashboardProfessor = () => {
               <h2 className="text-xl font-bold text-slate-950">Formulário PDI</h2>
               <Link to="/pdi/meus-pdis"><Button size="sm" variant="outline">Meus PDIs</Button></Link>
             </div>
-            <p className="mb-3 text-xs text-slate-500">Fichas das disciplinas que você leciona, em todas as suas escolas e turmas.</p>
             {meusPdisReaisLoading ? (
               <p className="text-sm text-slate-500">Carregando...</p>
             ) : (
@@ -110,11 +108,6 @@ export const DashboardProfessor = () => {
                 ))
               )}
             </div>
-          </Card>
-
-          <Card className="border-dashed bg-slate-50 text-center">
-            <p className="font-semibold text-slate-800">Em construção</p>
-            <p className="mt-1 text-sm text-slate-500">Formulário 1/3, Correções de simulados, pendências, eventos e notícias serão liberados nas próximas entregas.</p>
           </Card>
         </section>
       </div>

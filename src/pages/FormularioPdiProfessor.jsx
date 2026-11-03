@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Badge, Button, Card, EmptyState, FormField } from '../components/Common';
+import { Badge, Button, Card, EmptyState, FormField, LoadingBlock, Spinner } from '../components/Common';
 import { SegmentedToggle } from '../components/AnamneseFields';
 import { HabilidadesCrmgSelecao } from '../components/HabilidadesCrmgSelecao';
 import { useAuth } from '../context/AuthContext';
@@ -145,7 +145,7 @@ export const FormularioPdiProfessor = () => {
   }, [blocoAnswers, blocoTouchedIds, draftKeyPadrao, userId]);
 
   if (carregando) {
-    return <MainLayout><Card className="py-12 text-center"><p className="text-slate-500">Carregando ficha...</p></Card></MainLayout>;
+    return <MainLayout><Card><LoadingBlock text="Carregando ficha..." className="py-12" /></Card></MainLayout>;
   }
 
   if (erro || !dados) {
@@ -217,7 +217,7 @@ export const FormularioPdiProfessor = () => {
       return resultado;
     }
     if (resultado.codigo === 'CONFLITO_VERSAO') {
-      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações foram guardadas.');
       setStatusLocal('idle');
       return { ...resultado, conflito: true };
     }
@@ -254,7 +254,7 @@ export const FormularioPdiProfessor = () => {
       return resultado;
     }
     if (resultado.codigo === 'CONFLITO_VERSAO') {
-      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+      setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações foram guardadas.');
       setStatusLocal('idle');
       return { ...resultado, conflito: true };
     }
@@ -305,7 +305,7 @@ export const FormularioPdiProfessor = () => {
       await salvarPendentes();
       await salvarBlocoPendentes();
       setConcluindo(false);
-      setMensagemErro('Para concluir a ficha, é necessário estar conectado. Suas respostas estão protegidas e poderão ser concluídas assim que a conexão voltar.');
+      setMensagemErro('Conecte-se à internet para concluir. Suas respostas foram guardadas.');
       return;
     }
     setConcluindo(true);
@@ -456,7 +456,7 @@ export const FormularioPdiProfessor = () => {
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={handleVoltar} disabled={bloqueado} className="text-sm font-semibold text-teal-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">{salvandoSaida ? 'Salvando...' : '← Voltar'}</button>
+              <button type="button" onClick={handleVoltar} disabled={bloqueado} className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">{salvandoSaida ? <><Spinner className="h-3.5 w-3.5" />Salvando...</> : '← Voltar'}</button>
               <SavingIndicator estado={statusLocal} />
             </div>
             <h1 className="mt-3 text-3xl font-bold text-slate-950">{ficha.disciplinaNome}</h1>
@@ -500,7 +500,7 @@ export const FormularioPdiProfessor = () => {
             </div>
             {blocoPadrao.compartilhadoCom.length > 0 && (
               <p className="mt-1 text-xs text-slate-500">
-                Compartilhada com: {blocoPadrao.compartilhadoCom.map(f => f.disciplinaNome).join(', ')}. Preencher aqui já preenche nas outras — cada disciplina continua com seu próprio status/conclusão.
+                Vale também para: {blocoPadrao.compartilhadoCom.map(f => f.disciplinaNome).join(', ')}.
               </p>
             )}
             <div className="mt-3">{questionsPadrao.map(renderQuestionPadrao)}</div>
@@ -508,7 +508,7 @@ export const FormularioPdiProfessor = () => {
         )}
 
         {questions.length === 0 && !blocoPadrao ? (
-          <EmptyState title="Nenhuma pergunta neste modelo" description="Este modelo PDI não possui itens ativos no momento em que esta aplicação foi criada." />
+          <EmptyState title="Nenhuma pergunta neste formulário" />
         ) : (
           <div className="space-y-6">
             {questions.length > 0 && secoes.map(secao => (
@@ -530,7 +530,7 @@ export const FormularioPdiProfessor = () => {
                     Faltam {perguntasFaltando} {perguntasFaltando === 1 ? 'pergunta' : 'perguntas'} para poder concluir.
                   </p>
                 )}
-                <Button onClick={concluir} disabled={bloqueado || ficha.status === 'concluida' || perguntasFaltando > 0}>
+                <Button onClick={concluir} loading={concluindo} disabled={bloqueado || ficha.status === 'concluida' || perguntasFaltando > 0}>
                   {ficha.status === 'concluida' ? 'Ficha concluída' : concluindo ? 'Concluindo...' : 'Concluir Ficha PDI'}
                 </Button>
               </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, Modal, OrderButtons } from '../components/Common';
+import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal, OrderButtons } from '../components/Common';
 import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -210,7 +210,7 @@ export const FormularioPdiPage = () => {
     }));
     setAplicacaoExpandida(reaberturaForm.aplicacaoId);
     setReaberturaForm(null);
-    setMessage('Reabertura registrada com sucesso.');
+    setMessage('Aplicação reaberta.');
   };
 
   const criarModelo = async (event) => {
@@ -230,7 +230,7 @@ export const FormularioPdiPage = () => {
     // Fluxo direto: criar já abre a edição do modelo recém-criado, sem passo intermediário.
     setModeloEditandoId(resultado.modelo.id);
     setNovoModeloForm(null);
-    setMessage('Modelo PDI criado com sucesso.');
+    setMessage('Modelo criado.');
   };
 
   const salvarPergunta = async (event) => {
@@ -284,7 +284,7 @@ export const FormularioPdiPage = () => {
         setAplicacaoError(resultado.error);
         return;
       }
-      setMessage('Vigência da aplicação atualizada com sucesso.');
+      setMessage('Vigência atualizada.');
       setAplicacaoForm(null);
       setEditingAplicacao(null);
       return;
@@ -330,7 +330,7 @@ export const FormularioPdiPage = () => {
         : detalhes.join('; '));
       if (sucesso.length === 0) return;
     }
-    if (falha.length === 0) setMessage(`Aplicação PDI criada com sucesso para ${sucesso.length} ${sucesso.length === 1 ? 'escola' : 'escolas'}.`);
+    if (falha.length === 0) setMessage(`Aplicação criada para ${sucesso.length} ${sucesso.length === 1 ? 'escola' : 'escolas'}.`);
     setAplicacaoForm(null);
     setEditingAplicacao(null);
   };
@@ -380,7 +380,7 @@ export const FormularioPdiPage = () => {
       {aplicacaoExpandida === aplicacao.id && (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
           {carregandoHistorico && !historicoReaberturas[aplicacao.id] ? (
-            <p className="text-sm text-slate-500">Carregando histórico...</p>
+            <LoadingBlock text="Carregando histórico..." className="py-3" />
           ) : (historicoReaberturas[aplicacao.id] || []).length === 0 ? (
             <p className="text-sm text-slate-500">Nenhuma reabertura registrada para esta aplicação.</p>
           ) : (
@@ -431,7 +431,7 @@ export const FormularioPdiPage = () => {
               </div>
             )}
             {pdiModelosReaisLoading ? (
-              <p className="text-center text-slate-500">Carregando modelos...</p>
+              <LoadingBlock text="Carregando modelos..." />
             ) : modeloSelecionado ? (
               <>
                 <button type="button" onClick={() => setModeloEditandoId(null)} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar aos modelos</button>
@@ -440,7 +440,6 @@ export const FormularioPdiPage = () => {
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{modeloSelecionado.disciplinaNome || 'Disciplina não encontrada'}</p>
                     <h2 className="mt-1 text-xl font-bold text-slate-950">{modeloSelecionado.nome}</h2>
-                    <p className="mt-1 text-sm text-slate-600">Itens do formulário — todos podem ser editados, reordenados ou inativados, inclusive os que vieram prontos.</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={modeloSelecionado.status === 'ativa' ? 'green' : 'gray'}>{modeloSelecionado.status === 'ativa' ? 'Ativo' : 'Inativo'}</Badge>
@@ -506,7 +505,6 @@ export const FormularioPdiPage = () => {
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Modelos PDI</p>
                     <h2 className="mt-1 text-xl font-bold text-slate-950">Formulários por disciplina</h2>
-                    <p className="mt-1 text-sm text-slate-600">Configurado poucas vezes — normalmente só quando uma disciplina nova entra no PDI.</p>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
                     {modelosInativos.length > 0 && (
@@ -587,9 +585,6 @@ export const FormularioPdiPage = () => {
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Aplicações PDI</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Vigência por escola</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  {souSecretaria ? 'Agendadas e vigentes no momento — encerradas ficam no histórico, para não acumular na tela principal.' : 'Consulta das aplicações PDI das suas escolas.'}
-                </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
                 {aplicacoesEncerradas.length > 0 && (
@@ -605,7 +600,7 @@ export const FormularioPdiPage = () => {
                 {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
               </div>
             </div>
-            {souSecretaria && modelosAtivos.length === 0 && <p className="mt-2 text-xs text-slate-500">Cadastre ao menos um modelo PDI ativo na aba Modelos antes de criar uma aplicação.</p>}
+            {souSecretaria && modelosAtivos.length === 0 && <p className="mt-2 text-xs text-slate-500">Crie um modelo na aba Modelos antes de criar uma aplicação.</p>}
 
             {pdiAplicacoesReaisError && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
@@ -615,10 +610,10 @@ export const FormularioPdiPage = () => {
             )}
 
             {pdiAplicacoesReaisLoading ? (
-              <p className="mt-4 text-center text-slate-500">Carregando aplicações...</p>
+              <LoadingBlock text="Carregando aplicações..." className="mt-4 py-4" />
             ) : pdiAplicacoesReais.length === 0 ? (
               <div className="mt-4">
-                <EmptyState title="Nenhuma aplicação PDI criada" description={souSecretaria ? 'Abra uma aplicação para disponibilizar os formulários aos professores de uma escola.' : 'Nenhuma aplicação PDI foi criada para suas escolas ainda.'}>
+                <EmptyState title="Nenhuma aplicação PDI criada">
                   {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
                 </EmptyState>
               </div>
@@ -690,7 +685,7 @@ export const FormularioPdiPage = () => {
                   ? 'O modelo já nasce com o conjunto padrão de itens (gerenciado em Configurações) e abre direto para edição.'
                   : 'O modelo nasce vazio — você adiciona os itens manualmente depois de criar.'}
               </p>
-              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)} disabled={salvandoModelo}>Cancelar</Button><Button type="submit" disabled={salvandoModelo}>{salvandoModelo ? 'Criando...' : 'Criar modelo'}</Button></div>
+              <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)} disabled={salvandoModelo}>Cancelar</Button><Button type="submit" loading={salvandoModelo}>{salvandoModelo ? 'Criando...' : 'Criar modelo'}</Button></div>
             </form>
           </Modal>
         )}
@@ -704,7 +699,7 @@ export const FormularioPdiPage = () => {
             onClose={() => setPerguntaForm(null)}
             saving={salvandoPergunta}
             ocultarTrimestre
-            trimestreInfo={trimestreVigenteLabel ? `Esta pergunta aparecerá apenas no ${trimestreVigenteLabel} (período vigente hoje).` : 'Nenhum trimestre vigente configurado hoje — esta pergunta aparecerá em qualquer Aplicação.'}
+            trimestreInfo={trimestreVigenteLabel ? `Aparece apenas no ${trimestreVigenteLabel}.` : undefined}
           />
         )}
 
@@ -721,12 +716,11 @@ export const FormularioPdiPage = () => {
                 setVinculandoPadrao(false);
                 if (!resultado.ok) { setVincularPadraoErro(resultado.error); return; }
                 setVincularPadraoForm(null);
-                setMessage('Pergunta vinculada ao padrão compartilhado — reaproveitada nas outras disciplinas do mesmo Professor a partir da próxima Aplicação criada.');
+                setMessage('Pergunta vinculada ao padrão.');
               }}
             >
               <p className="text-sm text-slate-600">
-                Confirme qual pergunta padrão (Configurações) é exatamente a mesma que <strong>"{vincularPadraoForm.pergunta.pergunta}"</strong>.
-                Isso nunca é adivinhado por texto — só vale a partir de agora: Aplicações já criadas não mudam.
+                Escolha a pergunta padrão que corresponde a <strong>"{vincularPadraoForm.pergunta.pergunta}"</strong>.
               </p>
               {vincularPadraoErro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{vincularPadraoErro}</div>}
               <FormField label="Pergunta padrão">
@@ -739,7 +733,7 @@ export const FormularioPdiPage = () => {
               </FormField>
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="secondary" onClick={() => setVincularPadraoForm(null)} disabled={vinculandoPadrao}>Cancelar</Button>
-                <Button type="submit" disabled={vinculandoPadrao || !padraoEscolhidoId}>{vinculandoPadrao ? 'Vinculando...' : 'Vincular'}</Button>
+                <Button type="submit" loading={vinculandoPadrao} disabled={!padraoEscolhidoId}>{vinculandoPadrao ? 'Vinculando...' : 'Vincular'}</Button>
               </div>
             </form>
           </Modal>
@@ -773,9 +767,6 @@ export const FormularioPdiPage = () => {
                     </div>
                   )}
                 </div>
-              )}
-              {!editingAplicacao && (
-                <p className="text-sm text-slate-600">Durante esta vigência, os professores da escola terão acesso aos formulários PDI correspondentes às disciplinas que lecionam e que possuem modelo configurado.</p>
               )}
               {editingAplicacao ? (
                 <FormField label="Escola">
@@ -820,7 +811,7 @@ export const FormularioPdiPage = () => {
               {!editingAplicacao && (
                 <FormField label="Disciplinas (modelos ativos)">
                   {modelosAtivos.length === 0 ? (
-                    <p className="text-sm text-slate-500">Nenhum Modelo PDI ativo no momento — cadastre um na aba "Modelos" antes de criar a Aplicação.</p>
+                    <p className="text-sm text-slate-500">Nenhum modelo ativo. Crie um na aba Modelos.</p>
                   ) : (
                     <div className="space-y-1.5 rounded-lg border border-slate-200 p-3">
                       {modelosAtivos.map(modelo => (
@@ -857,7 +848,7 @@ export const FormularioPdiPage = () => {
               </div>
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="secondary" onClick={() => { setAplicacaoForm(null); setEditingAplicacao(null); setAplicacaoError(''); }} disabled={salvandoAplicacao}>Cancelar</Button>
-                <Button type="submit" disabled={salvandoAplicacao}>{salvandoAplicacao ? 'Salvando...' : 'Salvar'}</Button>
+                <Button type="submit" loading={salvandoAplicacao}>{salvandoAplicacao ? 'Salvando...' : 'Salvar'}</Button>
               </div>
             </form>
           </Modal>
@@ -867,7 +858,7 @@ export const FormularioPdiPage = () => {
           <Modal title="Reabrir aplicação PDI" onClose={() => { setReaberturaForm(null); setReaberturaError(''); }}>
             <form onSubmit={salvarReabertura} className="space-y-4">
               {reaberturaError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{reaberturaError}</div>}
-              <p className="text-sm text-slate-600">A vigência original da aplicação nunca é alterada — a reabertura cria um novo período extra, separado, sempre depois do fim original.</p>
+              <p className="text-sm text-slate-600">A reabertura cria um período extra, depois do fim da aplicação.</p>
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Início"><input className={inputClass} type="date" value={reaberturaForm.dataInicio} onChange={event => setReaberturaForm(prev => ({ ...prev, dataInicio: event.target.value }))} required /></FormField>
                 <FormField label="Encerramento"><input className={inputClass} type="date" value={reaberturaForm.dataFim} onChange={event => setReaberturaForm(prev => ({ ...prev, dataFim: event.target.value }))} required /></FormField>
@@ -880,7 +871,7 @@ export const FormularioPdiPage = () => {
               <FormField label="Motivo (opcional)"><textarea className={inputClass} rows="3" value={reaberturaForm.motivo} onChange={event => setReaberturaForm(prev => ({ ...prev, motivo: event.target.value }))} /></FormField>
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="secondary" onClick={() => { setReaberturaForm(null); setReaberturaError(''); }} disabled={salvandoReabertura}>Cancelar</Button>
-                <Button type="submit" disabled={salvandoReabertura}>{salvandoReabertura ? 'Salvando...' : 'Reabrir'}</Button>
+                <Button type="submit" loading={salvandoReabertura}>{salvandoReabertura ? 'Salvando...' : 'Reabrir'}</Button>
               </div>
             </form>
           </Modal>
@@ -890,8 +881,8 @@ export const FormularioPdiPage = () => {
           <ConfirmDialog
             title={inativandoPergunta.ativar ? 'Reativar item' : 'Inativar item'}
             message={inativandoPergunta.ativar
-              ? 'Deseja reativar este item? Ele volta a aparecer no modelo operacional.'
-              : 'Deseja inativar este item? Aplicações já criadas continuam com a versão que tinham no momento em que foram abertas — só novas aplicações deixam de incluir este item. O histórico é preservado.'}
+              ? 'Deseja reativar este item?'
+              : 'Deseja inativar este item? Aplicações já criadas não são afetadas.'}
             confirmLabel={inativandoPergunta.ativar ? 'Reativar' : 'Inativar'}
             onCancel={() => setInativandoPergunta(null)}
             onConfirm={async () => {
@@ -923,7 +914,7 @@ export const FormularioPdiPage = () => {
         {excluindoModelo && (
           <ConfirmDialog
             title="Excluir modelo PDI"
-            message={`Tem certeza que deseja excluir o modelo "${excluindoModelo.nome}"? Se ele nunca foi usado em nenhuma Aplicação, será removido definitivamente, junto com suas perguntas. Se já foi usado, ele some da tela principal e fica arquivado no Histórico de modelos — nenhuma Aplicação ou Ficha já criada é afetada.`}
+            message={`Excluir o modelo "${excluindoModelo.nome}"? Se ele já foi usado em alguma aplicação, fica arquivado no histórico. Aplicações e fichas existentes não são afetadas.`}
             confirmLabel="Excluir"
             onCancel={() => setExcluindoModelo(null)}
             onConfirm={async () => {
@@ -932,7 +923,7 @@ export const FormularioPdiPage = () => {
               if (modeloEditandoId === modelo.id) setModeloEditandoId(null);
               const resultado = await excluirPdiModelo(modelo.id);
               setMessage(resultado.ok
-                ? (resultado.removidoFisicamente ? 'Modelo excluído definitivamente — nunca havia sido usado em nenhuma Aplicação.' : 'Modelo removido da tela principal e arquivado no Histórico (já havia sido usado em alguma Aplicação).')
+                ? (resultado.removidoFisicamente ? 'Modelo excluído.' : 'Modelo arquivado no histórico.')
                 : resultado.error);
             }}
           />
@@ -941,7 +932,7 @@ export const FormularioPdiPage = () => {
         {removendoAplicacao && (
           <ConfirmDialog
             title="Remover aplicação PDI"
-            message={`Tem certeza que deseja remover esta aplicação (${removendoAplicacao.escolaNome || escolas.find(item => item.id === removendoAplicacao.escolaId)?.nome})? Se nenhum professor respondeu nada ainda, ela é excluída definitivamente. Se já houver alguma resposta salva, ela só sai de circulação (deixa de aparecer em Meus PDIs e nos indicadores) — as Fichas e Respostas já preenchidas continuam guardadas.`}
+            message={`Remover esta aplicação (${removendoAplicacao.escolaNome || escolas.find(item => item.id === removendoAplicacao.escolaId)?.nome})? Se já houver respostas salvas, elas continuam guardadas, mas a aplicação deixa de aparecer para os professores.`}
             confirmLabel="Remover"
             onCancel={() => setRemovendoAplicacao(null)}
             onConfirm={async () => {
@@ -954,8 +945,8 @@ export const FormularioPdiPage = () => {
               }
               setMessage(
                 resultado.modo === 'excluida'
-                  ? 'Aplicação excluída definitivamente — nunca havia resposta registrada.'
-                  : 'Aplicação removida de circulação (inativada) — já havia resposta registrada, o histórico foi preservado.',
+                  ? 'Aplicação excluída.'
+                  : 'Aplicação removida. As respostas foram mantidas.',
               );
             }}
           />

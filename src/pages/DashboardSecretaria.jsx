@@ -113,7 +113,6 @@ export const DashboardSecretaria = () => {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4">
             <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Preenchimento do PDI</p>
-            <p className="mt-1 text-sm text-slate-600">Fichas concluídas nas Aplicações PDI ativas agora, recalculado ao vivo a partir de quem realmente está responsável por cada turma/disciplina hoje.</p>
           </div>
           {indicadoresError ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
@@ -133,16 +132,8 @@ export const DashboardSecretaria = () => {
           <Card>
             <div className="mb-5">
               <h2 className="text-xl font-bold text-slate-950">{activeEscolaId === null ? 'Escolas da Rede' : 'Resumo da Escola'}</h2>
-              <p className="mt-1 text-sm text-slate-600">Estrutura cadastrada por escola. O módulo PDI é gerenciado em Escolas/Turmas/Pessoas e no menu PDI.</p>
             </div>
             <DataTable columns={columns} rows={resumos} onRowClick={activeEscolaId === null ? row => setActiveEscolaId(row.escola.id) : undefined} emptyMessage="Nenhuma escola cadastrada" />
-          </Card>
-        </section>
-
-        <section>
-          <Card className="border-dashed bg-slate-50 text-center">
-            <p className="font-semibold text-slate-800">Em construção</p>
-            <p className="mt-1 text-sm text-slate-500">Indicadores de Formulário 1/3, Correções de simulados e demais instrumentos serão liberados nas próximas entregas.</p>
           </Card>
         </section>
       </div>

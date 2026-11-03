@@ -15,28 +15,6 @@ const emptyCompose = { escolaId: '', destinatarioIds: [], assunto: '', conteudo:
 
 const formatDate = (date) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(date));
 
-// Botão de anexo — infraestrutura de upload fica pra depois (seção 17 do pedido): só avisa.
-const BotaoAnexo = () => {
-  const [aviso, setAviso] = useState(false);
-  return (
-    <div className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setAviso(true)}
-        title="Anexar arquivo"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-500 transition hover:bg-slate-50"
-      >
-        📎
-      </button>
-      {aviso && (
-        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg" onMouseLeave={() => setAviso(false)}>
-          Anexos ainda não estão disponíveis.
-        </div>
-      )}
-    </div>
-  );
-};
-
 export const MensagensPage = () => {
   const { user } = useAuth();
   const userId = user?.email?.toLowerCase();
@@ -140,7 +118,7 @@ export const MensagensPage = () => {
       setSelectedId(null);
       setThread(null);
       await carregarConversas();
-      setMensagem('Conversa removida da sua caixa. Ela continua existindo para a outra pessoa.');
+      setMensagem('Conversa removida da sua caixa.');
     } catch (error) {
       setMensagem(error.message);
     }
@@ -227,7 +205,6 @@ export const MensagensPage = () => {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Comunicação interna</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Mensagens</h1>
-            <p className="mt-2 text-slate-600">Caixa de entrada para comunicações formais da equipe.</p>
           </div>
           <Button onClick={abrirCompose}>Nova mensagem</Button>
         </div>
@@ -295,8 +272,7 @@ export const MensagensPage = () => {
 
               <form onSubmit={enviarResposta} className="space-y-2">
                 <textarea className={inputClass} rows="3" placeholder="Responder..." value={respostaTexto} onChange={event => setRespostaTexto(event.target.value)} />
-                <div className="flex items-center justify-between gap-3">
-                  <BotaoAnexo />
+                <div className="flex items-center justify-end gap-3">
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={excluirParaMim}>Excluir para mim</Button>
                     <Button type="submit" disabled={enviandoResposta || !respostaTexto.trim()}>{enviandoResposta ? 'Enviando...' : 'Responder'}</Button>
@@ -346,8 +322,7 @@ export const MensagensPage = () => {
             <FormField label="Assunto"><input className={inputClass} value={form.assunto} onChange={event => setForm(prev => ({ ...prev, assunto: event.target.value }))} required /></FormField>
             <FormField label="Mensagem"><textarea className={inputClass} rows="6" value={form.conteudo} onChange={event => setForm(prev => ({ ...prev, conteudo: event.target.value }))} required /></FormField>
 
-            <div className="flex items-center justify-between gap-3">
-              <BotaoAnexo />
+            <div className="flex items-center justify-end gap-3">
               <div className="flex gap-3">
                 <Button type="button" variant="secondary" onClick={() => setComposeOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={enviando}>{enviando ? 'Enviando...' : (form.destinatarioIds.length > 1 ? `Enviar para ${form.destinatarioIds.length} pessoas` : 'Enviar mensagem')}</Button>

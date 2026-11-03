@@ -79,16 +79,12 @@ export const LoginPage = () => {
             type="submit"
             variant="primary"
             className="w-full"
-            disabled={carregando}
+            loading={carregando}
           >
             {carregando ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
       </div>
-
-      <p className="text-white text-center text-xs mt-8">
-        Protótipo de demonstração - Dados fictícios
-      </p>
     </AuthLayout>
   );
 };

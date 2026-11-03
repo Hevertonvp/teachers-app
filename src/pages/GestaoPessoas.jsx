@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, Modal, PersonName } from '../components/Common';
+import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, LoadingBlock, Modal, PersonName } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { apiFetch } from '../services/api';
@@ -116,7 +116,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
         <div>
           <p className="mb-2 text-sm font-semibold text-slate-700">Vínculos</p>
           {carregando ? (
-            <p className="text-sm text-slate-500">Carregando...</p>
+            <LoadingBlock text="Carregando..." className="py-3" />
           ) : vinculosOrdenados.length === 0 ? (
             <p className="text-sm text-slate-500">Nenhum vínculo escolar no momento.</p>
           ) : (
@@ -163,7 +163,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
                 </select>
               )}
             </FormField>
-            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando || escolasFiltradas.length === 0}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+            <div className="flex justify-end"><Button type="submit" size="sm" loading={salvando} disabled={escolasFiltradas.length === 0}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
           </form>
         )}
 
@@ -264,7 +264,7 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
         <div>
           <p className="mb-2 text-sm font-semibold text-slate-700">Vínculos ativos</p>
           {carregando ? (
-            <p className="text-sm text-slate-500">Carregando...</p>
+            <LoadingBlock text="Carregando..." className="py-3" />
           ) : vinculosAtivos.length === 0 ? (
             <p className="text-sm text-slate-500">Nenhuma turma vinculada no momento.</p>
           ) : (
@@ -321,7 +321,7 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
                 Atualmente, outro professor (#{conflitoComOutro.professorId}) leciona esta disciplina nesta turma — vincular aqui encerra o vínculo dele automaticamente.
               </p>
             )}
-            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando || !novoVinculo.turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+            <div className="flex justify-end"><Button type="submit" size="sm" loading={salvando} disabled={!novoVinculo.turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
           </form>
         )}
 
@@ -651,7 +651,7 @@ const ProfessoresReaisManager = ({ user }) => {
       )}
 
       {carregando ? (
-        <Card><p className="text-center text-slate-500">Carregando professores...</p></Card>
+        <Card><LoadingBlock text="Carregando professores..." /></Card>
       ) : professores.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum professor nesta visão</p><p className="mt-1 text-sm text-slate-500">Cadastre o primeiro professor com uma conta real.</p></Card>
       ) : (
@@ -684,7 +684,7 @@ const ProfessoresReaisManager = ({ user }) => {
             </FormField>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
-              <Button type="submit" disabled={salvando}>{salvando ? 'Criando...' : 'Próximo →'}</Button>
+              <Button type="submit" loading={salvando}>{salvando ? 'Criando...' : 'Próximo →'}</Button>
             </div>
           </form>
         </Modal>
@@ -891,7 +891,7 @@ const GestoresReaisManager = () => {
       )}
 
       {carregando ? (
-        <Card><p className="text-center text-slate-500">Carregando supervisores...</p></Card>
+        <Card><LoadingBlock text="Carregando supervisores..." /></Card>
       ) : gestoresReais.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum supervisor(a) cadastrado</p><p className="mt-1 text-sm text-slate-500">Cadastre o(a) primeiro(a) supervisor(a) com uma conta real.</p></Card>
       ) : (
@@ -924,7 +924,7 @@ const GestoresReaisManager = () => {
             </FormField>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
-              <Button type="submit" disabled={salvando}>{salvando ? 'Criando...' : 'Cadastrar'}</Button>
+              <Button type="submit" loading={salvando}>{salvando ? 'Criando...' : 'Cadastrar'}</Button>
             </div>
           </form>
         </Modal>
@@ -1101,7 +1101,7 @@ const DiretorasReaisManager = () => {
       )}
 
       {carregando ? (
-        <Card><p className="text-center text-slate-500">Carregando diretoras...</p></Card>
+        <Card><LoadingBlock text="Carregando diretoras..." /></Card>
       ) : diretorasReais.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhuma diretora cadastrada</p><p className="mt-1 text-sm text-slate-500">Cadastre a primeira diretora com uma conta real.</p></Card>
       ) : (
@@ -1127,7 +1127,7 @@ const DiretorasReaisManager = () => {
             </FormField>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
-              <Button type="submit" disabled={salvando}>{salvando ? 'Criando...' : 'Cadastrar'}</Button>
+              <Button type="submit" loading={salvando}>{salvando ? 'Criando...' : 'Cadastrar'}</Button>
             </div>
           </form>
         </Modal>
@@ -1261,7 +1261,7 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
         <div>
           <p className="mb-2 text-sm font-semibold text-slate-700">Turmas ativas</p>
           {carregando ? (
-            <p className="text-sm text-slate-500">Carregando...</p>
+            <LoadingBlock text="Carregando..." className="py-3" />
           ) : vinculosAtivos.length === 0 ? (
             <p className="text-sm text-slate-500">Nenhuma turma vinculada no momento.</p>
           ) : (
@@ -1314,7 +1314,7 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
                 Esta turma já tem um Auxiliar ativo — vincular aqui encerra o vínculo dele automaticamente.
               </p>
             )}
-            <div className="flex justify-end"><Button type="submit" size="sm" disabled={salvando || !turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
+            <div className="flex justify-end"><Button type="submit" size="sm" loading={salvando} disabled={!turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
           </form>
         )}
 
@@ -1480,7 +1480,7 @@ const AuxiliaresReaisManager = ({ user }) => {
       )}
 
       {carregando ? (
-        <Card><p className="text-center text-slate-500">Carregando auxiliares...</p></Card>
+        <Card><LoadingBlock text="Carregando auxiliares..." /></Card>
       ) : auxiliares.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum Auxiliar ativo</p></Card>
       ) : (
@@ -1513,7 +1513,7 @@ const AuxiliaresReaisManager = ({ user }) => {
             </FormField>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
-              <Button type="submit" disabled={salvando}>{salvando ? 'Criando...' : 'Cadastrar'}</Button>
+              <Button type="submit" loading={salvando}>{salvando ? 'Criando...' : 'Cadastrar'}</Button>
             </div>
           </form>
         </Modal>

@@ -40,9 +40,7 @@ export const PrimeiroAcessoPage = () => {
         <div className="text-center mb-8">
           <Logo size={64} className="mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-700">Crie sua senha</h1>
-          <p className="text-gray-600 text-sm mt-2">
-            Você está acessando o sistema pela primeira vez (ou sua senha foi redefinida). Para continuar, defina uma senha pessoal.
-          </p>
+          <p className="text-gray-600 text-sm mt-2">Defina sua senha para continuar.</p>
         </div>
 
         {erro && (
@@ -79,7 +77,7 @@ export const PrimeiroAcessoPage = () => {
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" disabled={salvando}>
+          <Button type="submit" variant="primary" className="w-full" loading={salvando}>
             {salvando ? 'Salvando...' : 'Salvar nova senha'}
           </Button>
         </form>

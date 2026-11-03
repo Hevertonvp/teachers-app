@@ -107,7 +107,7 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
             />
             {!online && busca.trim().length >= MIN_CARACTERES && (
               <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                A busca de habilidades precisa de conexão com a internet. Suas alterações já realizadas continuam protegidas.
+                A busca de habilidades precisa de internet.
               </p>
             )}
             {aviso && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{aviso}</p>}

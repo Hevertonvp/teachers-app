@@ -99,7 +99,6 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
                     </select>
                   </FormField>
                 )}
-                {value.tipoResposta === 'marcacao' && <p className="text-sm text-slate-600 md:col-span-1">Exibido quando a marcação estiver marcada.</p>}
                 <FormField label="Texto exibido (ex.: Como?)"><input className={inputClass} value={value.complementar.label} onChange={event => onChange({ ...value, complementar: { ...value.complementar, label: event.target.value } })} required /></FormField>
               </div>
             )}
@@ -125,21 +124,12 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
           <div className="rounded-lg border border-slate-200 p-4">
             <label className="flex items-start gap-2 text-sm font-semibold text-slate-700">
               <input type="checkbox" className="mt-0.5" checked={value.compartilhada !== false} disabled={value.tipoResposta === 'habilidade_crmg'} onChange={event => onChange({ ...value, compartilhada: event.target.checked })} />
-              <span>
-                Resposta compartilhada entre as disciplinas
-                <span className="mt-1 block text-xs font-normal text-slate-500">
-                  {value.tipoResposta === 'habilidade_crmg'
-                    ? 'CRMG é sempre por disciplina.'
-                    : value.compartilhada !== false
-                      ? 'Uma resposta para todas as disciplinas.'
-                      : 'Cada disciplina responde.'}
-                </span>
-              </span>
+              <span>Resposta compartilhada entre as disciplinas</span>
             </label>
           </div>
         )}
 
-        <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></div>
+        <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button><Button type="submit" loading={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></div>
       </form>
     </Modal>
   );

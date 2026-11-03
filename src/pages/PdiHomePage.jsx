@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card } from '../components/Common';
+import { Badge, Button, Card, LoadingBlock } from '../components/Common';
 import { BarraEmpilhada } from '../components/pdi/Graficos';
 import { useVizTema } from '../components/pdi/vizTema';
 import { useAuth } from '../context/AuthContext';
@@ -114,7 +114,7 @@ const EntregaGestao = ({ activeEscolaId }) => {
       </Card>
     );
   }
-  if (!indicadores) return <Card><p className="text-sm text-slate-500">Carregando...</p></Card>;
+  if (!indicadores) return <Card><LoadingBlock text="Carregando..." className="py-4" /></Card>;
 
   const escopo = activeEscolaId === null ? indicadores : indicadores.filter(item => item.escolaId === activeEscolaId);
   const comAplicacao = escopo.filter(item => item.aplicacaoId !== null);
@@ -158,7 +158,7 @@ const EntregaGestao = ({ activeEscolaId }) => {
 const EntregaProfessor = () => {
   const { meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
   useEffect(() => { loadMeusPdisReais(); }, [loadMeusPdisReais]);
-  if (meusPdisReaisLoading) return <Card><p className="text-sm text-slate-500">Carregando...</p></Card>;
+  if (meusPdisReaisLoading) return <Card><LoadingBlock text="Carregando..." className="py-4" /></Card>;
 
   const vigentes = meusPdisReais.filter(item => item.statusVigencia === 'active' || item.editavelAgora);
   const agendadas = meusPdisReais.filter(item => item.statusVisual === 'agendado').length;

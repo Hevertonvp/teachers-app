@@ -30,7 +30,26 @@ export const Card = ({ children, className = '' }) => (
   </div>
 );
 
-export const Button = ({ children, variant = 'primary', size = 'md', className = '', ...props }) => {
+// Ícone de carregamento (anel girando). Decorativo: quem usa deve manter um texto ao lado
+// ("Salvando...", "Carregando...") — é ele que o leitor de tela lê, nunca o ícone.
+export const Spinner = ({ className = 'h-4 w-4' }) => (
+  <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+    <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="opacity-90" />
+  </svg>
+);
+
+// Bloco de "carregando" para telas e listas inteiras: spinner + texto, anunciado ao leitor de tela.
+export const LoadingBlock = ({ text = 'Carregando...', className = 'py-8' }) => (
+  <div role="status" aria-live="polite" className={`flex items-center justify-center gap-3 text-slate-500 ${className}`}>
+    <Spinner className="h-5 w-5" />
+    <span className="text-sm">{text}</span>
+  </div>
+);
+
+// `loading`: mostra o spinner, desabilita o botão e ignora novos cliques enquanto a ação roda
+// (evita duplo envio). O texto do botão continua sendo o `children` — troque-o junto ("Salvando...").
+export const Button = ({ children, variant = 'primary', size = 'md', className = '', loading = false, disabled, ...props }) => {
   const baseClasses = 'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed';
   const variants = {
     primary: 'bg-slate-800 text-white hover:bg-slate-950',
@@ -42,7 +61,12 @@ export const Button = ({ children, variant = 'primary', size = 'md', className =
   };
   const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-sm', lg: 'px-5 py-3 text-base' };
 
-  return <button className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>{children}</button>;
+  return (
+    <button className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+      {loading && <Spinner />}
+      {children}
+    </button>
+  );
 };
 
 export const StatusBadge = ({ status }) => {

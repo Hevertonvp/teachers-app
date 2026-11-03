@@ -97,7 +97,7 @@ export const CorrecoesPdiDetalhePage = () => {
       await carregar();
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') {
-        setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+        setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações foram guardadas.');
       } else if (!error.codigo && /conectar ao servidor/.test(error.message || '')) {
         await enfileirar({
           userId, resourceType: 'correcao-resposta', resourceId: fichaId, operation: 'respostas',
@@ -105,7 +105,7 @@ export const CorrecoesPdiDetalhePage = () => {
           payload: { respostas }, baseTokenField: 'baseUpdatedAt', baseToken: dados.ficha.updatedAt,
         });
         setStatusLocal('saved');
-        setMensagem('Sem conexão — a correção foi protegida e será enviada automaticamente quando a conexão voltar.');
+        setMensagem('Sem conexão. A correção será enviada quando a conexão voltar.');
       } else {
         setStatusLocal('idle');
         setErro(error.message);
@@ -122,7 +122,7 @@ export const CorrecoesPdiDetalhePage = () => {
       await devolverFichaPdiReal(fichaId, observacao.trim());
       setDevolverAberto(false);
       setObservacao('');
-      setMensagem('Ficha devolvida ao Professor responsável atual — janela de 3 dias aberta.');
+      setMensagem('Ficha devolvida ao Professor.');
       await carregar();
     } catch (error) {
       setErro(error.message);
@@ -145,18 +145,18 @@ export const CorrecoesPdiDetalhePage = () => {
     try {
       await corrigirDiretamentePadraoReal(fichaId, respostas, dados.blocoPadrao.version);
       apagarDraft(draftKeyPadrao);
-      setMensagem('Correção da pergunta padrão salva com sucesso — vale para todas as disciplinas deste Professor.');
+      setMensagem('Correção salva.');
       await carregar();
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') {
-        setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.');
+        setConflito('Este registro foi alterado enquanto você estava sem conexão. Suas alterações foram guardadas.');
       } else if (!error.codigo && /conectar ao servidor/.test(error.message || '')) {
         await enfileirar({
           userId, resourceType: 'correcao-bloco', resourceId: fichaId, operation: 'respostas-padrao',
           endpoint: `/api/correcoes-pdi/${fichaId}/respostas-padrao`, method: 'PUT',
           payload: { respostas }, baseTokenField: 'version', baseToken: dados.blocoPadrao.version,
         });
-        setMensagem('Sem conexão — a correção foi protegida e será enviada automaticamente quando a conexão voltar.');
+        setMensagem('Sem conexão. A correção será enviada quando a conexão voltar.');
       } else {
         setErro(error.message);
       }
@@ -172,7 +172,7 @@ export const CorrecoesPdiDetalhePage = () => {
       await devolverPadraoReal(fichaId, observacaoPadrao.trim());
       setDevolverPadraoAberto(false);
       setObservacaoPadrao('');
-      setMensagem('Pergunta padrão devolvida ao Professor responsável atual — vale para todas as disciplinas deste Professor, janela de 3 dias aberta.');
+      setMensagem('Pergunta padrão devolvida ao Professor.');
       await carregar();
     } catch (error) {
       setErro(error.message);
@@ -271,11 +271,11 @@ export const CorrecoesPdiDetalhePage = () => {
         {dados.blocoPadrao && (
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Perguntas padrão (bloco comum)</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Perguntas padrão</p>
             </div>
             {dados.blocoPadrao.compartilhadoCom.length > 0 && (
               <p className="mt-1 text-xs text-slate-500">
-                Compartilhada com: {dados.blocoPadrao.compartilhadoCom.map((f) => f.disciplinaNome).join(', ')}. Corrigir ou devolver aqui vale para todas de uma vez — nunca uma correção duplicada por disciplina.
+                Vale também para: {dados.blocoPadrao.compartilhadoCom.map((f) => f.disciplinaNome).join(', ')}.
               </p>
             )}
             <div className="mt-3 divide-y divide-slate-100">
@@ -350,7 +350,7 @@ export const CorrecoesPdiDetalhePage = () => {
           <Modal title="Devolver pergunta padrão" onClose={() => setDevolverPadraoAberto(false)}>
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
-                Abre uma janela de 3 dias pra o Professor responsável atual corrigir a pergunta padrão — vale para TODAS as disciplinas deste agrupamento de uma vez, nunca uma devolução por disciplina.
+                O Professor terá 3 dias para corrigir a pergunta padrão em todas as disciplinas.
               </p>
               <FormField label="Observação para o Professor">
                 <textarea className={inputClass} rows="3" value={observacaoPadrao} onChange={(event) => setObservacaoPadrao(event.target.value)} placeholder="Ex.: Rever resposta da pergunta padrão X." required />
@@ -398,7 +398,7 @@ export const CorrecoesPdiDetalhePage = () => {
           <Modal title="Devolver ao Professor" onClose={() => setDevolverAberto(false)}>
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
-                Abre uma janela de 3 dias pra o Professor responsável atual corrigir esta Ficha, mesmo que a Aplicação já tenha encerrado. Nenhuma outra Ficha é afetada.
+                O Professor terá 3 dias para corrigir esta Ficha.
               </p>
               <FormField label="Observação para o Professor">
                 <textarea className={inputClass} rows="3" value={observacao} onChange={(event) => setObservacao(event.target.value)} placeholder="Ex.: Rever resposta da seção X." required />

@@ -50,7 +50,6 @@ export const FeedbacksSistemaListaPage = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Feedbacks do sistema</h1>
-          <p className="mt-2 text-slate-600">Relatos e sugestões enviados por qualquer perfil, de todas as escolas.</p>
         </div>
 
         <Card>

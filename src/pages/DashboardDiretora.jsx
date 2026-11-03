@@ -49,7 +49,6 @@ export const DashboardDiretora = () => {
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Visão das escolas vinculadas</p>
               <h1 className="mt-2 text-3xl font-bold text-slate-950">Dashboard do(a) Diretor(a)</h1>
-              <p className="mt-2 max-w-2xl text-slate-600">Esta primeira entrega disponibiliza só o módulo PDI — os demais indicadores serão liberados nas próximas etapas.</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard label="Escolas" value={escolasVinculadas.length} description="vinculadas" />
@@ -64,7 +63,6 @@ export const DashboardDiretora = () => {
           <Card>
             <div className="mb-5">
               <h2 className="text-xl font-bold text-slate-950">Escolas vinculadas</h2>
-              <p className="mt-1 text-sm text-slate-600">Consulte o PDI dos alunos dessas escolas pelo menu PDI.</p>
             </div>
             <div className="space-y-3">
               {escolasVisualizadas.map(escola => (
@@ -79,13 +77,6 @@ export const DashboardDiretora = () => {
                 </div>
               ))}
             </div>
-          </Card>
-        </section>
-
-        <section>
-          <Card className="border-dashed bg-slate-50 text-center">
-            <p className="font-semibold text-slate-800">Em construção</p>
-            <p className="mt-1 text-sm text-slate-500">Indicadores de Formulário 1/3, Correções de simulados e supervisores serão liberados nas próximas entregas.</p>
           </Card>
         </section>
       </div>

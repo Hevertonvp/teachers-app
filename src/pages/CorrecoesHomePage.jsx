@@ -16,7 +16,6 @@ export const CorrecoesHomePage = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Correções</h1>
-          <p className="mt-2 text-slate-600">Revisão e correção dos instrumentos já concluídos.</p>
         </div>
 
         {temAlgumaSubarea ? (
@@ -26,7 +25,6 @@ export const CorrecoesHomePage = () => {
                 <Card className="h-full transition hover:border-teal-300 hover:shadow-md">
                   <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">PDI</p>
                   <p className="mt-1 text-lg font-bold text-slate-950">Correção de Fichas PDI</p>
-                  <p className="mt-2 text-sm text-slate-600">Localizar, corrigir diretamente ou devolver Fichas PDI já concluídas.</p>
                 </Card>
               </Link>
             )}
