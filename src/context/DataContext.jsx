@@ -975,6 +975,9 @@ export const DataProvider = ({ children }) => {
 
   const loadTrimestres = useCallback(async () => {
     try {
+      // A chamada teve sucesso: usa exatamente o que o backend respondeu, mesmo vazio — nunca
+      // mantém as datas mock como se fossem reais (isso já mascarou uma configuração vazia de
+      // verdade, fazendo a tela parecer configurada quando não tinha nada salvo no banco).
       setTrimestrePeriods(await listarTrimestres());
     } catch {
       // Sem conexão: mantém o que já estava carregado.
