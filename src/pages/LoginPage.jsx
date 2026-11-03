@@ -29,25 +29,6 @@ export const LoginPage = () => {
     setCarregando(false);
   };
 
-  const preencherDados = (tipo) => {
-    if (tipo === 'professor') {
-      setEmail('professor@escola.gov.br');
-      setSenha('123456');
-    } else if (tipo === 'gestor') {
-      setEmail('gestor@escola.gov.br');
-      setSenha('123456');
-    } else if (tipo === 'secretaria') {
-      setEmail('secretaria@escola.gov.br');
-      setSenha('123456');
-    } else if (tipo === 'diretora') {
-      setEmail('diretora@escola.gov.br');
-      setSenha('123456');
-    } else if (tipo === 'auxiliar') {
-      setEmail('auxiliar@escola.gov.br');
-      setSenha('123456');
-    }
-  };
-
   return (
     <AuthLayout>
       <div className="bg-white rounded-lg shadow-xl p-8">
@@ -103,42 +84,6 @@ export const LoginPage = () => {
             {carregando ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
-
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-600 mb-3">Contas de Demonstração</p>
-          <div className="space-y-2">
-            <button
-              onClick={() => preencherDados('professor')}
-              className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
-            >
-              Professor(a)
-            </button>
-            <button
-              onClick={() => preencherDados('gestor')}
-              className="w-full px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
-            >
-              Gestor(a)/Supervisor(a)
-            </button>
-            <button
-              onClick={() => preencherDados('secretaria')}
-              className="w-full px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
-            >
-              Secretaria de Educação
-            </button>
-            <button
-              onClick={() => preencherDados('diretora')}
-              className="w-full px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium"
-            >
-              Diretor(a)
-            </button>
-            <button
-              onClick={() => preencherDados('auxiliar')}
-              className="w-full px-4 py-2 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition text-sm font-medium"
-            >
-              Auxiliar de Aprendizagem
-            </button>
-          </div>
-        </div>
       </div>
 
       <p className="text-white text-center text-xs mt-8">
