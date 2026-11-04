@@ -82,6 +82,7 @@ export const FormularioPdiPage = () => {
   const trimestreVigenteLabel = getTrimestreAtual(trimestrePeriods, hojeISO());
   const trimestreVigenteNumero = trimestreVigenteLabel ? trimestres.indexOf(trimestreVigenteLabel) + 1 : null;
 
+  const [filtroTrimestreModelo, setFiltroTrimestreModelo] = useState(null);
   const souSecretaria = isSecretaria(user);
   // Gerenciar (criar/editar/reabrir) Aplicações é exclusivo da Secretaria — Gestor e Diretora só
   // consultam, dentro do próprio escopo de escola (correção explícita pedida nesta tarefa: Gestor
@@ -151,7 +152,15 @@ export const FormularioPdiPage = () => {
   const disciplinasComModeloAtivo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
   const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !disciplinasComModeloAtivo.has(disciplina.id));
   const modeloSelecionado = pdiModelosReais.find(modelo => modelo.id === modeloEditandoId) || null;
-  const perguntasDoModelo = modeloSelecionado ? [...(modeloSelecionado.perguntas || [])].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
+  const perguntasDoModeloCompletas = modeloSelecionado ? [...(modeloSelecionado.perguntas || [])].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
+  // Só afeta a EXIBIÇÃO: o modelo continua guardando as perguntas de todos os trimestres (a
+  // Aplicação de cada trimestre filtra no backend). Padrão = trimestre vigente; 'todos' mostra tudo.
+  // Reordenar troca `ordem` só entre vizinhas visíveis — as ocultas não mudam de lugar relativo.
+  const filtroTrimestre = filtroTrimestreModelo ?? (trimestreVigenteNumero ? String(trimestreVigenteNumero) : 'todos');
+  const perguntasDoModelo = filtroTrimestre === 'todos'
+    ? perguntasDoModeloCompletas
+    : perguntasDoModeloCompletas.filter(pergunta => !pergunta.trimestre || pergunta.trimestre === Number(filtroTrimestre));
+  const perguntasOcultasPorTrimestre = perguntasDoModeloCompletas.length - perguntasDoModelo.length;
   // `status` já vem calculado pelo backend com os mesmos 3 valores que formStatusLabel/
   // formStatusClasses esperam ('scheduled'/'active'/'expired') — nunca recalculado aqui.
   // `operacional` decide só ONDE o item aparece (tela principal vs histórico de encerradas) — uma
@@ -452,7 +461,28 @@ export const FormularioPdiPage = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200">
+                <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                  <label htmlFor="filtro-trimestre-modelo" className="font-semibold text-slate-700">Mostrando perguntas de:</label>
+                  <select
+                    id="filtro-trimestre-modelo"
+                    className={inputClass}
+                    style={{ width: 'auto' }}
+                    value={filtroTrimestre}
+                    onChange={event => setFiltroTrimestreModelo(event.target.value)}
+                  >
+                    <option value="1">1º trimestre</option>
+                    <option value="2">2º trimestre</option>
+                    <option value="3">3º trimestre</option>
+                    <option value="todos">Todos os trimestres</option>
+                  </select>
+                  {perguntasOcultasPorTrimestre > 0 && (
+                    <span className="text-slate-500">
+                      {perguntasOcultasPorTrimestre} {perguntasOcultasPorTrimestre === 1 ? 'pergunta de outro trimestre oculta' : 'perguntas de outros trimestres ocultas'} (continuam no modelo).
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
                   {perguntasDoModelo.map((pergunta, index) => (
                     <div key={pergunta.id} className="flex items-center gap-3 p-4">
                       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">{index + 1}</span>
