@@ -5,9 +5,10 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
 const MIN_CARACTERES = 2;
 const DEBOUNCE_MS = 300;
+const MAX_HABILIDADES = 3;
 
 // Resposta de uma pergunta "Habilidades do CRMG": o Professor marca uma ou várias habilidades da
-// disciplina da Ficha (qualquer ano) ou "Todas as habilidades". A busca vai ao backend (até 20
+// disciplina da Ficha (qualquer ano), no máximo 3. A busca vai ao backend (até 20
 // sugestões por vez, sempre filtradas pelo componente da disciplina) — o catálogo nunca vem inteiro.
 // `value` = { todas: boolean, habilidades: [{ id, codigo, descricaoOficial }] }.
 export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly = false, disabled = false }) => {
@@ -25,6 +26,7 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
   const inputId = useId();
   const listaId = useId();
   const selecionadosIds = new Set(atual.habilidades.map(h => h.id));
+  const limiteAtingido = atual.habilidades.length >= MAX_HABILIDADES;
 
   useEffect(() => {
     const termo = busca.trim();
@@ -55,7 +57,7 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
   }, [busca, disciplinaId, readOnly]);
 
   const adicionar = (habilidade) => {
-    if (selecionadosIds.has(habilidade.id)) return;
+    if (selecionadosIds.has(habilidade.id) || limiteAtingido) return;
     onChange({ todas: false, habilidades: [...atual.habilidades, { id: habilidade.id, codigo: habilidade.codigo, descricaoOficial: habilidade.descricaoOficial }] });
     // Marcou: limpa a busca (a lista fecha) — cada habilidade nova é uma pesquisa nova.
     setBusca('');
@@ -85,14 +87,17 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
 
   return (
     <div className="space-y-3">
-      <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-        <input type="checkbox" checked={atual.todas} disabled={disabled} onChange={event => onChange({ todas: event.target.checked, habilidades: event.target.checked ? [] : atual.habilidades })} />
-        Todas as habilidades
-      </label>
+      {/* Resposta antiga salva como "Todas as habilidades" (a opção deixou de existir na tela):
+          continua legível e só sai dali se o Professor escolher habilidades específicas. */}
+      {atual.todas && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <span>Resposta anterior: "Todas as habilidades".</span>
+          <button type="button" disabled={disabled} onClick={() => onChange({ todas: false, habilidades: [] })} className="font-semibold underline disabled:opacity-50">Escolher habilidades específicas</button>
+        </div>
+      )}
 
       {!atual.todas && (
         <>
-          {listaSelecionadas}
           <div>
             <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-slate-700">Buscar habilidade do CRMG</label>
             <input
@@ -101,10 +106,13 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
               value={busca}
               onChange={event => setBusca(event.target.value)}
               placeholder="Código (ex.: EF06MA) ou palavras da descrição"
-              disabled={disabled}
+              disabled={disabled || limiteAtingido}
               autoComplete="off"
               aria-controls={listaId}
             />
+            {limiteAtingido && (
+              <p className="mt-2 text-sm text-slate-600">Máximo de {MAX_HABILIDADES} habilidades. Remova uma para adicionar outra.</p>
+            )}
             {!online && busca.trim().length >= MIN_CARACTERES && (
               <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                 A busca de habilidades precisa de internet.
@@ -131,6 +139,8 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
               </ul>
             )}
           </div>
+          {/* Habilidades marcadas ficam ABAIXO da busca e vão se acumulando (máx. 3). */}
+          {listaSelecionadas}
         </>
       )}
     </div>

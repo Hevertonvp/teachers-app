@@ -60,7 +60,7 @@ export const PerguntaPdiFormModal = ({ title, value, onChange, onSubmit, onClose
 
         {value.tipoResposta === 'habilidade_crmg' && (
           <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Na Ficha, o Professor responde marcando uma ou várias habilidades do CRMG da disciplina (de qualquer ano), ou "Todas as habilidades".
+            Na Ficha, o Professor responde marcando até 3 habilidades do CRMG da disciplina (de qualquer ano).
           </p>
         )}
 
