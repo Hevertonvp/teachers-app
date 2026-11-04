@@ -396,13 +396,19 @@ export const FormularioPdiAlunoPage = () => {
     setMensagem('');
     setMensagemErro('');
     setResultadoConclusao(null);
-    if (!temAlgoParaSalvar()) { setMensagem('Nada novo para salvar.'); return; }
+    // Salvar (mesmo parcial) volta para a lista de formulários. Em falha NUNCA navega: fica na tela
+    // com o que foi digitado, para tentar de novo. Concluir continua exigindo tudo preenchido.
+    if (!temAlgoParaSalvar()) { navigate('/pdi/meus-pdis'); return; }
     setOcupado('salvando');
     setStatusLocal('saving');
     const falhas = await salvarTudo();
     setOcupado(null);
     setStatusLocal(falhas.length ? 'idle' : 'saved');
-    if (falhas.length) setMensagemErro('Algumas partes não foram salvas. Veja os avisos abaixo.');
+    if (falhas.length) {
+      setMensagemErro('Algumas partes não foram salvas. Veja os avisos abaixo.');
+      return;
+    }
+    navigate('/pdi/meus-pdis', { state: { pdiMensagemSucesso: 'Respostas salvas.' } });
   };
 
   const handleVoltar = async () => {
@@ -579,9 +585,6 @@ export const FormularioPdiAlunoPage = () => {
                   <Badge variant={editavelAgora ? 'green' : 'gray'}>{editavelAgora ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
                 </div>
               </div>
-              {!concluida && editavelAgora && (
-                <p className="mt-1 text-xs font-semibold text-slate-500">{faltando === 0 ? 'Pronto para concluir.' : `Faltam ${faltando} ${faltando === 1 ? 'pergunta' : 'perguntas'}.`}</p>
-              )}
               {renderAvisoSalvar(f.salvar, handleSalvar)}
               {perguntas.length === 0 ? (
                 <p className="mt-3 text-sm text-slate-500">Só perguntas comuns.</p>
