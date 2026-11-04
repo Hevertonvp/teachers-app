@@ -220,8 +220,14 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
     listarVinculosProfessorTurmaDisciplina({ turmaId: novoVinculo.turmaId }).then(setOcupantesDaTurma).catch(() => setOcupantesDaTurma([]));
   }, [novoVinculo.turmaId]);
 
+  // O vínculo já traz `escolaId`; o nome vem de professor.escolas (escopo de quem gerencia).
+  const nomeDaEscola = (escolaId) => professor.escolas.find(escola => escola.id === escolaId)?.nome ?? '—';
+
   const vinculosAtivos = vinculos.filter(item => item.status === 'ATIVO').sort((a, b) => a.turmaNome.localeCompare(b.turmaNome));
   const historico = vinculos.filter(item => item.status === 'ENCERRADO').sort((a, b) => new Date(b.dataInicio) - new Date(a.dataInicio));
+  // Escolas do professor + qualquer escola com vínculo ativo fora dessa lista (não deve acontecer, mas não some).
+  const idsEscolas = [...new Set([...professor.escolas.map(escola => escola.id), ...vinculosAtivos.map(item => item.escolaId)])];
+  const gruposPorEscola = idsEscolas.map(escolaId => ({ escolaId, nome: nomeDaEscola(escolaId), vinculos: vinculosAtivos.filter(item => item.escolaId === escolaId) }));
   const ocupanteAtual = ocupantesDaTurma.find(item => item.status === 'ATIVO' && item.disciplinaId === Number(novoVinculo.disciplinaId));
   const conflitoComOutro = ocupanteAtual && ocupanteAtual.professorId !== professor.id ? ocupanteAtual : null;
 
@@ -265,17 +271,28 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
           <p className="mb-2 text-sm font-semibold text-slate-700">Vínculos ativos</p>
           {carregando ? (
             <LoadingBlock text="Carregando..." className="py-3" />
-          ) : vinculosAtivos.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhuma turma vinculada no momento.</p>
           ) : (
-            <div className="space-y-2">
-              {vinculosAtivos.map(vinculo => (
-                <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                  <div>
-                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
-                    <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
-                  </div>
-                  <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+            // Agrupado por escola: mostra TODAS as escolas do professor, inclusive as que ainda não
+            // têm nenhuma turma vinculada (antes ficavam invisíveis aqui).
+            <div className="space-y-4">
+              {gruposPorEscola.map(grupo => (
+                <div key={grupo.escolaId}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-700">{grupo.nome}</p>
+                  {grupo.vinculos.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">Nenhuma turma vinculada nesta escola.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {grupo.vinculos.map(vinculo => (
+                        <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+                          <div>
+                            <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
+                            <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
+                          </div>
+                          <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -330,10 +347,11 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
             <p className="mb-2 text-sm font-semibold text-slate-700">Histórico</p>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">
-                <thead><tr className="text-xs font-semibold uppercase tracking-wide text-slate-400"><th className="pb-2 pr-4">Turma</th><th className="pb-2 pr-4">Disciplina</th><th className="pb-2 pr-4">Início</th><th className="pb-2">Fim</th></tr></thead>
+                <thead><tr className="text-xs font-semibold uppercase tracking-wide text-slate-400"><th className="pb-2 pr-4">Escola</th><th className="pb-2 pr-4">Turma</th><th className="pb-2 pr-4">Disciplina</th><th className="pb-2 pr-4">Início</th><th className="pb-2">Fim</th></tr></thead>
                 <tbody>
                   {historico.map(item => (
                     <tr key={item.id} className="border-t border-slate-100">
+                      <td className="py-2 pr-4">{nomeDaEscola(item.escolaId)}</td>
                       <td className="py-2 pr-4">{item.turmaNome}</td>
                       <td className="py-2 pr-4">{item.disciplinaNome}</td>
                       <td className="py-2 pr-4">{formatDataReal(item.dataInicio)}</td>
