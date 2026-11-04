@@ -67,7 +67,7 @@ export const PdiPage = () => {
   if (!isSecretaria(user) && userEscolas.length === 0) {
     return (
       <MainLayout>
-        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." />
+        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a administração do sistema." />
       </MainLayout>
     );
   }
@@ -199,7 +199,7 @@ export const PdiPage = () => {
 
         {isDiretora(user) && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Você tem acesso de consulta aos Alunos PDI das suas escolas. Cadastro, edição e arquivamento são feitos pela Secretaria ou pela Supervisão.
+            Você tem acesso de consulta aos Alunos PDI das suas escolas. Cadastro, edição e arquivamento não estão disponíveis para o seu perfil.
           </div>
         )}
 

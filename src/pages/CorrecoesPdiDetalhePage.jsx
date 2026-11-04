@@ -12,7 +12,7 @@ import { SavingIndicator } from '../components/SavingIndicator';
 
 const STATUS_CORRECAO_LABEL = { ABERTA: 'Aberta', RESOLVIDA: 'Resolvida', EXPIRADA: 'Expirada' };
 const STATUS_CORRECAO_VARIANT = { ABERTA: 'yellow', RESOLVIDA: 'blue', EXPIRADA: 'gray' };
-const ORIGEM_LABEL = { SECRETARIA_DIRETA: 'Secretaria (direta)', PROFESSOR_POS_DEVOLUCAO: 'Professor (pós-devolução)' };
+const ORIGEM_LABEL = { SECRETARIA_DIRETA: 'Correção direta', PROFESSOR_POS_DEVOLUCAO: 'Professor (pós-devolução)' };
 
 const formatarDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
 const formatarValor = (valor) => (valor && typeof valor === 'object' ? (valor.resposta ?? '—') : (valor ?? '—'));

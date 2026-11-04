@@ -12,7 +12,7 @@ export const DashboardGestor = () => {
   if (userEscolas.length === 0) {
     return (
       <MainLayout>
-        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." />
+        <EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a administração do sistema." />
       </MainLayout>
     );
   }

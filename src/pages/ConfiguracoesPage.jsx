@@ -136,7 +136,7 @@ export const ConfiguracoesPage = () => {
               </select>
             </FormField>
           </div>
-          {!podeConfigurar && <p className="mt-1 text-sm text-slate-600">Definido pela Secretaria de Educação.</p>}
+          {!podeConfigurar && <p className="mt-1 text-sm text-slate-600">Período definido para toda a rede.</p>}
 
           <div className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${trimestresFaltando.length === 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
             {trimestresFaltando.length === 0

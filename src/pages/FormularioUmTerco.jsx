@@ -109,7 +109,7 @@ export const FormularioUmTerco = () => {
   const { activeEscolaId, userEscolas } = useEscola();
 
   if (!isSecretaria(user) && userEscolas.length === 0) {
-    return <MainLayout><EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a Secretaria de Educação." /></MainLayout>;
+    return <MainLayout><EmptyState title="Nenhuma escola vinculada" description="Você não possui vínculo ativo com nenhuma escola no momento. Procure a administração do sistema." /></MainLayout>;
   }
 
   if (canManagePedagogico(user)) return <FormularioUmTercoHome escolas={escolas} escolaId={activeEscolaId} formPeriods={formPeriods} />;

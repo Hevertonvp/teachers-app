@@ -10,7 +10,7 @@ import { MainLayout } from '../layouts/Layouts';
 const STATUS_FICHA_ANUAL_LABEL = { EM_ANDAMENTO: 'em andamento', FECHADA: 'fechada' };
 const STATUS_FICHA_LABEL = { PENDENTE: 'Não iniciado', EM_ANDAMENTO: 'Em preenchimento', CONCLUIDA: 'Concluído' };
 const STATUS_FICHA_VARIANT = { PENDENTE: 'gray', EM_ANDAMENTO: 'blue', CONCLUIDA: 'green' };
-const INDICADOR_CORRECAO_LABEL = { solicitada: 'Correção solicitada', resolvida: 'Corrigida pela Secretaria' };
+const INDICADOR_CORRECAO_LABEL = { solicitada: 'Correção solicitada', resolvida: 'Corrigida' };
 const INDICADOR_CORRECAO_VARIANT = { solicitada: 'yellow', resolvida: 'blue' };
 
 const formatarData = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
@@ -230,7 +230,7 @@ export const FichaAnualPdiPage = () => {
         {confirmandoFechamento && (
           <ConfirmDialog
             title="Fechar Ficha Anual"
-            message={`Isso marca o ciclo ${ano} deste aluno como encerrado. Hoje não existe um botão para reabrir depois — formulários que ainda estiverem em aberto continuam preenchíveis normalmente (o fechamento não bloqueia nada, é só o status do ciclo), mas desfazer precisa ser pedido à Secretaria responsável pelo sistema. Deseja continuar?`}
+            message={`Isso marca o ciclo ${ano} deste aluno como encerrado. Hoje não existe um botão para reabrir depois — formulários que ainda estiverem em aberto continuam preenchíveis normalmente (o fechamento não bloqueia nada, é só o status do ciclo), mas desfazer precisa ser solicitado pelo suporte do sistema. Deseja continuar?`}
             confirmLabel="Fechar Ficha Anual"
             onCancel={() => setConfirmandoFechamento(false)}
             onConfirm={fecharAno}

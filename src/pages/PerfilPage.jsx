@@ -50,7 +50,7 @@ export const PerfilPage = () => {
               <Button size="sm" variant="outline" onClick={reloadVinculos}>Tentar novamente</Button>
             </div>
           ) : userEscolas.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">Nenhuma escola vinculada no momento. Procure a Secretaria de Educação.</p>
+            <p className="mt-3 text-sm text-slate-500">Nenhuma escola vinculada no momento. Procure a administração do sistema.</p>
           ) : (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {userEscolas.map(escola => (

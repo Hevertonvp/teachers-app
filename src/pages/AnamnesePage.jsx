@@ -330,7 +330,7 @@ export const AnamnesePage = () => {
           <Card>
             <EmptyState
               title={souSecretaria ? 'Anamnese ainda não preenchida' : 'Anamnese ainda não disponível'}
-              description={souSecretaria ? 'Inicie a Anamnese deste aluno usando o Modelo ativo no momento.' : 'A Secretaria ainda não iniciou a Anamnese deste aluno.'}
+              description={souSecretaria ? 'Inicie a Anamnese deste aluno usando o Modelo ativo no momento.' : 'A anamnese deste aluno está em desenvolvimento.'}
             >
               {souSecretaria && <Button onClick={iniciar} disabled={iniciando}>{iniciando ? 'Iniciando...' : 'Iniciar Anamnese'}</Button>}
             </EmptyState>

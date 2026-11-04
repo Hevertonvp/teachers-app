@@ -311,7 +311,7 @@ export const PdiAlunoPerfil = () => {
         {encerrandoAuxiliar && (
           <ConfirmDialog
             title="Encerrar vínculo"
-            message="Todos os alunos PDI desta turma ficarão sem Auxiliar de Aprendizagem vinculado até que a Secretaria vincule um novo. O histórico deste vínculo é preservado."
+            message="Todos os alunos PDI desta turma ficarão sem Auxiliar de Aprendizagem vinculado até que um novo seja vinculado. O histórico deste vínculo é preservado."
             confirmLabel="Encerrar vínculo"
             onCancel={() => setEncerrandoAuxiliar(false)}
             onConfirm={confirmEncerrarAuxiliar}

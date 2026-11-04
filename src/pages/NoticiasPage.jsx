@@ -37,7 +37,7 @@ export const NoticiasPage = () => {
     <MainLayout>
       <InstrumentManager
         title="Notícias"
-        description="Novidades e comunicados da rede municipal de ensino, publicados pela Secretaria de Educação."
+        description="Novidades e comunicados da rede municipal de ensino."
         records={noticias}
         fields={fields}
         columns={columns}
@@ -53,7 +53,7 @@ export const NoticiasPage = () => {
           { name: 'categoria', label: 'Categoria', options: categoriaOptions, getValue: row => row.categoria },
         ]}
         emptyTitle="Nenhuma notícia"
-        emptyDescription={podeGerenciar ? 'Publique a primeira notícia da rede.' : 'Nenhuma notícia publicada pela Secretaria até o momento.'}
+        emptyDescription={podeGerenciar ? 'Publique a primeira notícia da rede.' : 'Nenhuma notícia publicada até o momento.'}
       />
     </MainLayout>
   );
