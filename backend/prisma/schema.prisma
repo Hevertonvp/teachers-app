@@ -104,6 +104,7 @@ model Escola {
   anamneses         Anamnese[]
   conversasMensagem ConversaMensagem[]
   feedbacksSistema  FeedbackSistema[]
+  coberturasUmTerco CoberturaEntregaUmTerco[]
 
   @@map("escolas")
 }
@@ -131,6 +132,7 @@ model Disciplina {
   aplicacaoModelosPdi  AplicacaoModeloPdi[]
   fichasPdi            FichaPdi[]
   componenteCurricular DisciplinaComponenteCurricular?
+  entregasUmTerco      EntregaUmTerco[]
 
   @@map("disciplinas")
 }
@@ -177,6 +179,7 @@ model Turma {
   anamneses          Anamnese[]
   movimentacoesAluno MovimentacaoAlunoPdi[]
   blocosPadrao       BlocoRespostasPadraoPdi[]
+  coberturasUmTerco  CoberturaEntregaUmTerco[]
 
   // Cobre o filtro mais comum da listagem (GET /api/turmas?escolaId=...&anoLetivo=...&status=...)
   // — Postgres também usa o prefixo desse índice (só escolaId, ou escolaId+anoLetivo) sozinho.
@@ -230,6 +233,7 @@ model Pessoa {
   feedbacksSistema          FeedbackSistema[]          @relation("FeedbackSistemaAutor")
   mensagensFeedbackSistema  MensagemFeedbackSistema[]  @relation("MensagemFeedbackSistemaAutor")
   eventosFeedbackSistema    FeedbackSistemaEvento[]    @relation("FeedbackSistemaEventoAutor")
+  entregasUmTerco           EntregaUmTerco[]           @relation("EntregaUmTercoProfessor")
 
   @@map("pessoas")
 }
@@ -293,9 +297,10 @@ model ProfessorTurmaDisciplina {
   disciplinaId Int
   disciplina   Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
 
-  status     StatusVinculo @default(ATIVO)
-  dataInicio DateTime      @db.Date
-  dataFim    DateTime?     @db.Date
+  status            StatusVinculo             @default(ATIVO)
+  dataInicio        DateTime                  @db.Date
+  dataFim           DateTime?                 @db.Date
+  coberturasUmTerco CoberturaEntregaUmTerco[]
 
   @@index([turmaId, disciplinaId])
   @@index([professorId])
@@ -458,25 +463,25 @@ model PerguntaPdi {
 // tabela por FK — ela só é LIDA e COPIADA para dentro do ModeloPdi no momento da criação, nunca
 // mais depois — então não existe snapshot/histórico a proteger aqui).
 model PerguntaPdiPadrao {
-  id           Int               @id @default(autoincrement())
-  secao        String            @db.VarChar(100)
-  subsecao     String?           @db.VarChar(100)
-  codigo       String?           @db.VarChar(20)
-  texto        String            @db.Text
-  indicador    String?           @db.VarChar(100)
-  origem       OrigemPerguntaPdi
-  tipoResposta TipoRespostaPdi
-  opcoes       Json?
-  complementar Json?
-  ordem        Int
-  status       StatusRegistro    @default(ATIVA)
-  trimestre    Int? // mesmo significado de PerguntaPdi.trimestre — copiado para o Modelo na criação
+  id            Int               @id @default(autoincrement())
+  secao         String            @db.VarChar(100)
+  subsecao      String?           @db.VarChar(100)
+  codigo        String?           @db.VarChar(20)
+  texto         String            @db.Text
+  indicador     String?           @db.VarChar(100)
+  origem        OrigemPerguntaPdi
+  tipoResposta  TipoRespostaPdi
+  opcoes        Json?
+  complementar  Json?
+  ordem         Int
+  status        StatusRegistro    @default(ATIVA)
+  trimestre     Int? // mesmo significado de PerguntaPdi.trimestre — copiado para o Modelo na criação
   // "Padrão" (entra automaticamente em todo Modelo novo) e "compartilhada" (UMA resposta no bloco
   // comum do Professor, reaproveitada entre as disciplinas) são coisas diferentes: false = nasce em
   // todo Modelo, mas cada disciplina responde a sua (nota, CRMG, pergunta do trimestre…). Decidido
   // na criação da Aplicação (snapshot), nunca na cópia pro Modelo. HABILIDADE_CRMG nunca é
   // compartilhada (CHECK no banco).
-  compartilhada Boolean          @default(true)
+  compartilhada Boolean           @default(true)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -1489,4 +1494,153 @@ model FeedbackSistemaEvento {
 
   @@index([feedbackId, createdAt])
   @@map("feedback_sistema_eventos")
+}
+
+// --- Formulário 1/3 (registro dos conteúdos ensinados por semana) ---------------------------
+// Identidade do preenchimento: ciclo + professor + anoSerie + disciplina (EntregaUmTerco). A
+// escola/turma NUNCA fazem parte da identidade — só dizem a quais vínculos o preenchimento vale
+// (CoberturaEntregaUmTerco). O conteúdo existe uma única vez, mesmo com N turmas/escolas.
+
+enum StatusEntregaUmTerco {
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+enum TipoEventoEntregaUmTerco {
+  INICIADA
+  SALVA
+  CONCLUIDA
+  COBERTURA_ADICIONADA
+  COBERTURA_ENCERRADA
+}
+
+// Ciclo da rede (um por ano letivo + trimestre ativo). abreEm/prazoEm são instantes (timestamptz);
+// o fuso operacional é America/Sao_Paulo (ver domain/umTerco.ts). As datas das semanas são só data.
+model CicloUmTerco {
+  id        Int            @id @default(autoincrement())
+  anoLetivo Int
+  trimestre Int // 1, 2 ou 3 — calendário global PeriodoTrimestre
+  titulo    String         @default("Formulário 1/3") @db.VarChar(200)
+  abreEm    DateTime
+  prazoEm   DateTime
+  status    StatusRegistro @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  semanas     SemanaUmTerco[]
+  entregas    EntregaUmTerco[]
+  reaberturas ReaberturaUmTerco[]
+
+  @@index([anoLetivo, trimestre])
+  @@map("ciclos_um_terco")
+}
+
+model SemanaUmTerco {
+  id         Int          @id @default(autoincrement())
+  cicloId    Int
+  ciclo      CicloUmTerco @relation(fields: [cicloId], references: [id], onDelete: Cascade)
+  numero     Int // 1..N — o rótulo "Semana N" é gerado pelo sistema, nunca digitado
+  dataInicio DateTime     @db.Date
+  dataFim    DateTime     @db.Date
+
+  respostas RespostaSemanaUmTerco[]
+
+  @@unique([cicloId, numero])
+  @@map("semanas_um_terco")
+}
+
+model EntregaUmTerco {
+  id           Int                  @id @default(autoincrement())
+  cicloId      Int
+  ciclo        CicloUmTerco         @relation(fields: [cicloId], references: [id], onDelete: Restrict)
+  professorId  Int
+  professor    Pessoa               @relation("EntregaUmTercoProfessor", fields: [professorId], references: [id], onDelete: Restrict)
+  anoSerie     Int
+  disciplinaId Int
+  disciplina   Disciplina           @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  status       StatusEntregaUmTerco @default(EM_ANDAMENTO)
+
+  iniciadaEm  DateTime  @default(now())
+  concluidaEm DateTime?
+  createdAt   DateTime  @default(now())
+  // Token de conflito (optimistic locking) — sempre atualizado em toda gravação (ver rota).
+  updatedAt   DateTime  @updatedAt
+
+  respostas RespostaSemanaUmTerco[]
+  cobertura CoberturaEntregaUmTerco[]
+  historico HistoricoEntregaUmTerco[]
+
+  // Garante no banco: nunca dois preenchimentos para a mesma combinação (duas turmas, duas
+  // escolas, duas abas, duplo clique).
+  @@unique([cicloId, professorId, anoSerie, disciplinaId])
+  @@index([professorId])
+  @@map("entregas_um_terco")
+}
+
+model RespostaSemanaUmTerco {
+  id        Int            @id @default(autoincrement())
+  entregaId Int
+  entrega   EntregaUmTerco @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  semanaId  Int
+  semana    SemanaUmTerco  @relation(fields: [semanaId], references: [id], onDelete: Restrict)
+  texto     String         @db.Text
+  updatedAt DateTime       @updatedAt
+
+  @@unique([entregaId, semanaId])
+  @@map("respostas_semana_um_terco")
+}
+
+// Uma linha por vínculo Professor×Turma×Disciplina coberto pela entrega. `ate` nulo = ainda vale.
+// Vínculo perdido só ganha `ate` (o histórico daquele período nunca some); vínculo equivalente
+// novo ganha uma linha nova apontando para a MESMA entrega.
+model CoberturaEntregaUmTerco {
+  id        Int                      @id @default(autoincrement())
+  entregaId Int
+  entrega   EntregaUmTerco           @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  vinculoId Int
+  vinculo   ProfessorTurmaDisciplina @relation(fields: [vinculoId], references: [id], onDelete: Restrict)
+  turmaId   Int
+  turma     Turma                    @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  escolaId  Int
+  escola    Escola                   @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  desde     DateTime                 @default(now())
+  ate       DateTime?
+
+  @@unique([entregaId, vinculoId])
+  @@index([escolaId])
+  @@index([turmaId])
+  @@map("cobertura_entrega_um_terco")
+}
+
+// Reabertura do CICLO inteiro (mesmo conceito da ReaberturaPdi), com início e fim em instantes.
+// Nunca altera abreEm/prazoEm originais. Só a Secretaria cria; períodos não se sobrepõem.
+model ReaberturaUmTerco {
+  id       Int          @id @default(autoincrement())
+  cicloId  Int
+  ciclo    CicloUmTerco @relation(fields: [cicloId], references: [id], onDelete: Restrict)
+  inicioEm DateTime
+  fimEm    DateTime
+  motivo   String?      @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  createdBy String?  @db.VarChar(200)
+
+  @@index([cicloId])
+  @@map("reaberturas_um_terco")
+}
+
+model HistoricoEntregaUmTerco {
+  id        Int                      @id @default(autoincrement())
+  entregaId Int
+  entrega   EntregaUmTerco           @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  tipo      TipoEventoEntregaUmTerco
+  pessoaId  Int?
+  quando    DateTime                 @default(now())
+  detalhe   Json?
+
+  @@index([entregaId, quando])
+  @@map("historico_entrega_um_terco")
 }

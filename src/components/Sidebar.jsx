@@ -125,7 +125,6 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
 
   const menuGestor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-    { name: 'Formulário 1/3', path: '/formulario-um-terco', icon: 'formulario' },
     { name: 'PDI', path: '/pdi', icon: 'pdi' },
     { name: 'Correções', path: '/correcoes', icon: 'correcoes' },
     { name: 'Gestão de Professores(as)', path: '/gestao-professores', icon: 'pessoas' },

@@ -16,6 +16,10 @@ import { GestaoPessoas } from './pages/GestaoPessoas';
 import { GestaoTurmas } from './pages/GestaoTurmas';
 import { PdiHomePage } from './pages/PdiHomePage';
 import { MeusPdisPage } from './pages/MeusPdisPage';
+import { UmTercoSecretariaPage } from './pages/UmTercoSecretariaPage';
+import { UmTercoPainelPage } from './pages/UmTercoPainelPage';
+import { UmTercoProfessorPage } from './pages/UmTercoProfessorPage';
+import { UmTercoPreenchimentoPage } from './pages/UmTercoPreenchimentoPage';
 import { FormularioPdiPage } from './pages/FormularioPdiPage';
 import { FormularioPdiProfessor } from './pages/FormularioPdiProfessor';
 import { FormularioPdiAlunoPage } from './pages/FormularioPdiAlunoPage';
@@ -52,6 +56,22 @@ const DashboardRouter = () => {
   return <Navigate to="/login" />;
 };
 
+// Formulário 1/3: tela inicial depende do perfil; os demais perfis não têm acesso.
+const UmTercoEntrada = () => {
+  const { user } = useAuth();
+  if (isSecretaria(user)) return <UmTercoSecretariaPage />;
+  if (isProfessor(user)) return <UmTercoProfessorPage />;
+  return <Navigate to="/dashboard" replace />;
+};
+const UmTercoSomenteSecretaria = ({ children }) => {
+  const { user } = useAuth();
+  return isSecretaria(user) ? children : <Navigate to="/dashboard" replace />;
+};
+const UmTercoSomenteProfessor = ({ children }) => {
+  const { user } = useAuth();
+  return isProfessor(user) ? children : <Navigate to="/dashboard" replace />;
+};
+
 // Nesta primeira entrega, só o PDI por disciplina (e a infraestrutura da qual ele depende —
 // Escolas/Turmas/Pessoas/vínculos) está liberado. Toda rota fora desse escopo continua existindo
 // (os links do menu continuam visíveis para todos os perfis), mas aponta para EmConstrucaoPage —
@@ -78,12 +98,14 @@ const AppRoutes = () => <Routes>
   <Route path="/pessoas" element={<ProtectedRoute><GestaoPessoas /></ProtectedRoute>} />
   <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
   <Route path="/correcoes" element={<ProtectedRoute><CorrecoesHomePage /></ProtectedRoute>} />
+  {/* Formulário 1/3: só Secretaria (administra) e Professor (preenche) — qualquer outro perfil volta ao dashboard. */}
+  <Route path="/formulario-um-terco" element={<ProtectedRoute><UmTercoEntrada /></ProtectedRoute>} />
+  <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><UmTercoSomenteSecretaria><UmTercoPainelPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
+  <Route path="/formulario-um-terco/:cicloId/:anoSerie/:disciplinaId" element={<ProtectedRoute><UmTercoSomenteProfessor><UmTercoPreenchimentoPage /></UmTercoSomenteProfessor></ProtectedRoute>} />
   <Route path="/correcoes/pdi" element={<ProtectedRoute><CorrecoesPdiListaPage /></ProtectedRoute>} />
   <Route path="/correcoes/pdi/:fichaId" element={<ProtectedRoute><CorrecoesPdiDetalhePage /></ProtectedRoute>} />
 
   {/* Fora do escopo desta entrega (só PDI) — "em construção" para todos os perfis. */}
-  <Route path="/formulario-um-terco" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
-  <Route path="/formulario-um-terco/criar" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/pdi/acompanhamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/correcoes-simulados" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/pendencias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />

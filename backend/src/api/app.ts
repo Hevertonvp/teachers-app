@@ -26,6 +26,7 @@ import { notificacoesRouter } from './routes/notificacoes.js';
 import { feedbackSistemaRouter } from './routes/feedbackSistema.js';
 import { habilidadesCurricularesRouter } from './routes/habilidadesCurriculares.js';
 import { trimestresRouter } from './routes/trimestres.js';
+import { formularioUmTercoRouter } from './routes/formularioUmTerco.js';
 import { pdiIndicadoresRouter } from './routes/pdiIndicadores.js';
 
 export function createApp() {
@@ -87,6 +88,7 @@ export function createApp() {
   app.use('/api/pdi-perguntas', pdiPerguntasRouter);
   app.use('/api/pdi-perguntas-padrao', pdiPerguntasPadraoRouter);
   app.use('/api/pdi-aplicacoes', pdiAplicacoesRouter);
+  app.use('/api/formulario-um-terco', formularioUmTercoRouter);
   app.use('/api/pdi-fichas', pdiFichasRouter);
   app.use('/api/pdi-ficha-anual', pdiFichaAnualRouter);
   app.use('/api/correcoes-pdi', correcoesPdiRouter);
