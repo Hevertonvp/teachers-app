@@ -59,10 +59,18 @@ export async function flushTudo(userId) {
     flushando = true;
     try {
       const pendentes = await listarFilaDoUsuario(userId);
-      for (const item of pendentes.filter((i) => i.status === 'pending' || i.status === 'error')) {
+      // 'syncing' aqui só pode ser sobra de um envio interrompido (aba fechada no meio): este
+      // flush segura a trava, então ninguém mais está enviando — volta a ser tentado (o servidor
+      // é idempotente: instantâneo completo + token de versão). 'error' (recusa definitiva do
+      // servidor, ex.: prazo encerrado, sem vínculo) NÃO é reenviado automaticamente: só quando o
+      // professor editar de novo aquele formulário (a linha volta a 'pending').
+      for (const item of pendentes.filter((i) => i.status === 'pending' || i.status === 'syncing')) {
         if (!getNetworkSnapshot().online) break; // caiu de novo no meio da fila — a escada de retry assume
         await enviarUm(item);
       }
+    } catch {
+      // Interrupção esperada (rede caiu, sessão inválida, servidor indisponível): a linha já voltou
+      // a 'pending' em enviarUm e o resto da fila fica para a próxima oportunidade.
     } finally {
       flushando = false;
       notify();
@@ -100,10 +108,26 @@ async function enviarUm(item) {
       await salvarNaFila({ ...item, status: 'pending', attempts: (item.attempts || 0) + 1, lastError: error.message });
       throw error;
     }
+    if (error.status === 401 || error.codigo === 'SENHA_TEMPORARIA_PENDENTE' || (error.status >= 500)) {
+      // Sessão inválida/expirada, senha temporária pendente ou servidor indisponível: nada foi
+      // recusado de verdade — mantém a linha (e o rascunho) para enviar depois de um login válido
+      // ou quando o servidor voltar. Nunca descarta, nunca marca como erro definitivo.
+      await salvarNaFila({ ...item, status: 'pending', attempts: (item.attempts || 0) + 1, lastError: error.message });
+      throw error;
+    }
     // Erro de negócio real (validação etc.) — nunca adianta re-tentar sozinho; fica visível como
     // erro, mas não trava o resto da fila.
     await salvarNaFila({ ...item, status: 'error', attempts: (item.attempts || 0) + 1, lastError: error.message });
   }
+}
+
+// DEF-07: ao ABRIR o app (ou fazer login) já com sessão válida, envia a fila pendente daquele
+// usuário — antes só era enviada ao enfileirar com rede ou ao detectar reconexão, e quem fechava o
+// navegador offline e voltava com internet ficava com a alteração presa no aparelho. Só a fila do
+// próprio usuário (listarFilaDoUsuario); quem chama garante sessão válida (AuthContext).
+export function sincronizarAoEntrar(userId) {
+  if (!userId || !getNetworkSnapshot().online) return;
+  flushTudo(userId);
 }
 
 // Reconectou (qualquer aba) -> tenta sincronizar a fila do usuário atual automaticamente.

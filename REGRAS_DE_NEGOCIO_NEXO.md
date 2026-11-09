@@ -843,3 +843,4 @@ Nenhuma regra de negócio foi criada nem alterada. Foram corrigidas **divergênc
 |---|---|---|
 | PDI-04 (bloco pertence ao professor que escreveu) | DEF-14: o novo responsável sobrescrevia o bloco do anterior, na troca de turma e também na **substituição de professor** | **Corrigida.** O bloco de quem preenche é o da turma atual + professor responsável atual. As Correções da Secretaria continuam mostrando o bloco original. |
 | PER-02, PER-03, PDI-10 (Diretora e Gestor consultam alunos da própria escola) | DEF-17: a tela checava acesso com dados de exemplo | **Corrigida.** A tela usa os vínculos reais. O backend continua sendo a autoridade. |
+| OFF-02 (fila; nada se perde; nada é sobrescrito em silêncio) | DEF-07: a fila não era enviada ao abrir o app; item preso em "enviando"; recusa definitiva reenviada sem fim | **Corrigida.** A fila é enviada ao abrir ou logar com sessão válida, só a do próprio usuário. |

@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState, useContext } from 'react';
 import { usuarios as usuariosIniciais } from '../data/mockData';
 import { apiFetch, getAuthToken, setAuthToken, setSenhaTemporariaPendenteHandler, setUnauthorizedHandler } from '../services/api';
-import { registrarUsuarioAtual } from '../offline/syncQueue';
+import { registrarUsuarioAtual, sincronizarAoEntrar } from '../offline/syncQueue';
 import { useData } from './DataContext';
 
 const AuthContext = createContext();
@@ -160,7 +160,12 @@ export const AuthProvider = ({ children }) => {
   // apaga rascunho não sincronizado (decisão confirmada) — só para de ler/escrever o namespace
   // daquele usuário; o dado fica inerte no IndexedDB até ele logar de novo no mesmo navegador.
   useEffect(() => {
-    registrarUsuarioAtual(user?.email?.toLowerCase() ?? null);
+    const userId = user?.email?.toLowerCase() ?? null;
+    registrarUsuarioAtual(userId);
+    // DEF-07: ao abrir o app/logar, envia a fila pendente DESTE usuário — só com sessão válida
+    // (token presente e sem senha temporária pendente, que o backend recusaria). Se o token
+    // estiver expirado, o 401 devolve a linha a 'pending' e ela segue guardada até o próximo login.
+    if (userId && !user.senhaTemporaria && getAuthToken()) sincronizarAoEntrar(userId);
   }, [user]);
 
   const isAuthenticated = () => user !== null;

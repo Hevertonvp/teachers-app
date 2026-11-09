@@ -122,3 +122,31 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
      - o modal de vínculos de `GestaoEscolas.jsx`, que é uma tela real da Secretaria. A exibição pode estar incorreta; é preciso auditar.
    - **Não testado:** Gestor com vínculo em escola **inativa** (consulta histórica).
 
+## DEF-07 — CORRIGIDO (MÉDIO/ALTO) — fila offline não era enviada ao abrir o app
+1. **Causa:** `src/offline/syncQueue.js` só enviava a fila ao enfileirar com rede ou ao detectar reconexão. Na mesma rotina apareceram mais três problemas:
+   - item interrompido no meio do envio ficava preso em "enviando" para sempre;
+   - recusa definitiva do servidor (prazo, vínculo) era reenviada a cada sincronização;
+   - sessão expirada (401) virava "erro".
+2. **Comportamento anterior (reproduzido):**
+   - fechar offline e reabrir com internet não enviava nada, nem no 1/3 nem no PDI;
+   - depois de um novo login, também não;
+   - item preso em "enviando" nunca saía.
+3. **Arquivos:** `src/offline/syncQueue.js`, `src/context/AuthContext.jsx`, `src/services/api.js` (o erro passa a carregar o `status` HTTP; só acrescenta).
+4. **Solução:**
+   - `sincronizarAoEntrar(userId)` é chamado pelo AuthContext ao abrir ou logar **com sessão válida** (token presente, sem senha temporária pendente) e envia só a fila daquele usuário;
+   - item que sobrou em "enviando" é reenviado, sob a trava de sincronização;
+   - 401, senha temporária pendente e 5xx devolvem o item a "pendente". Nada é descartado;
+   - recusa de negócio fica como "erro" e **não é reenviada automaticamente**. Volta a "pendente" quando o professor editar de novo;
+   - a remoção da fila continua só depois de resposta 2xx, e o conflito continua dando 409, sem sobrescrita.
+5. **Testes:** `32-def07-def08-offline.mjs`, cenários:
+   - 1: 1/3;
+   - 2: PDI;
+   - 3: sessão expirada;
+   - 4: dois usuários no mesmo navegador;
+   - 5: envio interrompido, sem duplicar.
+6. **Resultado:** ANTES, 7 reprovados nesses cenários; DEPOIS, todos aprovados (contagem total abaixo).
+7. **Riscos residuais:**
+   - não testado em celular físico nem no build de produção;
+   - ao abrir com sessão expirada, a página vai para o login e a fila espera o novo login. É assim por desenho.
+8. **Fora de escopo:** DEF-06/13 (aviso offline cobre os botões) continua aberto. Nos testes do PDI, o Salvar foi acionado pelo teclado.
+

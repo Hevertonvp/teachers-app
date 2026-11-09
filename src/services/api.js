@@ -85,6 +85,9 @@ export async function apiFetch(path, options = {}) {
     const erro = new Error(data?.message || 'Ocorreu um erro inesperado ao comunicar com o servidor.');
     // Infra offline (seção "Conflitos"): quem chamou decide o que fazer com o conflito — nunca
     // tratado genericamente aqui, cada tela sabe como preservar o próprio rascunho local.
+    // status HTTP: a fila offline distingue sessão inválida (401) e falha temporária do servidor
+    // (5xx), que devem ser tentadas de novo, de recusa definitiva de negócio (4xx).
+    erro.status = response.status;
     if (data?.codigo) erro.codigo = data.codigo;
     if (data?.dadosAtuais !== undefined) erro.dadosAtuais = data.dadosAtuais;
     throw erro;
