@@ -218,3 +218,13 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
 6. **Riscos residuais:**
    - o conflito detectado **no momento do salvamento** (409 com a tela aberta) continua com a mensagem "recarregue a página". Ao recarregar, cai neste novo fluxo com as opções;
    - **agrupamento do bloco comum:** no formulário único, o agrupamento ainda usa o professor gravado na fotografia da ficha. Um aluno transferido com fichas criadas por dois professores diferentes, que passam ao mesmo professor novo, pode mostrar o bloco duas vezes. O servidor responde 409 e nada se perde, mas a tela fica confusa. Não reproduzido.
+
+## DEF-06 / DEF-13 — CORRIGIDO (MÉDIO) — aviso de sem conexão cobria os botões
+1. **Causa:** o aviso global (`SyncStatusBanner`, fixo no rodapé, `z-40`) ocupava a faixa inteira por cima da barra de ações do 1/3 (`z-30`). No PDI, cobria o "Salvar" do fim da página.
+2. **Antes (roteiro 35, desktop e celular):** "Próximo" e "Salvar progresso" do 1/3 e "Salvar" do PDI estavam cobertos. Para conferir, o teste olha qual elemento fica no centro do botão. ANTES: 4 de 4 reprovados.
+3. **Arquivos:** `src/components/SyncStatusBanner.jsx` e `src/pages/UmTercoPreenchimentoPage.jsx` (só a marcação `data-barra-acoes-fixa` na barra).
+4. **Solução:**
+   - só a caixa do aviso recebe cliques; o resto da faixa deixa passar;
+   - se a tela tem barra de ações fixa, o aviso sobe para cima dela;
+   - enquanto o aviso está visível, a página ganha espaço no fim, para o último botão poder rolar para cima dele.
+5. **Resultado:** DEPOIS 4/4, em desktop e celular. O aviso continua visível.

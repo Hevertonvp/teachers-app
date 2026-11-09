@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useFilaResumo } from '../hooks/useFilaResumo';
@@ -20,6 +20,8 @@ export const SyncStatusBanner = () => {
   const { online, retryInSeconds } = useNetworkStatus();
   const { pendentes, sincronizando, conflitos, erros } = useFilaResumo(user?.email?.toLowerCase());
   const [mostrarTudoOk, setMostrarTudoOk] = useState(false);
+  const caixaRef = useRef(null);
+  const [elevacao, setElevacao] = useState(0);
   const tinhaPendenciaRef = useRef(false);
 
   const totalPendente = pendentes + sincronizando + conflitos + erros;
@@ -55,11 +57,35 @@ export const SyncStatusBanner = () => {
     texto = 'Tudo sincronizado.';
   }
 
+  // DEF-06/13: o aviso nunca pode cobrir botões. (1) só a caixa recebe cliques (o resto da faixa
+  // deixa passar); (2) se a tela tem barra de ações fixa no rodapé ([data-barra-acoes-fixa]), o
+  // aviso sobe para cima dela; (3) enquanto visível, a página ganha espaço no fim para o último
+  // botão poder rolar para cima do aviso.
+  useLayoutEffect(() => {
+    if (!texto) return undefined;
+    const medir = () => {
+      const barra = document.querySelector('[data-barra-acoes-fixa]');
+      const alturaBarra = barra ? Math.ceil(barra.getBoundingClientRect().height) : 0;
+      setElevacao(alturaBarra);
+      const alturaCaixa = caixaRef.current ? caixaRef.current.getBoundingClientRect().height : 0;
+      document.body.style.paddingBottom = `${Math.ceil(alturaCaixa + alturaBarra + 24)}px`;
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    const observador = new MutationObserver(medir);
+    observador.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      window.removeEventListener('resize', medir);
+      observador.disconnect();
+      document.body.style.paddingBottom = '';
+    };
+  }, [texto]);
+
   if (!texto) return null;
 
   return (
-    <div className={`fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3 sm:bottom-3`}>
-      <div className={`flex max-w-xl items-center gap-3 rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${TOM_CLASSES[tom]}`}>
+    <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3 ${elevacao ? '' : 'sm:bottom-3'}`} style={elevacao ? { bottom: elevacao + 8 } : undefined}>
+      <div ref={caixaRef} className={`pointer-events-auto flex max-w-xl items-center gap-3 rounded-lg border px-4 py-2 text-sm font-semibold shadow-lg ${TOM_CLASSES[tom]}`}>
         <span>{texto}</span>
         {!online && (
           <button type="button" onClick={tentarAgora} className="shrink-0 rounded px-2 py-0.5 text-xs font-bold underline hover:no-underline">

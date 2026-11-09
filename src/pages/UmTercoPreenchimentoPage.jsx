@@ -334,7 +334,7 @@ export const UmTercoPreenchimentoPage = () => {
         </Card>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+      <div data-barra-acoes-fixa className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
           <Button variant="secondary" className="min-h-12 flex-1 sm:flex-none" onClick={() => (etapa === 0 ? sair() : irParaEtapa(etapa - 1))}>{etapa === 0 ? 'Sair' : 'Voltar'}</Button>
           {editavel && <Button variant="outline" className="min-h-12 flex-1 sm:flex-none" onClick={salvarAgora} disabled={!sujo || !!conflito}>Salvar progresso</Button>}
