@@ -1,2 +1,3 @@
 perguntas*.txt
 .env
+node_modules/
