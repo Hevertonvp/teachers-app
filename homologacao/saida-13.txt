@@ -1,0 +1,15 @@
+[APROVADO] UT-VIN-00 — Turma de Educação Infantil criada pela interface → Berçário I — Manhã
+Professores P07–P15 e vínculos preparados no banco local.
+[APROVADO] UT-VIN-P07 — P07: formulários visíveis conforme vínculo histórico → 6º ano — Matemática | 6º ano — Matemática cobre 6M3: true
+[REPROVADO] UT-VIN-P08 — P08: formulários visíveis conforme vínculo histórico → (nenhum) — tela: "Formulário 1/3 — Conteúdos Registre, semana a semana, os conteúdos que você ensinou. Você preenche uma vez por ano/série e discipl"
+[APROVADO] UT-VIN-P09 — P09: formulários visíveis conforme vínculo histórico → (nenhum) — tela: "Formulário 1/3 — Conteúdos Registre, semana a semana, os conteúdos que você ensinou. Você preenche uma vez por ano/série e discipl"
+[APROVADO] UT-VIN-P10 — P10: formulários visíveis conforme vínculo histórico → (nenhum) — tela: "Formulário 1/3 — Conteúdos Registre, semana a semana, os conteúdos que você ensinou. Você preenche uma vez por ano/série e discipl"
+[APROVADO] UT-VIN-P11 — P11: formulários visíveis conforme vínculo histórico → 7º ano — História
+[APROVADO] UT-VIN-P12 — P12: formulários visíveis conforme vínculo histórico → 6º ano — Ciências + 7º ano — Ciências | 6º ano — Ciências cobre 6M4: true | 7º ano — Ciências cobre 7M2: true
+[APROVADO] UT-VIN-P13 — P13: formulários visíveis conforme vínculo histórico → (nenhum) — tela: "Formulário 1/3 — Conteúdos Registre, semana a semana, os conteúdos que você ensinou. Você preenche uma vez por ano/série e discipl"
+[APROVADO] UT-VIN-P14 — P14: formulários visíveis conforme vínculo histórico → (nenhum) — tela: "Formulário 1/3 — Conteúdos Registre, semana a semana, os conteúdos que você ensinou. Você preenche uma vez por ano/série e discipl"
+[APROVADO] UT-VIN-P15 — P15: formulários visíveis conforme vínculo histórico → 7º ano — Matemática
+[APROVADO] UT-VIN-PAINEL1 — Painel: obrigações esperadas = 21 (cálculo manual por professor) → {"esperadas":21,"concluidas":2,"andamento":4,"nao":15,"linhas":21}
+[APROVADO] UT-VIN-PAINEL1b — Painel: concluídas + em andamento + não iniciadas = esperadas → 2+4+15=21
+[REPROVADO] UT-VIN-CARDS — Total de cartões vistos pelos professores novos = 6 e bate com o painel → 5
+Painel antes: {"esperadas":21,"concluidas":2,"andamento":4,"nao":15,"linhas":21}

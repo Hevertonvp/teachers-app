@@ -1,0 +1,10 @@
+[APROVADO] UT-EST-01 — P11 conclui o 7º História pela interface → CONCLUIDA
+[APROVADO] UT-EST-02 — Painel com P11 concluído e todos ativos: esperadas 21, concluídas 3 → 21 / 3
+inativar P11 / turma BV 7M1 → HTTP 200 200
+Painel depois: {"esperadas":20,"concluidas":3,"linhas":20,"temP11":true,"temP15":false,"cobBV":"0/2"}
+[APROVADO] UT-EST-03 — Professor desativado DEPOIS de concluir: a entrega concluída continua contando no painel (histórico preservado) → esperadas 20, concluídas 3, P11 na lista: true
+[REPROVADO] UT-EST-04 — Turma inativada durante o ciclo: obrigação do P15 (único vínculo) sai do painel → esperadas 20; P15 na lista: false
+[APROVADO] UT-EST-05 — Professor inativo não consegue entrar → /login
+[OBSERVAÇÃO (regra não especificada)] UT-EST-06 — P15 (turma inativada): formulário some da lista dele → 0 cartão(ões)
+reativar P11 / turma → 200 200
+[APROVADO] UT-EST-07 — Reativar professor e turma restaura painel (21 / 3) → 21 / 3

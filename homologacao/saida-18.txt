@@ -1,0 +1,8 @@
+Aplicações: [ 'ZZ-HOMOLOG Escola Aurora 2026-11-04→2026-12-15 tri=3' ]
+[APROVADO] PDI-SET-03 — Secretaria cria Aplicação PDI da Escola Aurora (3º tri, 04/11–15/12) com 7 disciplinas → ZZ-HOMOLOG Escola Aurora tri=3
+inválidos: []
+inválidos: []
+inválidos: []
+inválidos: []
+[APROVADO] PDI-SET-04 — Secretaria cadastra 4 alunos PDI pela interface → 4
+erros []

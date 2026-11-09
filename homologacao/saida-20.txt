@@ -1,0 +1,12 @@
+[APROVADO] PDI-P04-01 — Formulário único do Lucas mostra 1 bloco compartilhado + 3 blocos de disciplina → 4 campos
+[APROVADO] PDI-P04-02 — Salvar parcial volta para "Meus PDIs" e grava só o que foi preenchido → /pdi/meus-pdis | Arte:EM_ANDAMENTO/2resp | Ensino Religioso:EM_ANDAMENTO/2resp | Inglês:EM_ANDAMENTO/2resp
+[APROVADO] PDI-P04-03 — Ao reabrir, o texto compartilhado e o de Arte reaparecem iguais → compartilhado ok: true; Arte ok: true
+[APROVADO] PDI-P04-04 — Clique duplo em Salvar não duplica fichas nem respostas → 3 fichas; Arte:EM_ANDAMENTO/2resp | Ensino Religioso:EM_ANDAMENTO/2resp | Inglês:EM_ANDAMENTO/2resp
+[APROVADO] PDI-P04-05 — Resposta compartilhada gravada UMA vez para as 3 disciplinas (bloco padrão) → 1
+[APROVADO] PDI-P04-06 — Ficha vazia: botão "Concluir Inglês" fica desabilitado na tela → desabilitado: true
+[APROVADO] PDI-P04-06b — Servidor recusa concluir ficha incompleta → HTTP 400
+[APROVADO] PDI-P04-07 — "Concluir todas as disciplinas" conclui as 3 fichas da Marina → Arte:CONCLUIDA/2resp | Ensino Religioso:CONCLUIDA/2resp | Inglês:CONCLUIDA/2resp
+[REPROVADO] PDI-P04-08 — Ficha concluída fica protegida contra edição pelo professor → disabled: false
+[APROVADO] PDI-P04-09 — Após logout/login, Meus PDIs mostra a Marina concluída e o Lucas em preenchimento → Lucas Almeida Prado ZZ-HOMOLOG Escola Aurora 6M1 Arte Em preenchimento Ensino Religioso Em preenchimento Inglês Em preenchimento 04/11/2026 a 15/12/2026 Vigente Marina Teixeira Lopes ZZ-HOMOLOG Escola Aurora 6M1 Arte Concluído Ens
+Fichas do P04 já criadas: 6
+erros []

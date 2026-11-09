@@ -1,0 +1,11 @@
+import { abrir, login, foto, BASE } from './lib.mjs';
+const { browser, page, erros } = await abrir();
+await login(page, 'secretaria@escola.gov.br', '123456');
+await page.goto(BASE + '/#/pdi/formulario'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(1500);
+await foto(page, '16-pdi-formulario-secretaria');
+await page.getByRole('button', { name: '+ Novo modelo' }).first().click();
+await page.waitForTimeout(600);
+await foto(page, '16-pdi-novo-modelo-modal');
+console.log((await page.locator('div.fixed.inset-0').innerText()).replace(/\s+/g, ' ').slice(0, 600));
+console.log('erros', erros);
+await browser.close();

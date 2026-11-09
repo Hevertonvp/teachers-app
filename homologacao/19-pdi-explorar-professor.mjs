@@ -1,0 +1,13 @@
+import { abrir, login, foto, BASE } from './lib.mjs';
+const { browser, page, erros } = await abrir();
+await login(page, 'p04@homolog.nexo', 'Nexo!Prof04-2026');
+await page.goto(BASE + '/#/pdi/meus-pdis'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(1500);
+await page.getByText('Lucas Almeida Prado').first().click();
+await page.waitForLoadState('networkidle'); await page.waitForTimeout(2000);
+console.log('URL', page.url().split('#')[1]);
+await foto(page, '19-p04-formulario-unico-lucas');
+console.log((await page.locator('main').innerText()).replace(/\s+/g, ' ').slice(0, 1500));
+console.log('campos:', await page.locator('main textarea, main select, main input').evaluateAll(l => l.map(e => e.tagName + ':' + (e.closest('label')?.innerText ?? '').split('\n')[0].slice(0, 40) + ':' + (e.type ?? ''))));
+console.log('botoes:', (await page.locator('main button').allInnerTexts()).map(b => b.trim()).filter(Boolean).join(' | '));
+console.log('erros', erros);
+await browser.close();

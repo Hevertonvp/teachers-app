@@ -1,0 +1,14 @@
+[APROVADO] PDI-MULTI-01 — P02 vê só as 3 disciplinas dele (LP, Ciências, História), sem as do P04 → confere
+[APROVADO] PDI-MULTI-02 — Bloco compartilhado do P02 começa VAZIO (não herda o texto do P04 sobre o mesmo aluno) → ""
+Blocos de Lucas: [ 'p04@homolog.nexo:1', 'p02@homolog.nexo:1' ]
+[APROVADO] PDI-MULTI-03 — P02 e P04 têm blocos compartilhados SEPARADOS para o mesmo aluno/turma → 2 bloco(s): p04@homolog.nexo, p02@homolog.nexo
+[APROVADO] PDI-MULTI-04 — O texto do P04 sobre o Lucas permanece intacto depois que o P02 salvou o dele → "Lucas demonstra boa autonomia e curiosidade; "
+[APROVADO] PDI-AUT-P03 — P03 (Geografia 6M2/6M3/6M4/7M2; sem vínculo com a 6M1) abre o PDI do Lucas por URL → rota: /pdi/aluno/1/1; conteúdo exposto: false
+[APROVADO] PDI-AUT-P05 — P05 (Educação Física, sem modelo/vínculo com 6M1) abre o PDI do Lucas por URL → rota: /pdi/aluno/1/1; conteúdo exposto: false
+[APROVADO] PDI-AUT-API — P03 tenta ler e gravar a ficha de Arte do Lucas pela API → GET 403 | PUT 400
+[APROVADO] PDI-CONC-01 — Duas sessões do mesmo professor salvam o mesmo campo: nada é sobrescrito em silêncio → final no banco: SESSÃO 1; aviso na sessão 2: Alterado em outra aba; rota sessão 2: /pdi/aluno/1/1
+[REPROVADO] PDI-PRZ-01 — Aplicação com período encerrado: formulário somente leitura na tela → disabled: false
+[APROVADO] PDI-PRZ-02 — Servidor recusa gravar ficha fora do período → HTTP 400
+[APROVADO] PDI-VIN-01 — Vínculo de Arte (6M1) do P04 encerra no meio do período: Arte some da lista dele; as outras disciplinas ficam → Lucas Almeida Prado ZZ-HOMOLOG Escola Aurora 6M1 Ensino Religioso Em preenchimento Inglês Em preenchimento 04/11/2026 a 15/12/2026 Vigente 
+[APROVADO] PDI-VIN-02 — A ficha de Arte já preenchida é PRESERVADA no banco após o vínculo encerrar → status EM_ANDAMENTO, 2 respostas
+erros (B): []

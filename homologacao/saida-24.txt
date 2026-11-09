@@ -1,0 +1,5 @@
+[APROVADO] UT-CARD-P01 — P01: formulários e turmas cobertas conferem com a conta manual → 6º ano — Matemática ZZ-HOMOLOG Escola Aurora — 6M1
+[APROVADO] UT-CARD-P02 — P02: formulários e turmas cobertas conferem com a conta manual → 6º ano — Língua Portuguesa ZZ-HOMOLOG Escola Aurora — 6M1 + 6º ano — Ciências ZZ-HOMOLOG Escola Aurora — 6M1 + 6º ano — História ZZ-HOMOLOG Escola Aurora — 6M1
+[APROVADO] UT-CARD-P03 — P03: formulários e turmas cobertas conferem com a conta manual → 6º ano — Geografia ZZ-HOMOLOG Escola Aurora — 6M2, 6M3, 6M4 + 7º ano — Geografia ZZ-HOMOLOG Escola Aurora — 7M2
+[APROVADO] UT-CARD-P05 — P05: formulários e turmas cobertas conferem com a conta manual → 7º ano — Educação Física ZZ-HOMOLOG Escola Aurora — 7M2 ZZ-HOMOLOG Escola Boa Vista — 7M1
+[APROVADO] UT-CARD-P06 — P06: formulários e turmas cobertas conferem com a conta manual → 6º ano — Ciências ZZ-HOMOLOG Escola Aurora — 6M2

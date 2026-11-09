@@ -1,0 +1,10 @@
+[APROVADO] UT-PRZ-00 — Secretaria antecipa o prazo do ciclo (edição com entregas permitida) → HTTP 200
+[APROVADO] UT-PRZ-01 — Lista mostra o ciclo como Encerrado e o botão passa a "Ver" → Encerrado: true; Ver: true
+[APROVADO] UT-PRZ-02 — Formulário após o prazo fica somente leitura (campo desabilitado) → desabilitado: true; mensagem: "Prazo: 04/11/2026, 09:00 Válido para: ZZ-HOMOLOG Escola Boa Vista — 8M1 Somente leitura."
+[APROVADO] UT-PRZ-03 — Servidor recusa gravar após o prazo (não depende da tela) → HTTP 400: O prazo deste Formulário 1/3 terminou — ele está somente para leitura. Peça à Secretaria u
+[APROVADO] UT-PRZ-04 — Nada foi gravado pela tentativa fora do prazo → 0
+[APROVADO] UT-PRZ-05 — Prazo vence com a tela aberta: salvar depois do vencimento é recusado e o professor é avisado → gravou: 0; mensagem na tela: "Prazo: 20/11/2026, 18:00 Válido para: ZZ-HOMOLOG Escola Boa Vista — 9M2 O prazo deste Formulário 1/3 terminou — ele está"
+[APROVADO] UT-PRZ-06 — Secretaria reabre o ciclo pela interface (04/11 00:00 → 06/11 23:59) → 1 reabertura(s)
+[APROVADO] UT-PRZ-07 — Dentro da reabertura o professor volta a editar e o texto é gravado → habilitado: true; gravado: 1
+[APROVADO] UT-PRZ-08 — Prazo original do ciclo permanece 04/11 09:00 (reabertura não altera o prazo) → 2026-11-04T12:00:00.000Z
+restaurado A → 200

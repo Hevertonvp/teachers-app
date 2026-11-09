@@ -1,0 +1,4 @@
+[APROVADO] PDI-SET-01 — Secretaria cadastra 3 perguntas padrão pela interface (1 compartilhada, 2 por disciplina) → 3
+Modelos: Matemática(ativo=ATIVA,perguntas=3) | Inglês(ativo=ATIVA,perguntas=3) | Arte(ativo=ATIVA,perguntas=3) | Ensino Religioso(ativo=ATIVA,perguntas=3) | Língua Portuguesa(ativo=ATIVA,perguntas=3) | Ciências(ativo=ATIVA,perguntas=3) | História(ativo=ATIVA,perguntas=3)
+[APROVADO] PDI-SET-02 — Secretaria cria 7 modelos (um por disciplina), cada um nasce com as 3 perguntas padrão → Matemática:3, Inglês:3, Arte:3, Ensino Religioso:3, Língua Portuguesa:3, Ciências:3, História:3
+erros []

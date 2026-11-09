@@ -1,0 +1,7 @@
+[REPROVADO] PDI-OFF-01 — Editar o PDI sem rede: o texto é guardado na fila local e a tela avisa → fila: []; aviso: true
+[REPROVADO] PDI-OFF-02 — Botão "Salvar" do PDI continua clicável sem rede (não coberto por aviso) → BLOQUEADO (aviso offline cobre o botão)
+[REPROVADO] PDI-OFF-03 — Ao reconectar, o texto escrito offline chega ao servidor → NÃO chegou em 80 s
+[APROVADO] CEL-1-3-lista — Tela 1-3-lista em 390 px sem rolagem horizontal → {"larguraDoc":390,"janela":390}
+[APROVADO] CEL-pdi-meus — Tela pdi-meus em 390 px sem rolagem horizontal → {"larguraDoc":390,"janela":390}
+[APROVADO] CEL-pdi-formulario — Tela pdi-formulario em 390 px sem rolagem horizontal → {"larguraDoc":390,"janela":390}
+[APROVADO] CEL-1-3-preenchimento — Preenchimento do 1/3 em 390 px sem rolagem horizontal → {"larguraDoc":390,"janela":390}

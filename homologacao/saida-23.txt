@@ -1,0 +1,4 @@
+[APROVADO] PDI-OFF-04 — Texto digitado sem rede vira rascunho local (IndexedDB) automaticamente → {"drafts":[{"key":"p04@homolog.nexo::bloco-resposta::12"}],"queue":[]}
+[APROVADO] PDI-OFF-05 — Salvar por teclado (Tab+Enter) sem rede enfileira a alteração → [{"key":"p04@homolog.nexo::bloco-resposta::12::respostas-padrao","status":"pending"},{"key":"p04@homolog.nexo::ficha-resposta::12::respostas","status":"pending"}]
+[APROVADO] PDI-OFF-06 — Depois de fechar o navegador offline e reabrir com rede, o texto digitado é recuperado → "RASCUNHO-OFFLINE: Pedro precisa de refor" | aviso: (nenhum)
+[REPROVADO] PDI-OFF-07 — A alteração pendente é enviada ao servidor ao abrir com rede (15 s) → respostas padrão: 0; respostas de ficha: 0

@@ -1,0 +1,6 @@
+pgdata/
+node_modules/
+evidencias/*.webm
+evidencias/traces/
+.env*
+.senhas.json

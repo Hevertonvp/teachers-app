@@ -1,0 +1,14 @@
+[APROVADO] UT-OFF-01 — Salvamento ONLINE grava a semana 1 no servidor → 1 resposta(s)
+[APROVADO] UT-OFF-02 — Salvar sem rede NÃO perde o texto: vai para a fila local; servidor ainda sem a semana 2 → fila: [{"key":"p04@homolog.nexo::um-terco-resposta::1-9-9::respostas","status":"pending","attempts":0,"lastError":null,"resourceId":"1-9-9"}]; banco: 1 resposta(s)
+[APROVADO] UT-OFF-03 — A tela AVISA claramente que está offline / pendente de sincronização → aviso encontrado no texto da tela
+[APROVADO] UT-OFF-04 — Várias edições do MESMO formulário offline não geram itens duplicados na fila → 1 item(ns): ["pending"]
+[OBSERVAÇÃO (regra não especificada)] UT-OFF-05 — Abrir o app do zero (nova aba) SEM rede → não abriu (erro de rede do navegador)
+[APROVADO] UT-OFF-06 — Ao reconectar, a fila sincroniza sozinha e o servidor recebe as 3 semanas → 3 resposta(s) após 2s; textos: Semana 1  | Semana 2  | Semana 3 
+[APROVADO] UT-OFF-07 — Fila esvazia depois de sincronizar e não há eventos/respostas duplicados → fila: 0; respostas: 3; INICIADA: 1
+[APROVADO] UT-OFF-09 — Conflito: celular editou offline, outro dispositivo gravou antes → servidor NÃO é sobrescrito em silêncio → HTTP do outro dispositivo: 200; servidor: "Semana 1 EDITADA NO COMPUTADOR DA ESCOLA (outro disposi"
+[REPROVADO] UT-OFF-10 — Conflito: a tela mostra opções ao professor (usar versão salva / manter o meu) → SEM aviso de conflito na tela
+[REPROVADO] UT-OFF-10b — Conflito de fila: ao REABRIR o formulário aparecem as opções (usar versão salva / manter o meu) → sem opções; texto da semana 1: Semana 1 EDITADA OFFLINE no celular: saudações formais, info
+Fila final: [{"key":"p04@homolog.nexo::um-terco-resposta::1-7-9::respostas","status":"conflict","attempts":0,"lastError":"Este formulário foi alterado em outra aba ou dispositivo. Suas alterações foram guardadas.","resourceId":"1-7-9"}]
+Erros de console/rede (exclui falhas de rede esperadas): [
+  'Failed to load resource: the server responded with a status of 409 (Conflict)'
+]
