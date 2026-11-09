@@ -106,6 +106,9 @@ export const EscolaProvider = ({ children }) => {
 
   const value = {
     userEscolas,
+    // VinculoEscolar ATIVOS reais do usuário (inclui escola inativa) — para telas que precisam
+    // da regra "vínculo ativo, mesmo com escola inativa" (consulta histórica do Gestor no PDI).
+    vinculosReais,
     activeEscolaId,
     setActiveEscolaId,
     isExplicitBatchSelection,

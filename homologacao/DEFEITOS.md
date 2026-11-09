@@ -105,3 +105,20 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
 7. **Riscos residuais:** o novo professor precisa responder as perguntas comuns de novo (bloco próprio) para concluir uma ficha herdada. É consequência da regra 25 ("professores diferentes não compartilham"). O bloco antigo continua no banco e aparece nas Correções.
 8. **Depende da Secretaria (NÃO decidido):** se o novo professor pode alterar as respostas **de disciplina** de ficha concluída por outro (QUE-03). O comportamento foi mantido como estava (`DEF14-DEPOIS-C3`).
 
+## DEF-17 — CORRIGIDO (ALTO) — Gestor/Diretora reais não abriam o perfil do aluno PDI
+1. **Causa:** `src/pages/PdiAlunoPerfil.jsx` conferia o acesso com `vinculosEscolares` de `src/data/mockData` (dados de exemplo).
+2. **Comportamento anterior (reproduzido):** "Aluno não encontrado" para todo Gestor e toda Diretora reais, com a API respondendo 200. ANTES: 5 de 11 reprovados.
+3. **Arquivos:** `src/pages/PdiAlunoPerfil.jsx`, `src/context/EscolaContext.jsx` (expõe `vinculosReais`; só acrescenta).
+4. **Solução:**
+   - o perfil usa os vínculos REAIS do `EscolaContext` (`GET /api/vinculos-escolares/me`), com as mesmas regras de antes: Gestor precisa de vínculo ativo, mesmo com escola inativa; os demais, de escola ativa e vínculo ativo;
+   - enquanto carrega, a tela mostra "Carregando…" em vez de "não encontrado".
+   
+   Nenhuma permissão foi ampliada. O backend continua sendo a autoridade: o 403 foi conferido em todos os casos negativos.
+5. **Testes:** `31-def17-perfil-aluno.mjs`, com contas reais e login de verdade: Diretora e Gestor de cada escola, em aluno próprio e de outra escola, transferido e não transferido; Secretaria e Professor.
+6. **Resultado:** DEPOIS 11/11; regressão final 11/11.
+7. **Riscos residuais:**
+   - **Outras dependências de `mockData` encontradas e NÃO alteradas** (fora do PDI):
+     - `getUserEscolaIds` e `professoresDaEscola` com vínculos de exemplo em `Pendencias.jsx`, `ListaPlanejamentos*.jsx`, `VisualizarPlanejamento.jsx`, `CorrecoesSimulados.jsx`, `ListaProfessores.jsx` e `AcompanhamentoEscolar.jsx`. São telas que também usam dados de exemplo;
+     - o modal de vínculos de `GestaoEscolas.jsx`, que é uma tela real da Secretaria. A exibição pode estar incorreta; é preciso auditar.
+   - **Não testado:** Gestor com vínculo em escola **inativa** (consulta histórica).
+

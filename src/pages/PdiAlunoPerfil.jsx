@@ -1,6 +1,6 @@
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card, ConfirmDialog, FormField, Modal } from '../components/Common';
+import { Badge, Button, Card, ConfirmDialog, FormField, LoadingBlock, Modal } from '../components/Common';
 import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
 import { IndicadoresAluno } from '../components/pdi/IndicadoresAluno';
 import { useAuth } from '../context/AuthContext';
@@ -8,7 +8,6 @@ import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { criarVinculoAuxiliarTurma, encerrarVinculoAuxiliarTurma, listarAuxiliaresReais, listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
 import { escolaName, inputClass, turmaName } from '../utils/display';
-import { canAccessEscola, gestorVinculadoEscola } from '../utils/escolas';
 import { parentescoOptions } from '../utils/pdi';
 import { formatFullDate } from '../utils/formAvailability';
 import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico, canViewPdiAlunos } from '../utils/roles';
@@ -30,19 +29,24 @@ export const PdiAlunoPerfil = () => {
     loadPdiAplicacoesReais,
     turmas,
     escolas,
-    vinculosEscolares,
+    pdiAlunosReaisLoading,
   } = useData();
 
   const aluno = pdiAlunosReais.find(item => item.id === Number(id));
   const isProfessor = isProfessorRole(user);
   const canManagePdi = canManagePedagogico(user);
   const canView = canViewPdiAlunos(user);
-  const { activeEscolaId } = useEscola();
-  // Supervisora: consulta permitida mesmo com a escola inativa (histórico), desde que
-  // vinculada a ela — diferente de canAccessEscola, que bloqueia integralmente escola inativa.
+  const { activeEscolaId, userEscolas, vinculosReais, vinculosLoading } = useEscola();
+  // DEF-17: o escopo vem dos VinculoEscolar REAIS do usuário (EscolaContext, GET
+  // /api/vinculos-escolares/me), nunca do mock `vinculosEscolares` — com o mock, Gestor/Diretora
+  // reais viam "Aluno não encontrado" em qualquer aluno. Mesmas regras de antes:
+  // - Supervisora: consulta permitida mesmo com a escola inativa (histórico), desde que tenha
+  //   vínculo ativo com ela;
+  // - demais perfis: escola ativa + vínculo ativo (= escolas selecionáveis em userEscolas).
+  // O backend continua sendo a autoridade final (GET /api/pdi-alunos/:id checa o escopo).
   const hasEscolaAccess = isSecretaria(user)
-    || (aluno && isGestor(user) && gestorVinculadoEscola(user, aluno.escolaId, { vinculosEscolares }))
-    || (aluno && canAccessEscola(user, aluno.escolaId, { escolas, vinculosEscolares }));
+    || (aluno && isGestor(user) && vinculosReais.some(vinculo => vinculo.escolaId === aluno.escolaId))
+    || (aluno && userEscolas.some(escola => escola.id === aluno.escolaId));
   const escolaAtivaAluno = aluno ? escolas.find(item => item.id === aluno.escolaId)?.status === 'ativa' : false;
   // Escola inativa vinculada à Supervisora: consulta sempre permitida, edição nunca. Secretaria
   // não é afetada por esta regra (ver instrução do módulo PDI: escopo é "Gestor/Supervisora").
@@ -91,6 +95,11 @@ export const PdiAlunoPerfil = () => {
   // Diretora ganhou consulta (nunca edição — canEditPdi abaixo já exclui ela) escopada às
   // próprias escolas, quando Aluno PDI virou real (ver PdiPage.jsx e canViewPdiAlunos).
   if (!canView) return <Navigate to="/dashboard" replace />;
+
+  // Enquanto alunos ou vínculos ainda carregam, nunca concluir "não encontrado" cedo demais.
+  if (pdiAlunosReaisLoading || (!isSecretaria(user) && vinculosLoading)) {
+    return <MainLayout><LoadingBlock text="Carregando aluno..." /></MainLayout>;
+  }
 
   if (!aluno || !hasEscolaAccess) {
     return (
