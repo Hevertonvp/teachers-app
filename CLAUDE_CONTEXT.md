@@ -2211,3 +2211,13 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - ensaio do plano B com o ambiente local de homologação;
     - congelamento com tag do commit publicado.
   - **Evitar na demonstração:** DEF-15, DEF-16 e DEF-18; abrir o app sem internet; notificação push. A marca "Nexo" ainda não está nas telas (DEF-05).
+- **Push (09/11/2026):** os commits até `e053d71` foram enviados ao GitHub por outra pessoa ou outra sessão desta máquina (o reflog registra "update by push"; não foi o Claude). Depois, com autorização do usuário ("pode fazer"), o Claude enviou o `fe10a64` (`e053d71..fe10a64`).
+- **Produção conferida só lendo:**
+  - o arquivo publicado no GitHub Pages (`assets/index-BV9mazxN.js`) contém as correções DEF-08, DEF-19 e DEF-06 e aponta para `teachers-app-xokm.onrender.com`;
+  - o Render responde `/health` com 200.
+  
+  **Não confirmado:** qual commit o backend do Render está rodando (conferir no painel; o DEF-14 está no `c66ceac`).
+- **Novo roteiro `homologacao/38-producao-somente-leitura.mjs`:** verificação da produção real em que **toda requisição não GET à API é bloqueada no navegador** (exceto o login), então nada é gravado. As senhas entram por variável de ambiente (`NEXO_SECRETARIA`, `NEXO_PROFESSOR`, `NEXO_GESTOR`, `NEXO_DIRETORA` = `email|senha`) e nunca ficam em arquivo. Cobre infraestrutura, login de cada perfil, telas principais e o perfil do aluno para Gestor e Diretora (DEF-17).
+  - **Validado no ambiente local:** 16 aprovados; a única falha é a INFRA-2, que só se aplica ao build publicado.
+  - **Contra a produção, sem senhas:** INFRA-1 e INFRA-2 aprovados.
+  - **Falta:** rodar com as contas reais.
