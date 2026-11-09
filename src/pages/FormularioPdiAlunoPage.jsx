@@ -376,16 +376,22 @@ export const FormularioPdiAlunoPage = () => {
     return { ok: false };
   };
 
+  // `falhas.naFila` (DEF-08): quantas partes ficaram só na fila deste aparelho (sem conexão) — nunca
+  // anunciar "Respostas salvas." como se tivessem chegado ao servidor.
   const salvarTudo = async () => {
     const falhas = [];
+    let naFila = 0;
     for (const chave of Object.keys(blocosRef.current)) {
       const r = await salvarBloco(chave);
       if (!r.ok) falhas.push({ bloco: chave });
+      else if (r.fila) naFila += 1;
     }
     for (const disciplinaId of Object.keys(fichasRef.current)) {
       const r = await salvarFicha(disciplinaId);
       if (!r.ok) falhas.push({ disciplinaId: Number(disciplinaId) });
+      else if (r.fila) naFila += 1;
     }
+    falhas.naFila = naFila;
     return falhas;
   };
 
@@ -403,12 +409,14 @@ export const FormularioPdiAlunoPage = () => {
     setStatusLocal('saving');
     const falhas = await salvarTudo();
     setOcupado(null);
-    setStatusLocal(falhas.length ? 'idle' : 'saved');
+    setStatusLocal(falhas.length ? 'idle' : falhas.naFila ? 'queued' : 'saved');
     if (falhas.length) {
       setMensagemErro('Algumas partes não foram salvas. Veja os avisos abaixo.');
       return;
     }
-    navigate('/pdi/meus-pdis', { state: { pdiMensagemSucesso: 'Respostas salvas.' } });
+    navigate('/pdi/meus-pdis', { state: { pdiMensagemSucesso: falhas.naFila
+      ? 'Sem conexão: suas respostas foram guardadas neste aparelho e serão enviadas quando a internet voltar.'
+      : 'Respostas salvas.' } });
   };
 
   const handleVoltar = async () => {

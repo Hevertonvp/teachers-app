@@ -104,7 +104,7 @@ export const CorrecoesPdiDetalhePage = () => {
           endpoint: `/api/correcoes-pdi/${fichaId}/respostas`, method: 'PUT',
           payload: { respostas }, baseTokenField: 'baseUpdatedAt', baseToken: dados.ficha.updatedAt,
         });
-        setStatusLocal('saved');
+        setStatusLocal('queued'); // DEF-08: só na fila deste aparelho, não no servidor
         setMensagem('Sem conexão. A correção será enviada quando a conexão voltar.');
       } else {
         setStatusLocal('idle');

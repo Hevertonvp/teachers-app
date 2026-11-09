@@ -844,3 +844,11 @@ Nenhuma regra de negócio foi criada nem alterada. Foram corrigidas **divergênc
 | PDI-04 (bloco pertence ao professor que escreveu) | DEF-14: o novo responsável sobrescrevia o bloco do anterior, na troca de turma e também na **substituição de professor** | **Corrigida.** O bloco de quem preenche é o da turma atual + professor responsável atual. As Correções da Secretaria continuam mostrando o bloco original. |
 | PER-02, PER-03, PDI-10 (Diretora e Gestor consultam alunos da própria escola) | DEF-17: a tela checava acesso com dados de exemplo | **Corrigida.** A tela usa os vínculos reais. O backend continua sendo a autoridade. |
 | OFF-02 (fila; nada se perde; nada é sobrescrito em silêncio) | DEF-07: a fila não era enviada ao abrir o app; item preso em "enviando"; recusa definitiva reenviada sem fim | **Corrigida.** A fila é enviada ao abrir ou logar com sessão válida, só a do próprio usuário. |
+| OFF-02 / UT-11 (conflito nunca sobrescreve) | DEF-08: "Salvo" falso; conflito da fila invisível; rascunho reenviado por cima de versão mais nova | **Corrigida no 1/3** (opções de conflito; nada é enviado até a escolha). Indicadores honestos ("Sincronizado" × "Salvo só neste aparelho") no 1/3, no PDI, na Anamnese e nas Correções. |
+
+**Continuam abertos:**
+- **QUE-03 / TRF-04:** pendente da Secretaria. O novo professor ainda pode editar as respostas de disciplina de uma ficha concluída por outro. Não foi decidido.
+- **DEF-19 (novo, MÉDIO, a confirmar):** o formulário do PDI recupera rascunho sem a versão de referência e pode sobrescrever uma alteração mais recente de outro aparelho. O conflito do PDI não tem opções.
+- **DEF-06/13:** o aviso offline ainda cobre os botões.
+- **Dependências de `mockData` fora do PDI** (lista em DEFEITOS.md, DEF-17): incluem o modal de vínculos da tela de Escolas.
+- Os demais itens do plano da seção 19 (grupos A a D) não foram executados. Ficaram concluídos A1 (DEF-14), A2 (DEF-17), A3 (DEF-07), A5 (DEF-08) e D1 (`node_modules`).

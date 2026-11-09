@@ -6,13 +6,15 @@ import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { apagarDraft, lerDraft, salvarDraft } from '../offline/db';
-import { enfileirar } from '../offline/syncQueue';
+import { chaveFila, enfileirar, obterItemDaFila, removerDaFila } from '../offline/syncQueue';
 import { concluirFormularioUmTerco, caminhoRespostasUmTerco, obterFormularioUmTerco, salvarRespostasUmTerco } from '../services/formularioUmTerco';
 import { inputClass } from '../utils/display';
 import { agruparPorEscola, formatarDataHora, formatarPeriodo } from '../utils/umTerco';
 
 const AUTOSAVE_MS = 2000;
 const eRede = (error) => !error.codigo && /conectar ao servidor/.test(error.message || '');
+// O texto local (rascunho) é igual ao que o servidor já tem? Então não há conflito de verdade.
+const mesmosTextos = (textosLocais, detalhe) => detalhe.semanas.every(s => (textosLocais[s.id] ?? '') === (s.texto ?? ''));
 
 // Preenchimento em etapas (uma semana por vez). Rascunho local (IndexedDB) a cada digitação, envio
 // ao servidor ao avançar/voltar de etapa, por debounce e em "Salvar progresso". Falha de REDE vai
@@ -26,6 +28,7 @@ export const UmTercoPreenchimentoPage = () => {
   const userId = user?.email?.toLowerCase();
   const resourceId = `${cicloId}-${anoSerie}-${disciplinaId}`;
   const draftKey = `${userId}::um-terco-resposta::${resourceId}`;
+  const filaKey = chaveFila(userId, 'um-terco-resposta', resourceId, 'respostas');
 
   const [dados, setDados] = useState(null);
   const [erroCarga, setErroCarga] = useState('');
@@ -38,9 +41,14 @@ export const UmTercoPreenchimentoPage = () => {
   const [conflito, setConflito] = useState(null); // detalhe atual do servidor
   const [concluindo, setConcluindo] = useState(false);
   const baseRef = useRef(null); // updatedAt que o servidor tem, na última sincronização
+  // DEF-08: versão do servidor sobre a qual o texto LOCAL foi escrito — vai junto no rascunho.
+  // Ao reabrir, se o servidor mudou depois disso, o rascunho nunca é reenviado em silêncio.
+  const baseDoRascunhoRef = useRef(null);
   const salvandoRef = useRef(false);
   const textosRef = useRef({});
   const sujoRef = useRef(false);
+  const conflitoRef = useRef(null);
+  useEffect(() => { conflitoRef.current = conflito; }, [conflito]);
 
   const aplicarServidor = useCallback((detalhe) => {
     baseRef.current = detalhe.updatedAt;
@@ -55,26 +63,51 @@ export const UmTercoPreenchimentoPage = () => {
         const detalhe = await obterFormularioUmTerco(cicloId, anoSerie, disciplinaId);
         if (!ativo) return;
         aplicarServidor(detalhe);
-        const rascunho = detalhe.editavelAgora ? await lerDraft(draftKey) : null;
+        baseDoRascunhoRef.current = detalhe.updatedAt;
+        if (!detalhe.editavelAgora) return;
+        const [rascunho, itemFila] = await Promise.all([lerDraft(draftKey), userId ? obterItemDaFila(filaKey) : null]);
         if (!ativo) return;
-        if (rascunho?.textos) {
-          setTextos(prev => ({ ...prev, ...rascunho.textos }));
-          setSujo(true);
-          setAviso('Recuperamos o que você tinha digitado e ainda não foi enviado.');
+        if (!rascunho?.textos) {
+          if (itemFila?.status === 'error') setMensagemErro(`Uma alteração guardada neste aparelho foi recusada pelo servidor: ${itemFila.lastError}`);
+          return;
         }
+        const textosLocais = { ...Object.fromEntries(detalhe.semanas.map(s => [s.id, s.texto])), ...rascunho.textos };
+        if (mesmosTextos(textosLocais, detalhe)) {
+          // O servidor já tem exatamente este texto (ex.: a fila enviou ao abrir o app): nada a recuperar.
+          apagarDraft(draftKey);
+          if (itemFila) removerDaFila(filaKey);
+          return;
+        }
+        setTextos(textosLocais);
+        setSujo(true);
+        // DEF-08: o rascunho foi escrito sobre qual versão? Rascunho antigo (sem essa informação)
+        // só é aplicado direto se o servidor ainda não tinha nada.
+        const baseDoRascunho = rascunho.base === undefined ? null : rascunho.base;
+        baseDoRascunhoRef.current = baseDoRascunho;
+        const servidorMudouDepois = itemFila?.status === 'conflict'
+          || (rascunho.base === undefined ? detalhe.updatedAt !== null : baseDoRascunho !== detalhe.updatedAt);
+        if (servidorMudouDepois) {
+          setConflito(detalhe);
+          setAviso('Recuperamos o que você tinha digitado neste aparelho, mas este formulário foi alterado depois em outro lugar. Nada foi enviado nem sobrescrito: escolha qual versão manter.');
+          return;
+        }
+        setAviso('Recuperamos o que você tinha digitado e ainda não foi enviado.');
+        if (itemFila?.status === 'pending' || itemFila?.status === 'syncing') setEstado('queued');
+        if (itemFila?.status === 'error') setMensagemErro(`Uma alteração guardada neste aparelho foi recusada pelo servidor: ${itemFila.lastError}`);
       } catch (error) {
         if (ativo) setErroCarga(error.message);
       }
     })();
     return () => { ativo = false; };
-  }, [cicloId, anoSerie, disciplinaId, draftKey, aplicarServidor]);
+  }, [cicloId, anoSerie, disciplinaId, draftKey, filaKey, userId, aplicarServidor]);
 
   useEffect(() => { textosRef.current = textos; sujoRef.current = sujo; }, [textos, sujo]);
 
-  // Rascunho local protegido a cada alteração (sobrevive a reload/fechamento do navegador).
+  // Rascunho local protegido a cada alteração (sobrevive a reload/fechamento do navegador), com a
+  // versão do servidor sobre a qual foi escrito (DEF-08).
   useEffect(() => {
     if (!sujo || !userId) return;
-    salvarDraft(draftKey, { userId, textos, savedAt: Date.now() });
+    salvarDraft(draftKey, { userId, textos, base: baseDoRascunhoRef.current, savedAt: Date.now() });
   }, [textos, sujo, draftKey, userId]);
 
   const editavel = !!dados?.editavelAgora;
@@ -82,6 +115,9 @@ export const UmTercoPreenchimentoPage = () => {
   // Sempre manda TODAS as semanas (instantâneo completo): idempotente na fila offline e no servidor.
   const salvarAgora = useCallback(async () => {
     if (!dados || !dados.editavelAgora || !sujoRef.current || salvandoRef.current) return { ok: true };
+    // DEF-08: com conflito em aberto, NADA é enviado (nem ao trocar de semana ou sair) até o
+    // professor escolher "Usar a versão salva" ou "Manter o meu texto".
+    if (conflitoRef.current) return { ok: false, conflito: true };
     salvandoRef.current = true;
     setEstado('saving');
     setMensagemErro('');
@@ -89,13 +125,27 @@ export const UmTercoPreenchimentoPage = () => {
     try {
       const novo = await salvarRespostasUmTerco(cicloId, anoSerie, disciplinaId, respostas, baseRef.current);
       baseRef.current = novo.updatedAt;
+      baseDoRascunhoRef.current = novo.updatedAt;
       setDados(prev => ({ ...prev, updatedAt: novo.updatedAt, status: novo.status, entregaId: novo.entregaId, validoPara: novo.validoPara, historico: novo.historico }));
       setSujo(false);
       apagarDraft(draftKey);
+      // O servidor recebeu o instantâneo completo mais recente: qualquer envio antigo deste
+      // formulário ainda na fila ficou obsoleto (nunca reenviar por cima).
+      if (userId) removerDaFila(filaKey);
       setEstado('saved');
       return { ok: true, updatedAt: novo.updatedAt };
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') {
+        // Falso conflito: o servidor já tem exatamente este texto (ex.: a fila acabou de enviar).
+        if (error.dadosAtuais && mesmosTextos(textosRef.current, error.dadosAtuais)) {
+          aplicarServidor(error.dadosAtuais);
+          baseDoRascunhoRef.current = error.dadosAtuais.updatedAt;
+          setSujo(false);
+          apagarDraft(draftKey);
+          if (userId) removerDaFila(filaKey);
+          setEstado('saved');
+          return { ok: true, updatedAt: error.dadosAtuais.updatedAt };
+        }
         setConflito(error.dadosAtuais || null);
         setEstado('idle');
         return { ok: false, conflito: true };
@@ -106,7 +156,8 @@ export const UmTercoPreenchimentoPage = () => {
           endpoint: caminhoRespostasUmTerco(cicloId, anoSerie, disciplinaId), method: 'PUT',
           payload: { respostas }, baseTokenField: 'baseUpdatedAt', baseToken: baseRef.current,
         });
-        setEstado('saved');
+        // DEF-08: guardado SÓ neste aparelho — nunca "Salvo" como se o servidor tivesse recebido.
+        setEstado('queued');
         setAviso('Sem conexão: suas respostas foram guardadas neste aparelho e serão enviadas quando a internet voltar.');
         return { ok: true, queued: true };
       }
@@ -116,7 +167,7 @@ export const UmTercoPreenchimentoPage = () => {
     } finally {
       salvandoRef.current = false;
     }
-  }, [dados, cicloId, anoSerie, disciplinaId, draftKey, userId, resourceId]);
+  }, [dados, cicloId, anoSerie, disciplinaId, draftKey, userId, resourceId, filaKey, aplicarServidor]);
 
   // Debounce: depois de parar de digitar, envia sem o professor precisar fazer nada.
   useEffect(() => {
@@ -168,18 +219,29 @@ export const UmTercoPreenchimentoPage = () => {
   };
 
   const usarVersaoDoServidor = () => {
-    if (conflito) aplicarServidor(conflito);
+    if (conflito) {
+      aplicarServidor(conflito);
+      baseDoRascunhoRef.current = conflito.updatedAt;
+    }
     apagarDraft(draftKey);
+    if (userId) removerDaFila(filaKey); // o envio pendente/em conflito deste formulário foi descartado pelo professor
     setSujo(false);
+    conflitoRef.current = null;
     setConflito(null);
+    setAviso('');
   };
   const manterMeuTexto = () => {
     if (conflito) {
       baseRef.current = conflito.updatedAt;
+      baseDoRascunhoRef.current = conflito.updatedAt;
       setDados(prev => ({ ...prev, updatedAt: conflito.updatedAt, status: conflito.status }));
+      // Regrava o rascunho já com a nova versão de referência (se fechar agora, não volta o conflito).
+      if (userId) salvarDraft(draftKey, { userId, textos: textosRef.current, base: conflito.updatedAt, savedAt: Date.now() });
     }
     setSujo(true);
+    conflitoRef.current = null;
     setConflito(null);
+    setAviso('');
   };
 
   if (erroCarga) {

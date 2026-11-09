@@ -228,7 +228,7 @@ export const FormularioPdiProfessor = () => {
         payload: { respostas: respostasPendentes }, baseTokenField: 'baseUpdatedAt', baseToken: ficha.updatedAt,
       });
       setTouchedIds(new Set());
-      setStatusLocal('saved');
+      setStatusLocal('queued'); // DEF-08: só na fila deste aparelho, não no servidor
       return { ok: true, queued: true };
     }
     setStatusLocal('idle');
@@ -265,7 +265,7 @@ export const FormularioPdiProfessor = () => {
         payload: { respostas: respostasPendentes }, baseTokenField: 'version', baseToken: blocoPadrao.version,
       });
       setBlocoTouchedIds(new Set());
-      setStatusLocal('saved');
+      setStatusLocal('queued'); // DEF-08: só na fila deste aparelho, não no servidor
       return { ok: true, queued: true };
     }
     setStatusLocal('idle');

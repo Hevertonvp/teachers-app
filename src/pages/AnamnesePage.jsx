@@ -171,7 +171,7 @@ export const AnamnesePage = () => {
     }
     if (!resultado.codigo && /conectar ao servidor/.test(resultado.error || '')) {
       await enfileirarAnamnese({ estrutural: payload });
-      setStatusLocal('saved');
+      setStatusLocal('queued'); // DEF-08: só na fila deste aparelho, não no servidor
       return;
     }
     setStatusLocal('idle');
@@ -199,7 +199,7 @@ export const AnamnesePage = () => {
     }
     if (!resultado.codigo && /conectar ao servidor/.test(resultado.error || '')) {
       await enfileirarAnamnese({ respostas: [{ perguntaAnamneseId: pergunta.id, valor }] });
-      setStatusLocal('saved');
+      setStatusLocal('queued'); // DEF-08: só na fila deste aparelho, não no servidor
       return;
     }
     setStatusLocal('idle');

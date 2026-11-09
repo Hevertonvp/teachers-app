@@ -150,3 +150,50 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
    - ao abrir com sessão expirada, a página vai para o login e a fila espera o novo login. É assim por desenho.
 8. **Fora de escopo:** DEF-06/13 (aviso offline cobre os botões) continua aberto. Nos testes do PDI, o Salvar foi acionado pelo teclado.
 
+## DEF-08 — CORRIGIDO (MÉDIO) — conflito vindo da fila sem opções e "Salvo" falso
+1. **Causa:**
+   - a tela do 1/3 marcava "Salvo" quando o salvamento ia só para a fila;
+   - ao reabrir, a tela não consultava a fila, então o conflito ficava invisível;
+   - o **rascunho recuperado era aplicado sobre a versão mais nova do servidor e reenviado com essa versão**, sobrescrevendo em silêncio o que outro aparelho tinha salvo (reproduzido em `OFF-ANTES-6c`);
+   - Anamnese, Correções e formulários do PDI também mostravam "Salvo" ou "Respostas salvas." quando a gravação só tinha ido para a fila.
+2. **Arquivos:**
+   - `src/pages/UmTercoPreenchimentoPage.jsx`;
+   - `src/components/SavingIndicator.jsx`: novo estado "Salvo só neste aparelho"; "Sincronizado" passa a significar confirmado pelo servidor;
+   - `src/pages/FormularioPdiAlunoPage.jsx`, `src/pages/FormularioPdiProfessor.jsx`, `src/pages/AnamnesePage.jsx`, `src/pages/CorrecoesPdiDetalhePage.jsx`.
+3. **Solução:**
+   - o rascunho do 1/3 guarda a versão do servidor sobre a qual foi escrito;
+   - ao reabrir, se o servidor mudou depois, ou se a fila marcou conflito, a tela mostra "Usar a versão salva" e "Manter o meu texto";
+   - **nada é enviado** até o professor escolher, nem ao trocar de semana nem ao sair;
+   - se o texto local já é igual ao do servidor, a tela resolve sozinha, sem falso conflito;
+   - salvamento confirmado limpa a fila daquele formulário;
+   - "Usar a versão salva" descarta o envio pendente.
+   
+   Nenhuma política de sobrescrita automática foi criada.
+4. **Testes:** `32-def07-def08-offline.mjs`, cenários 1a/1b (indicador), 2a (mensagem do PDI) e 6a–6d (conflito, opções, troca de semana com conflito aberto, "Manter", "Usar a versão salva").
+5. **Resultado:** a primeira rodada DEPOIS achou um furo real: trocar de semana com o conflito aberto ainda enviava e sobrescrevia. Corrigido. Rodada final: 14/14.
+6. **Riscos residuais (identificados na leitura do código; NÃO corrigidos e NÃO reproduzidos):**
+   - o **formulário do PDI** recupera rascunhos sem guardar a versão de referência. Ao salvar, pode sobrescrever uma alteração mais recente feita em outro aparelho nas mesmas perguntas. É a mesma classe do problema do 1/3. Registrado como **DEF-19 (MÉDIO, a confirmar)**;
+   - o conflito do PDI continua só com a mensagem "recarregue a página", sem opções.
+
+## Contagem desta fase
+- **Navegador real + banco:**
+  - DEF-14: 12/12, mais 3 complementares;
+  - DEF-17: 11/11;
+  - DEF-07/08: 14/14;
+  - regressão: 13/13 (login, permissões, 7 cartões do professor com vários vínculos, persistência do PDI);
+  - repetição final: DEF-14 12/12 + 3/3 e DEF-17 11/11.
+- **Baterias automatizadas (API real, banco local):**
+  - regras do 1/3: 20/20;
+  - integração do 1/3: 50/50, sem resíduo;
+  - formulário único do PDI: 35/35;
+  - indicadores do PDI: 29/29;
+  - calendário: 92/92;
+  - CRMG **não executado** (catálogo ausente no banco local).
+- **Rodadas ANTES (comprovação de cada defeito):**
+  - DEF-14: 6 de 12 reprovados;
+  - DEF-17: 5 de 11;
+  - DEF-07/08: 10 reprovados de 13 executados; 1 interrompido por falta dos botões de conflito.
+- **Não reexecutados** (dependem do estado do banco, que já mudou):
+  - script 03 (primeiro acesso): as senhas temporárias já foram trocadas;
+  - scripts 10–12 e 22–23: substituídos pelo 32;
+  - scripts 25–28: substituídos pelo 30, que cobre troca de turma, troca de escola e substituição de professor com alunos novos.
