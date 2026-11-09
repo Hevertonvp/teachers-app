@@ -197,3 +197,24 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
   - script 03 (primeiro acesso): as senhas temporárias já foram trocadas;
   - scripts 10–12 e 22–23: substituídos pelo 32;
   - scripts 25–28: substituídos pelo 30, que cobre troca de turma, troca de escola e substituição de professor com alunos novos.
+
+## DEF-19 — CONFIRMADO E CORRIGIDO (MÉDIO→ALTO) — PDI sobrescrevia em silêncio a versão mais recente de outro aparelho
+1. **Causa:** os dois formulários do PDI (formulário único do professor, `FormularioPdiAlunoPage.jsx`, e ficha única do Gestor, `FormularioPdiProfessor.jsx`) recuperavam o rascunho do aparelho misturando-o sobre a versão **mais nova** do servidor. O "Salvar" e o "Voltar" enviavam com a versão de referência atual (`ficha.updatedAt` / `bloco.version`), então o servidor aceitava e o texto salvo depois em outro aparelho era apagado.
+2. **Reprodução em navegador real** (dois contextos da mesma professora; `34-def19-pdi-sobrescrita.mjs`):
+   - **R1:** rascunho não salvo;
+   - **R2:** edição offline na fila.
+   
+   Nas duas variantes, ao reabrir, o aparelho A mostrava o próprio texto sem aviso. "Salvar" apagou o texto do aparelho B, nas respostas da disciplina e nas perguntas comuns, e mostrou "Respostas salvas." ANTES: 4 de 6 reprovados. A fila enviada ao abrir (DEF-07) **não** sobrescreveu: o servidor devolveu 409. Na tela do Gestor (`34b-def19-gestor.mjs`), "Voltar" gravou o texto de A por cima, sem aviso (ANTES: 2 de 2 reprovados).
+3. **Arquivos:** `src/utils/pdiFicha.js` (`analisarRascunho`, `MENSAGEM_CONFLITO_RASCUNHO`), `src/pages/FormularioPdiAlunoPage.jsx`, `src/pages/FormularioPdiProfessor.jsx`.
+4. **Solução (só a causa técnica; nenhuma regra nova):**
+   - o rascunho passa a guardar `base`, a versão do servidor sobre a qual foi escrito;
+   - ao reabrir, se o servidor mudou depois (ou o rascunho é antigo, sem `base`, e o servidor tem outra resposta), o rascunho **não é misturado**. Os campos mostram a versão salva, o texto deste aparelho fica visível num aviso, e o usuário escolhe "Usar a versão salva" ou "Restaurar o meu texto";
+   - até a escolha, aquela parte fica travada, nada dela é enviado e o "Salvar" informa "Algumas partes não foram salvas", **sem sucesso falso**;
+   - rascunho igual ao servidor é descartado;
+   - salvamento confirmado limpa o envio antigo daquela ficha ou bloco na fila.
+   
+   Os dois trabalhos ficam preservados até a escolha: o do outro aparelho no servidor, o deste aparelho no rascunho.
+5. **Resultado:** DEPOIS, formulário único 8/8 (incluindo "Restaurar o meu texto" e "Usar a versão salva", fila vazia ao final) e tela do Gestor 2/2.
+6. **Riscos residuais:**
+   - o conflito detectado **no momento do salvamento** (409 com a tela aberta) continua com a mensagem "recarregue a página". Ao recarregar, cai neste novo fluxo com as opções;
+   - **agrupamento do bloco comum:** no formulário único, o agrupamento ainda usa o professor gravado na fotografia da ficha. Um aluno transferido com fichas criadas por dois professores diferentes, que passam ao mesmo professor novo, pode mostrar o bloco duas vezes. O servidor responde 409 e nada se perde, mas a tela fica confusa. Não reproduzido.

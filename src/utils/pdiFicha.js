@@ -29,3 +29,22 @@ export const agruparPorSecao = (questions) => {
   });
   return secoes;
 };
+
+// DEF-19 — rascunho local × versão atual do servidor (formulário único do aluno e tela de UMA Ficha).
+// O rascunho guarda `base`: a versão do servidor sobre a qual foi escrito (updatedAt da Ficha ou
+// version do bloco comum). Resultado:
+//   'nenhum'    — não há rascunho;
+//   'igual'     — o servidor já tem exatamente esse conteúdo (descartar o rascunho);
+//   'recuperar' — o servidor não mudou depois: recuperar como sempre;
+//   'conflito'  — o servidor mudou depois (ou rascunho antigo, sem `base`, e o servidor já tem outra
+//                 resposta): NÃO misturar; mostrar a versão salva e deixar o professor escolher.
+export const analisarRascunho = (draft, perguntas, baseServidor, temRespostaNoServidor, versaoServidor) => {
+  if (!draft) return { tipo: 'nenhum' };
+  const ids = (draft.touchedIds || []).filter(id => perguntas.some(question => question.id === id));
+  const diferentes = ids.filter(id => JSON.stringify(draft.answers?.[id]) !== JSON.stringify(baseServidor[id]));
+  if (diferentes.length === 0) return { tipo: 'igual' };
+  const servidorMudou = draft.base === undefined ? diferentes.some(temRespostaNoServidor) : draft.base !== versaoServidor;
+  return { tipo: servidorMudou ? 'conflito' : 'recuperar', ids, answers: draft.answers };
+};
+
+export const MENSAGEM_CONFLITO_RASCUNHO = 'Recuperamos o que você digitou neste aparelho, mas esta parte foi alterada depois em outro lugar. Os campos mostram a versão salva; nada foi enviado nem sobrescrito. Escolha qual versão manter.';

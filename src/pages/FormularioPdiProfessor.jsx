@@ -13,9 +13,9 @@ import { isGestor, isProfessor } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
-import { enfileirar } from '../offline/syncQueue';
+import { chaveFila, enfileirar, removerDaFila } from '../offline/syncQueue';
 import { SavingIndicator } from '../components/SavingIndicator';
-import { agruparPorSecao, answerFromResposta } from '../utils/pdiFicha';
+import { agruparPorSecao, analisarRascunho, answerFromResposta, MENSAGEM_CONFLITO_RASCUNHO } from '../utils/pdiFicha';
 
 const STATUS_LABEL = { pendente: 'Pendente', em_andamento: 'Em preenchimento', concluida: 'Concluído' };
 const STATUS_VARIANT = { pendente: 'gray', em_andamento: 'blue', concluida: 'green' };
@@ -58,6 +58,11 @@ export const FormularioPdiProfessor = () => {
   // sobrescreve, só informa e preserva o rascunho local (ver salvarPendentes/salvarBlocoPendentes).
   const [statusLocal, setStatusLocal] = useState('idle');
   const [conflito, setConflito] = useState('');
+  // DEF-19: rascunho deste aparelho escrito sobre uma versão que mudou depois no servidor — fica
+  // aqui (sem misturar nos campos) até o usuário escolher. { especifica, padrao }: { answers, ids } | null.
+  const [rascunhoPendente, setRascunhoPendente] = useState({ especifica: null, padrao: null });
+  const pendenteRef = useRef(rascunhoPendente);
+  pendenteRef.current = rascunhoPendente;
   // Guarda a CHAVE (aplicação+aluno+disciplina) já carregada/em carregamento — nunca só um
   // booleano. A rota reaproveita a mesma instância do componente ao navegar de uma Ficha para
   // outra (mesmo padrão de rota, só os parâmetros mudam), então o efeito PRECISA rodar de novo
@@ -85,6 +90,7 @@ export const FormularioPdiProfessor = () => {
     setBlocoTouchedIds(new Set());
     setMensagemErro('');
     setConflito('');
+    setRascunhoPendente({ especifica: null, padrao: null });
 
     (async () => {
       const resultado = podeEditarPerfil
@@ -117,10 +123,24 @@ export const FormularioPdiProfessor = () => {
         lerDraft(`${userId}::ficha-resposta::${resultado.ficha.id}`),
         resultado.blocoPadrao ? lerDraft(`${userId}::bloco-resposta::${resultado.ficha.id}`) : Promise.resolve(null),
       ]);
-      setAnswers(draftEspecifica ? { ...respostasBase, ...draftEspecifica.answers } : respostasBase);
-      setTouchedIds(draftEspecifica ? new Set(draftEspecifica.touchedIds) : new Set());
-      setBlocoAnswers(draftPadrao ? { ...respostasPadraoBase, ...draftPadrao.answers } : respostasPadraoBase);
-      setBlocoTouchedIds(draftPadrao ? new Set(draftPadrao.touchedIds) : new Set());
+      // DEF-19: só recupera direto se o servidor não mudou depois do rascunho; se mudou, os campos
+      // mostram a versão salva e o rascunho fica pendente da escolha (nada é misturado nem enviado).
+      const analiseEsp = analisarRascunho(draftEspecifica, resultado.perguntas, respostasBase, id => resultado.respostas.some(r => r.aplicacaoPerguntaId === id), resultado.ficha.updatedAt);
+      const analisePad = resultado.blocoPadrao
+        ? analisarRascunho(draftPadrao, resultado.blocoPadrao.perguntas, respostasPadraoBase, id => resultado.blocoPadrao.respostas.some(r => r.aplicacaoPerguntaPadraoId === id), resultado.blocoPadrao.version)
+        : { tipo: 'nenhum' };
+      if (analiseEsp.tipo === 'igual') apagarDraft(`${userId}::ficha-resposta::${resultado.ficha.id}`);
+      if (analisePad.tipo === 'igual') apagarDraft(`${userId}::bloco-resposta::${resultado.ficha.id}`);
+      setAnswers(analiseEsp.tipo === 'recuperar' ? { ...respostasBase, ...draftEspecifica.answers } : respostasBase);
+      setTouchedIds(analiseEsp.tipo === 'recuperar' ? new Set(analiseEsp.ids) : new Set());
+      setBlocoAnswers(analisePad.tipo === 'recuperar' ? { ...respostasPadraoBase, ...draftPadrao.answers } : respostasPadraoBase);
+      setBlocoTouchedIds(analisePad.tipo === 'recuperar' ? new Set(analisePad.ids) : new Set());
+      const pendentes = {
+        especifica: analiseEsp.tipo === 'conflito' ? { answers: analiseEsp.answers, ids: analiseEsp.ids } : null,
+        padrao: analisePad.tipo === 'conflito' ? { answers: analisePad.answers, ids: analisePad.ids } : null,
+      };
+      setRascunhoPendente(pendentes);
+      if (pendentes.especifica || pendentes.padrao) setConflito(MENSAGEM_CONFLITO_RASCUNHO);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aplicacaoId, alunoId, disciplinaId]);
@@ -128,21 +148,48 @@ export const FormularioPdiProfessor = () => {
   // Salvamento local com debounce leve (seção "Eficiência": nunca a cada tecla) — só grava
   // enquanto houver algo tocado ainda não sincronizado; some sozinho depois que salvarPendentes
   // confirma com o servidor (apagarDraft).
+  // `base` (DEF-19): versão do servidor sobre a qual as alterações foram feitas. Com rascunho
+  // pendente de escolha, não regrava (o rascunho original fica intacto no aparelho).
   useEffect(() => {
-    if (!draftKeyEspecifica || touchedIds.size === 0) return undefined;
+    if (!draftKeyEspecifica || touchedIds.size === 0 || rascunhoPendente.especifica) return undefined;
     const t = setTimeout(() => {
-      salvarDraft(draftKeyEspecifica, { userId, answers, touchedIds: [...touchedIds], savedAt: Date.now() });
+      salvarDraft(draftKeyEspecifica, { userId, answers, touchedIds: [...touchedIds], base: dados?.ficha?.updatedAt, savedAt: Date.now() });
     }, 500);
     return () => clearTimeout(t);
-  }, [answers, touchedIds, draftKeyEspecifica, userId]);
+  }, [answers, touchedIds, draftKeyEspecifica, userId, rascunhoPendente.especifica, dados?.ficha?.updatedAt]);
 
   useEffect(() => {
-    if (!draftKeyPadrao || blocoTouchedIds.size === 0) return undefined;
+    if (!draftKeyPadrao || blocoTouchedIds.size === 0 || rascunhoPendente.padrao) return undefined;
     const t = setTimeout(() => {
-      salvarDraft(draftKeyPadrao, { userId, answers: blocoAnswers, touchedIds: [...blocoTouchedIds], savedAt: Date.now() });
+      salvarDraft(draftKeyPadrao, { userId, answers: blocoAnswers, touchedIds: [...blocoTouchedIds], base: dados?.blocoPadrao?.version, savedAt: Date.now() });
     }, 500);
     return () => clearTimeout(t);
-  }, [blocoAnswers, blocoTouchedIds, draftKeyPadrao, userId]);
+  }, [blocoAnswers, blocoTouchedIds, draftKeyPadrao, userId, rascunhoPendente.padrao, dados?.blocoPadrao?.version]);
+
+  // DEF-19: escolha do usuário diante do rascunho pendente.
+  const filaEspecifica = () => chaveFila(userId, 'ficha-resposta', dados.ficha.id, 'respostas');
+  const filaPadrao = () => chaveFila(userId, 'bloco-resposta', dados.ficha.id, 'respostas-padrao');
+  const usarVersaoSalva = () => {
+    if (rascunhoPendente.especifica) { apagarDraft(draftKeyEspecifica); removerDaFila(filaEspecifica()); }
+    if (rascunhoPendente.padrao) { apagarDraft(draftKeyPadrao); removerDaFila(filaPadrao()); }
+    setRascunhoPendente({ especifica: null, padrao: null });
+    setConflito('');
+  };
+  const restaurarMeuTexto = () => {
+    const { especifica, padrao } = rascunhoPendente;
+    if (especifica) {
+      removerDaFila(filaEspecifica());
+      setAnswers(prev => ({ ...prev, ...Object.fromEntries(especifica.ids.map(id => [id, especifica.answers[id]])) }));
+      setTouchedIds(prev => new Set([...prev, ...especifica.ids]));
+    }
+    if (padrao) {
+      removerDaFila(filaPadrao());
+      setBlocoAnswers(prev => ({ ...prev, ...Object.fromEntries(padrao.ids.map(id => [id, padrao.answers[id]])) }));
+      setBlocoTouchedIds(prev => new Set([...prev, ...padrao.ids]));
+    }
+    setRascunhoPendente({ especifica: null, padrao: null });
+    setConflito('');
+  };
 
   if (carregando) {
     return <MainLayout><Card><LoadingBlock text="Carregando ficha..." className="py-12" /></Card></MainLayout>;
@@ -160,8 +207,10 @@ export const FormularioPdiProfessor = () => {
   }
 
   const { ficha, perguntas, respostas, editavelAgora, blocoPadrao } = dados;
-  const podePreencher = podeEditarPerfil && editavelAgora;
-  const podePreencherBloco = podeEditarPerfil && !!blocoPadrao?.editavelAgora;
+  // DEF-19: com rascunho deste aparelho pendente de escolha, os campos daquela parte ficam travados
+  // (mostram a versão salva) até o usuário escolher "Usar a versão salva" ou "Restaurar o meu texto".
+  const podePreencher = podeEditarPerfil && editavelAgora && !rascunhoPendente.especifica;
+  const podePreencherBloco = podeEditarPerfil && !!blocoPadrao?.editavelAgora && !rascunhoPendente.padrao;
   const questions = [...perguntas];
   const secoes = agruparPorSecao(questions);
   const questionsPadrao = blocoPadrao?.perguntas || [];
@@ -202,6 +251,7 @@ export const FormularioPdiProfessor = () => {
   // reload/fechamento) e sincroniza sozinha quando a conexão voltar (seção "Fila offline" do
   // pedido); CONFLITO_VERSAO nunca sobrescreve, preserva o rascunho e avisa (seção "Conflitos").
   const salvarPendentes = async () => {
+    if (pendenteRef.current.especifica) return { ok: false, conflito: true }; // DEF-19: aguardando escolha
     if (touchedIds.size === 0) return { ok: true };
     const respostasPendentes = [...touchedIds].map(id => {
       const question = questions.find(item => item.id === id);
@@ -213,6 +263,7 @@ export const FormularioPdiProfessor = () => {
       setDados(prev => ({ ...prev, ficha: resultado.ficha, respostas: resultado.respostas }));
       setTouchedIds(new Set());
       if (draftKeyEspecifica) apagarDraft(draftKeyEspecifica);
+      removerDaFila(chaveFila(userId, 'ficha-resposta', ficha.id, 'respostas')); // envio antigo na fila ficou obsoleto
       setStatusLocal('saved');
       return resultado;
     }
@@ -239,6 +290,7 @@ export const FormularioPdiProfessor = () => {
   // editável agora e algo foi de fato tocado nesta visita. `version` vai sempre a que está em
   // tela no momento do envio (seção 23 do pedido: nunca sobrescrever silenciosamente outra aba).
   const salvarBlocoPendentes = async () => {
+    if (pendenteRef.current.padrao) return { ok: false, conflito: true }; // DEF-19: aguardando escolha
     if (!podePreencherBloco || blocoTouchedIds.size === 0) return { ok: true };
     const respostasPendentes = [...blocoTouchedIds].map(id => {
       const question = questionsPadrao.find(item => item.id === id);
@@ -250,6 +302,7 @@ export const FormularioPdiProfessor = () => {
       setDados(prev => ({ ...prev, blocoPadrao: resultado.blocoPadrao }));
       setBlocoTouchedIds(new Set());
       if (draftKeyPadrao) apagarDraft(draftKeyPadrao);
+      removerDaFila(chaveFila(userId, 'bloco-resposta', ficha.id, 'respostas-padrao')); // envio antigo na fila ficou obsoleto
       setStatusLocal('saved');
       return resultado;
     }
@@ -468,7 +521,25 @@ export const FormularioPdiProfessor = () => {
         {conflito && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
             <span>{conflito}</span>
-            <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Recarregar</Button>
+            {(rascunhoPendente.especifica || rascunhoPendente.padrao) ? (
+              // DEF-19: texto deste aparelho preservado, à vista, até o usuário escolher.
+              <div className="w-full space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide">Texto guardado neste aparelho (ainda não enviado):</p>
+                <ul className="space-y-1 rounded-md border border-amber-200 bg-white px-3 py-2 text-sm font-normal text-slate-800">
+                  {[[rascunhoPendente.padrao, questionsPadrao], [rascunhoPendente.especifica, questions]].filter(([pendente]) => pendente).flatMap(([pendente, lista]) => pendente.ids.map(id => {
+                    const valor = pendente.answers[id];
+                    const texto = valor && typeof valor === 'object' ? [valor.texto, valor.resposta, valor.opcao, valor.valor, valor.complementar].filter(item => item !== undefined && item !== null && item !== '').join(' — ') || JSON.stringify(valor) : String(valor ?? '(vazio)');
+                    return <li key={`${lista === questions ? 'e' : 'p'}-${id}`}><span className="font-semibold">{lista.find(question => question.id === id)?.pergunta ?? 'Pergunta'}:</span> {texto}</li>;
+                  }))}
+                </ul>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={usarVersaoSalva}>Usar a versão salva</Button>
+                  <Button size="sm" onClick={restaurarMeuTexto}>Restaurar o meu texto</Button>
+                </div>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Recarregar</Button>
+            )}
           </div>
         )}
         {mensagemErro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{mensagemErro}</div>}

@@ -9,12 +9,12 @@ import { useData } from '../context/DataContext';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { MainLayout } from '../layouts/Layouts';
 import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
-import { enfileirar } from '../offline/syncQueue';
+import { chaveFila, enfileirar, removerDaFila } from '../offline/syncQueue';
 import { listarMeusPdisReais, paraPayloadValor } from '../services/pdiFichas';
 import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
 import { inputClass } from '../utils/display';
 import { formatFullDate } from '../utils/formAvailability';
-import { agruparPorSecao, answerFromResposta } from '../utils/pdiFicha';
+import { agruparPorSecao, analisarRascunho, answerFromResposta, MENSAGEM_CONFLITO_RASCUNHO } from '../utils/pdiFicha';
 import { isProfessor } from '../utils/roles';
 
 // Formulário ÚNICO do aluno para o Professor (mesma Aplicação, todas as disciplinas que ele
@@ -87,15 +87,20 @@ const CampoPergunta = ({ question, value, onChange, editavel, bloqueado, discipl
 // Estado inicial de UMA disciplina a partir do payload de obter-ou-criar (+ rascunho local).
 const montarEstadoFicha = (linha, resultado, draft) => {
   const base = Object.fromEntries(resultado.perguntas.map(question => [question.id, answerFromResposta(question, resultado.respostas.find(r => r.aplicacaoPerguntaId === question.id))]));
+  const analise = analisarRascunho(draft, resultado.perguntas, base, id => resultado.respostas.some(r => r.aplicacaoPerguntaId === id), resultado.ficha.updatedAt);
+  const recuperar = analise.tipo === 'recuperar';
   return {
     disciplinaId: linha.disciplinaId,
     disciplinaNome: linha.disciplinaNome,
     carregando: false,
     erroCarga: '',
     dados: { ficha: resultado.ficha, perguntas: resultado.perguntas, respostas: resultado.respostas, editavelAgora: resultado.editavelAgora, blocoPadrao: resultado.blocoPadrao },
-    answers: draft ? { ...base, ...draft.answers } : base,
-    touched: draft ? new Set(draft.touchedIds) : new Set(),
-    salvar: null, // { estado: 'erro' | 'conflito' | 'fila' | 'salvo' | 'concluida', mensagem }
+    answers: recuperar ? { ...base, ...draft.answers } : base,
+    touched: recuperar ? new Set(analise.ids) : new Set(),
+    // { answers, ids } do rascunho deste aparelho aguardando a escolha do professor (DEF-19).
+    rascunhoPendente: analise.tipo === 'conflito' ? { answers: analise.answers, ids: analise.ids } : null,
+    descartarRascunho: analise.tipo === 'igual',
+    salvar: analise.tipo === 'conflito' ? { estado: 'conflito', mensagem: MENSAGEM_CONFLITO_RASCUNHO } : null, // { estado: 'erro' | 'conflito' | 'fila' | 'salvo' | 'concluida', mensagem }
   };
 };
 
@@ -137,6 +142,7 @@ const montarBlocos = (fichas, anteriores = {}) => {
       editavelAgora: maisNovo.dados.blocoPadrao.editavelAgora,
       answers: anterior ? { ...base, ...Object.fromEntries([...touched].map(id => [id, anterior.answers[id]])) } : base,
       touched,
+      rascunhoPendente: anterior?.rascunhoPendente ?? null,
       salvar: anterior?.salvar ?? null,
     }];
   }));
@@ -197,22 +203,76 @@ export const FormularioPdiAlunoPage = () => {
       return { disciplinaId: linha.disciplinaId, disciplinaNome: linha.disciplinaNome, carregando: false, erroCarga: resultado.error, dados: null, answers: {}, touched: new Set(), salvar: null };
     }
     const draft = await lerDraft(chaveDraftFicha(userId, resultado.ficha.id));
-    return montarEstadoFicha(linha, resultado, draft);
+    const estado = montarEstadoFicha(linha, resultado, draft);
+    if (estado.descartarRascunho) apagarDraft(chaveDraftFicha(userId, resultado.ficha.id)); // servidor já tem este texto
+    return estado;
   };
 
   // Rascunhos do bloco podem existir sob a chave de qualquer Ficha do agrupamento (tela de UMA
-  // Ficha grava pela Ficha aberta) — junta todos, o mais recente por último.
+  // Ficha grava pela Ficha aberta) — junta todos, o mais recente por último. DEF-19: mesma análise
+  // das Fichas (ver analisarRascunho) — se o bloco mudou no servidor depois do rascunho, nada é
+  // misturado: fica pendente da escolha do professor.
   const restaurarDraftsDosBlocos = async (blocosMontados) => {
     for (const bloco of Object.values(blocosMontados)) {
       const drafts = (await Promise.all(bloco.fichaIds.map(id => lerDraft(chaveDraftBloco(userId, id))))).filter(Boolean).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
       if (drafts.length === 0) continue;
       const idsValidos = new Set(bloco.perguntas.map(question => question.id));
+      const juntos = { answers: {}, touchedIds: [], base: drafts[drafts.length - 1].base };
       drafts.forEach(draft => draft.touchedIds.filter(id => idsValidos.has(id)).forEach(id => {
-        bloco.answers[id] = draft.answers[id];
-        bloco.touched.add(id);
+        juntos.answers[id] = draft.answers[id];
+        if (!juntos.touchedIds.includes(id)) juntos.touchedIds.push(id);
       }));
+      // Qualquer rascunho sem versão (antigo) ou de versão diferente da atual conta como "mudou depois".
+      if (drafts.some(draft => draft.base !== undefined && draft.base !== bloco.version)) juntos.base = -1;
+      if (drafts.some(draft => draft.base === undefined)) juntos.base = undefined;
+      const baseServidor = { ...bloco.answers };
+      const analise = analisarRascunho(juntos, bloco.perguntas, baseServidor, id => bloco.respostas.some(r => r.aplicacaoPerguntaPadraoId === id), bloco.version);
+      if (analise.tipo === 'igual') { bloco.fichaIds.forEach(id => apagarDraft(chaveDraftBloco(userId, id))); continue; }
+      if (analise.tipo === 'conflito') {
+        bloco.rascunhoPendente = { answers: analise.answers, ids: analise.ids };
+        bloco.salvar = { estado: 'conflito', mensagem: MENSAGEM_CONFLITO_RASCUNHO };
+        continue;
+      }
+      analise.ids.forEach(id => { bloco.answers[id] = analise.answers[id]; bloco.touched.add(id); });
     }
     return blocosMontados;
+  };
+
+  // --- DEF-19: escolha do professor diante de um rascunho deste aparelho × versão mais nova salva ---
+  const chaveFilaFicha = (fichaId) => chaveFila(userId, 'ficha-resposta', fichaId, 'respostas');
+  const chaveFilaBloco = (fichaId) => chaveFila(userId, 'bloco-resposta', fichaId, 'respostas-padrao');
+  const usarVersaoSalvaFicha = (disciplinaId) => {
+    const f = fichasRef.current[disciplinaId];
+    apagarDraft(chaveDraftFicha(userId, f.dados.ficha.id));
+    removerDaFila(chaveFilaFicha(f.dados.ficha.id));
+    atualizarFicha(disciplinaId, atual => ({ ...atual, rascunhoPendente: null, salvar: null }));
+  };
+  const restaurarMeuTextoFicha = (disciplinaId) => {
+    const f = fichasRef.current[disciplinaId];
+    removerDaFila(chaveFilaFicha(f.dados.ficha.id)); // o envio antigo da fila fica obsoleto: vale o texto restaurado
+    atualizarFicha(disciplinaId, atual => ({
+      ...atual,
+      answers: { ...atual.answers, ...Object.fromEntries(atual.rascunhoPendente.ids.map(id => [id, atual.rascunhoPendente.answers[id]])) },
+      touched: new Set([...atual.touched, ...atual.rascunhoPendente.ids]),
+      rascunhoPendente: null,
+      salvar: null,
+    }));
+  };
+  const usarVersaoSalvaBloco = (chave) => {
+    const b = blocosRef.current[chave];
+    b.fichaIds.forEach(id => { apagarDraft(chaveDraftBloco(userId, id)); removerDaFila(chaveFilaBloco(id)); });
+    atualizarBloco(chave, atual => ({ ...atual, rascunhoPendente: null, salvar: null }));
+  };
+  const restaurarMeuTextoBloco = (chave) => {
+    const b = blocosRef.current[chave];
+    b.fichaIds.forEach(id => removerDaFila(chaveFilaBloco(id)));
+    atualizarBloco(chave, atual => ({
+      ...atual,
+      answers: { ...atual.answers, ...Object.fromEntries(atual.rascunhoPendente.ids.map(id => [id, atual.rascunhoPendente.answers[id]])) },
+      touched: new Set([...atual.touched, ...atual.rascunhoPendente.ids]),
+      rascunhoPendente: null,
+      salvar: null,
+    }));
   };
 
   useEffect(() => {
@@ -251,11 +311,13 @@ export const FormularioPdiAlunoPage = () => {
   // Rascunho local com debounce leve (mesma infra da tela de UMA Ficha): só o que foi tocado.
   useEffect(() => {
     const t = setTimeout(() => {
+      // `base` (DEF-19): versão do servidor sobre a qual estas alterações foram feitas. Parte com
+      // rascunho pendente de escolha não é regravada (o rascunho original fica intacto no aparelho).
       Object.values(fichas).forEach(f => {
-        if (f.dados && f.touched.size > 0) salvarDraft(chaveDraftFicha(userId, f.dados.ficha.id), { userId, answers: f.answers, touchedIds: [...f.touched], savedAt: Date.now() });
+        if (f.dados && f.touched.size > 0 && !f.rascunhoPendente) salvarDraft(chaveDraftFicha(userId, f.dados.ficha.id), { userId, answers: f.answers, touchedIds: [...f.touched], base: f.dados.ficha.updatedAt, savedAt: Date.now() });
       });
       Object.values(blocos).forEach(b => {
-        if (b.touched.size > 0) salvarDraft(chaveDraftBloco(userId, b.anchorFichaId), { userId, answers: b.answers, touchedIds: [...b.touched], savedAt: Date.now() });
+        if (b.touched.size > 0 && !b.rascunhoPendente) salvarDraft(chaveDraftBloco(userId, b.anchorFichaId), { userId, answers: b.answers, touchedIds: [...b.touched], base: b.version, savedAt: Date.now() });
       });
     }, 500);
     return () => clearTimeout(t);
@@ -304,6 +366,9 @@ export const FormularioPdiAlunoPage = () => {
   // que falhou fica marcada, com o rascunho local intacto, e "Salvar" reenvia só o que falta.
   const salvarBloco = async (chave) => {
     const bloco = blocosRef.current[chave];
+    // DEF-19: com rascunho deste aparelho aguardando escolha, esta parte nunca é enviada nem
+    // contada como salva (o aviso com as opções continua na tela).
+    if (bloco?.rascunhoPendente) return { ok: false, pendente: true };
     if (!bloco || !bloco.editavelAgora || bloco.touched.size === 0) return { ok: true };
     // Cada pergunta é salva pela Ficha cujo snapshot a inclui (normalmente todas pela âncora).
     const porFicha = new Map();
@@ -337,13 +402,15 @@ export const FormularioPdiAlunoPage = () => {
       atualizarBloco(chave, b => ({ ...b, salvar: { estado: 'erro', mensagem: resultado.error } }));
       return { ok: false };
     }
-    bloco.fichaIds.forEach(id => apagarDraft(chaveDraftBloco(userId, id)));
+    // Servidor confirmou: rascunho e qualquer envio antigo deste bloco na fila ficaram obsoletos.
+    bloco.fichaIds.forEach(id => { apagarDraft(chaveDraftBloco(userId, id)); removerDaFila(chaveFilaBloco(id)); });
     atualizarBloco(chave, b => ({ ...b, salvar: { estado: 'salvo', mensagem: '' } }));
     return { ok: true };
   };
 
   const salvarFicha = async (disciplinaId) => {
     const f = fichasRef.current[disciplinaId];
+    if (f?.rascunhoPendente) return { ok: false, pendente: true }; // DEF-19: aguardando escolha do professor
     if (!f?.dados || !f.dados.editavelAgora || f.touched.size === 0) return { ok: true };
     const { ficha, perguntas } = f.dados;
     const ids = [...f.touched];
@@ -351,6 +418,7 @@ export const FormularioPdiAlunoPage = () => {
     const resultado = await salvarRespostasFichaPdi(ficha.id, respostas, ficha.updatedAt);
     if (resultado.ok) {
       apagarDraft(chaveDraftFicha(userId, ficha.id));
+      removerDaFila(chaveFilaFicha(ficha.id)); // envio antigo desta Ficha na fila ficou obsoleto
       atualizarFicha(disciplinaId, atual => ({
         ...atual,
         dados: { ...atual.dados, ficha: resultado.ficha, respostas: resultado.respostas },
@@ -395,8 +463,9 @@ export const FormularioPdiAlunoPage = () => {
     return falhas;
   };
 
-  const temAlgoParaSalvar = () => Object.values(fichasRef.current).some(f => f.dados?.editavelAgora && f.touched.size > 0)
-    || Object.values(blocosRef.current).some(b => b.editavelAgora && b.touched.size > 0);
+  // Parte com rascunho pendente de escolha (DEF-19) também conta: o Salvar precisa avisar que ela não foi salva.
+  const temAlgoParaSalvar = () => Object.values(fichasRef.current).some(f => (f.dados?.editavelAgora && f.touched.size > 0) || f.rascunhoPendente)
+    || Object.values(blocosRef.current).some(b => (b.editavelAgora && b.touched.size > 0) || b.rascunhoPendente);
 
   const handleSalvar = async () => {
     setMensagem('');
@@ -497,14 +566,36 @@ export const FormularioPdiAlunoPage = () => {
   const referencia = Object.values(fichas).find(f => f.dados)?.dados.ficha;
   const linha0 = linhas[0];
 
-  const renderAvisoSalvar = (salvar, onTentar) => {
+  // `pendente` (DEF-19): { rascunho: { answers, ids }, perguntas, usar(), restaurar() } — mostra o texto
+  // guardado neste aparelho e deixa o professor escolher; os campos mostram a versão salva.
+  const resumoResposta = (valor) => {
+    if (valor === null || valor === undefined) return '(vazio)';
+    if (typeof valor !== 'object') return String(valor);
+    const partes = [valor.texto, valor.resposta, valor.opcao, valor.valor, valor.complementar].filter(item => item !== undefined && item !== null && item !== '');
+    return partes.length ? partes.join(' — ') : JSON.stringify(valor);
+  };
+  const renderAvisoSalvar = (salvar, onTentar, pendente = null) => {
     if (!salvar || salvar.estado === 'salvo' || salvar.estado === 'concluida') return null;
     const cor = salvar.estado === 'fila' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-red-200 bg-red-50 text-red-800';
     return (
       <div className={`mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm font-semibold ${cor}`}>
         <span>{salvar.estado === 'erro' ? `Não salvo: ${salvar.mensagem}` : salvar.mensagem}</span>
         {salvar.estado === 'erro' && <Button size="sm" variant="outline" onClick={onTentar} disabled={bloqueado}>Tentar novamente</Button>}
-        {salvar.estado === 'conflito' && <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Recarregar</Button>}
+        {salvar.estado === 'conflito' && !pendente && <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Recarregar</Button>}
+        {salvar.estado === 'conflito' && pendente && (
+          <div className="w-full space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide">Texto guardado neste aparelho (ainda não enviado):</p>
+            <ul className="space-y-1 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-normal text-slate-800">
+              {pendente.rascunho.ids.map(id => (
+                <li key={id}><span className="font-semibold">{pendente.perguntas.find(question => question.id === id)?.pergunta ?? 'Pergunta'}:</span> {resumoResposta(pendente.rascunho.answers[id])}</li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={pendente.usar} disabled={bloqueado}>Usar a versão salva</Button>
+              <Button size="sm" onClick={pendente.restaurar} disabled={bloqueado}>Restaurar o meu texto</Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -559,10 +650,10 @@ export const FormularioPdiAlunoPage = () => {
             {bloco.disciplinas.length > 1 && (
               <p className="mt-1 text-xs text-slate-500">Vale para: {bloco.disciplinas.join(', ')}.</p>
             )}
-            {renderAvisoSalvar(bloco.salvar, handleSalvar)}
+            {renderAvisoSalvar(bloco.salvar, handleSalvar, bloco.rascunhoPendente && { rascunho: bloco.rascunhoPendente, perguntas: bloco.perguntas, usar: () => usarVersaoSalvaBloco(bloco.chave), restaurar: () => restaurarMeuTextoBloco(bloco.chave) })}
             <div className="mt-3">
               {bloco.perguntas.map(question => (
-                <CampoPergunta key={question.id} question={question} value={bloco.answers[question.id]} onChange={valor => atualizarRespostaBloco(bloco.chave, question, valor)} editavel={bloco.editavelAgora} bloqueado={bloqueado} />
+                <CampoPergunta key={question.id} question={question} value={bloco.answers[question.id]} onChange={valor => atualizarRespostaBloco(bloco.chave, question, valor)} editavel={bloco.editavelAgora && !bloco.rascunhoPendente} bloqueado={bloqueado} />
               ))}
             </div>
           </Card>
@@ -593,7 +684,7 @@ export const FormularioPdiAlunoPage = () => {
                   <Badge variant={editavelAgora ? 'green' : 'gray'}>{editavelAgora ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
                 </div>
               </div>
-              {renderAvisoSalvar(f.salvar, handleSalvar)}
+              {renderAvisoSalvar(f.salvar, handleSalvar, f.rascunhoPendente && { rascunho: f.rascunhoPendente, perguntas: f.dados.perguntas, usar: () => usarVersaoSalvaFicha(f.disciplinaId), restaurar: () => restaurarMeuTextoFicha(f.disciplinaId) })}
               {perguntas.length === 0 ? (
                 <p className="mt-3 text-sm text-slate-500">Só perguntas comuns.</p>
               ) : agruparPorSecao(perguntas).map(secao => (
@@ -603,7 +694,7 @@ export const FormularioPdiAlunoPage = () => {
                     <div key={subsecao.nome || 'default'} className="mt-2">
                       {subsecao.nome && <p className="mb-2 text-xs font-semibold text-slate-400">{subsecao.nome}</p>}
                       {subsecao.questions.map(question => (
-                        <CampoPergunta key={question.id} question={question} value={f.answers[question.id]} onChange={valor => atualizarResposta(f.disciplinaId, question, valor)} editavel={editavelAgora} bloqueado={bloqueado} disciplinaId={ficha.disciplinaId} />
+                        <CampoPergunta key={question.id} question={question} value={f.answers[question.id]} onChange={valor => atualizarResposta(f.disciplinaId, question, valor)} editavel={editavelAgora && !f.rascunhoPendente} bloqueado={bloqueado} disciplinaId={ficha.disciplinaId} />
                       ))}
                     </div>
                   ))}

@@ -3683,5 +3683,203 @@
     "evidencia": "31-REGRESSAO-professor.png",
     "nota": "",
     "quando": "2026-11-09T22:48:16.604Z"
+  },
+  {
+    "id": "DEF19-ANTES-R1a",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "Rascunho não salvo: depois que o aparelho B salvou, a fila/abertura do aparelho A não sobrescreve o servidor",
+    "esperado": "banco com o texto do aparelho B",
+    "observado": "B salvou: true; após A reabrir (fila): Inglês B=true, comum B=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T22:56:33.936Z"
+  },
+  {
+    "id": "DEF19-ANTES-R1b",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: aparelho A reabre o formulário — o texto dele é preservado na tela e o conflito é avisado",
+    "esperado": "texto de A na tela + aviso de alteração em outro lugar",
+    "observado": "tela: comum \"A comum 225604-R1\", Inglês \"A Inglês 225604-R1\"; aviso: false",
+    "status": "REPROVADO",
+    "evidencia": "34-ANTES-R1-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T22:56:33.951Z"
+  },
+  {
+    "id": "DEF19-ANTES-R1c",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: o aparelho A clica Salvar sem escolher — o texto do aparelho B NÃO é sobrescrito em silêncio e não aparece \"Respostas salvas.\"",
+    "esperado": "banco ainda com B; sem mensagem de sucesso",
+    "observado": "banco final: Inglês B=false, comum B=false; sucesso falso: true; mensagem: \"Respostas salvas.\"",
+    "status": "REPROVADO",
+    "evidencia": "34-ANTES-R1-depois-salvar.png",
+    "nota": "",
+    "quando": "2026-11-09T22:56:33.963Z"
+  },
+  {
+    "id": "DEF19-ANTES-R2a",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "Edição offline na fila: depois que o aparelho B salvou, a fila/abertura do aparelho A não sobrescreve o servidor",
+    "esperado": "banco com o texto do aparelho B",
+    "observado": "B salvou: true; após A reabrir (fila): Inglês B=true, comum B=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T22:57:07.749Z"
+  },
+  {
+    "id": "DEF19-ANTES-R2b",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: aparelho A reabre o formulário — o texto dele é preservado na tela e o conflito é avisado",
+    "esperado": "texto de A na tela + aviso de alteração em outro lugar",
+    "observado": "tela: comum \"A comum 225604-R2\", Inglês \"A Inglês 225604-R2\"; aviso: false",
+    "status": "REPROVADO",
+    "evidencia": "34-ANTES-R2-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T22:57:07.774Z"
+  },
+  {
+    "id": "DEF19-ANTES-R2c",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: o aparelho A clica Salvar sem escolher — o texto do aparelho B NÃO é sobrescrito em silêncio e não aparece \"Respostas salvas.\"",
+    "esperado": "banco ainda com B; sem mensagem de sucesso",
+    "observado": "banco final: Inglês B=false, comum B=false; sucesso falso: true; mensagem: \"Respostas salvas.\"",
+    "status": "REPROVADO",
+    "evidencia": "34-ANTES-R2-depois-salvar.png",
+    "nota": "",
+    "quando": "2026-11-09T22:57:07.785Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R1a",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "Rascunho não salvo: depois que o aparelho B salvou, a fila/abertura do aparelho A não sobrescreve o servidor",
+    "esperado": "banco com o texto do aparelho B",
+    "observado": "B salvou: true; após A reabrir (fila): Inglês B=true, comum B=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:03:03.068Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R1b",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: aparelho A reabre o formulário — o texto dele é preservado e visível, o conflito é avisado e os campos mostram a versão salva (B)",
+    "esperado": "texto de A visível (aviso) + aviso de alteração + campos com o texto de B",
+    "observado": "campos: comum \"B comum 230232-R1\", Inglês \"B Inglês 230232-R1\"; texto de A na tela: true; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "34-DEPOIS-R1-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:03:03.084Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R1c",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: o aparelho A clica Salvar sem escolher — o texto do aparelho B NÃO é sobrescrito em silêncio e não aparece \"Respostas salvas.\"",
+    "esperado": "banco ainda com B; sem mensagem de sucesso",
+    "observado": "banco final: Inglês B=true, comum B=true; sucesso falso: false; mensagem: \"não foram salvas.\"",
+    "status": "APROVADO",
+    "evidencia": "34-DEPOIS-R1-depois-salvar.png",
+    "nota": "",
+    "quando": "2026-11-09T23:03:03.094Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R1d",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: o professor escolhe \"Restaurar o meu texto\" e salva — agora (por decisão explícita) o texto do aparelho A vai para o servidor",
+    "esperado": "banco com o texto de A",
+    "observado": "Inglês A=true, comum A=true; fila restante 0",
+    "status": "APROVADO",
+    "evidencia": "34-DEPOIS-R1-escolha.png",
+    "nota": "",
+    "quando": "2026-11-09T23:03:08.189Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R2a",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "Edição offline na fila: depois que o aparelho B salvou, a fila/abertura do aparelho A não sobrescreve o servidor",
+    "esperado": "banco com o texto do aparelho B",
+    "observado": "B salvou: true; após A reabrir (fila): Inglês B=true, comum B=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:03:41.293Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R2b",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: aparelho A reabre o formulário — o texto dele é preservado e visível, o conflito é avisado e os campos mostram a versão salva (B)",
+    "esperado": "texto de A visível (aviso) + aviso de alteração + campos com o texto de B",
+    "observado": "campos: comum \"B comum 230232-R2\", Inglês \"B Inglês 230232-R2\"; texto de A na tela: true; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "34-DEPOIS-R2-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:03:41.307Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R2c",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: o aparelho A clica Salvar sem escolher — o texto do aparelho B NÃO é sobrescrito em silêncio e não aparece \"Respostas salvas.\"",
+    "esperado": "banco ainda com B; sem mensagem de sucesso",
+    "observado": "banco final: Inglês B=true, comum B=true; sucesso falso: false; mensagem: \"não foram salvas.\"",
+    "status": "APROVADO",
+    "evidencia": "34-DEPOIS-R2-depois-salvar.png",
+    "nota": "",
+    "quando": "2026-11-09T23:03:41.317Z"
+  },
+  {
+    "id": "DEF19-DEPOIS-R2d",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: o professor escolhe \"Usar a versão salva\" — o servidor mantém B e o envio pendente do aparelho A é descartado",
+    "esperado": "banco com B; fila vazia",
+    "observado": "Inglês B=true, comum B=true; fila restante 0",
+    "status": "APROVADO",
+    "evidencia": "34-DEPOIS-R2-escolha.png",
+    "nota": "",
+    "quando": "2026-11-09T23:03:44.303Z"
+  },
+  {
+    "id": "DEF19-GESTOR-ANTES-1",
+    "modulo": "PDI conflito entre aparelhos (DEF-19, tela do Gestor)",
+    "cenario": "Outro aparelho salvou depois do rascunho do aparelho A: ao reabrir, aviso + texto de A visível + opções",
+    "esperado": "aviso e opções; texto de A na tela",
+    "observado": "2 caixas; PUT outro aparelho 200; aviso: false; texto de A visível: false; opções: false",
+    "status": "REPROVADO",
+    "evidencia": "34b-ANTES-gestor-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:05:38.768Z"
+  },
+  {
+    "id": "DEF19-GESTOR-ANTES-2",
+    "modulo": "PDI conflito entre aparelhos (DEF-19, tela do Gestor)",
+    "cenario": "Sair por \"Voltar\" sem escolher não sobrescreve o texto do outro aparelho",
+    "esperado": "banco com o texto do outro aparelho",
+    "observado": "antes: true; depois de Voltar: false; texto de A no banco: true",
+    "status": "REPROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:05:38.783Z"
+  },
+  {
+    "id": "DEF19-GESTOR-DEPOIS-1",
+    "modulo": "PDI conflito entre aparelhos (DEF-19, tela do Gestor)",
+    "cenario": "Outro aparelho salvou depois do rascunho do aparelho A: ao reabrir, aviso + texto de A visível + opções",
+    "esperado": "aviso e opções; texto de A na tela",
+    "observado": "2 caixas; PUT outro aparelho 200; aviso: true; texto de A visível: true; opções: true",
+    "status": "APROVADO",
+    "evidencia": "34b-DEPOIS-gestor-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:05:58.191Z"
+  },
+  {
+    "id": "DEF19-GESTOR-DEPOIS-2",
+    "modulo": "PDI conflito entre aparelhos (DEF-19, tela do Gestor)",
+    "cenario": "Sair por \"Voltar\" sem escolher não sobrescreve o texto do outro aparelho",
+    "esperado": "banco com o texto do outro aparelho",
+    "observado": "antes: true; depois de Voltar: true; texto de A no banco: false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:05:58.207Z"
   }
 ]
