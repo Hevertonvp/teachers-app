@@ -2187,3 +2187,27 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
 - **DEF-19 confirmado e corrigido (formulário único do professor e ficha única do Gestor):** rascunho do PDI guarda a versão de referência; se o servidor mudou depois, não mistura, mostra a versão salva e o texto deste aparelho com "Usar a versão salva" / "Restaurar o meu texto"; parte pendente travada e nunca enviada nem dada como salva. Arquivos: `src/utils/pdiFicha.js`, `src/pages/FormularioPdiAlunoPage.jsx`, `src/pages/FormularioPdiProfessor.jsx`. Testes em navegador real (dois contextos): `34-def19-pdi-sobrescrita.mjs` antes 4/6 reprovados, depois 8/8; `34b-def19-gestor.mjs` antes 2/2 reprovados, depois 2/2. Nenhuma regra de negócio nova.
 - **DEF-06/13 corrigido:** `SyncStatusBanner.jsx` (só a caixa recebe cliques; sobe acima de barra fixa marcada com `data-barra-acoes-fixa`; espaço no fim da página enquanto visível) + marcação na barra do 1/3. Roteiro 35 (desktop e celular, elemento no centro do botão): antes 4/4 reprovados, depois 4/4.
 - **DEF-01 corrigido:** `UmTercoPreenchimentoPage.jsx` — troca de semana na hora com salvamento em segundo plano; texto digitado durante um envio não é marcado como salvo nem tem o rascunho apagado; salvamento pedido com outro em andamento espera e envia o resto (Sair/Concluir nunca seguem sem o último texto). Roteiro 35 (atraso de 2,5 s): antes 2 reprovados (inclusive **perda do texto digitado durante o salvamento**), depois 3/3. A primeira rodada do DEF01-c tinha erro do teste (clicou no Sair do cabeçalho) e foi descartada.
+- **Regressão final (09/11/2026, depois de todos os commits), banco LOCAL:**
+  - **Navegador real:** `homologacao/rodar-regressao.sh final` roda 33, 30, 30b, 31, 32, 34, 34b e 35 em sequência. Resultado: **78 aprovados, 0 reprovados**.
+  - **Integridade do banco** (`36-integridade.mjs`), antes e depois da suíte: **8/8**. Não há entrega, ficha, bloco ou resposta duplicados, nem resposta de semana de outro ciclo ou de pergunta de outra disciplina.
+  - **Baterias automáticas:** 1/3 regras 20/20, 1/3 integração 50/50 (sem resíduo), PDI formulário único 35/35, PDI indicadores 29/29, calendário 92/92. CRMG não executado (catálogo ausente no banco local).
+- **Build de produção** (`vite build` em pasta temporária + `vite preview` em https://localhost:5181, com backend extra na porta 3341, ambos no banco local; `dist/` versionado não tocado): `37-build-producao.mjs` **6/6**.
+  - carga sem erro de console nem arquivo 404;
+  - Service Worker registrado, ativo e controlando a página;
+  - 7 cartões do professor e gravação online "Sincronizado";
+  - offline com "Salvo só neste aparelho" e botão livre;
+  - fila enviada ao reabrir;
+  - Gestor abre o perfil do aluno.
+  
+  Os servidores extras foram desligados depois.
+- **Não testado:** celular físico; produção real (Render/GitHub Pages/Neon); notificações push (VAPID nunca confirmado).
+- **Preparação para a apresentação de 10/11/2026 (usuário):** o usuário vai assinar o plano básico do Render e pretende levar Render e Neon para a mesma região.
+  - **Recomendação registrada:** assinar o plano hoje e **não mudar região na véspera**. Pelo que se sabe, nenhum dos dois troca de região no lugar (exige projeto ou serviço novo, cópia de dados, nova URL da API no `deploy.yml` e ajuste de `FRONTEND_ORIGIN`). A confirmar no painel de cada um.
+  - **Pendências antes da apresentação:**
+    - push dos commits locais (`f5a5e77` até o último), que **depende de autorização do usuário**;
+    - conferência das variáveis do Render;
+    - teste de fumaça na produção e em celular real;
+    - dados fictícios de demonstração no Neon;
+    - ensaio do plano B com o ambiente local de homologação;
+    - congelamento com tag do commit publicado.
+  - **Evitar na demonstração:** DEF-15, DEF-16 e DEF-18; abrir o app sem internet; notificação push. A marca "Nexo" ainda não está nas telas (DEF-05).

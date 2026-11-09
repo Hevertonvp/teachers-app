@@ -852,3 +852,15 @@ Nenhuma regra de negócio foi criada nem alterada. Foram corrigidas **divergênc
 - **DEF-06/13:** o aviso offline ainda cobre os botões.
 - **Dependências de `mockData` fora do PDI** (lista em DEFEITOS.md, DEF-17): incluem o modal de vínculos da tela de Escolas.
 - Os demais itens do plano da seção 19 (grupos A a D) não foram executados. Ficaram concluídos A1 (DEF-14), A2 (DEF-17), A3 (DEF-07), A5 (DEF-08) e D1 (`node_modules`).
+
+## 21. Atualização de 09/11/2026 (2) — mais divergências corrigidas
+
+Nenhuma regra nova. Detalhes em `homologacao/DEFEITOS.md`.
+
+| Regra | Divergência | Situação agora |
+|---|---|---|
+| OFF-02 / PDI-07 (nada sobrescrito em silêncio) | DEF-19: o rascunho do PDI apagava a versão mais nova salva em outro aparelho | **Corrigida.** O rascunho guarda a versão de referência; em conflito, o usuário escolhe; nada é enviado nem dado como salvo antes da escolha. |
+| OFF-02 (proteção durante o uso) | DEF-06/13: o aviso offline cobria os botões | **Corrigida.** |
+| UT-07 (preenchimento por semana) | DEF-01: troca de semana com rede lenta; texto digitado durante o envio se perdia | **Corrigida.** |
+
+Regressão final: 78/78 em navegador, 226/226 em API, integridade 8/8 e build de produção 6/6.

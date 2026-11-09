@@ -2725,7 +2725,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:47:04.388Z"
+    "quando": "2026-11-09T23:16:17.274Z"
   },
   {
     "id": "DEF14-DEPOIS-C2",
@@ -2736,7 +2736,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:47:04.460Z"
+    "quando": "2026-11-09T23:16:17.329Z"
   },
   {
     "id": "DEF14-DEPOIS-C3",
@@ -2747,7 +2747,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "Não é aprovação da regra: só confirma que a correção do DEF-14 não decidiu o QUE-03.",
-    "quando": "2026-11-09T22:47:04.533Z"
+    "quando": "2026-11-09T23:16:17.399Z"
   },
   {
     "id": "DEF17-ANTES-01",
@@ -3297,7 +3297,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:45:58.053Z"
+    "quando": "2026-11-09T23:15:20.094Z"
   },
   {
     "id": "REG-LOGIN-2",
@@ -3308,7 +3308,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:45:58.076Z"
+    "quando": "2026-11-09T23:15:20.104Z"
   },
   {
     "id": "REG-LOGIN-3",
@@ -3319,18 +3319,18 @@
     "status": "APROVADO",
     "evidencia": "33-login.png",
     "nota": "",
-    "quando": "2026-11-09T22:45:58.090Z"
+    "quando": "2026-11-09T23:15:20.111Z"
   },
   {
     "id": "REG-MULTI-1",
     "modulo": "Regressão pós-correções",
     "cenario": "P04 (vínculos em 2 escolas, várias turmas e disciplinas) vê um cartão por ano/série + disciplina",
     "esperado": "7 cartões (6º Arte, 6º ER, 6º Inglês, 7º Arte, 7º Inglês, 8º Inglês, 9º Inglês)",
-    "observado": "7: 6º ano — Inglês | 6º ano — Ensino Religioso | 6º ano — Arte | 7º ano — Inglês | 7º ano — Arte | 8º ano — Inglês | 9º ano — Inglês",
+    "observado": "7: 6º ano — Inglês | 6º ano — Ensino Religioso | 7º ano — Inglês | 7º ano — Arte | 8º ano — Inglês | 9º ano — Inglês | 6º ano — Arte",
     "status": "APROVADO",
     "evidencia": "33-cartoes-p04.png",
     "nota": "",
-    "quando": "2026-11-09T22:46:00.485Z"
+    "quando": "2026-11-09T23:15:22.440Z"
   },
   {
     "id": "REG-MULTI-2",
@@ -3341,7 +3341,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:00.501Z"
+    "quando": "2026-11-09T23:15:22.451Z"
   },
   {
     "id": "REG-PDI-1",
@@ -3352,7 +3352,7 @@
     "status": "APROVADO",
     "evidencia": "33-pdi-persistencia.png",
     "nota": "",
-    "quando": "2026-11-09T22:46:09.133Z"
+    "quando": "2026-11-09T23:15:30.881Z"
   },
   {
     "id": "REG-PERM-1",
@@ -3363,7 +3363,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:09.870Z"
+    "quando": "2026-11-09T23:15:31.294Z"
   },
   {
     "id": "REG-PERM-2",
@@ -3374,7 +3374,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:09.888Z"
+    "quando": "2026-11-09T23:15:31.307Z"
   },
   {
     "id": "REG-PERM-3",
@@ -3385,7 +3385,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:09.913Z"
+    "quando": "2026-11-09T23:15:31.318Z"
   },
   {
     "id": "REG-PERM-4",
@@ -3396,7 +3396,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:09.954Z"
+    "quando": "2026-11-09T23:15:31.349Z"
   },
   {
     "id": "REG-PERM-5",
@@ -3407,7 +3407,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:09.997Z"
+    "quando": "2026-11-09T23:15:31.375Z"
   },
   {
     "id": "REG-PERM-6",
@@ -3418,7 +3418,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:10.031Z"
+    "quando": "2026-11-09T23:15:31.398Z"
   },
   {
     "id": "REG-PERM-7",
@@ -3429,7 +3429,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-09T22:46:10.049Z"
+    "quando": "2026-11-09T23:15:31.413Z"
   },
   {
     "id": "DEF14-REGRESSAO-S1a",
@@ -4024,5 +4024,841 @@
     "evidencia": "35-DEPOIS-def13-celular.png",
     "nota": "",
     "quando": "2026-11-09T23:13:09.908Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-1",
+    "modulo": "Integridade do banco",
+    "cenario": "1/3: uma entrega por ciclo+professor+ano/série+disciplina",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.255Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-2",
+    "modulo": "Integridade do banco",
+    "cenario": "1/3: uma resposta por entrega+semana",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.269Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-3",
+    "modulo": "Integridade do banco",
+    "cenario": "1/3: resposta sempre de semana do MESMO ciclo da entrega (sem mistura entre ciclos)",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.282Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-4",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: uma ficha por Aplicação+aluno+disciplina",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.294Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-5",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: uma resposta por ficha+pergunta",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.309Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-6",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: resposta sempre de pergunta do modelo da PRÓPRIA ficha (sem mistura entre disciplinas)",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.320Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-7",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: um bloco comum por Aplicação+aluno+turma+professor",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.335Z"
+  },
+  {
+    "id": "INTEG-ANTES-SUITE-8",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: uma resposta por bloco+pergunta padrão",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:06.348Z"
+  },
+  {
+    "id": "DEF14-FINAL-S1a",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Mesma turma: P04 e P02 salvam o campo comum da mesma aluna pela tela; cada um no próprio bloco",
+    "esperado": "2 blocos, cada um com o texto do seu autor",
+    "observado": "P04: [{\"resposta\":\"P04 escreveu sobre a Ana (231532)\",\"complement | P02: [{\"resposta\":\"P02 escreveu sobre a Ana (231532)\",\"complement",
+    "status": "APROVADO",
+    "evidencia": "30-FINAL-S1-p02-depois.png",
+    "nota": "",
+    "quando": "2026-11-09T23:15:51.376Z"
+  },
+  {
+    "id": "DEF14-FINAL-S1b",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "P04 e P02 gravam o campo comum ao mesmo tempo (API em paralelo)",
+    "esperado": "as duas gravações aceitas, cada uma no próprio bloco",
+    "observado": "HTTP 200/200; P04: [{\"resposta\":\"P04 simultâneo 231532\",\"complementar | P02: [{\"resposta\":\"P02 simultâneo 231532\",\"complementar",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:51.583Z"
+  },
+  {
+    "id": "DEF14-FINAL-S2",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "P04 preenche e conclui a ficha de Arte da Ana (professora anterior com ficha concluída)",
+    "esperado": "CONCLUIDA",
+    "observado": "respostas HTTP 200; concluir HTTP 200; status CONCLUIDA",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:51.707Z"
+  },
+  {
+    "id": "DEF14-FINAL-S3a",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Troca de turma: o campo comum que o novo professor (P10) vê ao abrir a aluna",
+    "esperado": "vazio (o bloco é dele, não o da P04)",
+    "observado": "\"\"",
+    "status": "APROVADO",
+    "evidencia": "30-FINAL-S3-p10-antes.png",
+    "nota": "",
+    "quando": "2026-11-09T23:15:59.543Z"
+  },
+  {
+    "id": "DEF14-FINAL-S3b",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Troca de turma: depois de o P10 salvar, o bloco da P04 continua intacto",
+    "esperado": "texto da P04 inalterado",
+    "observado": "antes [{\"resposta\":\"P04 simultâneo 231532\",\"complementar | depois [{\"resposta\":\"P04 simultâneo 231532\",\"complementar",
+    "status": "APROVADO",
+    "evidencia": "30-FINAL-S3-p10-depois.png",
+    "nota": "",
+    "quando": "2026-11-09T23:15:59.551Z"
+  },
+  {
+    "id": "DEF14-FINAL-S3c",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Troca de turma: o texto do P10 fica no bloco DELE (turma atual 6M3)",
+    "esperado": "bloco P10/6M3 com o texto do P10",
+    "observado": "[{\"resposta\":\"P10 escreveu sobre a Ana (231532)\",\"complementarTexto\":\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:59.560Z"
+  },
+  {
+    "id": "DEF14-FINAL-S3d",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Ficha de Arte concluída pela P04 continua concluída e com as respostas dela",
+    "esperado": "CONCLUIDA; respostas iguais",
+    "observado": "status CONCLUIDA; respostas iguais: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:15:59.575Z"
+  },
+  {
+    "id": "DEF14-FINAL-S4a",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Substituição de professor (sem transferência): campo comum que o substituto (P12) vê",
+    "esperado": "vazio (bloco próprio)",
+    "observado": "substituição HTTP 201; \"\"",
+    "status": "APROVADO",
+    "evidencia": "30-FINAL-S4-p12-antes.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:08.224Z"
+  },
+  {
+    "id": "DEF14-FINAL-S4b",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Substituição: depois de o P12 salvar, o bloco do P06 continua intacto",
+    "esperado": "texto do P06 inalterado",
+    "observado": "antes [{\"resposta\":\"P06 escreveu sobre o Bruno (231 | depois [{\"resposta\":\"P06 escreveu sobre o Bruno (231",
+    "status": "APROVADO",
+    "evidencia": "30-FINAL-S4-p12-depois.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:08.230Z"
+  },
+  {
+    "id": "DEF14-FINAL-S4c",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Substituição: texto do P12 no bloco DELE",
+    "esperado": "bloco P12/6M2 com o texto do P12",
+    "observado": "[{\"resposta\":\"P12 escreveu sobre o Bruno (231532)\",\"complementarTexto\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:16:08.236Z"
+  },
+  {
+    "id": "DEF14-FINAL-S5a",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Troca de escola: na nova Aplicação o campo comum da P04 começa vazio (sem cópia)",
+    "esperado": "vazio",
+    "observado": "\"\"",
+    "status": "APROVADO",
+    "evidencia": "30-FINAL-S5-p04-antes.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:16.332Z"
+  },
+  {
+    "id": "DEF14-FINAL-S5b",
+    "modulo": "PDI bloco comum (DEF-14)",
+    "cenario": "Troca de escola: blocos anteriores (P04 na Aurora 6M1 e P10 na Aurora 6M3) intactos",
+    "esperado": "inalterados",
+    "observado": "P04 igual: true; P10 igual: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:16:16.337Z"
+  },
+  {
+    "id": "DEF17-FINAL-01",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Diretora da Aurora → aluno da própria escola: Larissa (Aurora, nunca transferida)",
+    "esperado": "perfil abre; API 200",
+    "observado": "tela abriu: true; API 200",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-01.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:25.553Z"
+  },
+  {
+    "id": "DEF17-FINAL-02",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Diretora da Aurora → aluno de outra escola: Marina (Boa Vista, transferido)",
+    "esperado": "sem acesso na tela; API 403",
+    "observado": "tela abriu: false (\"Aluno não encontrado\"); API 403",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-02.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:31.720Z"
+  },
+  {
+    "id": "DEF17-FINAL-03",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Diretora da Boa Vista → aluna transferida para a escola dela: Marina (Boa Vista, transferido)",
+    "esperado": "perfil abre; API 200",
+    "observado": "tela abriu: true; API 200",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-03.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:37.471Z"
+  },
+  {
+    "id": "DEF17-FINAL-04",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Diretora da Boa Vista → aluno de outra escola: Larissa (Aurora, nunca transferida)",
+    "esperado": "sem acesso na tela; API 403",
+    "observado": "tela abriu: false (\"Aluno não encontrado\"); API 403",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-04.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:43.668Z"
+  },
+  {
+    "id": "DEF17-FINAL-05",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Gestor da Aurora → aluno autorizado (nunca transferido): Larissa (Aurora, nunca transferida)",
+    "esperado": "perfil abre; API 200",
+    "observado": "tela abriu: true; API 200",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-05.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:49.263Z"
+  },
+  {
+    "id": "DEF17-FINAL-06",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Gestor da Aurora → aluno autorizado (transferido e de volta): Pedro (Aurora, transferido)",
+    "esperado": "perfil abre; API 200",
+    "observado": "tela abriu: true; API 200",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-06.png",
+    "nota": "",
+    "quando": "2026-11-09T23:16:55.476Z"
+  },
+  {
+    "id": "DEF17-FINAL-07",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Gestor da Aurora → aluna que saiu da escola (não autorizado): Marina (Boa Vista, transferido)",
+    "esperado": "sem acesso na tela; API 403",
+    "observado": "tela abriu: false (\"Aluno não encontrado\"); API 403",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-07.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:01.803Z"
+  },
+  {
+    "id": "DEF17-FINAL-08",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Gestor da Boa Vista → aluna transferida para a escola dele: Marina (Boa Vista, transferido)",
+    "esperado": "perfil abre; API 200",
+    "observado": "tela abriu: true; API 200",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-08.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:08.094Z"
+  },
+  {
+    "id": "DEF17-FINAL-09",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Gestor da Boa Vista → aluno de outra escola (não autorizado): Lucas (Aurora, transferido)",
+    "esperado": "sem acesso na tela; API 403",
+    "observado": "tela abriu: false (\"Aluno não encontrado\"); API 403",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-09.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:14.301Z"
+  },
+  {
+    "id": "DEF17-FINAL-10",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Secretaria → qualquer aluno: Marina (Boa Vista, transferido)",
+    "esperado": "perfil abre; API 200",
+    "observado": "tela abriu: true; API 200",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-10.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:20.459Z"
+  },
+  {
+    "id": "DEF17-FINAL-PROF",
+    "modulo": "PDI perfil do aluno (DEF-17)",
+    "cenario": "Professor (P04) abre o perfil do aluno dele (Pedro, Inglês 6M2): vai para \"Meus PDIs\" e o aluno está lá",
+    "esperado": "rota /pdi/meus-pdis com Pedro",
+    "observado": "rota /pdi/meus-pdis; Pedro na lista: true",
+    "status": "APROVADO",
+    "evidencia": "31-FINAL-professor.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:25.167Z"
+  },
+  {
+    "id": "OFF-FINAL-1a",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Salvar com internet mostra que chegou ao servidor",
+    "esperado": "\"Sincronizado\"",
+    "observado": "Sincronizado",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:17:39.670Z"
+  },
+  {
+    "id": "OFF-FINAL-1b",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Salvar sem internet NÃO mostra sucesso de servidor",
+    "esperado": "\"Salvo só neste aparelho…\"",
+    "observado": "Salvo só neste aparelho — será enviado quando a internet voltar",
+    "status": "APROVADO",
+    "evidencia": "32-FINAL-1-offline.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:39.689Z"
+  },
+  {
+    "id": "OFF-FINAL-1c",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "DEF-07: reabrir o Nexo com internet envia sozinho a fila pendente (sem abrir o formulário)",
+    "esperado": "semana 2 no banco em até 15 s; fila vazia",
+    "observado": "fila antes [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]; banco S2: \"Semana 2 OFFLINE 231726 (fechar e reabrir)\"; fila depois []",
+    "status": "APROVADO",
+    "evidencia": "32-FINAL-1-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:43.453Z"
+  },
+  {
+    "id": "OFF-FINAL-2a",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "PDI: Salvar sem internet não anuncia \"Respostas salvas.\" como se tivesse chegado ao servidor",
+    "esperado": "mensagem de \"guardadas neste aparelho\"",
+    "observado": "Sem conexão: suas respostas foram guardadas neste aparelho e serão enviadas quando a internet voltar.; fila [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"ficha-resposta\",\"status\":\"pending\"}]",
+    "status": "APROVADO",
+    "evidencia": "32-FINAL-2-pdi-offline.png",
+    "nota": "",
+    "quando": "2026-11-09T23:17:52.734Z"
+  },
+  {
+    "id": "OFF-FINAL-2b",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "DEF-07 no PDI: reabrir com internet envia sozinho a resposta guardada",
+    "esperado": "resposta no banco em até 15 s; fila vazia",
+    "observado": "banco contém o texto: true; fila depois []",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:17:56.158Z"
+  },
+  {
+    "id": "OFF-FINAL-3a",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Sessão expirada ao reabrir: vai para o login e a alteração continua guardada (não vira erro)",
+    "esperado": "rota /login; fila com item pendente; nada enviado",
+    "observado": "rota /login; fila [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]; banco S2 tem o texto: false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:18:17.408Z"
+  },
+  {
+    "id": "OFF-FINAL-3b",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Depois do novo login do mesmo professor, a fila é enviada",
+    "esperado": "semana 2 no banco; fila vazia",
+    "observado": "banco S2: \"Semana 2 OFFLINE 231726 (sessão expirada)\"; fila []",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:18:17.418Z"
+  },
+  {
+    "id": "OFF-FINAL-4a",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Outro professor (P02) entra no mesmo navegador: a alteração pendente da P04 NÃO é enviada com a sessão dele",
+    "esperado": "banco sem o texto; item da P04 continua pendente",
+    "observado": "banco S2 tem o texto: false; fila [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:18:39.918Z"
+  },
+  {
+    "id": "OFF-FINAL-4b",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Quando a P04 volta a entrar, a alteração dela é enviada",
+    "esperado": "semana 2 no banco",
+    "observado": "banco S2: \"Semana 2 OFFLINE 231726 (dois usuários)\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:18:42.033Z"
+  },
+  {
+    "id": "OFF-FINAL-5",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "Item preso em \"enviando\" (aba fechada no meio do envio) é reenviado ao abrir, sem duplicar",
+    "esperado": "semana 2 no banco; 1 entrega; fila vazia",
+    "observado": "banco S2: \"Semana 2 OFFLINE 231726 (envio interromp\"; entregas 1; fila []",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:18:56.555Z"
+  },
+  {
+    "id": "OFF-FINAL-6a",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "DEF-08: outro aparelho salvou antes; ao reabrir, a fila NÃO sobrescreve o servidor",
+    "esperado": "banco com o texto do outro aparelho",
+    "observado": "outro aparelho HTTP 200; fila ao abrir [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"conflict\"}]; banco S2: \"Semana 2 do OUTRO APARELHO 231726-M\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:19:23.097Z"
+  },
+  {
+    "id": "OFF-FINAL-6b",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "DEF-08: ao abrir o formulário, aparecem as opções de conflito, com o texto deste aparelho preservado, sem \"Salvo\"/\"Sincronizado\", e trocar de semana NÃO envia nada",
+    "esperado": "botões de conflito; texto local na tela; banco ainda com o texto do outro aparelho",
+    "observado": "opções: true; texto na tela: \"Semana 2 OFFLINE 231726-M (este aparelho\"; indicador de sucesso falso: false; banco após trocar de semana: \"Semana 2 do OUTRO APARELHO 231726-M\"",
+    "status": "APROVADO",
+    "evidencia": "32-FINAL-6-conflito-231726-M.png",
+    "nota": "",
+    "quando": "2026-11-09T23:19:23.105Z"
+  },
+  {
+    "id": "OFF-FINAL-6c",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "DEF-08: \"Manter o meu texto\" envia o texto deste aparelho e limpa a fila",
+    "esperado": "banco com o texto deste aparelho; fila vazia",
+    "observado": "banco S2: \"Semana 2 OFFLINE 231726-M (este aparelho\"; fila []",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:19:27.699Z"
+  },
+  {
+    "id": "OFF-FINAL-6d",
+    "modulo": "Offline (DEF-07/DEF-08)",
+    "cenario": "DEF-08: \"Usar a versão salva\" mantém o servidor e descarta o envio pendente",
+    "esperado": "banco com o texto do outro aparelho; fila vazia",
+    "observado": "banco S2: \"Semana 2 do OUTRO APARELHO 231726-U\"; fila []",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:19:58.342Z"
+  },
+  {
+    "id": "DEF19-FINAL-R1a",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "Rascunho não salvo: depois que o aparelho B salvou, a fila/abertura do aparelho A não sobrescreve o servidor",
+    "esperado": "banco com o texto do aparelho B",
+    "observado": "B salvou: true; após A reabrir (fila): Inglês B=true, comum B=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:20:27.293Z"
+  },
+  {
+    "id": "DEF19-FINAL-R1b",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: aparelho A reabre o formulário — o texto dele é preservado e visível, o conflito é avisado e os campos mostram a versão salva (B)",
+    "esperado": "texto de A visível (aviso) + aviso de alteração + campos com o texto de B",
+    "observado": "campos: comum \"B comum 231959-R1\", Inglês \"B Inglês 231959-R1\"; texto de A na tela: true; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "34-FINAL-R1-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:20:27.304Z"
+  },
+  {
+    "id": "DEF19-FINAL-R1c",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: o aparelho A clica Salvar sem escolher — o texto do aparelho B NÃO é sobrescrito em silêncio e não aparece \"Respostas salvas.\"",
+    "esperado": "banco ainda com B; sem mensagem de sucesso",
+    "observado": "banco final: Inglês B=true, comum B=true; sucesso falso: false; mensagem: \"não foram salvas.\"",
+    "status": "APROVADO",
+    "evidencia": "34-FINAL-R1-depois-salvar.png",
+    "nota": "",
+    "quando": "2026-11-09T23:20:27.312Z"
+  },
+  {
+    "id": "DEF19-FINAL-R1d",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R1: o professor escolhe \"Restaurar o meu texto\" e salva — agora (por decisão explícita) o texto do aparelho A vai para o servidor",
+    "esperado": "banco com o texto de A",
+    "observado": "Inglês A=true, comum A=true; fila restante 0",
+    "status": "APROVADO",
+    "evidencia": "34-FINAL-R1-escolha.png",
+    "nota": "",
+    "quando": "2026-11-09T23:20:32.272Z"
+  },
+  {
+    "id": "DEF19-FINAL-R2a",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "Edição offline na fila: depois que o aparelho B salvou, a fila/abertura do aparelho A não sobrescreve o servidor",
+    "esperado": "banco com o texto do aparelho B",
+    "observado": "B salvou: true; após A reabrir (fila): Inglês B=true, comum B=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:21:05.115Z"
+  },
+  {
+    "id": "DEF19-FINAL-R2b",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: aparelho A reabre o formulário — o texto dele é preservado e visível, o conflito é avisado e os campos mostram a versão salva (B)",
+    "esperado": "texto de A visível (aviso) + aviso de alteração + campos com o texto de B",
+    "observado": "campos: comum \"B comum 231959-R2\", Inglês \"B Inglês 231959-R2\"; texto de A na tela: true; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "34-FINAL-R2-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:21:05.126Z"
+  },
+  {
+    "id": "DEF19-FINAL-R2c",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: o aparelho A clica Salvar sem escolher — o texto do aparelho B NÃO é sobrescrito em silêncio e não aparece \"Respostas salvas.\"",
+    "esperado": "banco ainda com B; sem mensagem de sucesso",
+    "observado": "banco final: Inglês B=true, comum B=true; sucesso falso: false; mensagem: \"não foram salvas.\"",
+    "status": "APROVADO",
+    "evidencia": "34-FINAL-R2-depois-salvar.png",
+    "nota": "",
+    "quando": "2026-11-09T23:21:05.137Z"
+  },
+  {
+    "id": "DEF19-FINAL-R2d",
+    "modulo": "PDI conflito entre aparelhos (DEF-19)",
+    "cenario": "R2: o professor escolhe \"Usar a versão salva\" — o servidor mantém B e o envio pendente do aparelho A é descartado",
+    "esperado": "banco com B; fila vazia",
+    "observado": "Inglês B=true, comum B=true; fila restante 0",
+    "status": "APROVADO",
+    "evidencia": "34-FINAL-R2-escolha.png",
+    "nota": "",
+    "quando": "2026-11-09T23:21:08.051Z"
+  },
+  {
+    "id": "DEF19-GESTOR-FINAL-1",
+    "modulo": "PDI conflito entre aparelhos (DEF-19, tela do Gestor)",
+    "cenario": "Outro aparelho salvou depois do rascunho do aparelho A: ao reabrir, aviso + texto de A visível + opções",
+    "esperado": "aviso e opções; texto de A na tela",
+    "observado": "2 caixas; PUT outro aparelho 200; aviso: true; texto de A visível: true; opções: true",
+    "status": "APROVADO",
+    "evidencia": "34b-FINAL-gestor-reaberto.png",
+    "nota": "",
+    "quando": "2026-11-09T23:21:24.017Z"
+  },
+  {
+    "id": "DEF19-GESTOR-FINAL-2",
+    "modulo": "PDI conflito entre aparelhos (DEF-19, tela do Gestor)",
+    "cenario": "Sair por \"Voltar\" sem escolher não sobrescreve o texto do outro aparelho",
+    "esperado": "banco com o texto do outro aparelho",
+    "observado": "antes: true; depois de Voltar: true; texto de A no banco: false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:21:24.029Z"
+  },
+  {
+    "id": "DEF01-a-FINAL",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: depois de \"Próximo\", o texto digitado vai para a semana 2 e a semana 1 fica intacta",
+    "esperado": "tela na Semana 2 em 300 ms; banco: S1 sem o texto; S2 com o texto",
+    "observado": "tela aos 300 ms: Semana 2; S1: \"SEMANA-UM 232125\"; S2: \"Semana 2 OFFLINE 231726 (envio interrompido) SEMAN\"",
+    "status": "APROVADO",
+    "evidencia": "35-FINAL-def01-durante.png",
+    "nota": "",
+    "quando": "2026-11-09T23:21:49.871Z"
+  },
+  {
+    "id": "DEF01-b-FINAL",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: o que é digitado DURANTE um salvamento também chega ao servidor (não é perdido nem marcado como salvo antes da hora)",
+    "esperado": "S3 com as duas partes",
+    "observado": "S3: \"TERCEIRA-PARTE-1 232125 TERCEIRA-PARTE-2 232125\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:09.996Z"
+  },
+  {
+    "id": "DEF01-c-FINAL",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: \"Sair\" logo depois de trocar de semana espera o envio em andamento e não perde a semana 4",
+    "esperado": "S4 no banco ao sair",
+    "observado": "rota: /formulario-um-terco; S4: \"QUARTA 232125\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:16.099Z"
+  },
+  {
+    "id": "DEF06-desktop-FINAL",
+    "modulo": "Offline (DEF-06)",
+    "cenario": "1/3 sem rede (desktop): aviso visível e \"Próximo\"/\"Salvar progresso\" não ficam cobertos",
+    "esperado": "aviso visível; botões livres",
+    "observado": "aviso: true; Próximo livre: true; Salvar progresso livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-FINAL-def06-desktop.png",
+    "nota": "",
+    "quando": "2026-11-09T23:22:26.882Z"
+  },
+  {
+    "id": "DEF13-desktop-FINAL",
+    "modulo": "Offline (DEF-13)",
+    "cenario": "PDI sem rede (desktop), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
+    "esperado": "Salvar livre",
+    "observado": "Salvar livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-FINAL-def13-desktop.png",
+    "nota": "",
+    "quando": "2026-11-09T23:22:37.270Z"
+  },
+  {
+    "id": "DEF06-celular-FINAL",
+    "modulo": "Offline (DEF-06)",
+    "cenario": "1/3 sem rede (celular): aviso visível e \"Próximo\"/\"Salvar progresso\" não ficam cobertos",
+    "esperado": "aviso visível; botões livres",
+    "observado": "aviso: true; Próximo livre: true; Salvar progresso livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-FINAL-def06-celular.png",
+    "nota": "",
+    "quando": "2026-11-09T23:22:47.655Z"
+  },
+  {
+    "id": "DEF13-celular-FINAL",
+    "modulo": "Offline (DEF-13)",
+    "cenario": "PDI sem rede (celular), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
+    "esperado": "Salvar livre",
+    "observado": "Salvar livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-FINAL-def13-celular.png",
+    "nota": "",
+    "quando": "2026-11-09T23:22:57.952Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-1",
+    "modulo": "Integridade do banco",
+    "cenario": "1/3: uma entrega por ciclo+professor+ano/série+disciplina",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.525Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-2",
+    "modulo": "Integridade do banco",
+    "cenario": "1/3: uma resposta por entrega+semana",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.538Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-3",
+    "modulo": "Integridade do banco",
+    "cenario": "1/3: resposta sempre de semana do MESMO ciclo da entrega (sem mistura entre ciclos)",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.547Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-4",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: uma ficha por Aplicação+aluno+disciplina",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.563Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-5",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: uma resposta por ficha+pergunta",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.576Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-6",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: resposta sempre de pergunta do modelo da PRÓPRIA ficha (sem mistura entre disciplinas)",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.587Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-7",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: um bloco comum por Aplicação+aluno+turma+professor",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.598Z"
+  },
+  {
+    "id": "INTEG-DEPOIS-SUITE-8",
+    "modulo": "Integridade do banco",
+    "cenario": "PDI: uma resposta por bloco+pergunta padrão",
+    "esperado": "0 ocorrências",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:22:58.613Z"
+  },
+  {
+    "id": "PROD-01",
+    "modulo": "Build de produção",
+    "cenario": "Build de produção carrega, faz login e não tem erro de console nem arquivo 404",
+    "esperado": "fora do /login; 0 erros; 0 falhas de arquivo",
+    "observado": "rota /dashboard; erros 0; falhas 0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:23:33.309Z"
+  },
+  {
+    "id": "PROD-02",
+    "modulo": "Build de produção",
+    "cenario": "Service Worker registra, fica ativo e controla a página no build de produção",
+    "esperado": "registrado, ativo, controla",
+    "observado": "{\"registrado\":true,\"ativo\":\"activated\",\"controla\":true,\"caches\":[\"gp-static-v1\"]}; controla após recarregar: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:23:33.322Z"
+  },
+  {
+    "id": "PROD-03",
+    "modulo": "Build de produção",
+    "cenario": "Professor com vários vínculos vê 7 cartões e grava online (indicador \"Sincronizado\")",
+    "esperado": "7 cartões; S1 no banco; \"Sincronizado\"",
+    "observado": "7 cartões; indicador: Sincronizado; banco S1: \"PROD semana 1 232326\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:23:40.354Z"
+  },
+  {
+    "id": "PROD-04",
+    "modulo": "Build de produção",
+    "cenario": "Sem rede (build de produção): indicador \"Salvo só neste aparelho\" e \"Próximo\" não coberto pelo aviso",
+    "esperado": "indicador honesto; botão livre",
+    "observado": "indicador: Salvo só neste aparelho; Próximo livre: true",
+    "status": "APROVADO",
+    "evidencia": "37-prod-offline.png",
+    "nota": "",
+    "quando": "2026-11-09T23:23:47.727Z"
+  },
+  {
+    "id": "PROD-05",
+    "modulo": "Build de produção",
+    "cenario": "Build de produção: reabrir com internet envia sozinho a alteração feita offline (DEF-07)",
+    "esperado": "S2 no banco em até 15 s",
+    "observado": "banco S2: \"PROD semana 2 OFFLINE 232326\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:23:50.412Z"
+  },
+  {
+    "id": "PROD-06",
+    "modulo": "Build de produção",
+    "cenario": "Build de produção: Gestor real abre o perfil de aluno da própria escola (DEF-17)",
+    "esperado": "perfil da Larissa",
+    "observado": "abriu: true; erros de console: 0",
+    "status": "APROVADO",
+    "evidencia": "37-prod-gestor-perfil.png",
+    "nota": "",
+    "quando": "2026-11-09T23:23:55.296Z"
   }
 ]

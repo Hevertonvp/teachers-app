@@ -247,3 +247,17 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
    - texto na Semana 2 com a Semana 1 intacta;
    - as duas partes digitadas durante o salvamento chegaram ao banco;
    - Sair esperou o envio da Semana 4.
+
+## Regressão final de 09/11/2026 (depois de DEF-14, 17, 07, 08, 19, 06/13 e 01)
+- **Navegador real (`rodar-regressao.sh final`):** 78 aprovados, 0 reprovados.
+- **Integridade do banco:** 8/8 antes e depois da suíte, sem duplicação nem mistura de respostas.
+- **Baterias de API:** 226/226.
+- **Build de produção isolado (`37-build-producao.mjs`):** 6/6.
+
+**Continuam abertos:**
+- DEF-15, DEF-16 e DEF-18;
+- DEF-02, DEF-10, DEF-11 e DEF-12 (baixos);
+- DEF-05 (marca Nexo);
+- QUE-02 a QUE-08 (pendentes da Secretaria);
+- dependências de `mockData` fora do PDI;
+- agrupamento do bloco comum com fichas de dois professores originais (ver DEF-19, riscos residuais).
