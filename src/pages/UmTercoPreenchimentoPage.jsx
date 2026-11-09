@@ -48,6 +48,7 @@ export const UmTercoPreenchimentoPage = () => {
   const textosRef = useRef({});
   const sujoRef = useRef(false);
   const conflitoRef = useRef(null);
+  const envioRef = useRef(null); // promessa do envio em andamento (DEF-01)
   useEffect(() => { conflitoRef.current = conflito; }, [conflito]);
 
   const aplicarServidor = useCallback((detalhe) => {
@@ -113,11 +114,16 @@ export const UmTercoPreenchimentoPage = () => {
   const editavel = !!dados?.editavelAgora;
 
   // Sempre manda TODAS as semanas (instantâneo completo): idempotente na fila offline e no servidor.
+  // DEF-01: um envio pode estar em andamento (ex.: o "Próximo" salva em segundo plano). Quem chamar
+  // agora ESPERA esse envio terminar e só então decide — nunca devolve "ok" sem ter enviado o texto
+  // mais recente (o Concluir e o Sair dependem disso).
   const salvarAgora = useCallback(async () => {
-    if (!dados || !dados.editavelAgora || !sujoRef.current || salvandoRef.current) return { ok: true };
+    while (envioRef.current) await envioRef.current.catch(() => {});
+    if (!dados || !dados.editavelAgora || !sujoRef.current) return { ok: true };
     // DEF-08: com conflito em aberto, NADA é enviado (nem ao trocar de semana ou sair) até o
     // professor escolher "Usar a versão salva" ou "Manter o meu texto".
     if (conflitoRef.current) return { ok: false, conflito: true };
+    const executar = async () => {
     salvandoRef.current = true;
     setEstado('saving');
     setMensagemErro('');
@@ -127,12 +133,17 @@ export const UmTercoPreenchimentoPage = () => {
       baseRef.current = novo.updatedAt;
       baseDoRascunhoRef.current = novo.updatedAt;
       setDados(prev => ({ ...prev, updatedAt: novo.updatedAt, status: novo.status, entregaId: novo.entregaId, validoPara: novo.validoPara, historico: novo.historico }));
-      setSujo(false);
-      apagarDraft(draftKey);
-      // O servidor recebeu o instantâneo completo mais recente: qualquer envio antigo deste
+      // DEF-01: o professor pode ter digitado DURANTE o envio — então o que chegou ao servidor não é
+      // tudo. Nesse caso continua "sujo" e o rascunho NÃO é apagado (o próximo salvamento envia o resto).
+      const mudouDuranteEnvio = dados.semanas.some((s, i) => (textosRef.current[s.id] ?? '') !== respostas[i].texto);
+      if (!mudouDuranteEnvio) {
+        setSujo(false);
+        apagarDraft(draftKey);
+      }
+      // O servidor recebeu um instantâneo completo mais recente: qualquer envio antigo deste
       // formulário ainda na fila ficou obsoleto (nunca reenviar por cima).
       if (userId) removerDaFila(filaKey);
-      setEstado('saved');
+      setEstado(mudouDuranteEnvio ? 'idle' : 'saved');
       return { ok: true, updatedAt: novo.updatedAt };
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') {
@@ -167,6 +178,14 @@ export const UmTercoPreenchimentoPage = () => {
     } finally {
       salvandoRef.current = false;
     }
+    };
+    const envio = executar();
+    envioRef.current = envio;
+    try {
+      return await envio;
+    } finally {
+      if (envioRef.current === envio) envioRef.current = null;
+    }
   }, [dados, cicloId, anoSerie, disciplinaId, draftKey, userId, resourceId, filaKey, aplicarServidor]);
 
   // Debounce: depois de parar de digitar, envia sem o professor precisar fazer nada.
@@ -182,10 +201,13 @@ export const UmTercoPreenchimentoPage = () => {
     setEstado('idle');
   };
 
-  const irParaEtapa = async (nova) => {
-    if (editavel && sujoRef.current) await salvarAgora();
+  // DEF-01: troca de semana NA HORA (antes esperava o salvamento terminar e, com rede lenta, o que
+  // se digitava nesse intervalo caía na semana anterior). O salvamento segue em segundo plano com o
+  // texto já capturado; o que for digitado depois vai para a semana nova e entra no próximo envio.
+  const irParaEtapa = (nova) => {
     setEtapa(nova);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (editavel && sujoRef.current) salvarAgora();
   };
 
   const sair = async () => {

@@ -3881,5 +3881,148 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-09T23:05:58.207Z"
+  },
+  {
+    "id": "DEF01-a-ANTES",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: depois de \"Próximo\", o texto digitado vai para a semana 2 e a semana 1 fica intacta",
+    "esperado": "tela na Semana 2 em 300 ms; banco: S1 sem o texto; S2 com o texto",
+    "observado": "tela aos 300 ms: Semana 1; S1: \"SEMANA-UM 230932\"; S2: \"Semana 2 OFFLINE 224117 (envio interrompido)\"",
+    "status": "REPROVADO",
+    "evidencia": "35-ANTES-def01-durante.png",
+    "nota": "",
+    "quando": "2026-11-09T23:09:55.473Z"
+  },
+  {
+    "id": "DEF01-b-ANTES",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: o que é digitado DURANTE um salvamento também chega ao servidor (não é perdido nem marcado como salvo antes da hora)",
+    "esperado": "S3 com as duas partes",
+    "observado": "S3: \"TERCEIRA-PARTE-1 230932\"",
+    "status": "REPROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:10:15.915Z"
+  },
+  {
+    "id": "DEF06-desktop-ANTES",
+    "modulo": "Offline (DEF-06)",
+    "cenario": "1/3 sem rede (desktop): aviso visível e \"Próximo\"/\"Salvar progresso\" não ficam cobertos",
+    "esperado": "aviso visível; botões livres",
+    "observado": "aviso: true; Próximo livre: false; Salvar progresso livre: false",
+    "status": "REPROVADO",
+    "evidencia": "35-ANTES-def06-desktop.png",
+    "nota": "",
+    "quando": "2026-11-09T23:10:46.786Z"
+  },
+  {
+    "id": "DEF13-desktop-ANTES",
+    "modulo": "Offline (DEF-13)",
+    "cenario": "PDI sem rede (desktop), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
+    "esperado": "Salvar livre",
+    "observado": "Salvar livre: false",
+    "status": "REPROVADO",
+    "evidencia": "35-ANTES-def13-desktop.png",
+    "nota": "",
+    "quando": "2026-11-09T23:10:57.205Z"
+  },
+  {
+    "id": "DEF06-celular-ANTES",
+    "modulo": "Offline (DEF-06)",
+    "cenario": "1/3 sem rede (celular): aviso visível e \"Próximo\"/\"Salvar progresso\" não ficam cobertos",
+    "esperado": "aviso visível; botões livres",
+    "observado": "aviso: true; Próximo livre: false; Salvar progresso livre: false",
+    "status": "REPROVADO",
+    "evidencia": "35-ANTES-def06-celular.png",
+    "nota": "",
+    "quando": "2026-11-09T23:11:06.909Z"
+  },
+  {
+    "id": "DEF13-celular-ANTES",
+    "modulo": "Offline (DEF-13)",
+    "cenario": "PDI sem rede (celular), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
+    "esperado": "Salvar livre",
+    "observado": "Salvar livre: false",
+    "status": "REPROVADO",
+    "evidencia": "35-ANTES-def13-celular.png",
+    "nota": "",
+    "quando": "2026-11-09T23:11:17.180Z"
+  },
+  {
+    "id": "DEF01-a-DEPOIS",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: depois de \"Próximo\", o texto digitado vai para a semana 2 e a semana 1 fica intacta",
+    "esperado": "tela na Semana 2 em 300 ms; banco: S1 sem o texto; S2 com o texto",
+    "observado": "tela aos 300 ms: Semana 2; S1: \"SEMANA-UM 231136\"; S2: \"Semana 2 OFFLINE 224117 (envio interrompido) SEMAN\"",
+    "status": "APROVADO",
+    "evidencia": "35-DEPOIS-def01-durante.png",
+    "nota": "",
+    "quando": "2026-11-09T23:11:59.474Z"
+  },
+  {
+    "id": "DEF01-b-DEPOIS",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: o que é digitado DURANTE um salvamento também chega ao servidor (não é perdido nem marcado como salvo antes da hora)",
+    "esperado": "S3 com as duas partes",
+    "observado": "S3: \"TERCEIRA-PARTE-1 231136 TERCEIRA-PARTE-2 231136\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:12:19.868Z"
+  },
+  {
+    "id": "DEF01-c-DEPOIS",
+    "modulo": "Formulário 1/3 (DEF-01)",
+    "cenario": "Rede lenta: \"Sair\" logo depois de trocar de semana espera o envio em andamento e não perde a semana 4",
+    "esperado": "S4 no banco ao sair",
+    "observado": "rota: /formulario-um-terco; S4: \"QUARTA 231136\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-09T23:12:26.184Z"
+  },
+  {
+    "id": "DEF06-desktop-DEPOIS",
+    "modulo": "Offline (DEF-06)",
+    "cenario": "1/3 sem rede (desktop): aviso visível e \"Próximo\"/\"Salvar progresso\" não ficam cobertos",
+    "esperado": "aviso visível; botões livres",
+    "observado": "aviso: true; Próximo livre: true; Salvar progresso livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-DEPOIS-def06-desktop.png",
+    "nota": "",
+    "quando": "2026-11-09T23:12:37.670Z"
+  },
+  {
+    "id": "DEF13-desktop-DEPOIS",
+    "modulo": "Offline (DEF-13)",
+    "cenario": "PDI sem rede (desktop), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
+    "esperado": "Salvar livre",
+    "observado": "Salvar livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-DEPOIS-def13-desktop.png",
+    "nota": "",
+    "quando": "2026-11-09T23:12:48.138Z"
+  },
+  {
+    "id": "DEF06-celular-DEPOIS",
+    "modulo": "Offline (DEF-06)",
+    "cenario": "1/3 sem rede (celular): aviso visível e \"Próximo\"/\"Salvar progresso\" não ficam cobertos",
+    "esperado": "aviso visível; botões livres",
+    "observado": "aviso: true; Próximo livre: true; Salvar progresso livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-DEPOIS-def06-celular.png",
+    "nota": "",
+    "quando": "2026-11-09T23:12:59.572Z"
+  },
+  {
+    "id": "DEF13-celular-DEPOIS",
+    "modulo": "Offline (DEF-13)",
+    "cenario": "PDI sem rede (celular), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
+    "esperado": "Salvar livre",
+    "observado": "Salvar livre: true",
+    "status": "APROVADO",
+    "evidencia": "35-DEPOIS-def13-celular.png",
+    "nota": "",
+    "quando": "2026-11-09T23:13:09.908Z"
   }
 ]

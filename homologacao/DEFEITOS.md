@@ -228,3 +228,22 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
    - se a tela tem barra de ações fixa, o aviso sobe para cima dela;
    - enquanto o aviso está visível, a página ganha espaço no fim, para o último botão poder rolar para cima dele.
 5. **Resultado:** DEPOIS 4/4, em desktop e celular. O aviso continua visível.
+
+## DEF-01 — CORRIGIDO (MÉDIO) — troca rápida de semana com rede lenta
+1. **Causa:** "Próximo" e as abas **esperavam** o salvamento terminar antes de trocar de semana, e a semana antiga continuava editável. A leitura do código mostrou mais dois problemas ligados a isso:
+   - ao terminar um salvamento, a tela marcava tudo como salvo e **apagava o rascunho**, mesmo que o professor tivesse digitado algo **durante** o envio;
+   - com um envio em andamento, um novo salvamento devolvia "ok" sem enviar, e o Sair ou o Concluir podiam seguir sem o último texto.
+2. **Antes (roteiro 35, atraso de 2,5 s nas gravações):**
+   - 300 ms depois de "Próximo", a tela ainda estava na Semana 1 e o texto digitado foi para a Semana 1 (DEF01-a reprovado);
+   - **o texto digitado durante um salvamento se perdeu**: só a primeira parte chegou ao banco (DEF01-b reprovado).
+   
+   A primeira rodada do DEF01-c tinha um erro do teste (clicou no "Sair" do cabeçalho) e foi descartada.
+3. **Arquivo:** `src/pages/UmTercoPreenchimentoPage.jsx`.
+4. **Solução:**
+   - a troca de semana acontece **na hora**, e o salvamento segue em segundo plano com o texto já capturado;
+   - se algo mudou durante o envio, o formulário continua "sujo", o rascunho não é apagado e o próximo envio leva o resto;
+   - quem pede um salvamento com outro em andamento **espera** esse terminar e então envia o que faltar. Sair e Concluir nunca seguem sem o último texto.
+5. **Resultado:** DEPOIS 3/3:
+   - texto na Semana 2 com a Semana 1 intacta;
+   - as duas partes digitadas durante o salvamento chegaram ao banco;
+   - Sair esperou o envio da Semana 4.
