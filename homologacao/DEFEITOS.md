@@ -75,3 +75,33 @@ Contas de teste criadas pela API da Secretaria no banco local (senha definida no
 - **QUE-08 (G6)** Aluno volta para a escola de origem (Pedro Boa Vista → Aurora 6M2): a ficha antiga da Aurora volta a abrir e fica **editável** de novo pela P04 (Aplicação ainda no período); a ficha da Boa Vista passa a dar 400. Indicadores Aurora 5/0/1 → 7/0/2; Boa Vista 2/0/1 → 1/0/0.
 
 **Estado do banco local depois:** Pedro de volta à Aurora 6M2; 3 contas novas (gestor/diretora); 1 `CorrecaoFichaPdi` ABERTA na ficha de Inglês da Marina (criada pelo teste G5).
+
+---
+
+# Correções de 09/11/2026 (fase de estabilização)
+
+Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes foi conferido que o backend e os scripts enxergam só as 2 escolas fictícias. Neon não acessado. Cada defeito foi **reproduzido antes** da correção com o mesmo roteiro usado depois (IDs `*-ANTES-*` × `*-DEPOIS-*` em `resultados.json`; capturas `30-*`, `31-*`, `32-*`, `33-*`).
+
+## DEF-14 — CORRIGIDO (ALTO) — professor sobrescrevia as perguntas comuns de outro professor
+1. **Causa:** gravação (`PUT /api/pdi-fichas/:id/respostas-padrao`), leitura (`montarBlocoParaFicha`) e conclusão localizavam o bloco de perguntas comuns pela **fotografia da ficha** (turma e professor de quando ela nasceu), e não por quem responde agora.
+2. **Comportamento anterior (reproduzido):**
+   - troca de turma: o P10 via e gravava o texto da P04;
+   - achado novo, **substituição de professor sem transferência**: o P12 via e gravava o texto do P06.
+   
+   Roteiro ANTES: 6 de 12 reprovados (S3a–c, S4a–c).
+3. **Arquivos:** `backend/src/domain/pdiBlocoPadrao.ts`, `backend/src/api/routes/pdiFichas.ts`.
+4. **Solução (mínima):**
+   - o bloco de quem preenche passa a ser o da **turma atual do aluno + professor responsável atual** (`identidadeBlocoAtual`), na leitura, na gravação e na exigência de completude ao concluir;
+   - quando nada mudou, a identidade é a mesma da fotografia, então não há diferença;
+   - turma sem professor responsável na disciplina: bloco só leitura e gravação recusada (403);
+   - as **Correções da Secretaria continuam lendo o bloco da fotografia** (leitura histórica).
+   
+   Nenhuma cópia de respostas, nenhuma migration, nenhuma mudança de permissão da ficha.
+5. **Testes:**
+   - `30-def14-bloco-comum.mjs` (navegador real + API + banco): mesma turma com 2 professores, gravação quase simultânea, ficha concluída pela professora anterior, troca de turma, substituição de professor, troca de escola;
+   - `30b-def14-complementos.mjs`: Correções mostram o original; turma sem professor; QUE-03 inalterado;
+   - baterias `testar-formulario-unico.ts` (35/35) e `testar-indicadores.ts` (29/29).
+6. **Resultado:** DEPOIS 12/12 + 3/3; repetido no fim (regressão) 12/12.
+7. **Riscos residuais:** o novo professor precisa responder as perguntas comuns de novo (bloco próprio) para concluir uma ficha herdada. É consequência da regra 25 ("professores diferentes não compartilham"). O bloco antigo continua no banco e aparece nas Correções.
+8. **Depende da Secretaria (NÃO decidido):** se o novo professor pode alterar as respostas **de disciplina** de ficha concluída por outro (QUE-03). O comportamento foi mantido como estava (`DEF14-DEPOIS-C3`).
+

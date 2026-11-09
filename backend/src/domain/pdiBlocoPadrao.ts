@@ -8,6 +8,22 @@ type Cliente = typeof prisma | Prisma.TransactionClient;
 
 export type IdentidadeBloco = { aplicacaoId: number; alunoId: number; turmaId: number; professorId: number };
 
+// Bloco gravado na fotografia da Ficha (turma e professor de quando ela nasceu) — leitura histórica.
+export const identidadeDaFotografia = (ficha: { aplicacaoId: number; alunoId: number; turmaId: number; professorResponsavelId: number }): IdentidadeBloco => ({
+  aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: ficha.turmaId, professorId: ficha.professorResponsavelId,
+});
+
+// Bloco de QUEM responde agora (DEF-14): turma ATUAL do aluno + professor responsável ATUAL
+// (ProfessorTurmaDisciplina ativo). Igual à fotografia quando nada mudou; diferente depois de troca
+// de turma ou substituição de professor — assim ninguém lê nem grava o bloco de outro professor.
+// `null` quando a turma está sem professor responsável nessa disciplina.
+export const identidadeBlocoAtual = (
+  ficha: { aplicacaoId: number; alunoId: number },
+  contexto: { aluno: { turmaId: number }; ptd: { professorId: number } | null },
+): IdentidadeBloco | null => (contexto.ptd
+  ? { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: contexto.aluno.turmaId, professorId: contexto.ptd.professorId }
+  : null);
+
 // Perguntas padrão compartilháveis que esta Ficha (pelo seu aplicacaoModeloId) de fato inclui —
 // nunca todas as perguntas padrão da Aplicação: um Modelo criado com carregarPerguntasPadrao=false,
 // ou que não incluía aquela pergunta específica, nunca mostra o que não carregou (ver schema.prisma,
@@ -114,24 +130,24 @@ const formatarPerguntaPadraoSnapshot = (p: {
 // nunca materializa o bloco numa leitura pura (GET nunca cria, mesmo padrão de Ficha/FichaAnual):
 // se o bloco ainda não existe, perguntas vêm do snapshot (sempre existe se a Aplicação foi criada
 // depois desta feature) e respostas/editavelAgora vêm vazios/neutros.
+// `opcoes.identidade` (DEF-14): quem está preenchendo agora vê e edita o bloco DELE (turma atual do
+// aluno + professor responsável atual), nunca o bloco de outro professor gravado na fotografia da
+// Ficha. `null` = não há professor responsável agora: mostra o bloco da fotografia só para leitura.
+// Sem `opcoes` (ex.: Correções da Secretaria) continua usando a fotografia — leitura histórica.
 export async function montarBlocoParaFicha(ficha: {
   id: number; aplicacaoId: number; aplicacaoModeloId: number; alunoId: number; turmaId: number;
   professorResponsavelId: number; disciplinaId: number;
-}) {
+}, opcoes?: { identidade: IdentidadeBloco | null }) {
   const perguntas = await perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId);
   if (perguntas.length === 0) return null; // este Modelo não tem nenhuma pergunta padrão compartilhável
 
-  const identidade: IdentidadeBloco = {
-    aplicacaoId: ficha.aplicacaoId,
-    alunoId: ficha.alunoId,
-    turmaId: ficha.turmaId,
-    professorId: ficha.professorResponsavelId,
-  };
+  const somenteLeitura = opcoes !== undefined && opcoes.identidade === null;
+  const identidade: IdentidadeBloco = opcoes?.identidade ?? identidadeDaFotografia(ficha);
   const [bloco, aplicacao, outrasFichas] = await Promise.all([
     prisma.blocoRespostasPadraoPdi.findUnique({ where: { aplicacaoId_alunoId_turmaId_professorId: identidade } }),
     prisma.aplicacaoPdi.findUniqueOrThrow({ where: { id: ficha.aplicacaoId } }),
     prisma.fichaPdi.findMany({
-      where: { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: ficha.turmaId, professorResponsavelId: ficha.professorResponsavelId, disciplinaId: { not: ficha.disciplinaId } },
+      where: { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: identidade.turmaId, professorResponsavelId: identidade.professorId, disciplinaId: { not: ficha.disciplinaId } },
       select: { id: true, disciplinaId: true, disciplinaNomeSnapshot: true },
     }),
   ]);
@@ -146,7 +162,7 @@ export async function montarBlocoParaFicha(ficha: {
     version: bloco?.version ?? 0,
     perguntas: perguntas.map(formatarPerguntaPadraoSnapshot),
     respostas: respostas.map((r) => ({ id: r.id, aplicacaoPerguntaPadraoId: r.aplicacaoPerguntaPadraoId, valor: r.valor })),
-    editavelAgora: editavel,
+    editavelAgora: editavel && !somenteLeitura,
     compartilhadoCom: outrasFichas.map((f) => ({ fichaId: f.id, disciplinaId: f.disciplinaId, disciplinaNome: f.disciplinaNomeSnapshot })),
   };
 }

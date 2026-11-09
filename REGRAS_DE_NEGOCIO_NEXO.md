@@ -832,3 +832,13 @@ A exclusão definitiva (EXC-01) é a **única** exceção à regra de não apaga
 8. B5, B6 e B7.
 9. Restante dos grupos A e C.
 10. D2 a D5.
+
+---
+
+## 20. Atualização de 09/11/2026 — correções aplicadas (fase de estabilização)
+
+Nenhuma regra de negócio foi criada nem alterada. Foram corrigidas **divergências entre o código e regras já registradas**. Detalhes, testes e evidências estão em `homologacao/DEFEITOS.md`, na seção "Correções de 09/11/2026".
+
+| Regra | Divergência | Situação agora |
+|---|---|---|
+| PDI-04 (bloco pertence ao professor que escreveu) | DEF-14: o novo responsável sobrescrevia o bloco do anterior, na troca de turma e também na **substituição de professor** | **Corrigida.** O bloco de quem preenche é o da turma atual + professor responsável atual. As Correções da Secretaria continuam mostrando o bloco original. |

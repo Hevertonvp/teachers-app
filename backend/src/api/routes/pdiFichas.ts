@@ -7,7 +7,8 @@ import { isAplicacaoEditavelAgora, statusVigencia } from '../../domain/pdiAplica
 import { editavelParaProfessor, fichaEditavelAgora, statusAposSalvarResposta, statusVisualItem } from '../../domain/pdiFichas.js';
 import { prepararValoresResposta } from '../../domain/habilidadesCurriculares.js';
 import {
-  exigirBlocoEditavelAgora, montarBlocoParaFicha, perguntasPadraoDaFicha, resolverOuCriarBloco,
+  exigirBlocoEditavelAgora, identidadeBlocoAtual, identidadeDaFotografia, montarBlocoParaFicha, perguntasPadraoDaFicha, resolverOuCriarBloco,
+  type IdentidadeBloco,
 } from '../../domain/pdiBlocoPadrao.js';
 import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
 import { escolasPermitidas } from './pessoas.js';
@@ -211,7 +212,9 @@ const formatarResposta = (r: {
 // Aplicação/Reaberturas REAIS atuais, nunca com o snapshot congelado da própria Ficha).
 // Exportada: reaproveitada por correcoesPdi.ts no detalhe de uma Ficha (GET /api/correcoes-pdi/:fichaId)
 // — mesmo formato "suficiente pra montar a tela" usado aqui, sem duplicar a lógica.
-export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>) {
+// `opcoes.identidadeBloco` (DEF-14): quem está preenchendo agora vê o bloco de perguntas comuns
+// DELE (ver identidadeBlocoAtual). Sem `opcoes` (Correções da Secretaria) = bloco da fotografia.
+export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>, opcoes?: { identidadeBloco: IdentidadeBloco | null }) {
   const [perguntas, respostas, aplicacao, reaberturas, escola, correcaoIndividualAtiva] = await Promise.all([
     prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId }, orderBy: { ordem: 'asc' } }),
     prisma.respostaPdi.findMany({ where: { fichaId: ficha.id } }),
@@ -231,9 +234,13 @@ export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof pr
     ),
     // null = este Modelo não carregou nenhuma pergunta padrão compartilhável (seção 21 do pedido de
     // bloco comum) — o frontend simplesmente não mostra a seção "Perguntas padrão" nesse caso.
-    blocoPadrao: await montarBlocoParaFicha(ficha),
+    blocoPadrao: await montarBlocoParaFicha(ficha, opcoes ? { identidade: opcoes.identidadeBloco } : undefined),
   };
 }
+
+// Atalho usado pelas rotas de preenchimento: resposta montada com o bloco de quem responde agora.
+const respostaParaQuemPreenche = (ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>, contexto: { aluno: { turmaId: number }; ptd: { professorId: number } | null }) =>
+  montarRespostaCompleta(ficha, { identidadeBloco: identidadeBlocoAtual(ficha, contexto) });
 
 const obterOuCriarSchema = z.object({
   aplicacaoId: z.number().int(),
@@ -267,9 +274,11 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
   const chave = { aplicacaoId_alunoId_disciplinaId: { aplicacaoId, alunoId, disciplinaId } };
 
   let ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>;
+  let contextoFinal: Contexto;
   try {
     ficha = await prisma.$transaction(async (tx) => {
       const contexto = await resolverContexto(tx, aplicacaoId, alunoId, disciplinaId);
+      contextoFinal = contexto;
 
       const existente = await tx.fichaPdi.findUnique({ where: chave });
       if (existente) {
@@ -327,10 +336,11 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
 
     const contexto = await resolverContexto(prisma, aplicacaoId, alunoId, disciplinaId);
     await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
+    contextoFinal = contexto;
     ficha = existente;
   }
 
-  res.json(await montarRespostaCompleta(ficha));
+  res.json(await respostaParaQuemPreenche(ficha, contextoFinal!));
 });
 
 // Listagem unificada do Professor (seções 2-6 do pedido) — não depende de Ficha existir: gera
@@ -448,7 +458,7 @@ pdiFichasRouter.get('/:aplicacaoId/:alunoId/:disciplinaId', async (req, res) => 
   const ficha = await prisma.fichaPdi.findUnique({ where: { aplicacaoId_alunoId_disciplinaId: { aplicacaoId, alunoId, disciplinaId } } });
   if (!ficha) throw new NotFoundError('Esta Ficha PDI ainda não foi criada.');
 
-  res.json(await montarRespostaCompleta(ficha));
+  res.json(await respostaParaQuemPreenche(ficha, contexto));
 });
 
 // Listagem/consulta de Fichas já existentes, escopada por perfil (seção 21 do pedido). Sempre
@@ -537,7 +547,7 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   await exigirSemConflitoDeVersao(
     baseUpdatedAt,
     ficha.updatedAt ?? ficha.createdAt,
-    () => montarRespostaCompleta(ficha),
+    () => respostaParaQuemPreenche(ficha, contexto),
     'Esta Ficha PDI foi alterada enquanto você estava sem conexão. Suas respostas continuam protegidas e precisam ser revisadas antes da sincronização.',
   );
 
@@ -598,7 +608,7 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   }
 
   const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });
-  res.json(await montarRespostaCompleta(atualizada));
+  res.json(await respostaParaQuemPreenche(atualizada, contexto));
 });
 
 const respostaPadraoItemSchema = z.object({
@@ -640,16 +650,20 @@ pdiFichasRouter.put('/:id/respostas-padrao', async (req, res) => {
 
   await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
 
-  const bloco = await resolverOuCriarBloco(
-    { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: ficha.turmaId, professorId: ficha.professorResponsavelId },
-    actor.id,
-  );
+  // DEF-14: grava SEMPRE no bloco de quem responde agora (turma atual + professor responsável
+  // atual), nunca no bloco gravado na fotografia da Ficha — senão, depois de uma troca de turma ou
+  // substituição de professor, o novo responsável sobrescrevia as respostas do professor anterior.
+  const identidade = identidadeBlocoAtual(ficha, contexto);
+  if (!identidade) {
+    throw new ForbiddenError('Esta turma está sem professor responsável nesta disciplina: as perguntas comuns não podem ser alteradas agora.');
+  }
+  const bloco = await resolverOuCriarBloco(identidade, actor.id);
   if (bloco.version !== version) {
     // Mesmo código de máquina (CONFLITO_VERSAO) de qualquer outro recurso da infra offline —
     // nunca sobrescreve, o frontend usa `dadosAtuais` pra mostrar o conflito.
     throw new ConflitoVersaoError(
       'Este bloco de respostas padrão foi atualizado em outra aba/sessão enquanto você editava. Suas respostas continuam protegidas e precisam ser revisadas antes da sincronização.',
-      await montarRespostaCompleta(ficha),
+      await respostaParaQuemPreenche(ficha, contexto),
     );
   }
   const correcaoAtiva = await exigirBlocoEditavelAgora(prisma, bloco, contexto.aplicacao);
@@ -709,7 +723,7 @@ pdiFichasRouter.put('/:id/respostas-padrao', async (req, res) => {
   }, { timeout: 15000 });
 
   const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });
-  res.json(await montarRespostaCompleta(atualizada));
+  res.json(await respostaParaQuemPreenche(atualizada, contexto));
 });
 
 // Ação explícita de conclusão (seção 20 do pedido) — idempotente: concluir uma Ficha já CONCLUIDA
@@ -750,7 +764,8 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
     let faltandoPadrao = 0;
     if (perguntasPadrao.length > 0) {
       const bloco = await prisma.blocoRespostasPadraoPdi.findUnique({
-        where: { aplicacaoId_alunoId_turmaId_professorId: { aplicacaoId: ficha.aplicacaoId, alunoId: ficha.alunoId, turmaId: ficha.turmaId, professorId: ficha.professorResponsavelId } },
+        // DEF-14: conclui exigindo o bloco de quem responde agora (o mesmo que ele vê e grava).
+        where: { aplicacaoId_alunoId_turmaId_professorId: identidadeBlocoAtual(ficha, contexto) ?? identidadeDaFotografia(ficha) },
       });
       const respondidasPadraoIds = bloco
         ? new Set((await prisma.respostaPadraoPdi.findMany({ where: { blocoId: bloco.id }, select: { aplicacaoPerguntaPadraoId: true } })).map((r) => r.aplicacaoPerguntaPadraoId))
@@ -783,5 +798,5 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   }
 
   const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });
-  res.json(await montarRespostaCompleta(atualizada));
+  res.json(await respostaParaQuemPreenche(atualizada, contexto));
 });
