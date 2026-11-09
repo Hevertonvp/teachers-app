@@ -4,3 +4,5 @@ evidencias/*.webm
 evidencias/traces/
 .env*
 .senhas.json
+*.log
+saida-*.tmp

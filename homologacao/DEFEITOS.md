@@ -36,3 +36,42 @@ Modo diagnóstico: nenhum código de produção foi alterado. Banco de teste: Po
 | DEF-11 | BAIXO | PDI (Aplicação) | Data de início anterior a hoje é barrada só pelo balão nativo do navegador, sem mensagem própria na tela; o botão Salvar não responde. |
 | DEF-12 | BAIXO | PDI (Alunos) | "Novo aluno PDI" parece ativo, mas com "Todas as escolas" só mostra o aviso verde no topo. |
 | DEF-13 | MÉDIO | PDI offline | O mesmo aviso offline que cobre os botões do 1/3 (DEF-06) cobre o "Salvar" do PDI; a alternativa é salvar por teclado (Tab+Enter), que enfileira corretamente. A fila do PDI também não é enviada ao abrir o app (DEF-07). |
+
+## Achados da rodada de transferência de aluno no PDI (09/11/2026)
+
+Scripts: `25-pdi-transferencia-turma.mjs`, `25x-put-valido.mjs`, `26-pdi-transferencia-escola.mjs`, `27-pdi-ficha-anual-transferido.mjs`. Navegador real (Chromium) contra o banco local. Transferências feitas pela interface da Secretaria; preparação declarada: vínculo Inglês 6M1 Boa Vista → P04 criado pela API.
+
+| ID | Sev. | Módulo | Resumo | Evidência |
+|---|---|---|---|---|
+| DEF-14 | ALTO | PDI (bloco de perguntas comuns) | Depois da troca de turma (Lucas 6M1 → 6M3), o novo professor (P10) abre a ficha de Arte e o campo "Perguntas comuns" mostra o texto da professora anterior (P04). Ao salvar, o P10 **sobrescreve o bloco da P04** (`blocos_respostas_padrao_pdi` id 1: professorId P04, `updatedBy` = P10). O texto original da P04 se perde sem histórico, e o bloco continua ligado às outras fichas da P04 para o mesmo aluno (Inglês e Ensino Religioso), que passam a mostrar o texto do P10. | 25a-p10-lucas-antes.png, 25a-p10-lucas-depois-salvar.png; PDI-TRF-T8 |
+| DEF-15 | MÉDIO | PDI (Ficha Anual) | Aluno transferido de escola: a Ficha Anual lista as fichas da escola anterior (disciplina, escola, turma, professor, "Concluído"), mas o link de cada uma leva a "Esta aplicação não pertence à escola atual deste aluno" — tanto para a Secretaria quanto para a professora da nova escola. A tela oferece um acesso que não funciona. | 26-sec-ficha-anual-marina.png, 27-ficha-anual-secretaria.png, 27-ficha-anual-p04.png; PDI-TRF-E8/E9 |
+| DEF-16 | BAIXO | PDI (Ficha Anual) | Datas da Aplicação exibidas um dia antes: tela "03/11/2026 a 14/12/2026"; banco 04/11/2026 a 15/12/2026 (provável conversão de data UTC para o fuso local). | 26-sec-ficha-anual-marina.png; PDI-TRF-E10 |
+
+**Regras não definidas (comportamento atual registrado, sem juízo de defeito):**
+- **QUE-02** Novo professor da turma assume a ficha **em andamento** iniciada por outro e pode alterar as respostas (PDI-TRF-T7).
+- **QUE-03** Novo professor pode alterar ficha **concluída** por outro; status continua CONCLUIDA e `concluidaEm` não muda; nenhum registro visível da alteração (PDI-TRF-T9).
+- **QUE-04** Fichas da escola anterior ficam ilegíveis para todos (autora, Secretaria, nova escola) pela rota da ficha: HTTP 400 "Esta aplicação não pertence à escola atual deste aluno" (PDI-TRF-E3/E4). Dados preservados no banco (PDI-TRF-E7).
+- **QUE-05** Indicadores calculados com a turma atual: fichas concluídas deixam de contar para a escola/turma de origem. Troca de turma: Aurora esperado 19 → 9, concluídas 3 → 1, em andamento 3 → 1 (a 6M3 só tem Arte e Matemática com professor). Entre escolas: Aurora 9/1/2 → 5/0/1; Boa Vista 0/0/0 → 2/0/1 (Ensino Religioso sem professor na Boa Vista não entra). As 3 fichas concluídas da Marina não contam em escola nenhuma.
+- **QUE-06** A tela do novo professor mostra a turma/escola da fotografia da ficha ("6M1 · Aurora") sem indicar que o aluno mudou de turma (PDI-TRF-T6).
+- **QUE-07** Disciplina sem professor na nova turma (ex.: Inglês do Lucas na 6M3): a ficha em andamento fica sem responsável e sai do esperado.
+
+**Aprovados:** transferência pela interface; histórico de movimentação (turma antiga fechada, nova aberta, trajetória completa na Ficha Anual); professora anterior perde acesso (lista, tela e API: GET/PUT 403, nada gravado — a primeira rodada usou corpo vazio, erro do teste corrigido); novo professor passa a ver o aluno; ficha nova na Boa Vista nasce vazia e é gravada separada; fichas, respostas e blocos da escola anterior intactos e sem duplicação (exceto o DEF-14).
+
+**Não testado:** Diretora/Gestor da escola anterior (não há contas no banco local), offline durante a transferência, Correções de ficha de aluno transferido, transferência de volta para a escola de origem.
+
+### Rodada complementar (09/11/2026) — `28-pdi-transferencia-complementar.mjs`
+
+Contas de teste criadas pela API da Secretaria no banco local (senha definida no banco, declarado): `gestor.bv@homolog.nexo` (Boa Vista), `diretora.bv@homolog.nexo` (Boa Vista), `gestor.aur@homolog.nexo` (Aurora).
+
+| ID | Sev. | Módulo | Resumo | Evidência |
+|---|---|---|---|---|
+| DEF-17 | ALTO | PDI (perfil do aluno) — **não é específico de transferência** | Gestor real abre "PDI > Alunos", vê o aluno na lista, mas o perfil (`/pdi/alunos/:id`) mostra "Aluno não encontrado" — por clique, URL direta e F5, para aluno transferido (Marina) e não transferido (Larissa). A API devolve o aluno (HTTP 200). Causa lida no código: `PdiAlunoPerfil.jsx` checa acesso com `vinculosEscolares` vindos de `src/data/mockData` (dados de exemplo), não dos vínculos reais. Afeta também a Diretora (mesmo caminho `canAccessEscola`). | 28-perfil-gestor-4.png, 28-perfil-gestor-2.png, 28-perfil-gestor-clicando.png |
+| DEF-18 | MÉDIO | PDI (Correções) | Secretaria consegue "Devolver ao Professor" uma ficha concluída de aluna já transferida (HTTP 201, prazo de 3 dias), mas a professora não consegue abrir a ficha (HTTP 400 "não pertence à escola atual"): devolução impossível de atender. | PDI-TRF-G5; 28-PDI-TRF-G5.png |
+
+**Comportamentos registrados (regra a definir):**
+- **G1/G2** Gestor e Diretora da nova escola: Ficha Anual lista as fichas da Aurora; ao clicar, "Esta aplicação não pertence à escola atual deste aluno" (mesmo DEF-15); API da ficha antiga 400. Perfil do aluno bloqueado pelo DEF-17.
+- **G3** Gestor da escola anterior: não vê mais a aluna (API aluno 403, ficha 400) — inclusive a ficha que a própria escola produziu.
+- **G4** **Secretaria lê o conteúdo da ficha antiga pelo fluxo de Correções** (`/correcoes/pdi/:fichaId`, API 200; respostas e perguntas comuns visíveis). Caminho de leitura **já existente**, só para a Secretaria. (Mesma tela também mostra as datas um dia antes — DEF-16.)
+- **QUE-08 (G6)** Aluno volta para a escola de origem (Pedro Boa Vista → Aurora 6M2): a ficha antiga da Aurora volta a abrir e fica **editável** de novo pela P04 (Aplicação ainda no período); a ficha da Boa Vista passa a dar 400. Indicadores Aurora 5/0/1 → 7/0/2; Boa Vista 2/0/1 → 1/0/0.
+
+**Estado do banco local depois:** Pedro de volta à Aurora 6M2; 3 contas novas (gestor/diretora); 1 `CorrecaoFichaPdi` ABERTA na ficha de Inglês da Marina (criada pelo teste G5).

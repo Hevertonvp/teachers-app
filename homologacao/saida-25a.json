@@ -1,0 +1,1084 @@
+{
+  "indicadoresAntes": [
+    {
+      "escolaId": 1,
+      "escolaNome": "ZZ-HOMOLOG Escola Aurora",
+      "aplicacaoId": 1,
+      "aplicacaoNome": null,
+      "aplicacaoDataInicio": "2026-11-04T00:00:00.000Z",
+      "aplicacaoDataFim": "2026-12-15T00:00:00.000Z",
+      "totalEsperado": 19,
+      "concluidas": 3,
+      "emAndamento": 3
+    },
+    {
+      "escolaId": 2,
+      "escolaNome": "ZZ-HOMOLOG Escola Boa Vista",
+      "aplicacaoId": null,
+      "aplicacaoNome": null,
+      "aplicacaoDataInicio": null,
+      "aplicacaoDataFim": null,
+      "totalEsperado": 0,
+      "concluidas": 0,
+      "emAndamento": 0
+    }
+  ],
+  "indicadoresDepoisTurma": [
+    {
+      "escolaId": 1,
+      "escolaNome": "ZZ-HOMOLOG Escola Aurora",
+      "aplicacaoId": 1,
+      "aplicacaoNome": null,
+      "aplicacaoDataInicio": "2026-11-04T00:00:00.000Z",
+      "aplicacaoDataFim": "2026-12-15T00:00:00.000Z",
+      "totalEsperado": 9,
+      "concluidas": 1,
+      "emAndamento": 1
+    },
+    {
+      "escolaId": 2,
+      "escolaNome": "ZZ-HOMOLOG Escola Boa Vista",
+      "aplicacaoId": null,
+      "aplicacaoNome": null,
+      "aplicacaoDataInicio": null,
+      "aplicacaoDataFim": null,
+      "totalEsperado": 0,
+      "concluidas": 0,
+      "emAndamento": 0
+    }
+  ],
+  "p10LucasCampos": [
+    "Lucas demonstra boa autonomia e curiosidade; no trimestre melhorou a organização do caderno e a participação oral, embora ainda se disperse em atividades longas.",
+    "Em Arte: ainda precisa consolidar a noção de perspectiva e o uso de sombreamento em desenhos de observação."
+  ],
+  "blocoP04LucasDepois": [
+    {
+      "resposta": "P10 (novo professor) ALTEROU o campo compartilhado.",
+      "complementarTexto": ""
+    }
+  ],
+  "antes": {
+    "fichas": [
+      {
+        "id": 1,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 2,
+        "alunoId": 1,
+        "disciplinaId": 9,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Inglês",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "EM_ANDAMENTO",
+        "createdAt": "2026-11-04T16:37:35.591Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:41:57.846Z",
+        "updatedBy": "14",
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": [
+          {
+            "id": 3,
+            "fichaId": 1,
+            "aplicacaoPerguntaId": 3,
+            "valor": {
+              "resposta": "SESSÃO 1 (computador da escola): Inglês — revisar auxiliares do/does.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.136Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:41:57.844Z",
+            "updatedBy": "14"
+          },
+          {
+            "id": 4,
+            "fichaId": 1,
+            "aplicacaoPerguntaId": 4,
+            "valor": {
+              "resposta": "Às vezes",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.136Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:19.402Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 3,
+        "alunoId": 1,
+        "disciplinaId": 3,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Arte",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "EM_ANDAMENTO",
+        "createdAt": "2026-11-04T16:37:35.591Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:13.231Z",
+        "updatedBy": "14",
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": [
+          {
+            "id": 1,
+            "fichaId": 2,
+            "aplicacaoPerguntaId": 5,
+            "valor": {
+              "resposta": "Em Arte: ainda precisa consolidar a noção de perspectiva e o uso de sombreamento em desenhos de observação.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:02.956Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:13.228Z",
+            "updatedBy": "14"
+          },
+          {
+            "id": 2,
+            "fichaId": 2,
+            "aplicacaoPerguntaId": 6,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:02.956Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:13.228Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 4,
+        "alunoId": 1,
+        "disciplinaId": 10,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Ensino Religioso",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "EM_ANDAMENTO",
+        "createdAt": "2026-11-04T16:37:35.592Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:19.439Z",
+        "updatedBy": "14",
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": [
+          {
+            "id": 5,
+            "fichaId": 3,
+            "aplicacaoPerguntaId": 7,
+            "valor": {
+              "resposta": "Em Ensino Religioso: participa com respeito dos debates; precisa ampliar o repertório sobre tradições religiosas diversas.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.171Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:19.436Z",
+            "updatedBy": "14"
+          },
+          {
+            "id": 6,
+            "fichaId": 3,
+            "aplicacaoPerguntaId": 8,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.171Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:19.436Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 4,
+        "alunoId": 2,
+        "disciplinaId": 10,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Marina Teixeira Lopes",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Ensino Religioso",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "CONCLUIDA",
+        "createdAt": "2026-11-04T16:39:13.758Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.572Z",
+        "updatedBy": "14",
+        "concluidaEm": "2026-11-04T16:40:26.571Z",
+        "concluidaPor": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 17,
+            "fichaId": 4,
+            "aplicacaoPerguntaId": 7,
+            "valor": {
+              "resposta": "Conteúdo ainda não consolidado em Ensino Religioso: revisar atividades do trimestre com apoio de exemplos concretos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.488Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.488Z",
+            "updatedBy": null
+          },
+          {
+            "id": 18,
+            "fichaId": 4,
+            "aplicacaoPerguntaId": 8,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.488Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.488Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 2,
+        "alunoId": 2,
+        "disciplinaId": 9,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Marina Teixeira Lopes",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Inglês",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "CONCLUIDA",
+        "createdAt": "2026-11-04T16:39:13.759Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.551Z",
+        "updatedBy": "14",
+        "concluidaEm": "2026-11-04T16:40:26.549Z",
+        "concluidaPor": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 15,
+            "fichaId": 5,
+            "aplicacaoPerguntaId": 3,
+            "valor": {
+              "resposta": "Conteúdo ainda não consolidado em Inglês: revisar atividades do trimestre com apoio de exemplos concretos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.456Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.456Z",
+            "updatedBy": null
+          },
+          {
+            "id": 16,
+            "fichaId": 5,
+            "aplicacaoPerguntaId": 4,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.456Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.456Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 3,
+        "alunoId": 2,
+        "disciplinaId": 3,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Marina Teixeira Lopes",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Arte",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "CONCLUIDA",
+        "createdAt": "2026-11-04T16:39:13.759Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.524Z",
+        "updatedBy": "14",
+        "concluidaEm": "2026-11-04T16:40:26.522Z",
+        "concluidaPor": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 13,
+            "fichaId": 6,
+            "aplicacaoPerguntaId": 5,
+            "valor": {
+              "resposta": "Conteúdo ainda não consolidado em Arte: revisar atividades do trimestre com apoio de exemplos concretos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.425Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.425Z",
+            "updatedBy": null
+          },
+          {
+            "id": 14,
+            "fichaId": 6,
+            "aplicacaoPerguntaId": 6,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.425Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.425Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 7,
+        "alunoId": 1,
+        "disciplinaId": 8,
+        "professorResponsavelId": 12,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "História",
+        "professorNomeSnapshot": "Beatriz Nogueira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "PENDENTE",
+        "createdAt": "2026-11-04T16:41:36.837Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:36.837Z",
+        "updatedBy": null,
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": []
+      },
+      {
+        "id": 8,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 5,
+        "alunoId": 1,
+        "disciplinaId": 1,
+        "professorResponsavelId": 12,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Língua Portuguesa",
+        "professorNomeSnapshot": "Beatriz Nogueira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "PENDENTE",
+        "createdAt": "2026-11-04T16:41:36.837Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:36.837Z",
+        "updatedBy": null,
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": []
+      },
+      {
+        "id": 9,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 6,
+        "alunoId": 1,
+        "disciplinaId": 6,
+        "professorResponsavelId": 12,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Ciências",
+        "professorNomeSnapshot": "Beatriz Nogueira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "PENDENTE",
+        "createdAt": "2026-11-04T16:41:36.838Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:36.838Z",
+        "updatedBy": null,
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": []
+      }
+    ],
+    "blocos": [
+      {
+        "id": 1,
+        "aplicacaoId": 1,
+        "alunoId": 1,
+        "turmaId": 1,
+        "professorId": 14,
+        "createdAt": "2026-11-04T16:39:02.905Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:13.193Z",
+        "updatedBy": "14",
+        "version": 2,
+        "respostas": [
+          {
+            "id": 1,
+            "blocoId": 1,
+            "aplicacaoPerguntaPadraoId": 1,
+            "valor": {
+              "resposta": "Lucas demonstra boa autonomia e curiosidade; no trimestre melhorou a organização do caderno e a participação oral, embora ainda se disperse em atividades longas.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:02.914Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:13.194Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "aplicacaoId": 1,
+        "alunoId": 2,
+        "turmaId": 1,
+        "professorId": 14,
+        "createdAt": "2026-11-04T16:40:26.389Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.392Z",
+        "updatedBy": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 3,
+            "blocoId": 2,
+            "aplicacaoPerguntaPadraoId": 1,
+            "valor": {
+              "resposta": "Marina é participativa e colaborativa; lidera bem trabalhos em grupo e pede ajuda quando tem dúvidas.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.394Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.394Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "aplicacaoId": 1,
+        "alunoId": 1,
+        "turmaId": 1,
+        "professorId": 12,
+        "createdAt": "2026-11-04T16:41:38.664Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:38.674Z",
+        "updatedBy": "12",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 4,
+            "blocoId": 3,
+            "aplicacaoPerguntaPadraoId": 1,
+            "valor": {
+              "resposta": "Visão do P02: Lucas lê com fluência e é cuidadoso nas atividades de Ciências, mas precisa revisar a escrita de textos longos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:41:38.676Z",
+            "createdBy": "12",
+            "updatedAt": "2026-11-04T16:41:38.676Z",
+            "updatedBy": null
+          }
+        ]
+      }
+    ],
+    "mov": [
+      {
+        "id": 1,
+        "alunoId": 1,
+        "turmaId": 1,
+        "dataInicio": "2026-11-04T16:37:00.429Z",
+        "dataFim": null,
+        "registradoPor": "3",
+        "createdAt": "2026-11-04T16:37:00.445Z"
+      },
+      {
+        "id": 2,
+        "alunoId": 2,
+        "turmaId": 1,
+        "dataInicio": "2026-11-04T16:37:02.643Z",
+        "dataFim": null,
+        "registradoPor": "3",
+        "createdAt": "2026-11-04T16:37:02.644Z"
+      }
+    ]
+  },
+  "final": {
+    "fichas": [
+      {
+        "id": 1,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 2,
+        "alunoId": 1,
+        "disciplinaId": 9,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Inglês",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "EM_ANDAMENTO",
+        "createdAt": "2026-11-04T16:37:35.591Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:41:57.846Z",
+        "updatedBy": "14",
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": [
+          {
+            "id": 3,
+            "fichaId": 1,
+            "aplicacaoPerguntaId": 3,
+            "valor": {
+              "resposta": "SESSÃO 1 (computador da escola): Inglês — revisar auxiliares do/does.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.136Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:41:57.844Z",
+            "updatedBy": "14"
+          },
+          {
+            "id": 4,
+            "fichaId": 1,
+            "aplicacaoPerguntaId": 4,
+            "valor": {
+              "resposta": "Às vezes",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.136Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:19.402Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 3,
+        "alunoId": 1,
+        "disciplinaId": 3,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Arte",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "EM_ANDAMENTO",
+        "createdAt": "2026-11-04T16:37:35.591Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-09T21:52:12.055Z",
+        "updatedBy": "20",
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": [
+          {
+            "id": 1,
+            "fichaId": 2,
+            "aplicacaoPerguntaId": 5,
+            "valor": {
+              "resposta": "P10 (novo professor) ALTEROU a resposta de Arte escrita pela P04.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:02.956Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-09T21:52:12.047Z",
+            "updatedBy": "20"
+          },
+          {
+            "id": 2,
+            "fichaId": 2,
+            "aplicacaoPerguntaId": 6,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:02.956Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:13.228Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 4,
+        "alunoId": 1,
+        "disciplinaId": 10,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Ensino Religioso",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "EM_ANDAMENTO",
+        "createdAt": "2026-11-04T16:37:35.592Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:19.439Z",
+        "updatedBy": "14",
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": [
+          {
+            "id": 5,
+            "fichaId": 3,
+            "aplicacaoPerguntaId": 7,
+            "valor": {
+              "resposta": "Em Ensino Religioso: participa com respeito dos debates; precisa ampliar o repertório sobre tradições religiosas diversas.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.171Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:19.436Z",
+            "updatedBy": "14"
+          },
+          {
+            "id": 6,
+            "fichaId": 3,
+            "aplicacaoPerguntaId": 8,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:09.171Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:19.436Z",
+            "updatedBy": "14"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 4,
+        "alunoId": 2,
+        "disciplinaId": 10,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Marina Teixeira Lopes",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Ensino Religioso",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "CONCLUIDA",
+        "createdAt": "2026-11-04T16:39:13.758Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.572Z",
+        "updatedBy": "14",
+        "concluidaEm": "2026-11-04T16:40:26.571Z",
+        "concluidaPor": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 17,
+            "fichaId": 4,
+            "aplicacaoPerguntaId": 7,
+            "valor": {
+              "resposta": "Conteúdo ainda não consolidado em Ensino Religioso: revisar atividades do trimestre com apoio de exemplos concretos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.488Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.488Z",
+            "updatedBy": null
+          },
+          {
+            "id": 18,
+            "fichaId": 4,
+            "aplicacaoPerguntaId": 8,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.488Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.488Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 2,
+        "alunoId": 2,
+        "disciplinaId": 9,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Marina Teixeira Lopes",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Inglês",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "CONCLUIDA",
+        "createdAt": "2026-11-04T16:39:13.759Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.551Z",
+        "updatedBy": "14",
+        "concluidaEm": "2026-11-04T16:40:26.549Z",
+        "concluidaPor": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 15,
+            "fichaId": 5,
+            "aplicacaoPerguntaId": 3,
+            "valor": {
+              "resposta": "Conteúdo ainda não consolidado em Inglês: revisar atividades do trimestre com apoio de exemplos concretos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.456Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.456Z",
+            "updatedBy": null
+          },
+          {
+            "id": 16,
+            "fichaId": 5,
+            "aplicacaoPerguntaId": 4,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.456Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.456Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 3,
+        "alunoId": 2,
+        "disciplinaId": 3,
+        "professorResponsavelId": 14,
+        "alunoNomeSnapshot": "Marina Teixeira Lopes",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Arte",
+        "professorNomeSnapshot": "Daniela Moreira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "CONCLUIDA",
+        "createdAt": "2026-11-04T16:39:13.759Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-09T21:52:17.819Z",
+        "updatedBy": "20",
+        "concluidaEm": "2026-11-04T16:40:26.522Z",
+        "concluidaPor": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 13,
+            "fichaId": 6,
+            "aplicacaoPerguntaId": 5,
+            "valor": {
+              "resposta": "P10 ALTEROU a ficha de Arte CONCLUÍDA pela P04.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.425Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-09T21:52:17.813Z",
+            "updatedBy": "20"
+          },
+          {
+            "id": 14,
+            "fichaId": 6,
+            "aplicacaoPerguntaId": 6,
+            "valor": {
+              "resposta": "Sempre",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.425Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.425Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 7,
+        "alunoId": 1,
+        "disciplinaId": 8,
+        "professorResponsavelId": 12,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "História",
+        "professorNomeSnapshot": "Beatriz Nogueira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "PENDENTE",
+        "createdAt": "2026-11-04T16:41:36.837Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:36.837Z",
+        "updatedBy": null,
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": []
+      },
+      {
+        "id": 8,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 5,
+        "alunoId": 1,
+        "disciplinaId": 1,
+        "professorResponsavelId": 12,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Língua Portuguesa",
+        "professorNomeSnapshot": "Beatriz Nogueira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "PENDENTE",
+        "createdAt": "2026-11-04T16:41:36.837Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:36.837Z",
+        "updatedBy": null,
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": []
+      },
+      {
+        "id": 9,
+        "aplicacaoId": 1,
+        "aplicacaoModeloId": 6,
+        "alunoId": 1,
+        "disciplinaId": 6,
+        "professorResponsavelId": 12,
+        "alunoNomeSnapshot": "Lucas Almeida Prado",
+        "turmaId": 1,
+        "turmaNomeSnapshot": "6M1",
+        "escolaId": 1,
+        "escolaNomeSnapshot": "ZZ-HOMOLOG Escola Aurora",
+        "disciplinaNomeSnapshot": "Ciências",
+        "professorNomeSnapshot": "Beatriz Nogueira",
+        "aplicacaoDataInicioSnapshot": "2026-11-04T00:00:00.000Z",
+        "aplicacaoDataFimSnapshot": "2026-12-15T00:00:00.000Z",
+        "status": "PENDENTE",
+        "createdAt": "2026-11-04T16:41:36.838Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:36.838Z",
+        "updatedBy": null,
+        "concluidaEm": null,
+        "concluidaPor": null,
+        "version": 1,
+        "respostas": []
+      }
+    ],
+    "blocos": [
+      {
+        "id": 1,
+        "aplicacaoId": 1,
+        "alunoId": 1,
+        "turmaId": 1,
+        "professorId": 14,
+        "createdAt": "2026-11-04T16:39:02.905Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-09T21:52:11.910Z",
+        "updatedBy": "20",
+        "version": 3,
+        "respostas": [
+          {
+            "id": 1,
+            "blocoId": 1,
+            "aplicacaoPerguntaPadraoId": 1,
+            "valor": {
+              "resposta": "P10 (novo professor) ALTEROU o campo compartilhado.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:39:02.914Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-09T21:52:11.918Z",
+            "updatedBy": "20"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "aplicacaoId": 1,
+        "alunoId": 2,
+        "turmaId": 1,
+        "professorId": 14,
+        "createdAt": "2026-11-04T16:40:26.389Z",
+        "createdBy": "14",
+        "updatedAt": "2026-11-04T16:40:26.392Z",
+        "updatedBy": "14",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 3,
+            "blocoId": 2,
+            "aplicacaoPerguntaPadraoId": 1,
+            "valor": {
+              "resposta": "Marina é participativa e colaborativa; lidera bem trabalhos em grupo e pede ajuda quando tem dúvidas.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:40:26.394Z",
+            "createdBy": "14",
+            "updatedAt": "2026-11-04T16:40:26.394Z",
+            "updatedBy": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "aplicacaoId": 1,
+        "alunoId": 1,
+        "turmaId": 1,
+        "professorId": 12,
+        "createdAt": "2026-11-04T16:41:38.664Z",
+        "createdBy": "12",
+        "updatedAt": "2026-11-04T16:41:38.674Z",
+        "updatedBy": "12",
+        "version": 1,
+        "respostas": [
+          {
+            "id": 4,
+            "blocoId": 3,
+            "aplicacaoPerguntaPadraoId": 1,
+            "valor": {
+              "resposta": "Visão do P02: Lucas lê com fluência e é cuidadoso nas atividades de Ciências, mas precisa revisar a escrita de textos longos.",
+              "complementarTexto": ""
+            },
+            "createdAt": "2026-11-04T16:41:38.676Z",
+            "createdBy": "12",
+            "updatedAt": "2026-11-04T16:41:38.676Z",
+            "updatedBy": null
+          }
+        ]
+      }
+    ],
+    "mov": [
+      {
+        "id": 1,
+        "alunoId": 1,
+        "turmaId": 1,
+        "dataInicio": "2026-11-04T16:37:00.429Z",
+        "dataFim": "2026-11-09T21:51:49.952Z",
+        "registradoPor": "3",
+        "createdAt": "2026-11-04T16:37:00.445Z"
+      },
+      {
+        "id": 2,
+        "alunoId": 2,
+        "turmaId": 1,
+        "dataInicio": "2026-11-04T16:37:02.643Z",
+        "dataFim": "2026-11-09T21:51:54.723Z",
+        "registradoPor": "3",
+        "createdAt": "2026-11-04T16:37:02.644Z"
+      },
+      {
+        "id": 5,
+        "alunoId": 1,
+        "turmaId": 3,
+        "dataInicio": "2026-11-09T21:51:49.952Z",
+        "dataFim": null,
+        "registradoPor": "3",
+        "createdAt": "2026-11-09T21:51:49.961Z"
+      },
+      {
+        "id": 6,
+        "alunoId": 2,
+        "turmaId": 3,
+        "dataInicio": "2026-11-09T21:51:54.723Z",
+        "dataFim": null,
+        "registradoPor": "3",
+        "createdAt": "2026-11-09T21:51:54.728Z"
+      }
+    ]
+  }
+}

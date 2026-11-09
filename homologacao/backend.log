@@ -1,5 +1,0 @@
-◇ injected env (4) from .env
-[scheduler] job de prazos de PDI agendado para 08:00 (America/Sao_Paulo)
-[scheduler] job de fechamento automático de Ficha Anual PDI agendado para 08:15 (America/Sao_Paulo)
-API ouvindo em http://localhost:3340
-Healthcheck: http://localhost:3340/health
