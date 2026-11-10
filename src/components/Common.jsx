@@ -169,12 +169,10 @@ export const DataTable = ({ columns, rows, emptyMessage = 'Nenhum registro encon
 
 // Fecha clicando fora do cartão (no fundo escurecido) ou com Esc, além do botão × — sem isso, um
 // modal sem essas saídas óbvias é facilmente percebido como "travado" pelo usuário.
+// Pedido do usuário (09/11/2026): o modal SÓ fecha pelo "×" ou por um botão de fechar/cancelar do
+// próprio conteúdo — nunca por clique fora nem pela tecla Esc (fechava sem querer e perdia o que
+// estava sendo preenchido).
 export const Modal = ({ title, children, onClose }) => {
-  useEffect(() => {
-    const aoPressionarTecla = (event) => { if (event.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', aoPressionarTecla);
-    return () => document.removeEventListener('keydown', aoPressionarTecla);
-  }, [onClose]);
 
   // O OVERLAY inteiro rola (não um max-height mágico no cartão — vh/dvh/% de altura se mostraram
   // pouco confiáveis em navegador mobile/headless, deixando o cartão maior que a tela com o topo
@@ -187,16 +185,15 @@ export const Modal = ({ title, children, onClose }) => {
   // dentro dos ~64px de altura do header, com o × praticamente inalcançável. Renderizar direto no
   // body contorna esse problema (e qualquer outro ancestral com transform/filter no futuro).
   return createPortal(
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-    >
-      <div className="mx-auto my-8 w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-slate-200 bg-white px-6 py-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 p-4">
+      {/* Altura limitada à tela, com rolagem DENTRO do conteúdo: o modal nunca cresce para fora da
+          tela. Se o navegador não suportar dvh, cai no comportamento anterior (o overlay rola). */}
+      <div className="mx-auto my-4 flex max-h-[calc(100dvh-4rem)] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between rounded-t-2xl border-b border-slate-200 bg-white px-6 py-4">
           <h2 className="break-words text-lg font-bold text-slate-900">{title}</h2>
           <button onClick={onClose} className="shrink-0 rounded-lg px-3 py-1 text-slate-500 hover:bg-slate-100" aria-label="Fechar">×</button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="min-h-0 overflow-y-auto p-6">{children}</div>
       </div>
     </div>,
     document.body,
