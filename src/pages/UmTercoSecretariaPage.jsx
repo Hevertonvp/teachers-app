@@ -59,24 +59,76 @@ const dataSemHoraPadrao = (iso, horaPadrao) => {
 };
 const SEMANAS_PADRAO = 4;
 
-// Data 'YYYY-MM-DD' <-> dia inteiro (UTC), para dividir o período sem efeito de fuso.
-const paraDia = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
-const deDia = (dia) => new Date(dia * 86400000).toISOString().slice(0, 10);
+const diaSeguinte = (iso) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
+const maior = (...datas) => datas.filter(Boolean).sort().at(-1);
+const menor = (...datas) => datas.filter(Boolean).sort()[0];
+const comErro = (erro) => (erro ? `${inputClass} min-w-0 border-red-400 bg-red-50` : `${inputClass} min-w-0`);
+const MsgErro = ({ children }) => (children ? <p role="alert" className="text-xs font-semibold text-red-700">{children}</p> : null);
 
-// Divide [inicio, fim] (inclusivo) em n períodos consecutivos o mais iguais possível.
-// Ex.: 02/11–27/11 em 4 → 02–07, 08–14, 15–20, 21–27. Devolve null se houver menos dias que semanas.
-const dividirPeriodo = (inicio, fim, n) => {
-  if (!inicio || !fim || n < 1) return null;
-  const a = paraDia(inicio);
-  const total = paraDia(fim) - a + 1;
-  if (total < n) return null;
-  return Array.from({ length: n }, (_, i) => ({
-    dataInicio: deDia(a + Math.floor((i * total) / n)),
-    dataFim: deDia(a + Math.floor(((i + 1) * total) / n) - 1),
-  }));
+// Validação das datas, NA HORA (regras de 10/11/2026, decididas pelo usuário; o backend valida as mesmas):
+// - abertura nunca no passado (hoje ou depois) — em ciclo existente, só se a data da abertura mudar;
+// - prazo não antes da abertura; abertura, prazo e semanas dentro do trimestre (identificado pela abertura);
+// - cada semana: fim não antes do início; começa depois do fim da anterior (em ordem, sem sobreposição;
+//   buracos entre semanas são permitidos, tamanho livre); nenhuma termina depois do prazo.
+// As semanas são o período de REFERÊNCIA do conteúdo, independentes da janela de preenchimento.
+const validarDatasCiclo = ({ abertura, prazo, semanas, janela, hoje, aberturaMudou }) => {
+  const erros = { abertura: '', prazo: '', semanas: semanas.map(() => ({ inicio: '', fim: '' })) };
+  if (abertura && aberturaMudou && abertura < hoje) erros.abertura = 'A abertura não pode ser no passado: escolha hoje ou uma data futura.';
+  if (abertura && prazo && prazo < abertura) erros.prazo = 'O prazo não pode ser antes da abertura.';
+  else if (prazo && janela && (prazo < janela.startDate || prazo > janela.endDate)) erros.prazo = `O prazo precisa estar dentro do ${janela.trimestre} (até ${dataFmt(janela.endDate)}).`;
+  semanas.forEach((s, i) => {
+    const e = erros.semanas[i];
+    const anterior = semanas[i - 1];
+    if (s.dataInicio && janela && (s.dataInicio < janela.startDate || s.dataInicio > janela.endDate)) e.inicio = 'Início fora do trimestre.';
+    else if (s.dataInicio && anterior?.dataFim && s.dataInicio <= anterior.dataFim) e.inicio = `Precisa começar depois do fim da Semana ${i} (${dataFmt(anterior.dataFim)}).`;
+    if (s.dataInicio && s.dataFim && s.dataFim < s.dataInicio) e.fim = 'O fim não pode ser antes do início.';
+    else if (s.dataFim && prazo && s.dataFim > prazo) e.fim = `Termina depois do prazo de entrega (${dataFmt(prazo)}).`;
+    else if (s.dataFim && janela && s.dataFim > janela.endDate) e.fim = 'Fim fora do trimestre.';
+  });
+  const temErro = !!(erros.abertura || erros.prazo || erros.semanas.some(e => e.inicio || e.fim));
+  return { ...erros, temErro };
 };
 
-const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
+// Escolas atendidas pelo ciclo (decisão do usuário, 10/11/2026 — substitui o "1/3 global"): "Todas as
+// escolas" (padrão; inclui escolas criadas depois) ou uma lista. Mesmo visual da escolha do PDI.
+const EscolhaEscolas = ({ escolas, todas, selecionadas, onTodas, onAlternar, erro }) => {
+  const [busca, setBusca] = useState('');
+  const visiveis = escolas.filter(e => e.nome.toLowerCase().includes(busca.toLowerCase()));
+  return (
+    <fieldset className="min-w-0 space-y-1">
+      <legend className="mb-1.5 text-sm font-semibold text-slate-700">Escolas atendidas</legend>
+      <div className={`space-y-2 rounded-lg border p-3 ${erro ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}>
+        <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <input type="checkbox" checked={todas} onChange={e => onTodas(e.target.checked)} />
+          Todas as escolas ({escolas.filter(e => e.status === 'ativa').length})
+        </label>
+        {todas
+          ? <p className="text-xs text-slate-500">Vale para todas as escolas, inclusive as que forem criadas depois.</p>
+          : (
+            <div className="border-t border-slate-100 pt-2">
+              {escolas.length > 6 && <input className={`${inputClass} mb-2`} value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar escola..." aria-label="Buscar escola" />}
+              <div className="grid max-h-48 grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
+                {visiveis.map(escola => (
+                  <label key={escola.id} className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked={selecionadas.includes(escola.id)} onChange={() => onAlternar(escola.id)} />
+                    <span className="min-w-0 truncate" title={escola.nome}>{escola.nome}{escola.status !== 'ativa' ? ' (inativa)' : ''}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-xs font-semibold text-slate-600">{selecionadas.length} {selecionadas.length === 1 ? 'escola escolhida' : 'escolas escolhidas'}</p>
+            </div>
+          )}
+      </div>
+      <MsgErro>{erro}</MsgErro>
+    </fieldset>
+  );
+};
+
+const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
   const editando = !!ciclo;
   const travado = editando && ciclo.entregasIniciadas > 0;
   // Abertura e prazo são escolhidos só por DATA (pedido do usuário, 10/11/2026): abre às 00:00 e o
@@ -87,32 +139,31 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
   const [abreEm, setAbreEm] = useState(abreOriginal.slice(0, 10));
   const [prazoEm, setPrazoEm] = useState(prazoOriginal.slice(0, 10));
   const [semanas, setSemanas] = useState(ciclo ? ciclo.semanas.map(s => ({ dataInicio: s.dataInicio, dataFim: s.dataFim })) : Array.from({ length: SEMANAS_PADRAO }, () => ({ ...SEMANA_VAZIA })));
+  const [todasEscolas, setTodasEscolas] = useState(ciclo ? ciclo.todasEscolas !== false : true);
+  const [escolaIds, setEscolaIds] = useState(ciclo?.escolas?.map(e => e.id) ?? []);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  // Escolas que podem ser escolhidas: as ativas + as (inativas) que o ciclo já tem.
+  const escolasEscolhiveis = escolas
+    .filter(e => e.status === 'ativa' || escolaIds.includes(e.id))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const erroEscolas = !todasEscolas && escolaIds.length === 0 ? 'Escolha ao menos uma escola, ou marque "Todas as escolas".' : '';
+  const alternarEscola = (id) => setEscolaIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
   // Ano e trimestre não são escolhidos: saem da data de ABERTURA (o trimestre do calendário que a
   // contém). Na prática é o trimestre vigente, e ainda permite preparar o próximo com antecedência.
   // Edição de ciclo cuja abertura não cai em trimestre configurado: mantém o ano/trimestre que já tem.
-  const diaAbertura = abreEm ? abreEm.slice(0, 10) : '';
-  const diaPrazo = prazoEm ? prazoEm.slice(0, 10) : '';
-  const janelaPelaAbertura = diaAbertura ? janelas.find(p => p.startDate <= diaAbertura && diaAbertura <= p.endDate) ?? null : null;
+  const janelaPelaAbertura = abreEm ? janelas.find(p => p.startDate <= abreEm && abreEm <= p.endDate) ?? null : null;
   const janela = janelaPelaAbertura ?? (editando ? janelas.find(p => p.ano === ciclo.anoLetivo && p.trimestre === trimestres[ciclo.trimestre - 1]) ?? null : null);
   const trimestreNumero = janela ? trimestres.indexOf(janela.trimestre) + 1 : null;
 
-  // Divide a janela abertura → prazo nas semanas. Novo ciclo: automático ao mudar abertura, prazo ou
-  // quantidade. Ciclo existente: só pelo botão "Redividir" (mudar o prazo de um ciclo em andamento
-  // não pode mexer sozinho nas semanas que os professores já estão preenchendo).
-  const periodoCurto = !!diaAbertura && !!diaPrazo && diaPrazo >= diaAbertura && !dividirPeriodo(diaAbertura, diaPrazo, semanas.length);
-  const redividir = (n = semanas.length, inicio = diaAbertura, fim = diaPrazo) => {
-    const divisao = inicio && fim && fim >= inicio ? dividirPeriodo(inicio, fim, n) : null;
-    setSemanas(prev => divisao ?? Array.from({ length: n }, (_, i) => prev[i] ?? { ...SEMANA_VAZIA }));
-  };
-  const mudarAbertura = (valor) => { setAbreEm(valor); if (!editando) redividir(semanas.length, valor.slice(0, 10), diaPrazo); };
-  const mudarPrazo = (valor) => { setPrazoEm(valor); if (!editando) redividir(semanas.length, diaAbertura, valor.slice(0, 10)); };
+  const hoje = paraInputDataHora(new Date().toISOString()).slice(0, 10);
+  const aberturaMudou = !editando || abreEm !== abreOriginal.slice(0, 10);
+  const v = validarDatasCiclo({ abertura: abreEm, prazo: prazoEm, semanas, janela, hoje, aberturaMudou });
+
   const mudarQuantidade = (valor) => {
     const n = Math.max(1, Math.min(30, Number(valor) || 1));
-    if (!editando) redividir(n);
-    else setSemanas(prev => Array.from({ length: n }, (_, i) => prev[i] ?? { ...SEMANA_VAZIA }));
+    setSemanas(prev => Array.from({ length: n }, (_, i) => prev[i] ?? { ...SEMANA_VAZIA }));
   };
   const mudarSemana = (indice, campo, valor) => setSemanas(prev => prev.map((s, i) => (i === indice ? { ...s, [campo]: valor } : s)));
 
@@ -120,12 +171,15 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
     event.preventDefault();
     setErro('');
     if (!janela) { setErro('A data de abertura não está dentro de nenhum trimestre do calendário (Configurações › Trimestres).'); return; }
+    if (v.temErro || erroEscolas) { setErro('Corrija os campos marcados em vermelho.'); return; }
     setSalvando(true);
     // Título sempre "Formulário 1/3" (ciclos antigos mantêm o título que já têm).
     const corpo = { anoLetivo: janela.ano, trimestre: trimestreNumero, titulo: editando ? ciclo.titulo : TITULO_PADRAO,
       abreEm: editando && abreEm === abreOriginal.slice(0, 10) ? abreOriginal : `${abreEm}T00:00`,
       prazoEm: editando && prazoEm === prazoOriginal.slice(0, 10) ? prazoOriginal : `${prazoEm}T23:59`,
-      semanas };
+      semanas,
+      todasEscolas,
+      escolaIds: todasEscolas ? [] : escolaIds };
     try {
       if (editando) await atualizarCicloUmTerco(ciclo.id, corpo);
       else await criarCicloUmTerco(corpo);
@@ -139,45 +193,60 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
 
   return (
     <Modal title={editando ? 'Editar Formulário 1/3' : 'Novo Formulário 1/3'} onClose={onClose}>
-      <form onSubmit={salvar} className="space-y-4">
+      <form onSubmit={salvar} className="space-y-4" noValidate>
         {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
         {travado && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Já há Professores preenchendo: o trimestre e a quantidade de semanas não podem mudar. Datas e prazo continuam editáveis.</p>}
 
+        <EscolhaEscolas escolas={escolasEscolhiveis} todas={todasEscolas} selecionadas={escolaIds} onTodas={setTodasEscolas} onAlternar={alternarEscola} erro={erroEscolas} />
+
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField label="Abertura"><input type="date" className={inputClass} value={abreEm} onChange={e => mudarAbertura(e.target.value)} required /></FormField>
-          <FormField label="Prazo de entrega"><input type="date" className={inputClass} value={prazoEm} onChange={e => mudarPrazo(e.target.value)} required /></FormField>
+          <div className="space-y-1">
+            <FormField label="Abertura"><input type="date" className={comErro(v.abertura)} value={abreEm} min={aberturaMudou ? hoje : undefined} onChange={e => setAbreEm(e.target.value)} required /></FormField>
+            <MsgErro>{v.abertura}</MsgErro>
+          </div>
+          <div className="space-y-1">
+            <FormField label="Prazo de entrega"><input type="date" className={comErro(v.prazo)} value={prazoEm} min={maior(abreEm, janela?.startDate)} max={janela?.endDate} onChange={e => setPrazoEm(e.target.value)} required /></FormField>
+            <MsgErro>{v.prazo}</MsgErro>
+          </div>
         </div>
 
         {janela
           ? <p className="text-xs font-semibold text-slate-600">{janela.trimestre} de {janela.ano} ({dataFmt(janela.startDate)} a {dataFmt(janela.endDate)}), identificado pela abertura. Todas as datas precisam estar dentro dele.</p>
-          : diaAbertura
-            ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">A abertura ({dataFmt(diaAbertura)}) não está dentro de nenhum trimestre do calendário. Configure em Configurações › Trimestres.</p>
-            : <p className="text-xs text-slate-500">Escolha a abertura e o prazo: o trimestre é identificado pela abertura e as semanas são divididas automaticamente.</p>}
+          : abreEm
+            ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">A abertura ({dataFmt(abreEm)}) não está dentro de nenhum trimestre do calendário. Configure em Configurações › Trimestres.</p>
+            : <p className="text-xs text-slate-500">Escolha a abertura e o prazo de entrega: o trimestre é identificado pela abertura.</p>}
 
         <div>
           <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
-            <p className="text-sm font-semibold text-slate-700">Semanas <span className="font-normal text-slate-500">(divididas dentro do período; podem ser editadas)</span></p>
-            <div className="flex items-end gap-2">
-              <FormField label="Quantidade de semanas"><input type="number" min={1} max={30} className={`${inputClass} w-24`} value={semanas.length} onChange={e => mudarQuantidade(e.target.value)} disabled={travado} /></FormField>
-              {editando && <Button type="button" size="sm" variant="outline" onClick={() => redividir()} disabled={!diaAbertura || !diaPrazo || diaPrazo < diaAbertura}>Redividir pelo período</Button>}
-            </div>
+            <p className="max-w-sm text-sm font-semibold text-slate-700">Semanas <span className="font-normal text-slate-500">(período do conteúdo: em ordem, sem se sobrepor e terminando até o prazo)</span></p>
+            <FormField label="Quantidade de semanas"><input type="number" min={1} max={30} className={`${inputClass} w-24`} value={semanas.length} onChange={e => mudarQuantidade(e.target.value)} disabled={travado} /></FormField>
           </div>
-          {periodoCurto && <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">O período tem menos dias que a quantidade de semanas: preencha as datas manualmente ou diminua a quantidade.</p>}
           <LinhaDoTempo janela={janela} semanas={semanas} />
-          <div className="mt-3 space-y-2">
-            {semanas.map((semana, indice) => (
-              <div key={indice} className="grid grid-cols-2 items-center gap-2 sm:grid-cols-[5.5rem_1fr_1fr]">
-                <span className="col-span-2 text-sm font-bold text-slate-800 sm:col-span-1">Semana {indice + 1}</span>
-                <input type="date" aria-label={`Semana ${indice + 1}: início`} className={`${inputClass} min-w-0`} value={semana.dataInicio} min={janela?.startDate} max={janela?.endDate} onChange={e => mudarSemana(indice, 'dataInicio', e.target.value)} required />
-                <input type="date" aria-label={`Semana ${indice + 1}: fim`} className={`${inputClass} min-w-0`} value={semana.dataFim} min={janela?.startDate} max={janela?.endDate} onChange={e => mudarSemana(indice, 'dataFim', e.target.value)} required />
-              </div>
-            ))}
+          <div className="mt-3 space-y-3">
+            {semanas.map((semana, indice) => {
+              const e = v.semanas[indice];
+              const fimAnterior = semanas[indice - 1]?.dataFim;
+              return (
+                <div key={indice}>
+                  <div className="grid grid-cols-2 items-center gap-2 sm:grid-cols-[5.5rem_1fr_1fr]">
+                    <span className="col-span-2 text-sm font-bold text-slate-800 sm:col-span-1">Semana {indice + 1}</span>
+                    <input type="date" aria-label={`Semana ${indice + 1}: início`} aria-invalid={!!e.inicio} className={comErro(e.inicio)} value={semana.dataInicio}
+                      min={maior(janela?.startDate, fimAnterior && diaSeguinte(fimAnterior))} max={menor(janela?.endDate, prazoEm)}
+                      onChange={ev => mudarSemana(indice, 'dataInicio', ev.target.value)} required />
+                    <input type="date" aria-label={`Semana ${indice + 1}: fim`} aria-invalid={!!e.fim} className={comErro(e.fim)} value={semana.dataFim}
+                      min={maior(janela?.startDate, semana.dataInicio)} max={menor(janela?.endDate, prazoEm)}
+                      onChange={ev => mudarSemana(indice, 'dataFim', ev.target.value)} required />
+                  </div>
+                  {(e.inicio || e.fim) && <div className="mt-1 space-y-0.5 sm:pl-24"><MsgErro>{e.inicio}</MsgErro><MsgErro>{e.fim}</MsgErro></div>}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" loading={salvando} disabled={!janela}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
+          <Button type="submit" loading={salvando} disabled={!janela || v.temErro || !!erroEscolas}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
         </div>
       </form>
     </Modal>
@@ -232,7 +301,7 @@ const ReaberturaModal = ({ ciclo, onClose, onSalvo }) => {
 export const UmTercoSecretariaPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { trimestrePeriods } = useData();
+  const { trimestrePeriods, escolas } = useData();
   const [ciclos, setCiclos] = useState(null);
   const [erro, setErro] = useState('');
   const [mensagem, setMensagem] = useState('');
@@ -297,6 +366,11 @@ export const UmTercoSecretariaPage = () => {
                 </div>
                 <h2 className="mt-3 text-xl font-bold text-slate-950">{ciclo.titulo} — {ciclo.trimestre}º trimestre de {ciclo.anoLetivo}</h2>
                 <p className="mt-1 text-sm text-slate-600">Abre {dataSemHoraPadrao(ciclo.abreEm, '00:00')} · prazo {dataSemHoraPadrao(ciclo.prazoEm, '23:59')}</p>
+                <p className="mt-1 text-sm text-slate-600" title={ciclo.todasEscolas ? undefined : ciclo.escolas.map(e => e.nome).join(', ')}>
+                  {ciclo.todasEscolas
+                    ? 'Todas as escolas'
+                    : `${ciclo.escolas.length} ${ciclo.escolas.length === 1 ? 'escola' : 'escolas'}: ${ciclo.escolas.slice(0, 3).map(e => e.nome).join(', ')}${ciclo.escolas.length > 3 ? ` e mais ${ciclo.escolas.length - 3}` : ''}`}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {ciclo.semanas.map(s => <span key={s.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{s.rotulo}: {formatarDiaMes(s.dataInicio)}–{formatarDiaMes(s.dataFim)}</span>)}
                 </div>
@@ -319,6 +393,7 @@ export const UmTercoSecretariaPage = () => {
         <CicloFormModal
           ciclo={formAberto === 'novo' ? null : formAberto}
           janelas={janelas}
+          escolas={escolas}
           onClose={() => setFormAberto(null)}
           onSalvo={() => { setFormAberto(null); setMensagem('Ciclo salvo.'); carregar(); }}
         />

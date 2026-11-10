@@ -184,10 +184,17 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 
 ## 5. Formulário 1/3
 
-**UT-01 · Aplicação global**
-- **Regra:** vale para todas as escolas ativas com turma do Ensino Fundamental e vínculo elegível, sem ativação por escola, sem `EscolaModulo` e sem lista de IDs. A Educação Infantil fica fora pela estrutura da turma.
-- **Origem:** usuário (§72, §73, §82). **Status:** Implementada.
-- **Testes:** testar-integracao (global, Educação Infantil fora), UT-VIN-P14.
+**UT-01 · Escolas atendidas pelo ciclo** *(mudou em 10/11/2026)*
+- **Regra:** ao criar o Formulário 1/3, a Secretaria escolhe **as escolas que ele atende**, ou marca **"Todas as escolas"** (padrão).
+  - "Todas" vale também para escolas criadas depois.
+  - Com escolas escolhidas, só entram turmas (do Fundamental, com vínculo elegível) dessas escolas: um professor de Matemática do 6º ano nas escolas A e B, num ciclo só da A, tem a entrega valendo só para as turmas da A.
+  - Escola com preenchimento iniciado no ciclo não pode ser retirada dele.
+  - Escola inativa não pode ser escolhida (a que já estava no ciclo pode continuar).
+  - A Educação Infantil continua fora pela estrutura da turma. Não usa `EscolaModulo` nem script.
+- **Origem:** usuário, 10/11/2026 ("devemos escolher as escolas que ele vai atender, assim como no PDI"). **Substitui** a regra "1/3 global" (§72, §73, §82), que foi confirmada como substituída. **Status:** Implementada.
+- **Ciclos que já existiam:** ficaram como "Todas as escolas", ou seja, o mesmo comportamento de antes.
+- **Diferença do PDI:** o PDI cria uma Aplicação por escola; o 1/3 é **um ciclo com uma lista de escolas**, porque a entrega é por professor + ano/série + disciplina (UT-02).
+- **Testes:** testar-integracao (ciclos "todas"), UT-ESC-1 a 8, UT-VIN-P14.
 
 **UT-02 · Identidade do preenchimento**
 - **Regra:** **um** formulário por ciclo + professor + ano/série + disciplina, valendo para todas as turmas e escolas desse ano/série ("todo sexto é sexto"). Escola e turma não fazem parte da identidade.
@@ -201,8 +208,8 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Origem:** usuário (§65–67). **Status:** Implementada.
 - **Testes:** testar-integracao (cobertura), UT-P04 (2 coberturas).
 
-**UT-04 · Vários ciclos por trimestre, sem janelas sobrepostas**
-- **Regra:** pode haver vários ciclos no mesmo trimestre, mas as **janelas originais** (abertura → prazo) de ciclos ativos nunca se sobrepõem, inclusive pela fronteira exata. A validação é feita no servidor, com trava contra concorrência.
+**UT-04 · Vários ciclos por trimestre, sem janelas sobrepostas na mesma escola**
+- **Regra:** pode haver vários ciclos no mesmo trimestre, mas as **janelas originais** (abertura → prazo) de ciclos ativos **que atendem alguma escola em comum** nunca se sobrepõem, inclusive pela fronteira exata. "Todas as escolas" tem escola em comum com qualquer ciclo. Ciclos de escolas diferentes podem coincidir (decisão do usuário, 10/11/2026). A validação é feita no servidor, com trava contra concorrência.
 - **Exemplo:** ciclo A de 05/03 a 15/03 e B de 20/03 a 30/03 são válidos. A de 05/03 a 20/03 e B de 15/03 a 25/03 são recusados.
 - **Origem:** usuário (§69–71). **Status:** Implementada.
 - **Exceção proposta:** uma reabertura pode coincidir com outro ciclo (PRZ-03).
@@ -211,15 +218,22 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 **UT-05 · Período de referência × janela de disponibilidade**
 - **Regra:** as **semanas** do ciclo são o período pedagógico de referência. A **abertura e o prazo** são a janela em que o professor pode preencher. As semanas podem ser anteriores à abertura, sempre dentro do mesmo trimestre (CAL-05). São de 1 a 30 semanas, rotuladas pelo sistema ("Semana N").
 - **Exemplo:** ciclo aberto de 10/11 a 20/11 sobre as semanas de 03/11 a 14/11.
-- **Origem:** usuário (§60–61; distinção confirmada em 09/11/2026). **Status:** Implementada. Nenhum campo novo é necessário.
-- **Testes:** testar-dominio.
+- **Origem:** usuário (§60–61; distinção confirmada em 09/11/2026 e de novo em 10/11/2026: "uma coisa não tem nada a ver com a outra"). **Status:** Implementada. Nenhum campo novo é necessário.
+- **Regras das semanas (decisão do usuário, 10/11/2026; implementada no frontend e no backend):**
+  - fim não antes do início;
+  - em ordem e sem sobreposição: cada semana começa depois do fim da anterior;
+  - **buracos entre semanas são permitidos** (feriado, recesso) e o **tamanho é livre** (não precisa ter 7 dias);
+  - **nenhuma semana termina depois do prazo de entrega**;
+  - as datas são preenchidas à mão (a divisão automática pela janela foi descartada pelo usuário).
+- **Consequência:** um ciclo antigo com semana depois do prazo (ex.: o #1 local, Semana 4 de 23 a 27/11 com prazo em 20/11) só volta a ser salvo depois de corrigido (estender o prazo ou ajustar a semana). A reabertura não é afetada.
+- **Testes:** testar-dominio, UT-MODAL-*.
 
 **UT-06 · Abertura atual ou futura**
 - **Regra:** a abertura de um **novo** ciclo deve ser hoje ou no futuro, nunca retroativa. O prazo vem depois da abertura, dentro do trimestre, sem sobreposição.
-- **Origem:** Decisão 3. **Status:** **Proposta (pendente Secretaria)**. Hoje um ciclo com janela no passado é aceito.
-- **Pontos em aberto:** tolerância de "hoje"; edição da abertura de um ciclo que já abriu.
+- **Origem:** Decisão 3. **Status:** **Implementada em 10/11/2026 por decisão do usuário** ("só no futuro", interpretado como hoje ou depois).
+- **Como ficou:** a abertura é só uma data (00:00) e o prazo vai até 23:59. A data da abertura precisa ser hoje ou depois. Em ciclo existente, a regra só vale se a data da abertura mudar: um ciclo já aberto pode ser editado sem mexer nela.
 - **Depende de:** CAL-05.
-- **Testes:** UT-T-S10/S12 (hoje aceitos; passariam a ser recusados).
+- **Testes:** UT-MODAL-2/2b/9/10. Os roteiros antigos UT-T-S10/S12, que criavam ciclos no passado, agora esperariam recusa (não reexecutados).
 
 **UT-07 · Preenchimento e conclusão**
 - **Regra:**

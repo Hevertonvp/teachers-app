@@ -105,6 +105,7 @@ model Escola {
   conversasMensagem ConversaMensagem[]
   feedbacksSistema  FeedbackSistema[]
   coberturasUmTerco CoberturaEntregaUmTerco[]
+  ciclosUmTerco     CicloUmTercoEscola[]
 
   @@map("escolas")
 }
@@ -1524,6 +1525,10 @@ model CicloUmTerco {
   abreEm    DateTime
   prazoEm   DateTime
   status    StatusRegistro @default(ATIVA)
+  // Escolas atendidas (decisão do usuário, 10/11/2026 — substitui a regra "1/3 global" das seções 72/82):
+  // true = todas as escolas, inclusive as criadas depois (comportamento antigo; padrão dos ciclos existentes);
+  // false = só as escolas listadas em CicloUmTercoEscola.
+  todasEscolas Boolean @default(true)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -1533,9 +1538,22 @@ model CicloUmTerco {
   semanas     SemanaUmTerco[]
   entregas    EntregaUmTerco[]
   reaberturas ReaberturaUmTerco[]
+  escolas     CicloUmTercoEscola[]
 
   @@index([anoLetivo, trimestre])
   @@map("ciclos_um_terco")
+}
+
+// Escolas de um ciclo do 1/3 quando ele NÃO é para todas as escolas (todasEscolas = false).
+model CicloUmTercoEscola {
+  cicloId  Int
+  ciclo    CicloUmTerco @relation(fields: [cicloId], references: [id], onDelete: Cascade)
+  escolaId Int
+  escola   Escola       @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+
+  @@id([cicloId, escolaId])
+  @@index([escolaId])
+  @@map("ciclos_um_terco_escolas")
 }
 
 model SemanaUmTerco {

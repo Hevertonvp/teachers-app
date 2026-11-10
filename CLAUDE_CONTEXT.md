@@ -1226,6 +1226,8 @@ Se existir índice/constraint impedindo vários ciclos no mesmo trimestre, criar
 
 # 72. EscolaModulo no 1/3
 
+> **MUDOU em 10/11/2026 (decisão do usuário):** o 1/3 deixou de ser global. Cada ciclo atende as escolas escolhidas pela Secretaria, ou "Todas as escolas". Continua sem `EscolaModulo`, sem script e sem lista fixa. Ver o Registro de alterações (10/11/2026) e UT-01 em REGRAS_DE_NEGOCIO_NEXO.md.
+
 Implementação inicial fez o 1/3 depender de `FORMULARIO_UM_TERCO` em `EscolaModulo`.
 
 Isso foi considerado errado.
@@ -1378,6 +1380,8 @@ Se for preciso consulta por Diretora/Gestor, perguntar antes.
 ---
 
 # 82. Aplicabilidade global do 1/3
+
+> **MUDOU em 10/11/2026:** além das condições abaixo, a escola precisa estar entre as escolas do ciclo (ou o ciclo ser "Todas as escolas"). Ver seção 72.
 
 Não usar `EscolaModulo`.
 
@@ -2358,3 +2362,72 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Fora do escopo, por regra de acesso:** o Gestor e a Diretora não veem o 1/3, porque o painel do 1/3 é só da Secretaria (PER-09). O Dashboard deles não mudou.
   - **Backend:** nada mudou.
   - **Teste:** `homologacao/45-dashboard-entregas.mjs`, desktop e celular, banco local: **8/8**. Compara com as APIs com todas as escolas e com a Aurora selecionada; verifica a página do PDI com os mesmos números e a ausência de rolagem horizontal.
+- **10/11/2026: validação das datas do Formulário 1/3; divisão automática das semanas removida (decisões do usuário; branch `feature/validacao-datas-um-terco`, a partir da `feature/dashboard-entregas`; frontend e backend).**
+  - **Decisão do usuário:** "esquece esse negócio de dividir as datas dentro da janela": as semanas (período de referência) e a abertura/prazo (janela de preenchimento) são independentes (UT-05). A divisão automática e o botão "Redividir" saíram; as semanas voltam a ser preenchidas à mão (4 em branco por padrão).
+  - **Respostas às perguntas de regra:**
+    - semana de tamanho livre;
+    - buracos entre semanas permitidos;
+    - semana depois do prazo **bloqueada**;
+    - abertura "só no futuro": aplicado como **hoje ou depois**; trocar para "a partir de amanhã" é uma linha.
+  - **Backend:**
+    - `validarCiclo` (`domain/umTerco.ts`) recusa semanas fora de ordem ou sobrepostas e semana terminando depois do prazo;
+    - nova `exigirAberturaNaoPassada`: vale sempre na criação e, na edição, só se a data da abertura mudar (`routes/formularioUmTerco.ts`);
+    - nenhuma migration.
+  - **Frontend (`UmTercoSecretariaPage.jsx`):**
+    - as mesmas regras são conferidas **na hora**, com borda vermelha e mensagem embaixo do campo;
+    - Salvar fica bloqueado enquanto houver erro;
+    - os calendários já limitam as datas possíveis (mínimo e máximo).
+  - **Achado:** o ciclo #1 do banco local tem a Semana 4 (23–27/11) depois do prazo (20/11). Com a regra nova, ele é acusado no modal e só salva depois de corrigido. **Antes de publicar, conferir se há ciclos assim na produção**: neles, editar exigirá ajustar o prazo ou a semana. Reaberturas não são afetadas.
+  - **Testes:**
+    - `scripts/umTerco/testar-dominio.ts` 20/20; `testar-integracao.ts` 50/50 (banco local, sem resíduo);
+    - `44-modal-novo-ciclo-um-terco.mjs` **21/21** (corrigido em 10/11: antes registrado por engano como 24/24), desktop e celular. Cobre cada regra na tela, um caso válido com buraco, semana anterior à abertura e tamanhos 5/10/1/1, a gravação exata no banco, o ciclo antigo e a API recusando (400) as mesmas 4 situações;
+    - resultados obsoletos do roteiro 44 (divisão automática) foram removidos da matriz;
+    - `REGRAS_DE_NEGOCIO_NEXO.md` atualizado (UT-05, UT-06).
+- **10/11/2026: Formulário 1/3 com ESCOLAS escolhidas por ciclo (pedido do usuário; branch `feature/um-terco-escolas`, a partir da `feature/validacao-datas-um-terco`; banco, backend e frontend).**
+  - **Pedido:** "para abrir um novo formulário 1/3, devemos escolher as escolas que ele vai atender, assim como no PDI. E também temos opção de marcar todas de uma vez".
+  - **Conflito apontado antes de implementar:** a regra "1/3 global" (§72/§82, marcada como definitiva). O usuário confirmou que a mudança a **substitui**. As seções 72 e 82 foram anotadas.
+  - **Decisões do usuário:**
+    1. "Todas as escolas" inclui escolas criadas depois;
+    2. ciclos de escolas diferentes podem ter janelas sobrepostas; ciclos com escola em comum (ou "todas") não podem.
+  - **Proposta técnica aplicada:**
+    - escola com preenchimento iniciado no ciclo não pode ser retirada (409);
+    - acrescentar escola pode;
+    - escola inativa não pode ser escolhida, salvo se já estava no ciclo.
+  - **Banco:** migration aditiva `20261110120000_um_terco_escolas_do_ciclo`:
+    - `ciclos_um_terco.todasEscolas` (padrão true: **ciclos existentes ficam "todas", sem mudança de comportamento**);
+    - tabela `ciclos_um_terco_escolas` (cicloId, escolaId).
+
+    Aplicada **só no banco local**, com diff schema × banco vazio. **Na produção (Neon) precisa ser aplicada com `prisma migrate deploy` antes de publicar o backend**: o build do Render não aplica migrations.
+  - **Backend (`routes/formularioUmTerco.ts`):**
+    - **ciclo na API:** ganhou `todasEscolas` e `escolas[]` na resposta e `todasEscolas`/`escolaIds` na criação e edição. Sem os campos, a API trata como "todas" na criação e mantém as escolas na edição, então clientes antigos não quebram;
+    - **elegibilidade:** `vinculosElegiveis` filtra as turmas pelas escolas do ciclo. Por isso painel, "Meus formulários" do professor, cobertura, exportação e dashboard respeitam as escolas automaticamente;
+    - **sobreposição:** `exigirJanelaLivre` só recusa quando há escola em comum.
+  - **Frontend (`UmTercoSecretariaPage.jsx`):**
+    - "Escolas atendidas" no topo do modal: "Todas as escolas" marcado por padrão; ao desmarcar, aparece a lista com busca (mais de 6 escolas) e a contagem; nenhuma escolhida mostra aviso e bloqueia Salvar;
+    - o cartão do ciclo mostra "Todas as escolas" ou "N escolas: A, B, C e mais X";
+    - no celular, os nomes longos são cortados com "…".
+  - **Testes (banco local):**
+    - `testar-dominio` 20/20; `testar-integracao` 50/50 (ciclos "todas" = comportamento antigo);
+    - **`homologacao/46-um-terco-escolas-do-ciclo.mjs` 8/8:**
+      - modal (padrão "todas", aviso sem escola, gravação no banco, cartão);
+      - painel só com turmas da Aurora;
+      - professor só da Aurora vê o ciclo e o só da Boa Vista não;
+      - sobreposição (só BV 201, com Aurora 409, todas 409);
+      - API sem escola 400;
+      - retirar a Aurora do ciclo #1 com preenchimentos 409, sem gravar nada;
+      - edição pelo modal com a Aurora marcada e conflito mostrado;
+    - regressão: 44 (21/21), 45 (8/8), 43 (21/21).
+  - **Correção de registro:** o roteiro 44 tem **21** casos, não 24 como registrado antes por erro de contagem.
+  - **Infra de teste:** havia 3 processos antigos do backend local (de 09/11) travando o motor do Prisma; foram encerrados. O `reiniciar-backend.sh` atual já derruba o processo da porta 3340.
+- **10/11/2026: estado de publicação conferido (corrige os "sem push" das entradas anteriores).**
+  - **Já está na `main`:** o usuário juntou a `feature/dashboard-entregas` (PRs **#5** e **#6**, 00:42–00:44 de 10/11) e, com ela, exportação para Excel, modal do 1/3 v1 (sem ano/trimestre/título, só data, **com a divisão automática das semanas**) e dashboard. O frontend é publicado pelo GitHub Actions a cada push na `main`, então essas telas estão no ar.
+  - **Commit "." (`0d3cd5c`, do usuário, dentro do PR #6):** levou para a `main` a parte de **backend** das validações de datas, ainda em andamento naquele momento (`domain/umTerco.ts`: semanas em ordem, nenhuma depois do prazo, `exigirAberturaNaoPassada`; rota usando essas regras). Se o Render publicou a `main`, a produção já aplica essas regras no backend. A divisão automática do frontend publicado gera semanas compatíveis com elas.
+  - **Ainda não está na `main`:**
+    - `feature/validacao-datas-um-terco`: frontend com semanas manuais e avisos na hora; remove a divisão automática;
+    - `feature/um-terco-escolas`: escolas por ciclo, **com migration**.
+  - **Ordem obrigatória para publicar as escolas:**
+    1. `prisma migrate deploy` no Neon (aditiva; ciclos atuais ficam "todas");
+    2. juntar à `main`.
+    
+    Juntar antes da migration faz o backend consultar colunas inexistentes e derruba o 1/3.
+  - **Não conferido:** qual commit o Render está rodando.
