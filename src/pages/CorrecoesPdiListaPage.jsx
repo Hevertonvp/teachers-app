@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge, Card, DataTable, EmptyState, FormField } from '../components/Common';
+import { Card, DataTable, EmptyState, FormField } from '../components/Common';
 import { useData } from '../context/DataContext';
 import { inputClass } from '../utils/display';
 import { listarCorrecoesPdiReais } from '../services/correcoesPdi';
+import { SeloCorrecao } from '../components/Correcoes';
 import { MainLayout } from '../layouts/Layouts';
 
-const INDICADOR_LABEL = { nenhuma: '—', solicitada: 'Correção solicitada', resolvida: 'Corrigida' };
-const INDICADOR_VARIANT = { nenhuma: 'gray', solicitada: 'yellow', resolvida: 'blue' };
+// Situação da correção mais recente (fluxo de correções, 10/11/2026): ver components/Correcoes.jsx.
 
 const formatarDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
 
@@ -22,12 +22,13 @@ export const CorrecoesPdiListaPage = () => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [soEmAndamento, setSoEmAndamento] = useState(false);
 
-  const carregar = async () => {
+  const carregar = async (emAndamento = soEmAndamento) => {
     setCarregando(true);
     setErro('');
     try {
-      const resultado = await listarCorrecoesPdiReais(filtros);
+      const resultado = await listarCorrecoesPdiReais({ ...filtros, correcao: emAndamento ? 'em_andamento' : '' });
       setItens(resultado);
     } catch (error) {
       setErro(error.message);
@@ -58,6 +59,10 @@ export const CorrecoesPdiListaPage = () => {
           <button type="button" onClick={() => setMostrarFiltros((prev) => !prev)} className="text-sm font-semibold text-teal-700 hover:underline">
             {mostrarFiltros ? 'Ocultar filtros' : 'Filtros e pesquisa'}
           </button>
+          <label className="ml-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <input type="checkbox" checked={soEmAndamento} onChange={(e) => { setSoEmAndamento(e.target.checked); carregar(e.target.checked); }} />
+            Só com correção em andamento
+          </label>
           {mostrarFiltros && (
             <form onSubmit={aplicarFiltros} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <FormField label="Escola">
@@ -101,7 +106,7 @@ export const CorrecoesPdiListaPage = () => {
               { key: 'disciplinaNome', header: 'Disciplina' },
               { key: 'professorNome', header: 'Professor' },
               { key: 'concluidaEm', header: 'Concluída em', render: (item) => formatarDataHora(item.concluidaEm) },
-              { key: 'indicadorCorrecao', header: 'Correção', render: (item) => <Badge variant={INDICADOR_VARIANT[item.indicadorCorrecao]}>{INDICADOR_LABEL[item.indicadorCorrecao]}</Badge> },
+              { key: 'indicadorCorrecao', header: 'Correção', render: (item) => (item.indicadorCorrecao === 'nenhuma' ? '—' : <SeloCorrecao situacao={item.indicadorCorrecao} />) },
             ]}
             rows={itens}
             onRowClick={(item) => navigate(`/correcoes/pdi/${item.id}`)}

@@ -66,6 +66,7 @@ export const MeusPdisPage = () => {
           <span key={item.disciplinaId} className="flex flex-wrap items-center gap-2">
             <span>{item.disciplinaNome}</span>
             <Badge variant={STATUS_VISUAL_VARIANT[item.statusVisual]}>{STATUS_VISUAL_LABEL[item.statusVisual]}</Badge>
+            {item.correcaoSolicitada && <Badge variant="yellow">Correção solicitada</Badge>}
           </span>
         ))}
       </div>

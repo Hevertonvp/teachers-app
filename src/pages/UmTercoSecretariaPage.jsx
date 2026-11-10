@@ -399,7 +399,7 @@ export const UmTercoSecretariaPage = () => {
                   <BotaoExportarExcel gerar={() => exportarUmTerco({ cicloId: ciclo.id, usuario: user?.nome })} />
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setFormAberto(ciclo)}>Editar</Button>}
                   {/* Reabrir só depois do prazo; antes, estende-se pelo Editar. */}{!inativo && ciclo.statusPrazo === 'encerrado' && <Button size="sm" variant="outline" onClick={() => setReabrindo(ciclo)}>Reabrir</Button>}
-                  {!inativo && ciclo.entregasIniciadas === 0 && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}
+                  {!inativo && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}
                   {inativo && <Button size="sm" variant="outline" onClick={() => acao(() => reativarCicloUmTerco(ciclo.id), 'Ciclo reativado. Ele voltou para a lista de ciclos ativos.')}>Reativar</Button>}
                 </div>
               </Card>
@@ -421,7 +421,10 @@ export const UmTercoSecretariaPage = () => {
       {inativando && (
         <ConfirmDialog
           title="Inativar ciclo"
-          message={`Inativar "${inativando.titulo}" do ${inativando.trimestre}º trimestre? Nenhum Professor começou a preencher, então nada se perde; dá para reativar depois.`}
+          // Pode inativar mesmo com preenchimentos (decisão do usuário, 10/11/2026): nada é apagado.
+          message={inativando.entregasIniciadas > 0
+            ? `Inativar "${inativando.titulo}" do ${inativando.trimestre}º trimestre? ${inativando.entregasIniciadas} ${inativando.entregasIniciadas === 1 ? 'preenchimento já foi iniciado' : 'preenchimentos já foram iniciados'}. Nada é apagado: os registros ficam guardados, os professores deixam de ver este ciclo e tudo volta se você reativar.`
+            : `Inativar "${inativando.titulo}" do ${inativando.trimestre}º trimestre? Nenhum Professor começou a preencher, então nada se perde; dá para reativar depois.`}
           confirmLabel="Inativar"
           onCancel={() => setInativando(null)}
           onConfirm={() => { const alvo = inativando; setInativando(null); acao(() => inativarCicloUmTerco(alvo.id), 'Ciclo inativado. Ele fica em "Ver inativos".'); }}

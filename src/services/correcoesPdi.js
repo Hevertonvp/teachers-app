@@ -34,3 +34,7 @@ export const devolverPadraoReal = (fichaId, observacao) => apiFetch(`/api/correc
   method: 'POST',
   body: { observacao },
 });
+
+// Fluxo de correções (10/11/2026): Secretaria aceita a correção que o Professor enviou.
+export const aceitarCorrecaoPdiReal = (fichaId) => apiFetch(`/api/correcoes-pdi/${fichaId}/aceitar`, { method: 'POST', body: {} });
+export const aceitarCorrecaoPadraoReal = (fichaId) => apiFetch(`/api/correcoes-pdi/${fichaId}/aceitar-padrao`, { method: 'POST', body: {} });

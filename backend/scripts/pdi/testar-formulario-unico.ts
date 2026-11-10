@@ -185,8 +185,13 @@ try {
   ok(relA.data.blocoPadrao.editavelAgora && relB2.data.blocoPadrao.editavelAgora, 'bloco devolvido fica editável a partir das duas Fichas');
   const corrige = await api(tProf, 'PUT', `/api/pdi-fichas/${fB.data.ficha.id}/respostas-padrao`, { respostas: [{ aplicacaoPerguntaPadraoId: pergAdapt.id, valor: { resposta: 'Não' } }], version: relB2.data.blocoPadrao.version });
   ok(corrige.status === 200, 'Professor corrige o bloco uma vez (pela Ficha B)', corrige);
+  // MUDOU (fluxo de correções, 10/11/2026): salvar é rascunho e NÃO resolve; "Enviar correção"
+  // (POST /concluir) em qualquer Ficha do bloco resolve para todas as disciplinas.
+  const corrSalva = await prisma.correcaoBlocoPadraoPdi.findFirst({ where: { bloco: { aplicacaoId } }, orderBy: { id: 'desc' } });
+  ok(corrSalva?.status === 'ABERTA', 'salvar o bloco não envia a correção (continua aberta)');
+  await api(tProf, 'POST', `/api/pdi-fichas/${fB.data.ficha.id}/concluir`);
   const corrBloco = await prisma.correcaoBlocoPadraoPdi.findFirst({ where: { bloco: { aplicacaoId } }, orderBy: { id: 'desc' } });
-  ok(corrBloco?.status === 'RESOLVIDA', 'correção do bloco resolvida pra todas as disciplinas');
+  ok(corrBloco?.status === 'RESOLVIDA', 'correção do bloco resolvida pra todas as disciplinas (ao enviar)');
   const hist = await prisma.historicoCorrecaoRespostaPadrao.findFirst({ where: { bloco: { aplicacaoId } }, orderBy: { id: 'desc' } });
   ok((hist?.valorAnterior as any)?.resposta === 'Sim' && (hist?.valorNovo as any)?.resposta === 'Não', 'histórico/auditoria do bloco com valor anterior e novo');
   const anual = await api(tSec, 'GET', `/api/pdi-ficha-anual/${aluno.id}/${ano}`);

@@ -32,3 +32,8 @@ export const concluirFormularioUmTerco = (cicloId, anoSerie, disciplinaId, baseU
   `${caminho(cicloId, anoSerie, disciplinaId)}/concluir`,
   { method: 'POST', body: { baseUpdatedAt: baseUpdatedAt ?? null } },
 );
+
+// Fluxo de correções (10/11/2026): Secretaria devolve uma entrega concluída ao Professor (orientações
+// obrigatórias, prazo fixo de 3 dias) e depois aceita a correção recebida.
+export const devolverEntregaUmTerco = (entregaId, observacao) => apiFetch(`${BASE}/entregas/${entregaId}/devolver`, { method: 'POST', body: { observacao } });
+export const aceitarCorrecaoUmTerco = (entregaId) => apiFetch(`${BASE}/entregas/${entregaId}/aceitar`, { method: 'POST', body: {} });

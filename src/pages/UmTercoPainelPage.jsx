@@ -5,7 +5,8 @@ import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { useAuth } from '../context/AuthContext';
 import { exportarUmTerco } from '../utils/exportarUmTerco';
-import { obterEntregaUmTerco, obterPainelUmTerco } from '../services/formularioUmTerco';
+import { aceitarCorrecaoUmTerco, devolverEntregaUmTerco, obterEntregaUmTerco, obterPainelUmTerco } from '../services/formularioUmTerco';
+import { FormEnviarParaCorrecao, HistoricoCorrecoes, SeloCorrecao, correcaoPendente } from '../components/Correcoes';
 import { inputClass } from '../utils/display';
 import { agruparPorEscola, formatarDataHora, formatarPeriodo, STATUS_ENTREGA } from '../utils/umTerco';
 
@@ -14,12 +15,26 @@ const EVENTO_ROTULO = {
   COBERTURA_ADICIONADA: 'Passou a valer para uma turma', COBERTURA_ENCERRADA: 'Deixou de valer para uma turma',
 };
 
-const DetalheEntregaModal = ({ cicloId, linha, onClose }) => {
+const DetalheEntregaModal = ({ cicloId, linha, onClose, onAlterado }) => {
   const [detalhe, setDetalhe] = useState(null);
   const [erro, setErro] = useState('');
-  useEffect(() => {
-    obterEntregaUmTerco(cicloId, linha.professorId, linha.anoSerie, linha.disciplinaId).then(setDetalhe).catch(e => setErro(e.message));
-  }, [cicloId, linha]);
+  const [aviso, setAviso] = useState('');
+  const [devolvendo, setDevolvendo] = useState(false);
+  const recarregar = () => obterEntregaUmTerco(cicloId, linha.professorId, linha.anoSerie, linha.disciplinaId).then(setDetalhe).catch(e => setErro(e.message));
+  useEffect(() => { recarregar(); }, [cicloId, linha]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fluxo de correções (10/11/2026): enviar para correção (orientações + confirmação) e aceitar.
+  const devolver = async (texto) => {
+    const r = await devolverEntregaUmTerco(detalhe.entregaId, texto);
+    setDevolvendo(false);
+    setAviso(r.mensagensEnviadas ? 'Correção enviada. O professor recebeu a mensagem com as orientações e o prazo.' : 'Correção registrada.');
+    await recarregar(); onAlterado?.();
+  };
+  const aceitar = async () => {
+    setErro(''); setAviso('');
+    try { await aceitarCorrecaoUmTerco(detalhe.entregaId); setAviso('Correção aceita.'); await recarregar(); onAlterado?.(); } catch (e) { setErro(e.message); }
+  };
+  const ultima = detalhe?.correcao ?? null;
 
   return (
     <Modal title={`${linha.professorNome} — ${linha.anoSerie}º ano ${linha.disciplinaNome}`} onClose={onClose}>
@@ -27,6 +42,17 @@ const DetalheEntregaModal = ({ cicloId, linha, onClose }) => {
       {!detalhe && !erro && <LoadingBlock text="Carregando..." className="py-4" />}
       {detalhe && (
         <div className="space-y-5">
+          {aviso && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{aviso}</p>}
+          {devolvendo ? (
+            <FormEnviarParaCorrecao descricao="Só este formulário (este ano/série e esta disciplina) é liberado para o professor corrigir." onConfirmar={devolver} onFechar={() => setDevolvendo(false)} />
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {detalhe.status === 'concluida' && !correcaoPendente(ultima) && <Button size="sm" variant="outline" onClick={() => setDevolvendo(true)}>Enviar para correção</Button>}
+              {ultima?.situacao === 'recebida' && <Button size="sm" variant="outline" onClick={aceitar}>Aceitar correção</Button>}
+              {ultima && <SeloCorrecao situacao={ultima.situacao} />}
+              {ultima?.situacao === 'recebida' && ultima.enviadaForaDoPrazo && <span className="text-xs text-slate-500">enviada fora do prazo</span>}
+            </div>
+          )}
           <div className="text-sm text-slate-700">
             <p className="font-semibold text-slate-800">Válido para:</p>
             {agruparPorEscola(detalhe.validoPara).map(e => <p key={e.escolaId}><span className="font-semibold">{e.escolaNome}</span> — {e.turmas.join(', ')}</p>)}
@@ -48,6 +74,7 @@ const DetalheEntregaModal = ({ cicloId, linha, onClose }) => {
               </ul>
             </div>
           )}
+          <HistoricoCorrecoes correcoes={detalhe.correcoes} />
           {detalhe.historico.length > 0 && (
             <div>
               <p className="mb-1 text-sm font-semibold text-slate-800">Histórico</p>
@@ -65,7 +92,7 @@ const DetalheEntregaModal = ({ cicloId, linha, onClose }) => {
 export const UmTercoPainelPage = () => {
   const { cicloId } = useParams();
   const { user } = useAuth();
-  const [filtros, setFiltros] = useState({ escolaId: '', anoSerie: '', disciplinaId: '', professorId: '', status: '' });
+  const [filtros, setFiltros] = useState({ escolaId: '', anoSerie: '', disciplinaId: '', professorId: '', status: '', correcao: '' });
   const [painel, setPainel] = useState(null);
   const [opcoes, setOpcoes] = useState(null); // visão sem filtros, só para preencher os selects
   const [erro, setErro] = useState('');
@@ -140,7 +167,7 @@ export const UmTercoPainelPage = () => {
         )}
 
         <Card>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <select aria-label="Escola" className={inputClass} value={filtros.escolaId} onChange={definir('escolaId')}>
               <option value="">Todas as escolas</option>
               {selects.escolas.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
@@ -160,6 +187,10 @@ export const UmTercoPainelPage = () => {
             <select aria-label="Status" className={inputClass} value={filtros.status} onChange={definir('status')}>
               <option value="">Todos os status</option>
               {Object.entries(STATUS_ENTREGA).map(([valor, { label }]) => <option key={valor} value={valor}>{label}</option>)}
+            </select>
+            <select aria-label="Correção" className={inputClass} value={filtros.correcao} onChange={definir('correcao')}>
+              <option value="">Todas (correção)</option>
+              <option value="em_andamento">Com correção em andamento</option>
             </select>
           </div>
         </Card>
@@ -190,9 +221,10 @@ export const UmTercoPainelPage = () => {
                     <p className="text-sm text-slate-600">{linha.anoSerie}º ano — {linha.disciplinaNome}</p>
                     <p className="mt-1 text-xs text-slate-500">{escolas.map(e => `${e.escolaNome} (${e.turmas.join(', ')})`).join(' · ') || 'Sem turma ativa'}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 flex-wrap items-center gap-3">
                     <span className="text-sm font-semibold text-slate-600">{linha.semanasPreenchidas}/{linha.totalSemanas}</span>
                     <Badge variant={status.variant}>{status.label}</Badge>
+                    {linha.correcao && <SeloCorrecao situacao={linha.correcao} />}
                     <Button size="sm" variant="outline" disabled={!linha.entregaId} onClick={() => setDetalhe(linha)}>Ver</Button>
                   </div>
                 </div>
@@ -201,7 +233,7 @@ export const UmTercoPainelPage = () => {
           })}
         </div>
       </div>
-      {detalhe && <DetalheEntregaModal cicloId={cicloId} linha={detalhe} onClose={() => setDetalhe(null)} />}
+      {detalhe && <DetalheEntregaModal cicloId={cicloId} linha={detalhe} onClose={() => setDetalhe(null)} onAlterado={() => setFiltros(prev => ({ ...prev }))} />}
     </MainLayout>
   );
 };

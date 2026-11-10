@@ -65,7 +65,9 @@ export async function resolverOuCriarBloco(identidade: IdentidadeBloco, actorId:
 
 export async function existeCorrecaoBlocoAtiva(client: Cliente, blocoId: number): Promise<boolean> {
   const correcao = await client.correcaoBlocoPadraoPdi.findFirst({
-    where: { blocoId, status: 'ABERTA', prazoAte: { gt: new Date() } },
+    // Sem condição de prazo (fluxo de correções, 10/11/2026): depois dos 3 dias a correção fica
+    // "com prazo encerrado", mas o Professor não é bloqueado; ela segue aberta até ele enviar.
+    where: { blocoId, status: 'ABERTA' },
     select: { id: true },
   });
   return !!correcao;

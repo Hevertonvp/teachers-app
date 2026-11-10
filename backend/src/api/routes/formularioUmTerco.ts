@@ -7,6 +7,8 @@ import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
+import { formatarCorrecao, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecao, textoMensagemCorrecao } from '../../domain/correcoes.js';
+import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 
 // Formulário 1/3 — registro dos conteúdos ensinados, por semana.
 // Identidade do preenchimento: ciclo + professor + anoSerie + disciplina (EntregaUmTerco, única no
@@ -210,6 +212,7 @@ async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, 
         respostas: true,
         cobertura: { include: { turma: { include: { escola: true } } }, orderBy: { desde: 'asc' } },
         historico: { orderBy: { quando: 'asc' } },
+        correcoes: { orderBy: { criadaEm: 'desc' } },
       },
     }),
     db.disciplina.findUnique({ where: { id: disciplinaId } }),
@@ -224,6 +227,10 @@ async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, 
   const respostaPorSemana = new Map((entrega?.respostas ?? []).map((r) => [r.semanaId, r.texto]));
   const agora = new Date();
   const prazoAberto = ciclo.status === 'ATIVA' && cicloEditavelAgora(ciclo, janelasDe(ciclo), agora);
+  // Correções desta entrega (fluxo de correções, 10/11/2026), mais recente primeiro.
+  const correcoes = entrega?.correcoes ?? [];
+  const nomes = await nomesDePessoas(db, idsDePessoasDasCorrecoes(correcoes));
+  const correcaoAberta = correcoes.some((c) => c.status === 'ABERTA');
   return {
     ciclo: formatarCiclo(ciclo),
     professorId: professor.id,
@@ -237,8 +244,11 @@ async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, 
     iniciadaEm: iso(entrega?.iniciadaEm ?? null),
     concluidaEm: iso(entrega?.concluidaEm ?? null),
     updatedAt: iso(entrega?.updatedAt ?? null),
-    // Pode editar = prazo/reabertura aberto E ainda leciona (vínculo ativo equivalente).
-    editavelAgora: opcoes.podeEditar && prazoAberto && ativos.length > 0,
+    // Pode editar = prazo/reabertura aberto E ainda leciona (vínculo ativo equivalente), ou há uma
+    // correção aberta para esta entrega (devolvida pela Secretaria).
+    editavelAgora: opcoes.podeEditar && ciclo.status === 'ATIVA' && ((prazoAberto && ativos.length > 0) || correcaoAberta),
+    correcao: correcoes[0] ? formatarCorrecao(correcoes[0], nomes) : null,
+    correcoes: correcoes.map((c) => formatarCorrecao(c, nomes)),
     semanas: ciclo.semanas.map((s) => ({
       id: s.id, numero: s.numero, rotulo: `Semana ${s.numero}`, dataInicio: dataIso(s.dataInicio), dataFim: dataIso(s.dataFim),
       texto: respostaPorSemana.get(s.id) ?? '',
@@ -354,7 +364,9 @@ formularioUmTercoRouter.post('/ciclos/:id/inativar', async (req, res) => {
   exigirSecretaria(actor);
   const id = lerId(req.params.id);
   const ciclo = await buscarCiclo(prisma, id);
-  if (await prisma.entregaUmTerco.count({ where: { cicloId: id } }) > 0) throw new ConflictError('Este ciclo já tem preenchimentos e não pode ser inativado.');
+  // MUDOU (decisão do usuário, 10/11/2026): pode inativar mesmo com preenchimentos. Nada é apagado:
+  // o ciclo só sai das listas (o professor deixa de vê-lo) e volta inteiro ao reativar. A tela avisa
+  // quantos professores já preencheram antes de confirmar.
   await prisma.cicloUmTerco.update({ where: { id: ciclo.id }, data: { status: 'INATIVA', updatedBy: String(actor.id) } });
   res.json(formatarCiclo(await buscarCiclo(prisma, id)));
 });
@@ -411,12 +423,14 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
   const filtroDisciplina = q.disciplinaId ? lerId(q.disciplinaId, 'Disciplina') : null;
   const filtroProfessor = q.professorId ? lerId(q.professorId, 'Professor') : null;
   const filtroStatus = typeof q.status === 'string' && ['nao_iniciado', 'em_andamento', 'concluida'].includes(q.status) ? q.status : null;
+  // Fluxo de correções (10/11/2026): só as entregas cuja correção aguarda o professor ou a conferência.
+  const filtroCorrecao = q.correcao === 'em_andamento';
 
   const [elegiveis, entregas] = await Promise.all([
     vinculosElegiveis(prisma, ciclo),
     prisma.entregaUmTerco.findMany({
       where: { cicloId: ciclo.id },
-      include: { respostas: true, professor: { select: { id: true, nome: true } }, disciplina: true, cobertura: { include: { turma: { include: { escola: true } } } } },
+      include: { respostas: true, professor: { select: { id: true, nome: true } }, disciplina: true, cobertura: { include: { turma: { include: { escola: true } } } }, correcoes: { orderBy: { criadaEm: 'desc' }, take: 1 } },
     }),
   ]);
 
@@ -452,6 +466,8 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
     return {
       professorId: l.professorId, professorNome: l.professorNome, anoSerie: l.anoSerie, disciplinaId: l.disciplinaId, disciplinaNome: l.disciplinaNome,
       entregaId: l.entrega?.id ?? null, status, semanasPreenchidas: preenchidas, totalSemanas,
+      // Situação da correção mais recente (nula = nunca devolvida). Ver domain/correcoes.ts.
+      correcao: l.entrega?.correcoes[0] ? situacaoCorrecao(l.entrega.correcoes[0]) : null,
       concluidaEm: iso(l.entrega?.concluidaEm ?? null), atualizadoEm: iso(l.entrega?.updatedAt ?? null),
       turmas,
     };
@@ -459,7 +475,8 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
     && (!filtroSerie || l.anoSerie === filtroSerie)
     && (!filtroDisciplina || l.disciplinaId === filtroDisciplina)
     && (!filtroProfessor || l.professorId === filtroProfessor)
-    && (!filtroStatus || l.status === filtroStatus))
+    && (!filtroStatus || l.status === filtroStatus)
+    && (!filtroCorrecao || ['solicitada', 'prazo_encerrado', 'recebida'].includes(l.correcao ?? '')))
     .sort((a, b) => a.professorNome.localeCompare(b.professorNome) || a.anoSerie - b.anoSerie || a.disciplinaNome.localeCompare(b.disciplinaNome));
 
   // Total é por entrega ÚNICA (nunca multiplica por escola/turma).
@@ -509,6 +526,63 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
   res.json({ ...painel, conteudos });
 });
 
+// ===== Secretaria: devolver para correção e aceitar (fluxo de correções, 10/11/2026) ==============
+// Mesmo desenho do PDI: orientações obrigatórias, prazo FIXO de 3 dias corridos, mensagem automática
+// na caixa do Professor dono da entrega, devoluções ilimitadas (uma aberta por vez). A entrega é a
+// do próprio Professor (professor + ano/série + disciplina), então nunca mistura professores; a
+// devolução libera só ela (nunca o ciclo, nunca outra disciplina ou outro ano/série).
+const devolverEntregaSchema = z.object({ observacao: z.string().trim().min(1, 'Escreva o que precisa ser corrigido.').max(OBSERVACAO_MAX, `Use no máximo ${OBSERVACAO_MAX} caracteres.`) });
+
+formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const entregaId = lerId(req.params.entregaId, 'Entrega');
+  const { observacao } = devolverEntregaSchema.parse(req.body);
+
+  const { correcao, criadas } = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM entregas_um_terco WHERE id = ${entregaId} FOR UPDATE`;
+    const entrega = await tx.entregaUmTerco.findUnique({
+      where: { id: entregaId },
+      include: { professor: true, disciplina: true, ciclo: true, cobertura: { include: { turma: { include: { escola: true } } } } },
+    });
+    if (!entrega) throw new NotFoundError('Entrega não encontrada.');
+    if (entrega.ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
+    if (entrega.status !== 'CONCLUIDA') throw new ValidationError('Só é possível devolver um formulário já concluído.');
+    if (entrega.professor.status !== 'ATIVO') throw new ValidationError('O professor desta entrega está inativo. Não há quem receba a correção.');
+    const aberta = await tx.correcaoEntregaUmTerco.findFirst({ where: { entregaId, status: 'ABERTA' } });
+    if (aberta) throw new ConflictError('Este formulário já tem uma correção aguardando o professor. Aguarde o envio para devolver de novo.');
+
+    const agora = new Date();
+    await tx.correcaoEntregaUmTerco.updateMany({ where: { entregaId, status: 'RESOLVIDA', conferencia: null }, data: { conferencia: 'DEVOLVIDA', conferidaEm: agora, conferidaPor: String(actor.id) } });
+    const nova = await tx.correcaoEntregaUmTerco.create({ data: { entregaId, observacao, criadaPor: String(actor.id), criadaEm: agora, prazoAte: new Date(agora.getTime() + PRAZO_CORRECAO_MS) } });
+
+    // Turmas e escolas que esta entrega cobre (vigentes; se nenhuma, as do histórico).
+    const cobertura = entrega.cobertura.filter((c) => !c.ate).length ? entrega.cobertura.filter((c) => !c.ate) : entrega.cobertura;
+    const porEscola = new Map<string, string[]>();
+    for (const c of cobertura) porEscola.set(c.turma.escola.nome, [...(porEscola.get(c.turma.escola.nome) ?? []), c.turma.nome]);
+    const linhasEscola = [...porEscola.entries()].map(([escola, turmas]) => `Escola: ${escola} · Turma(s): ${[...new Set(turmas)].join(', ')}`);
+    const msgs = await criarMensagensDeCorrecao(tx, {
+      remetenteId: actor.id, destinatarioIds: [entrega.professorId], escolasPreferidas: [...new Set(cobertura.map((c) => c.escolaId))],
+      assunto: `Correção pendente · Formulário 1/3 · ${entrega.anoSerie}º ano · ${entrega.disciplina.nome}`,
+      conteudo: textoMensagemCorrecao({ formulario: `Formulário 1/3 (${entrega.ciclo.titulo})`, identificacao: [`Ano/série: ${entrega.anoSerie}º ano`, `Disciplina: ${entrega.disciplina.nome}`, ...linhasEscola], observacao, prazoAte: nova.prazoAte }),
+      link: `/formulario-um-terco/${entrega.cicloId}/${entrega.anoSerie}/${entrega.disciplinaId}`,
+    });
+    return { correcao: nova, criadas: msgs };
+  });
+  await notificarMensagensDeCorrecao(prisma, actor.id, criadas, `correcao-um-terco-${correcao.id}`);
+  res.status(201).json({ ...formatarCorrecao(correcao), mensagensEnviadas: criadas.length });
+});
+
+formularioUmTercoRouter.post('/entregas/:entregaId/aceitar', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const entregaId = lerId(req.params.entregaId, 'Entrega');
+  const ultima = await prisma.correcaoEntregaUmTerco.findFirst({ where: { entregaId }, orderBy: { criadaEm: 'desc' } });
+  if (!ultima || ultima.status !== 'RESOLVIDA' || ultima.conferencia) throw new ConflictError('Não há correção recebida aguardando conferência neste formulário.');
+  await prisma.correcaoEntregaUmTerco.updateMany({ where: { id: ultima.id, status: 'RESOLVIDA', conferencia: null }, data: { conferencia: 'ACEITA', conferidaEm: new Date(), conferidaPor: String(actor.id) } });
+  res.json(formatarCorrecao(await prisma.correcaoEntregaUmTerco.findUniqueOrThrow({ where: { id: ultima.id } })));
+});
+
 // Secretaria consulta um preenchimento específico (somente leitura, com histórico).
 formularioUmTercoRouter.get('/ciclos/:cicloId/entregas/:professorId/:anoSerie/:disciplinaId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
@@ -529,7 +603,7 @@ formularioUmTercoRouter.get('/minhas', async (_req, res) => {
   for (const ciclo of ciclos) {
     const [elegiveis, entregas] = await Promise.all([
       vinculosElegiveis(prisma, ciclo, { professorId: actor.id }),
-      prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, professorId: actor.id }, include: { respostas: true, disciplina: true } }),
+      prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, professorId: actor.id }, include: { respostas: true, disciplina: true, correcoes: { where: { status: 'ABERTA' }, select: { id: true } } } }),
     ]);
     const ativos = apenasAtivos(elegiveis);
     const grupos = new Map<string, { anoSerie: number; disciplinaId: number; disciplinaNome: string; turmas: ReturnType<typeof descreverVinculo>[] }>();
@@ -553,7 +627,9 @@ formularioUmTercoRouter.get('/minhas', async (_req, res) => {
         semanasPreenchidas: e ? e.respostas.filter((r) => r.texto.trim().length > 0).length : 0,
         totalSemanas: ciclo.semanas.length,
         validoPara: g.turmas,
-        editavelAgora: resumoCiclo.editavelAgora && g.turmas.length > 0,
+        // Correção solicitada pela Secretaria: indicação discreta na lista e edição liberada só aqui.
+        correcaoSolicitada: !!e && e.correcoes.length > 0,
+        editavelAgora: (resumoCiclo.editavelAgora && g.turmas.length > 0) || (!!e && e.correcoes.length > 0),
       });
     }
   }
@@ -573,8 +649,16 @@ const respostasSchema = z.object({
   respostas: z.array(z.object({ semanaId: z.number().int(), texto: z.string().max(TEXTO_SEMANA_MAX, `Cada semana aceita no máximo ${TEXTO_SEMANA_MAX} caracteres.`) })).min(1),
 });
 
+// Correção aberta da entrega (fluxo de correções, 10/11/2026): devolvida pela Secretaria e ainda não
+// enviada pelo Professor. Libera a edição SÓ desta entrega, mesmo depois do prazo do ciclo e mesmo
+// depois dos 3 dias da correção (o Professor não é bloqueado). Nunca libera outro formulário.
+async function correcaoAbertaDaEntrega(db: Db, cicloId: number, professorId: number, anoSerie: number, disciplinaId: number) {
+  return db.correcaoEntregaUmTerco.findFirst({ where: { status: 'ABERTA', entrega: { cicloId, professorId, anoSerie, disciplinaId } }, orderBy: { criadaEm: 'desc' } });
+}
+
 async function exigirEditavel(tx: Db, ciclo: CicloCompleto, professorId: number, anoSerie: number, disciplinaId: number) {
   if (ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
+  if (await correcaoAbertaDaEntrega(tx, ciclo.id, professorId, anoSerie, disciplinaId)) return;
   if (!cicloEditavelAgora(ciclo, janelasDe(ciclo), new Date())) throw new ValidationError('O prazo deste Formulário 1/3 terminou — ele está somente para leitura. Peça à Secretaria uma reabertura.');
   const ativos = apenasAtivos(await vinculosElegiveis(tx, ciclo, { professorId, disciplinaId, anoSerie }));
   if (ativos.length === 0) throw new ForbiddenError('Você não tem vínculo ativo com esta disciplina neste ano/série.');
@@ -657,8 +741,13 @@ formularioUmTercoRouter.post('/ciclos/:cicloId/formularios/:anoSerie/:disciplina
       include: { respostas: true },
     });
     if (!entrega) throw new ValidationError('Preencha as semanas antes de concluir.');
-    // Duplo clique: já concluída -> resposta idempotente, sem novo evento.
-    if (entrega.status === 'CONCLUIDA') return;
+    // "Enviar correção": a entrega já estava concluída quando foi devolvida; concluir de novo envia a
+    // correção (ABERTA -> RESOLVIDA). updateMany com status ABERTA: duplo clique não faz nada.
+    // Enviada depois dos 3 dias continua valendo e fica marcada como fora do prazo.
+    if (entrega.status === 'CONCLUIDA') {
+      await tx.correcaoEntregaUmTerco.updateMany({ where: { entregaId: entrega.id, status: 'ABERTA' }, data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) } });
+      return;
+    }
     if (dados.baseUpdatedAt !== undefined && dados.baseUpdatedAt !== null && !tokenIgual(dados.baseUpdatedAt, entrega.updatedAt)) {
       throw new ConflitoVersaoError('Este formulário foi alterado em outra aba ou dispositivo.', null);
     }

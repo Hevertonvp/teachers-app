@@ -280,9 +280,9 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Exceção proposta:** EXC-01 apaga esse histórico junto com o ciclo.
 
 **UT-13 · Inativar ciclo**
-- **Regra:** só é permitido enquanto nenhum professor começou. Um ciclo inativo some da lista do professor e libera a janela. Reativar é recusado se a janela coincidir com a de outro ciclo.
-- **Origem:** implementação. **Status:** Implementada.
-- **Testes:** UT-ED-02, UT-ED-04.
+- **Regra:** **MUDOU em 10/11/2026 (decisão do usuário):** pode inativar a qualquer momento, mesmo com preenchimentos. Antes de confirmar, a tela avisa quantos preenchimentos já foram iniciados. Nada é apagado: o ciclo some da lista do professor, libera a janela e volta inteiro ao reativar. Reativar é recusado se a janela coincidir com a de outro ciclo. (Antes: só era permitido enquanto nenhum professor tinha começado.)
+- **Origem:** implementação; alterada pelo usuário. **Status:** Implementada.
+- **Testes:** UT-ED-02, UT-ED-04; `homologacao/52-inativar-um-terco-com-preenchimentos.mjs` (3/3).
 
 ---
 
@@ -345,10 +345,10 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Divergência:** DEF-17 na tela.
 
 **PDI-11 · Correções**
-- **Regra:** há dois fluxos, um da ficha e outro do bloco comum. A Secretaria corrige diretamente ou devolve ao professor com uma janela de 3 dias. Status: ABERTA, RESOLVIDA e EXPIRADA (esta é calculada, não gravada).
+- **Regra:** há dois fluxos, um da ficha e outro do bloco comum. A Secretaria corrige diretamente ou devolve ao professor. **MUDOU em 10/11/2026:** o fluxo completo de devolução está na seção 23 (COR-01 a COR-10), valendo para o PDI e para o Formulário 1/3.
 - **Origem:** usuário (§38). **Status:** Implementada.
-- **Divergência:** DEF-18 (devolução de ficha de aluno transferido não pode ser atendida).
-- **Testes:** PDI-TRF-G4/G5. O fluxo completo **não foi homologado**.
+- **Divergência:** DEF-18 **tratada** em 10/11/2026: a devolução de Ficha de aluno transferido para outra escola é recusada com explicação, e a Secretaria usa a correção direta (COR-07).
+- **Testes:** PDI-TRF-G4/G5; `homologacao/51-correcoes-professor.mjs` (24 casos).
 
 **PDI-12 · Ficha Anual**
 - **Regra:** visão por aluno e ano, montada a partir das fichas originais, sem duplicar respostas. Mostra o histórico de turmas e escolas do aluno. O fechamento automático é configurável (processo diário às 08:15).
@@ -895,3 +895,20 @@ Tela só de leitura. Detalhes em `PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md`.
 | ACP-07 | Percentual só com 5 ou mais itens esperados; abaixo disso, "x de y". |
 | ACP-08 | **Foto do PDI no prazo:** um job diário (08:30, e também na subida do servidor) guarda esperado, concluídas e em preenchimento de cada Aplicação ATIVA encerrada há 1 a 3 dias. Aplicação encerrada há mais tempo nunca ganha foto. Percentual de período do PDI já encerrado só aparece com foto; sem foto, só o número de Fichas concluídas. |
 | ACP-09 | O 1/3 pode ser comparado entre ciclos (o esperado usa as datas dos vínculos); o PDI histórico, só pela foto. |
+
+## 23. Fluxo de correções para professores (10/11/2026)
+
+Vale para o PDI (Ficha e perguntas comuns) e para o Formulário 1/3 (entrega). A correção direta da Secretaria no PDI continua igual. O 1/3 não tinha correções; ganhou só a devolução (não há correção direta no 1/3).
+
+| Regra | Descrição |
+|---|---|
+| COR-01 | A Secretaria escreve **"O que precisa ser corrigido?"** (obrigatório, até 2000 caracteres) e **confirma** antes de enviar. Só formulário já concluído pode ser devolvido. |
+| COR-02 | **Prazo fixo de 3 dias corridos** (72 h) a partir da confirmação, no horário de São Paulo. Não é editável e não há configuração. |
+| COR-03 | **Devoluções ilimitadas**, uma aberta de cada vez: enquanto a anterior aguarda o professor, outra é recusada (isso também segura o duplo clique). Cada devolução é um registro novo, com novas orientações e novo prazo; o histórico nunca é apagado. |
+| COR-04 | Ao confirmar, o sistema envia uma **mensagem automática na caixa de mensagens existente** do professor (sem push): tipo do formulário, aluno ou ano/série, escola, turma, disciplina, orientações completas, prazo e o botão **"Abrir formulário"**. A mensagem nasce na mesma transação da devolução (sem duplicar, sem devolução sem aviso). |
+| COR-05 | O professor vê **"Correção solicitada"** na lista e, dentro do formulário, as orientações, o prazo e a situação. **Salvar é rascunho; só "Enviar correção" envia.** No PDI, "Enviar correção" também envia a correção das perguntas comuns daquele aluno. |
+| COR-06 | A devolução libera a edição **só daquele formulário** (aquela Ficha ou aquela entrega), mesmo com a Aplicação ou o ciclo já encerrados. Nada mais é liberado. |
+| COR-07 | **Quem recebe** é quem consegue editar pela regra de acesso atual. PDI: o professor com vínculo ativo na turma atual do aluno, naquela disciplina, se o aluno ainda está na escola da Aplicação; perguntas comuns: o dono do bloco, se ainda é ele quem edita. 1/3: o próprio professor da entrega. Sem ninguém que consiga editar (aluno transferido de escola, professor inativo), a devolução é recusada com explicação. |
+| COR-08 | **Prazo vencido:** aparece "Prazo de correção encerrado". O professor **não é bloqueado**, nada é apagado, não há cobrança automática. O envio depois do prazo vale e fica marcado como "fora do prazo". |
+| COR-09 | Depois do envio, a Secretaria vê **"Correção recebida"** e pode **aceitar** (finaliza) ou **devolver de novo** (a anterior fica registrada como "Devolvida novamente"). Lista do PDI e painel do 1/3 têm o filtro "correção em andamento". |
+| COR-10 | Situações, calculadas a partir do que está gravado: Correção solicitada, Prazo de correção encerrado, Correção recebida, Correção aceita, Devolvida novamente. |
