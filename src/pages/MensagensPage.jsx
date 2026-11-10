@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -266,6 +266,10 @@ export const MensagensPage = () => {
                   <div key={msg.id} className={`max-w-[85%] rounded-xl p-3 text-sm ${msg.remetenteId === thread.outraPessoa?.id ? 'bg-white' : 'ml-auto bg-teal-100'}`}>
                     <p className="mb-1 text-xs font-semibold text-slate-500">{msg.remetenteNome} · {formatDate(msg.createdAt)}</p>
                     <p className="whitespace-pre-wrap text-slate-800">{msg.conteudo}</p>
+                    {/* Mensagem automática de correção: botão para o formulário certo (caminho interno do app). */}
+                    {msg.linkFormulario?.startsWith('/') && (
+                      <Link to={msg.linkFormulario} className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Abrir formulário</Link>
+                    )}
                   </div>
                 ))}
               </div>

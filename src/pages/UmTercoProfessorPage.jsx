@@ -53,6 +53,7 @@ export const UmTercoProfessorPage = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={entrega.variant}>{entrega.label}</Badge>
                   <Badge variant={prazo.variant}>{prazo.label}</Badge>
+                  {item.correcaoSolicitada && <Badge variant="yellow">Correção solicitada</Badge>}
                 </div>
                 <h2 className="mt-3 text-xl font-bold text-slate-950">{item.rotulo}</h2>
                 <p className="mt-1 text-sm text-slate-600">{item.ciclo.titulo} · {item.ciclo.trimestre}º trimestre · prazo {formatarDataHora(item.ciclo.prazoEm)}</p>
@@ -71,7 +72,7 @@ export const UmTercoProfessorPage = () => {
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold text-slate-600">{item.semanasPreenchidas}/{item.totalSemanas} semanas</span>
                   <Button onClick={() => navigate(`/formulario-um-terco/${item.ciclo.id}/${item.anoSerie}/${item.disciplinaId}`)}>
-                    {item.editavelAgora ? (item.status === 'nao_iniciado' ? 'Preencher' : item.status === 'concluida' ? 'Editar' : 'Continuar') : 'Ver'}
+                    {item.correcaoSolicitada ? 'Corrigir' : item.editavelAgora ? (item.status === 'nao_iniciado' ? 'Preencher' : item.status === 'concluida' ? 'Editar' : 'Continuar') : 'Ver'}
                   </Button>
                 </div>
               </Card>

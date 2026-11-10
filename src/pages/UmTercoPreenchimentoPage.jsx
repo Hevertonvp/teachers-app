@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { apagarDraft, lerDraft, salvarDraft } from '../offline/db';
 import { chaveFila, enfileirar, obterItemDaFila, removerDaFila } from '../offline/syncQueue';
+import { AvisoCorrecaoProfessor, correcaoPendente } from '../components/Correcoes';
 import { concluirFormularioUmTerco, caminhoRespostasUmTerco, obterFormularioUmTerco, salvarRespostasUmTerco } from '../services/formularioUmTerco';
 import { inputClass } from '../utils/display';
 import { agruparPorEscola, formatarDataHora, formatarPeriodo } from '../utils/umTerco';
@@ -230,8 +231,9 @@ export const UmTercoPreenchimentoPage = () => {
     const salvo = sujoRef.current ? await salvarAgora() : { ok: true };
     if (!salvo.ok) { setConcluindo(false); return; }
     try {
+      const eraCorrecao = correcaoPendente(dados?.correcao);
       await concluirFormularioUmTerco(cicloId, anoSerie, disciplinaId, baseRef.current);
-      navigate('/formulario-um-terco', { state: { sucesso: 'Formulário 1/3 concluído. Você ainda pode editar até o fim do prazo.' } });
+      navigate('/formulario-um-terco', { state: { sucesso: eraCorrecao ? 'Correção enviada à Secretaria.' : 'Formulário 1/3 concluído. Você ainda pode editar até o fim do prazo.' } });
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') setConflito(error.dadosAtuais || null);
       else setMensagemErro(error.message);
@@ -276,6 +278,8 @@ export const UmTercoPreenchimentoPage = () => {
   const ultima = etapa === total - 1;
   const escolas = agruparPorEscola(dados.validoPara);
   const concluida = dados.status === 'concluida';
+  // Fluxo de correções: "Salvar progresso" é rascunho; só "Enviar correção" devolve à Secretaria.
+  const emCorrecao = correcaoPendente(dados.correcao);
 
   return (
     <MainLayout>
@@ -289,6 +293,8 @@ export const UmTercoPreenchimentoPage = () => {
             <span>Prazo: {formatarDataHora(dados.ciclo.prazoEm)}</span>
           </div>
         </div>
+
+        <AvisoCorrecaoProfessor itens={[{ chave: 'correcao', titulo: null, correcao: dados.correcao }]} />
 
         <Card>
           <p className="text-sm font-semibold text-slate-800">Válido para:</p>
@@ -362,7 +368,7 @@ export const UmTercoPreenchimentoPage = () => {
           {editavel && <Button variant="outline" className="min-h-12 flex-1 sm:flex-none" onClick={salvarAgora} disabled={!sujo || !!conflito}>Salvar progresso</Button>}
           {ultima ? (
             editavel
-              ? <Button className="min-h-12 flex-1 sm:flex-none" onClick={concluir} loading={concluindo} disabled={!!conflito}>{concluindo ? 'Concluindo...' : concluida ? 'Salvar e concluir' : 'Concluir'}</Button>
+              ? <Button className="min-h-12 flex-1 sm:flex-none" onClick={concluir} loading={concluindo} disabled={!!conflito}>{emCorrecao ? (concluindo ? 'Enviando...' : 'Enviar correção') : concluindo ? 'Concluindo...' : concluida ? 'Salvar e concluir' : 'Concluir'}</Button>
               : <Button className="min-h-12 flex-1 sm:flex-none" onClick={sair}>Fechar</Button>
           ) : (
             <Button className="min-h-12 flex-1 sm:flex-none" onClick={() => irParaEtapa(etapa + 1)}>Próximo</Button>

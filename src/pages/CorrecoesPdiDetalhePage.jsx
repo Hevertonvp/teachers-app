@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Badge, Button, Card, FormField, Modal } from '../components/Common';
+import { Button, Card } from '../components/Common';
 import { HabilidadesCrmgSelecao } from '../components/HabilidadesCrmgSelecao';
 import { inputClass } from '../utils/display';
-import { obterCorrecaoPdiReal, corrigirDiretamenteReal, devolverFichaPdiReal, corrigirDiretamentePadraoReal, devolverPadraoReal } from '../services/correcoesPdi';
+import { obterCorrecaoPdiReal, corrigirDiretamenteReal, devolverFichaPdiReal, corrigirDiretamentePadraoReal, devolverPadraoReal, aceitarCorrecaoPdiReal, aceitarCorrecaoPadraoReal } from '../services/correcoesPdi';
+import { HistoricoCorrecoes, ModalEnviarParaCorrecao, SeloCorrecao, correcaoPendente } from '../components/Correcoes';
 import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
 import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 import { enfileirar } from '../offline/syncQueue';
 import { SavingIndicator } from '../components/SavingIndicator';
 
-const STATUS_CORRECAO_LABEL = { ABERTA: 'Aberta', RESOLVIDA: 'Resolvida', EXPIRADA: 'Expirada' };
-const STATUS_CORRECAO_VARIANT = { ABERTA: 'yellow', RESOLVIDA: 'blue', EXPIRADA: 'gray' };
 const ORIGEM_LABEL = { SECRETARIA_DIRETA: 'Correção direta', PROFESSOR_POS_DEVOLUCAO: 'Professor (pós-devolução)' };
 
 const formatarDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
@@ -33,15 +32,11 @@ export const CorrecoesPdiDetalhePage = () => {
   const [salvando, setSalvando] = useState(false);
   const [statusLocal, setStatusLocal] = useState('idle');
   const [devolverAberto, setDevolverAberto] = useState(false);
-  const [observacao, setObservacao] = useState('');
-  const [devolvendo, setDevolvendo] = useState(false);
   // Fluxo SEPARADO para o bloco comum de perguntas padrão (nunca misturar com o específico acima
   // — ver backend correcoesPdi.ts): identidade por aplicacaoPerguntaPadraoId, não aplicacaoPerguntaId.
   const [edicoesPadrao, setEdicoesPadrao] = useState({});
   const [salvandoPadrao, setSalvandoPadrao] = useState(false);
   const [devolverPadraoAberto, setDevolverPadraoAberto] = useState(false);
-  const [observacaoPadrao, setObservacaoPadrao] = useState('');
-  const [devolvendoPadrao, setDevolvendoPadrao] = useState(false);
 
   const draftKeyEspecifica = `${userId}::correcao-resposta::${fichaId}`;
   const draftKeyPadrao = `${userId}::correcao-bloco::${fichaId}`;
@@ -115,19 +110,23 @@ export const CorrecoesPdiDetalhePage = () => {
     }
   };
 
-  const confirmarDevolucao = async () => {
-    if (!observacao.trim()) return;
-    setDevolvendo(true);
+  // Fluxo de correções (10/11/2026): o modal pede as orientações e a confirmação; erros aparecem nele.
+  const confirmarDevolucao = async (texto) => {
+    const r = await devolverFichaPdiReal(fichaId, texto);
+    setDevolverAberto(false);
+    setErro('');
+    setMensagem(r.mensagensEnviadas ? 'Correção enviada. O professor recebeu a mensagem com as orientações e o prazo.' : 'Correção registrada.');
+    await carregar();
+  };
+
+  const aceitar = async (padrao) => {
+    setErro(''); setMensagem('');
     try {
-      await devolverFichaPdiReal(fichaId, observacao.trim());
-      setDevolverAberto(false);
-      setObservacao('');
-      setMensagem('Ficha devolvida ao Professor.');
+      await (padrao ? aceitarCorrecaoPadraoReal(fichaId) : aceitarCorrecaoPdiReal(fichaId));
+      setMensagem('Correção aceita.');
       await carregar();
     } catch (error) {
       setErro(error.message);
-    } finally {
-      setDevolvendo(false);
     }
   };
 
@@ -165,20 +164,12 @@ export const CorrecoesPdiDetalhePage = () => {
     }
   };
 
-  const confirmarDevolucaoPadrao = async () => {
-    if (!observacaoPadrao.trim()) return;
-    setDevolvendoPadrao(true);
-    try {
-      await devolverPadraoReal(fichaId, observacaoPadrao.trim());
-      setDevolverPadraoAberto(false);
-      setObservacaoPadrao('');
-      setMensagem('Pergunta padrão devolvida ao Professor.');
-      await carregar();
-    } catch (error) {
-      setErro(error.message);
-    } finally {
-      setDevolvendoPadrao(false);
-    }
+  const confirmarDevolucaoPadrao = async (texto) => {
+    const r = await devolverPadraoReal(fichaId, texto);
+    setDevolverPadraoAberto(false);
+    setErro('');
+    setMensagem(r.mensagensEnviadas ? 'Correção das perguntas comuns enviada. O professor recebeu a mensagem com as orientações e o prazo.' : 'Correção registrada.');
+    await carregar();
   };
 
   if (carregando) return <MainLayout><p className="text-center text-slate-500">Carregando...</p></MainLayout>;
@@ -190,6 +181,8 @@ export const CorrecoesPdiDetalhePage = () => {
   if (!dados) return null;
 
   const { ficha, perguntas } = dados;
+  const ultimaFicha = dados.correcoes[0] ?? null;
+  const ultimaBloco = dados.correcoesBloco?.[0] ?? null;
 
   return (
     <MainLayout>
@@ -221,7 +214,10 @@ export const CorrecoesPdiDetalhePage = () => {
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
             <Button onClick={salvarCorrecao} disabled={Object.keys(edicoes).length === 0 || salvando}>{salvando ? 'Salvando...' : 'Salvar correção direta'}</Button>
-            <Button variant="outline" onClick={() => setDevolverAberto(true)}>Devolver ao Professor</Button>
+            {!correcaoPendente(ultimaFicha) && <Button variant="outline" onClick={() => setDevolverAberto(true)}>Enviar para correção</Button>}
+            {ultimaFicha?.situacao === 'recebida' && <Button variant="outline" onClick={() => aceitar(false)}>Aceitar correção</Button>}
+            {ultimaFicha && <SeloCorrecao situacao={ultimaFicha.situacao} />}
+            {ultimaFicha?.situacao === 'recebida' && ultimaFicha.enviadaForaDoPrazo && <span className="text-xs text-slate-500">enviada fora do prazo</span>}
             <SavingIndicator estado={statusLocal} />
           </div>
         </Card>
@@ -310,28 +306,14 @@ export const CorrecoesPdiDetalhePage = () => {
             </div>
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
               <Button onClick={salvarCorrecaoPadrao} disabled={Object.keys(edicoesPadrao).length === 0 || salvandoPadrao}>{salvandoPadrao ? 'Salvando...' : 'Salvar correção da pergunta padrão'}</Button>
-              <Button variant="outline" onClick={() => setDevolverPadraoAberto(true)}>Devolver pergunta padrão</Button>
+              {!correcaoPendente(ultimaBloco) && <Button variant="outline" onClick={() => setDevolverPadraoAberto(true)}>Enviar perguntas comuns para correção</Button>}
+              {ultimaBloco?.situacao === 'recebida' && <Button variant="outline" onClick={() => aceitar(true)}>Aceitar correção</Button>}
+              {ultimaBloco && <SeloCorrecao situacao={ultimaBloco.situacao} />}
             </div>
           </Card>
         )}
 
-        {dados.correcoesBloco?.length > 0 && (
-          <Card>
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Histórico de devoluções — pergunta padrão</p>
-            <ul className="mt-3 space-y-3">
-              {dados.correcoesBloco.map((c) => (
-                <li key={c.id} className="rounded-lg border border-slate-200 p-3 text-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Badge variant={STATUS_CORRECAO_VARIANT[c.status]}>{STATUS_CORRECAO_LABEL[c.status]}</Badge>
-                    <span className="text-xs text-slate-500">Prazo até {formatarDataHora(c.prazoAte)}</span>
-                  </div>
-                  <p className="mt-2 text-slate-700">{c.observacao}</p>
-                  <p className="mt-1 text-xs text-slate-500">Devolvida em {formatarDataHora(c.criadaEm)}{c.concluidaEm ? ` · Resolvida em ${formatarDataHora(c.concluidaEm)}` : ''}</p>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
+        <HistoricoCorrecoes correcoes={dados.correcoesBloco} titulo="Histórico de correções · perguntas comuns" />
 
         {dados.historicoBloco?.length > 0 && (
           <Card>
@@ -347,39 +329,10 @@ export const CorrecoesPdiDetalhePage = () => {
         )}
 
         {devolverPadraoAberto && (
-          <Modal title="Devolver pergunta padrão" onClose={() => setDevolverPadraoAberto(false)}>
-            <div className="space-y-4">
-              <p className="text-sm text-slate-600">
-                O Professor terá 3 dias para corrigir a pergunta padrão em todas as disciplinas.
-              </p>
-              <FormField label="Observação para o Professor">
-                <textarea className={inputClass} rows="3" value={observacaoPadrao} onChange={(event) => setObservacaoPadrao(event.target.value)} placeholder="Ex.: Rever resposta da pergunta padrão X." required />
-              </FormField>
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={() => setDevolverPadraoAberto(false)}>Cancelar</Button>
-                <Button onClick={confirmarDevolucaoPadrao} disabled={!observacaoPadrao.trim() || devolvendoPadrao}>{devolvendoPadrao ? 'Devolvendo...' : 'Devolver'}</Button>
-              </div>
-            </div>
-          </Modal>
+          <ModalEnviarParaCorrecao titulo="Enviar perguntas comuns para correção" descricao="Vale para todas as disciplinas deste aluno com este professor." onConfirmar={confirmarDevolucaoPadrao} onFechar={() => setDevolverPadraoAberto(false)} />
         )}
 
-        {dados.correcoes.length > 0 && (
-          <Card>
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Histórico de devoluções</p>
-            <ul className="mt-3 space-y-3">
-              {dados.correcoes.map((c) => (
-                <li key={c.id} className="rounded-lg border border-slate-200 p-3 text-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Badge variant={STATUS_CORRECAO_VARIANT[c.status]}>{STATUS_CORRECAO_LABEL[c.status]}</Badge>
-                    <span className="text-xs text-slate-500">Prazo até {formatarDataHora(c.prazoAte)}</span>
-                  </div>
-                  <p className="mt-2 text-slate-700">{c.observacao}</p>
-                  <p className="mt-1 text-xs text-slate-500">Devolvida em {formatarDataHora(c.criadaEm)}{c.concluidaEm ? ` · Resolvida em ${formatarDataHora(c.concluidaEm)}` : ''}</p>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
+        <HistoricoCorrecoes correcoes={dados.correcoes} />
 
         {dados.historico.length > 0 && (
           <Card>
@@ -395,20 +348,7 @@ export const CorrecoesPdiDetalhePage = () => {
         )}
 
         {devolverAberto && (
-          <Modal title="Devolver ao Professor" onClose={() => setDevolverAberto(false)}>
-            <div className="space-y-4">
-              <p className="text-sm text-slate-600">
-                O Professor terá 3 dias para corrigir esta Ficha.
-              </p>
-              <FormField label="Observação para o Professor">
-                <textarea className={inputClass} rows="3" value={observacao} onChange={(event) => setObservacao(event.target.value)} placeholder="Ex.: Rever resposta da seção X." required />
-              </FormField>
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={() => setDevolverAberto(false)}>Cancelar</Button>
-                <Button onClick={confirmarDevolucao} disabled={!observacao.trim() || devolvendo}>{devolvendo ? 'Devolvendo...' : 'Devolver'}</Button>
-              </div>
-            </div>
-          </Modal>
+          <ModalEnviarParaCorrecao descricao={`Só esta Ficha (${ficha.disciplinaNome}) é liberada para o professor corrigir.`} onConfirmar={confirmarDevolucao} onFechar={() => setDevolverAberto(false)} />
         )}
       </div>
     </MainLayout>

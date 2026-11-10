@@ -38,6 +38,9 @@ const normalizeRespostaCompleta = (payload) => ({
   editavelAgora: payload.editavelAgora,
   // null = este Modelo não carrega nenhuma pergunta padrão compartilhável — ver domain/pdiBlocoPadrao.ts.
   blocoPadrao: normalizeBlocoPadrao(payload.blocoPadrao),
+  // Correção mais recente da Ficha e do bloco comum ({ ficha, bloco }, cada um nulo se nunca houve),
+  // com orientações, prazo e situação — fluxo de correções (10/11/2026).
+  correcao: payload.correcao ?? { ficha: null, bloco: null },
 });
 
 // Item de listagem (Meus PDIs / consulta por aluno) — mais leve que a Ficha completa: não tem

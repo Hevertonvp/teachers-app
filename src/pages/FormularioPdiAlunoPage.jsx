@@ -12,6 +12,7 @@ import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 import { chaveFila, enfileirar, removerDaFila } from '../offline/syncQueue';
 import { listarMeusPdisReais, paraPayloadValor } from '../services/pdiFichas';
 import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
+import { AvisoCorrecaoProfessor, correcaoPendente } from '../components/Correcoes';
 import { inputClass } from '../utils/display';
 import { formatFullDate } from '../utils/formAvailability';
 import { agruparPorSecao, analisarRascunho, answerFromResposta, MENSAGEM_CONFLITO_RASCUNHO } from '../utils/pdiFicha';
@@ -94,7 +95,7 @@ const montarEstadoFicha = (linha, resultado, draft) => {
     disciplinaNome: linha.disciplinaNome,
     carregando: false,
     erroCarga: '',
-    dados: { ficha: resultado.ficha, perguntas: resultado.perguntas, respostas: resultado.respostas, editavelAgora: resultado.editavelAgora, blocoPadrao: resultado.blocoPadrao },
+    dados: { ficha: resultado.ficha, perguntas: resultado.perguntas, respostas: resultado.respostas, editavelAgora: resultado.editavelAgora, blocoPadrao: resultado.blocoPadrao, correcao: resultado.correcao },
     answers: recuperar ? { ...base, ...draft.answers } : base,
     touched: recuperar ? new Set(analise.ids) : new Set(),
     // { answers, ids } do rascunho deste aparelho aguardando a escolha do professor (DEF-19).
@@ -509,7 +510,9 @@ export const FormularioPdiAlunoPage = () => {
     const f = fichasRef.current[disciplinaId];
     const resultado = await concluirFichaPdi(f.dados.ficha.id);
     if (!resultado.ok) return { ok: false, mensagem: resultado.error };
-    atualizarFicha(disciplinaId, atual => ({ ...atual, dados: { ...atual.dados, ficha: resultado.ficha, respostas: resultado.respostas, editavelAgora: resultado.editavelAgora }, salvar: { estado: 'concluida', mensagem: '' } }));
+    atualizarFicha(disciplinaId, atual => ({ ...atual, dados: { ...atual.dados, ficha: resultado.ficha, respostas: resultado.respostas, editavelAgora: resultado.editavelAgora, correcao: resultado.correcao }, salvar: { estado: 'concluida', mensagem: '' } }));
+    // A correção do bloco comum é a mesma para as outras disciplinas do bloco: atualiza nelas também.
+    if (resultado.correcao?.bloco) Object.values(fichasRef.current).forEach(outra => { if (outra.dados && outra.disciplinaId !== disciplinaId && outra.dados.correcao?.bloco?.id === resultado.correcao.bloco.id) atualizarFicha(outra.disciplinaId, atual => ({ ...atual, dados: { ...atual.dados, correcao: { ...atual.dados.correcao, bloco: resultado.correcao.bloco } } })); });
     const bloco = Object.values(blocosRef.current).find(b => b.fichaIds.includes(f.dados.ficha.id));
     if (bloco && resultado.blocoPadrao) aplicarBlocoDoServidor(bloco.chave, resultado.blocoPadrao);
     return { ok: true };
@@ -538,13 +541,17 @@ export const FormularioPdiAlunoPage = () => {
         resultados.push({ disciplinaNome: f.disciplinaNome, ok: false, mensagem: 'não concluída: respostas não salvas.' });
         continue;
       }
+      const eraCorrecao = temCorrecaoPendente(f);
       const r = await concluirUma(disciplinaId);
-      resultados.push({ disciplinaNome: f.disciplinaNome, ok: r.ok, mensagem: r.ok ? 'concluída.' : r.mensagem });
+      resultados.push({ disciplinaNome: f.disciplinaNome, ok: r.ok, mensagem: r.ok ? (eraCorrecao ? 'correção enviada à Secretaria.' : 'concluída.') : r.mensagem });
     }
     setOcupado(null);
     setStatusLocal('idle');
     setResultadoConclusao(resultados);
   };
+
+  // Esta disciplina tem correção aguardando o envio (dela ou do bloco comum dela)?
+  function temCorrecaoPendente(f) { return !!f?.dados && (correcaoPendente(f.dados.correcao?.ficha) || correcaoPendente(f.dados.correcao?.bloco)); }
 
   const disciplinasConcluiveis = Object.values(fichas).filter(f => f.dados?.editavelAgora && f.dados.ficha.status !== 'concluida').map(f => f.disciplinaId);
 
@@ -565,6 +572,8 @@ export const FormularioPdiAlunoPage = () => {
 
   const referencia = Object.values(fichas).find(f => f.dados)?.dados.ficha;
   const linha0 = linhas[0];
+  // Correção do bloco comum: vem igual em qualquer Ficha do bloco (a mais recente).
+  const correcaoDoBloco = (bloco) => Object.values(fichas).find(x => x.dados && bloco.fichaIds.includes(x.dados.ficha.id) && x.dados.correcao?.bloco)?.dados.correcao.bloco ?? null;
 
   // `pendente` (DEF-19): { rascunho: { answers, ids }, perguntas, usar(), restaurar() } — mostra o texto
   // guardado neste aparelho e deixa o professor escolher; os campos mostram a versão salva.
@@ -650,6 +659,7 @@ export const FormularioPdiAlunoPage = () => {
             {bloco.disciplinas.length > 1 && (
               <p className="mt-1 text-xs text-slate-500">Vale para: {bloco.disciplinas.join(', ')}.</p>
             )}
+            <div className="mt-3"><AvisoCorrecaoProfessor itens={[{ chave: `b-${bloco.chave}`, titulo: 'perguntas comuns', correcao: correcaoDoBloco(bloco) }]} /></div>
             {renderAvisoSalvar(bloco.salvar, handleSalvar, bloco.rascunhoPendente && { rascunho: bloco.rascunhoPendente, perguntas: bloco.perguntas, usar: () => usarVersaoSalvaBloco(bloco.chave), restaurar: () => restaurarMeuTextoBloco(bloco.chave) })}
             <div className="mt-3">
               {bloco.perguntas.map(question => (
@@ -684,6 +694,7 @@ export const FormularioPdiAlunoPage = () => {
                   <Badge variant={editavelAgora ? 'green' : 'gray'}>{editavelAgora ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
                 </div>
               </div>
+              <div className="mt-3"><AvisoCorrecaoProfessor itens={[{ chave: `f-${ficha.id}`, titulo: f.disciplinaNome, correcao: f.dados.correcao?.ficha }]} /></div>
               {renderAvisoSalvar(f.salvar, handleSalvar, f.rascunhoPendente && { rascunho: f.rascunhoPendente, perguntas: f.dados.perguntas, usar: () => usarVersaoSalvaFicha(f.disciplinaId), restaurar: () => restaurarMeuTextoFicha(f.disciplinaId) })}
               {perguntas.length === 0 ? (
                 <p className="mt-3 text-sm text-slate-500">Só perguntas comuns.</p>
@@ -700,7 +711,12 @@ export const FormularioPdiAlunoPage = () => {
                   ))}
                 </div>
               ))}
-              {editavelAgora && !concluida && (
+              {temCorrecaoPendente(f) ? (
+                // Fluxo de correções: "Salvar" guarda o rascunho; só "Enviar correção" devolve à Secretaria.
+                <div className="mt-4 flex justify-end">
+                  <Button onClick={() => concluir([f.disciplinaId])} loading={ocupado === 'concluindo'} disabled={bloqueado || faltando > 0}>Enviar correção · {f.disciplinaNome}</Button>
+                </div>
+              ) : editavelAgora && !concluida && (
                 <div className="mt-4 flex justify-end">
                   <Button variant="outline" onClick={() => concluir([f.disciplinaId])} disabled={bloqueado || faltando > 0}>Concluir {f.disciplinaNome}</Button>
                 </div>
