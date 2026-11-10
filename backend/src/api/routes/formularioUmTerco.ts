@@ -364,7 +364,9 @@ formularioUmTercoRouter.post('/ciclos/:id/inativar', async (req, res) => {
   exigirSecretaria(actor);
   const id = lerId(req.params.id);
   const ciclo = await buscarCiclo(prisma, id);
-  if (await prisma.entregaUmTerco.count({ where: { cicloId: id } }) > 0) throw new ConflictError('Este ciclo já tem preenchimentos e não pode ser inativado.');
+  // MUDOU (decisão do usuário, 10/11/2026): pode inativar mesmo com preenchimentos. Nada é apagado:
+  // o ciclo só sai das listas (o professor deixa de vê-lo) e volta inteiro ao reativar. A tela avisa
+  // quantos professores já preencheram antes de confirmar.
   await prisma.cicloUmTerco.update({ where: { id: ciclo.id }, data: { status: 'INATIVA', updatedBy: String(actor.id) } });
   res.json(formatarCiclo(await buscarCiclo(prisma, id)));
 });

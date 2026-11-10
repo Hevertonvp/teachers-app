@@ -2605,3 +2605,12 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - Falha de rede no meio do envio: coberta pelos testes offline existentes (32), sem caso novo.
     - Celular físico e produção não testados.
     - A mensagem vai como conversa nova por devolução; o professor pode responder nela.
+- **10/11/2026: 1/3, inativar ciclo mesmo com preenchimentos (decisão do usuário, opção 1).**
+  - Antes, o botão "Inativar" sumia e o servidor recusava assim que algum professor tinha começado.
+  - Agora pode sempre. O modal avisa quantos preenchimentos já foram iniciados e diz que nada é apagado: o ciclo sai da lista do professor e volta inteiro ao reativar.
+  - UT-13 atualizada.
+  - Camadas: backend (`formularioUmTerco.ts`, POST inativar) e frontend (`UmTercoSecretariaPage.jsx`). Sem migration.
+  - Testado (banco local):
+    - `homologacao/52-inativar-um-terco-com-preenchimentos.mjs` 3/3: aviso na tela; inativar com 8 entregas e 32 respostas sem perder nada; reativar devolve.
+    - 47 (inativos): 9/9.
+    - 1/3 integração: 50/50.

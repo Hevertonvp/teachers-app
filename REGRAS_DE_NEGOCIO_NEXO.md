@@ -280,9 +280,9 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Exceção proposta:** EXC-01 apaga esse histórico junto com o ciclo.
 
 **UT-13 · Inativar ciclo**
-- **Regra:** só é permitido enquanto nenhum professor começou. Um ciclo inativo some da lista do professor e libera a janela. Reativar é recusado se a janela coincidir com a de outro ciclo.
-- **Origem:** implementação. **Status:** Implementada.
-- **Testes:** UT-ED-02, UT-ED-04.
+- **Regra:** **MUDOU em 10/11/2026 (decisão do usuário):** pode inativar a qualquer momento, mesmo com preenchimentos. Antes de confirmar, a tela avisa quantos preenchimentos já foram iniciados. Nada é apagado: o ciclo some da lista do professor, libera a janela e volta inteiro ao reativar. Reativar é recusado se a janela coincidir com a de outro ciclo. (Antes: só era permitido enquanto nenhum professor tinha começado.)
+- **Origem:** implementação; alterada pelo usuário. **Status:** Implementada.
+- **Testes:** UT-ED-02, UT-ED-04; `homologacao/52-inativar-um-terco-com-preenchimentos.mjs` (3/3).
 
 ---
 
