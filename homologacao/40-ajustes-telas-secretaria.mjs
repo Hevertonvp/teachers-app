@@ -67,26 +67,19 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   const w = modal(Y.page);
   const redacao = await prisma.disciplina.findFirst({ where: { nome: 'Redação' } });
   const selW = w.locator('form select');
-  await selW.nth(1).selectOption(String(redacao.id)); await Y.page.waitForTimeout(400);
-  const turmasAntes = (await selW.nth(0).locator('option').allInnerTexts()).filter(t => !/já têm/.test(t));
+  // Seis vínculos com Redação (sem professor em nenhuma turma), escolhendo turma E disciplina a cada vez.
+  // A regra de "o que some do seletor" é testada no roteiro 42 (disciplinas por turma).
+  const valoresTurma = (await selW.nth(0).locator('option').evaluateAll(os => os.map(o => o.value).filter(Boolean))).slice(0, 6);
   const adicionadas = [];
-  for (let i = 0; i < 6; i++) {
-    const atual = await selW.nth(0).inputValue();
-    if (!atual) break;
-    adicionadas.push((await selW.nth(0).locator(`option[value="${atual}"]`).innerText()));
+  for (const valor of valoresTurma) {
+    await selW.nth(0).selectOption(valor); await Y.page.waitForTimeout(300);
+    await selW.nth(1).selectOption(String(redacao.id)); await Y.page.waitForTimeout(300);
+    adicionadas.push(await selW.nth(0).locator(`option[value="${valor}"]`).innerText());
     await w.getByRole('button', { name: '+ Adicionar' }).click(); await Y.page.waitForTimeout(1500);
   }
-  const turmasDepois = (await selW.nth(0).locator('option').allInnerTexts()).filter(t => !/já têm/.test(t));
-  const somem = adicionadas.every(t => !turmasDepois.includes(t));
-  // trocar para outra disciplina: as turmas voltam
-  const arte = await prisma.disciplina.findFirst({ where: { nome: 'Arte' } });
-  await selW.nth(1).selectOption(String(arte.id)); await Y.page.waitForTimeout(500);
-  const turmasArte = (await selW.nth(0).locator('option').allInnerTexts()).filter(t => !/já têm/.test(t));
   const cartao = await w.locator('> div').first().boundingBox();
   const alturaTela = vp.height;
   await foto(Y.page, `40-wizard-${nome}`);
-  r(`4a-${nome}`, `Assistente (${nome}): turma adicionada com Redação some do seletor enquanto Redação está escolhida`, 'adicionadas ausentes do seletor', `antes ${turmasAntes.length}; adicionadas ${adicionadas.join(', ')}; depois ${turmasDepois.length}`, adicionadas.length >= 2 && somem && turmasDepois.length === turmasAntes.length - adicionadas.length, `40-wizard-${nome}.png`);
-  r(`4b-${nome}`, `Assistente (${nome}): com outra disciplina (Arte), as turmas voltam a aparecer`, `${turmasAntes.length} turmas`, `${turmasArte.length} turmas`, turmasArte.length === turmasAntes.length);
   r(`4c-${nome}`, `Assistente (${nome}): com vários vínculos, o modal não passa da altura da tela`, `altura ≤ ${alturaTela}`, `topo ${Math.round(cartao.y)}, altura ${Math.round(cartao.height)}, base ${Math.round(cartao.y + cartao.height)}`, cartao.y >= 0 && cartao.y + cartao.height <= alturaTela + 1, `40-wizard-${nome}.png`);
   const criados = await prisma.professorTurmaDisciplina.count({ where: { professor: { email: `ui-${nome}-${TAG}@homolog.nexo` }, status: 'ATIVO' } });
   r(`4d-${nome}`, `Assistente (${nome}): vínculos criados no banco = os adicionados (sem duplicar)`, String(adicionadas.length), String(criados), criados === adicionadas.length);

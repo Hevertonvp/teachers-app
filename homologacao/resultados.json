@@ -4914,7 +4914,7 @@
     "status": "APROVADO",
     "evidencia": "40-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-10T02:13:16.889Z"
+    "quando": "2026-11-10T02:26:35.761Z"
   },
   {
     "id": "UI-SEC-2a",
@@ -4925,7 +4925,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-10T02:13:24.226Z"
+    "quando": "2026-11-10T02:26:42.528Z"
   },
   {
     "id": "UI-SEC-2b",
@@ -4936,7 +4936,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-10T02:13:24.238Z"
+    "quando": "2026-11-10T02:26:42.535Z"
   },
   {
     "id": "UI-SEC-3",
@@ -4947,7 +4947,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T02:13:25.966Z"
+    "quando": "2026-11-10T02:26:44.225Z"
   },
   {
     "id": "UI-SEC-3b",
@@ -4958,29 +4958,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T02:13:25.990Z"
-  },
-  {
-    "id": "UI-SEC-4a-desktop",
-    "modulo": "Ajustes de tela (Secretaria)",
-    "cenario": "Assistente (desktop): turma adicionada com Redação some do seletor enquanto Redação está escolhida",
-    "esperado": "adicionadas ausentes do seletor",
-    "observado": "antes 7; adicionadas 6M1, 6M2, 6M3, 6M4, 7M1, 7M2; depois 1",
-    "status": "APROVADO",
-    "evidencia": "40-wizard-desktop.png",
-    "nota": "",
-    "quando": "2026-11-10T02:13:42.117Z"
-  },
-  {
-    "id": "UI-SEC-4b-desktop",
-    "modulo": "Ajustes de tela (Secretaria)",
-    "cenario": "Assistente (desktop): com outra disciplina (Arte), as turmas voltam a aparecer",
-    "esperado": "7 turmas",
-    "observado": "7 turmas",
-    "status": "APROVADO",
-    "evidencia": "",
-    "nota": "",
-    "quando": "2026-11-10T02:13:42.124Z"
+    "quando": "2026-11-10T02:26:44.239Z"
   },
   {
     "id": "UI-SEC-4c-desktop",
@@ -4991,7 +4969,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T02:13:42.130Z"
+    "quando": "2026-11-10T02:27:03.043Z"
   },
   {
     "id": "UI-SEC-4d-desktop",
@@ -5002,29 +4980,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T02:13:42.140Z"
-  },
-  {
-    "id": "UI-SEC-4a-celular",
-    "modulo": "Ajustes de tela (Secretaria)",
-    "cenario": "Assistente (celular): turma adicionada com Redação some do seletor enquanto Redação está escolhida",
-    "esperado": "adicionadas ausentes do seletor",
-    "observado": "antes 7; adicionadas 6M1, 6M2, 6M3, 6M4, 7M1, 7M2; depois 1",
-    "status": "APROVADO",
-    "evidencia": "40-wizard-celular.png",
-    "nota": "",
-    "quando": "2026-11-10T02:14:00.235Z"
-  },
-  {
-    "id": "UI-SEC-4b-celular",
-    "modulo": "Ajustes de tela (Secretaria)",
-    "cenario": "Assistente (celular): com outra disciplina (Arte), as turmas voltam a aparecer",
-    "esperado": "7 turmas",
-    "observado": "7 turmas",
-    "status": "APROVADO",
-    "evidencia": "",
-    "nota": "",
-    "quando": "2026-11-10T02:14:00.250Z"
+    "quando": "2026-11-10T02:27:03.057Z"
   },
   {
     "id": "UI-SEC-4c-celular",
@@ -5035,7 +4991,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-celular.png",
     "nota": "",
-    "quando": "2026-11-10T02:14:00.267Z"
+    "quando": "2026-11-10T02:27:23.785Z"
   },
   {
     "id": "UI-SEC-4d-celular",
@@ -5046,6 +5002,94 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T02:14:00.288Z"
+    "quando": "2026-11-10T02:27:23.795Z"
+  },
+  {
+    "id": "ASSIST-1-desktop",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "desktop: depois de \"6M1 — Redação\", Redação some das disciplinas da 6M1 e outra já vem selecionada; a 6M1 continua na lista de turmas",
+    "esperado": "Redação ausente; 19 disciplinas; turmas 7",
+    "observado": "Redação presente: false; 19 disciplinas; selecionada: Arte; turmas 7",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:25:45.828Z"
+  },
+  {
+    "id": "ASSIST-2-desktop",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "desktop: na 6M2, Redação continua disponível",
+    "esperado": "Redação presente",
+    "observado": "Redação presente: true; 20 disciplinas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:25:46.292Z"
+  },
+  {
+    "id": "ASSIST-3-desktop",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "desktop: depois de \"6M1 — Geografia\", Redação e Geografia somem para a 6M1",
+    "esperado": "ambas ausentes",
+    "observado": "Redação: false; Geografia: false; 18 disciplinas",
+    "status": "APROVADO",
+    "evidencia": "42-assistente-desktop.png",
+    "nota": "",
+    "quando": "2026-11-10T02:25:49.295Z"
+  },
+  {
+    "id": "ASSIST-4-desktop",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "desktop: banco tem exatamente 6M1-Redação e 6M1-Geografia para o professor novo (sem duplicar)",
+    "esperado": "2 vínculos",
+    "observado": "6M1-Redação, 6M1-Geografia",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:25:49.326Z"
+  },
+  {
+    "id": "ASSIST-1-celular",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "celular: depois de \"6M1 — Redação\", Redação some das disciplinas da 6M1 e outra já vem selecionada; a 6M1 continua na lista de turmas",
+    "esperado": "Redação ausente; 19 disciplinas; turmas 7",
+    "observado": "Redação presente: false; 19 disciplinas; selecionada: Arte; turmas 7",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:25:59.845Z"
+  },
+  {
+    "id": "ASSIST-2-celular",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "celular: na 6M2, Redação continua disponível",
+    "esperado": "Redação presente",
+    "observado": "Redação presente: true; 20 disciplinas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:26:00.294Z"
+  },
+  {
+    "id": "ASSIST-3-celular",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "celular: depois de \"6M1 — Geografia\", Redação e Geografia somem para a 6M1",
+    "esperado": "ambas ausentes",
+    "observado": "Redação: false; Geografia: false; 18 disciplinas",
+    "status": "APROVADO",
+    "evidencia": "42-assistente-celular.png",
+    "nota": "",
+    "quando": "2026-11-10T02:26:03.072Z"
+  },
+  {
+    "id": "ASSIST-4-celular",
+    "modulo": "Assistente de vínculos (disciplinas por turma)",
+    "cenario": "celular: banco tem exatamente 6M1-Redação e 6M1-Geografia para o professor novo (sem duplicar)",
+    "esperado": "2 vínculos",
+    "observado": "6M1-Redação, 6M1-Geografia",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:26:03.098Z"
   }
 ]
