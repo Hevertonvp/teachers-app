@@ -2431,3 +2431,28 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     
     Juntar antes da migration faz o backend consultar colunas inexistentes e derruba o 1/3.
   - **Não conferido:** qual commit o Render está rodando.
+- **10/11/2026: Formulário 1/3: ciclos inativos em tela separada (pedido do usuário; branch `fix/um-terco-inativos-separados`, criada da `main` fb332b8 para poder ser publicada sem a migration das escolas; só frontend).**
+  - **Contexto:** o usuário pediu para "remover o único formulário 1/3 aberto" na produção. O levantamento mostrou que o único ciclo da produção (#8, abertura 11/11, prazo 16/12) **já estava inativo**, então nada foi apagado: a trava "exatamente 1 ciclo aberto" abortou a exclusão. O usuário esclareceu que não queria apagar, e sim **tirar os inativos da tela principal** ("se cada inativo ficar ali vai virar uma bagunça"). O script de exclusão foi descartado sem uso.
+  - **Mudança (`UmTercoSecretariaPage.jsx`):**
+    - a lista principal mostra só os ciclos ativos;
+    - abaixo do título fica o link **"Ver inativos (N) →"**;
+    - a lista de inativos abre na mesma página, com endereço próprio (`#/formulario-um-terco?ver=inativos`), para o Voltar do navegador funcionar. Ela tem o título "Formulário 1/3 — Inativos", "← Voltar aos ciclos ativos", Reativar em cada ciclo e não tem "+ Novo ciclo";
+    - as mensagens de inativar e reativar dizem onde o ciclo foi parar.
+  - **Backend:** nada mudou. O dashboard e a exportação já usavam só os ciclos ativos.
+  - **Teste:** `homologacao/47-um-terco-inativos-separados.mjs`, desktop e celular, banco local: **8/8**. Cobre:
+    - contagens iguais às do banco (1 ativo, 31 inativos);
+    - nenhum selo "Inativo" na lista principal;
+    - endereço próprio e Voltar;
+    - ciclo de teste inativado pela tela saindo da lista e aparecendo em inativos, depois reativado e voltando.
+    
+    O ciclo do teste ficou inativo no fim.
+- **10/11/2026: migration das escolas do 1/3 confirmada na produção.**
+  - **Situação:** o usuário juntou a `feature/um-terco-escolas` à `main` pelo GitHub (PR **#7**, `906e234`) e depois rodou `npx prisma migrate status` no Neon (`ep-little-voice-b53ix6xw`): "23 migrations found… Database schema is up to date!". São 23 também na pasta `prisma/migrations`, então `20261110120000_um_terco_escolas_do_ciclo` está aplicada. O ciclo #8 da produção ficou "todas as escolas".
+  - **Não confirmado por mim:** se a migration foi aplicada antes ou depois do deploy do PR #7 no Render, ou seja, se houve um intervalo com o 1/3 fora do ar. Também não testei o app publicado.
+  - **Branches:** o usuário reclamou do excesso. Regra nova: uma branch de trabalho por lote de publicação (memória `feedback_poucas_branches`). A única mudança ainda não publicada é a dos inativos separados (`fix/um-terco-inativos-separados`, também no topo da `feature/um-terco-escolas`). As outras 7 branches já estão inteiras na `main` e aguardam autorização para serem apagadas.
+- **10/11/2026: limpeza de branches (autorizada pelo usuário: "pode, para ambos").**
+  - **Apagadas:**
+    - no computador: as 7 branches já inteiras na `main` (`feature/dashboard-entregas`, `exportacao-excel`, `modal-ciclo-um-terco`, `validacao-datas-um-terco`, `fix/ajustes-telas-secretaria`, `assistente-disciplinas-por-turma`, `filtro-turma-alunos-pdi`), cada uma conferida com 0 commits fora da `main`;
+    - no GitHub: as 5 dessas que existiam lá.
+  - **Publicação dos inativos separados:** pela `feature/um-terco-escolas`, que é a base da `main` atual e entra sem conflito: PR `main...feature/um-terco-escolas`, aberto pelo usuário no GitHub (o `gh` não está instalado). A `fix/um-terco-inativos-separados` tem a mesma mudança, mas saiu da `main` antiga (daria conflito); ficou redundante.
+  - **Achado:** `fix/filtro-escola-sempre-visivel` (`53fc076`, "PDI > Alunos: filtro Escola sempre visível") **nunca entrou na `main`**, então o filtro de escola publicado continua aparecendo só com "Todas as escolas" no topo.
