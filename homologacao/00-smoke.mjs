@@ -1,6 +1,6 @@
 import { abrir, login, foto, BASE } from './lib.mjs';
 const { browser, page, erros } = await abrir();
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 console.log('URL após login:', page.url());
 await foto(page, '00-secretaria-dashboard');
 await page.goto(BASE + '/#/formulario-um-terco');

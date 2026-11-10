@@ -2614,3 +2614,21 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - `homologacao/52-inativar-um-terco-com-preenchimentos.mjs` 3/3: aviso na tela; inativar com 8 entregas e 32 respostas sem perder nada; reativar devolve.
     - 47 (inativos): 9/9.
     - 1/3 integração: 50/50.
+- **10/11/2026: PRODUÇÃO, dados de teste montados a pedido do usuário (sem mudança de código).**
+  - **Causa do caso da professora Aline Guedes (1M2, E. M. Três Marias, escola 25):** só 5 de 6 Fichas apareciam porque **não existia Modelo PDI de Matemática** (nem de Geografia e História). Uma Aplicação só leva as disciplinas com Modelo ativo no momento da criação.
+  - **Feito pela API oficial, como a Secretaria:**
+    - Modelos novos: Geografia (87), História (88) e Matemática (89), com as perguntas padrão. Nenhum Modelo existente foi apagado.
+    - Aluno de teste "Aluno Teste PDI 1M1" (id 662) na 1M1 (turma 1604), que estava vazia.
+    - Professor de teste "Professor Teste Todas as Disciplinas" (id 137), com vínculo nas 10 disciplinas da 1M1. A turma não tinha professor, então nada foi substituído.
+    - A Aplicação 176 da escola 25 (0 respostas, só 6 disciplinas) foi apagada de fato e recriada como **Aplicação 177** (10/11 a 13/12/2026) com as 10 disciplinas. A Aline passa a ver Matemática.
+  - **Testado na produção:**
+    - Pela API: 10/10 Fichas editáveis para o professor de teste.
+    - Pelo site, em navegador real: aluno em Meus PDIs; formulário com as 10 disciplinas e "Preenchimento disponível".
+  - A senha da conta da Secretaria foi trocada no banco local e na produção, a pedido do usuário. **Senhas nunca vão para arquivos do repositório.**
+- **10/11/2026: Gestão de Pessoas: inativos fora da lista principal (pedido do usuário; só frontend).**
+  - **Regra nova (vale para o sistema todo):** inativo some da tela principal e vai para uma visão separada, só para consulta e reativação. Nada é apagado.
+  - **Feito:** Professores, Auxiliares, Supervisores e Diretoras mostram só os ativos. Acima da tabela fica o link "Ver inativos (N) →"; na visão de inativos há "← Voltar aos ativos" e o botão Reativar continua. Estado local (não usa a URL, porque as abas dessa página também são estado).
+  - **Já cumpriam a regra, sem mudança:** Formulário 1/3 (ciclos inativos, entrada de 10/11) e PDI (Modelos inativos em "Histórico de Modelos"; Aplicações removidas em seção própria, `FormularioPdiPage.jsx`).
+  - **Fora do escopo, de propósito:** perguntas inativas dentro de um Modelo PDI/Anamnese continuam inline com a etiqueta "Inativa" (a reordenação depende da lista completa); Escolas e Turmas não foram pedidas e não foram alteradas; a exportação Excel de Professores continua com todos e a coluna Status.
+  - Camadas: só frontend (`src/pages/GestaoPessoas.jsx`: `ListaPessoas`, `LinkInativos`, `separarInativos`). Backend e banco não mudaram.
+  - Testado: `vite build` passa. **Não testado no navegador** (nem em celular).

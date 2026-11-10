@@ -7,7 +7,7 @@ import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 
 const API = 'http://localhost:3340';
-const SEC = ['secretaria@escola.gov.br', '123456'];
+const SEC = ['secretaria@escola.gov.br', '12345678'];
 const P04 = ['p04@homolog.nexo', 'Nexo!Prof04-2026'];
 const P10 = ['p10@homolog.nexo', 'Nexo!Prof10-2026'];
 const token = async ([email, senha]) => (await (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha }) })).json()).token;

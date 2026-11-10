@@ -18,6 +18,41 @@ import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/r
 // que espera "AAAA-MM-DD" puro) — por isso um formatador próprio aqui, em vez de reaproveitar.
 const formatDataReal = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
+// Pessoas inativas (ex-funcionários) saem da lista principal e vão para uma visão separada, só para
+// consulta/reativação (pedido do usuário, 10/11/2026 — mesmo padrão do Formulário 1/3). Vale para
+// Professores, Auxiliares, Supervisores e Diretoras. Nada é apagado.
+const separarInativos = (lista, ver) => {
+  const inativos = lista.filter(p => p.status !== 'ATIVO');
+  return { inativos, visiveis: ver ? inativos : lista.filter(p => p.status === 'ATIVO') };
+};
+
+// Envolve a DataTable: guarda o estado "ver inativos" e mostra só ativos ou só inativos.
+const ListaPessoas = ({ rows, columns, rotulo }) => {
+  const [ver, setVer] = useState(false);
+  const { inativos, visiveis } = separarInativos(rows, ver);
+  return (
+    <div className="space-y-3">
+      <LinkInativos ver={ver} setVer={setVer} qtd={inativos.length} rotulo={rotulo} />
+      {visiveis.length === 0
+        ? <Card className="py-10 text-center"><p className="font-semibold text-slate-800">{ver ? 'Nenhum registro inativo' : 'Nenhum registro ativo'}</p>{!ver && inativos.length > 0 && <p className="mt-1 text-sm text-slate-500">Os inativos estão em "Ver inativos".</p>}</Card>
+        : <DataTable columns={columns} rows={visiveis} />}
+    </div>
+  );
+};
+
+const LinkInativos = ({ ver, setVer, qtd, rotulo }) => {
+  if (ver) {
+    return (
+      <div className="space-y-1">
+        <button type="button" onClick={() => setVer(false)} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar aos ativos</button>
+        <p className="text-sm text-slate-600">{rotulo} inativos(as) não aparecem na lista principal nem têm acesso ao sistema. Podem ser reativados(as).</p>
+      </div>
+    );
+  }
+  if (qtd === 0) return null;
+  return <button type="button" onClick={() => setVer(true)} className="text-sm font-semibold text-teal-700 hover:underline">Ver inativos ({qtd}) →</button>;
+};
+
 // VinculoEscolar real — reutilizado por Professor e Auxiliar (ambos têm a mesma estrutura de
 // vínculo com escola agora). Encerrar aqui também encerra, no backend e na mesma transação, os
 // vínculos pedagógicos (ProfessorTurmaDisciplina/AuxiliarTurma) ativos daquela escola — a
@@ -707,7 +742,7 @@ const ProfessoresReaisManager = ({ user }) => {
       ) : professores.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum professor nesta visão</p><p className="mt-1 text-sm text-slate-500">Cadastre o primeiro professor com uma conta real.</p></Card>
       ) : (
-        <DataTable columns={columns} rows={professores} />
+        <ListaPessoas columns={columns} rows={professores} rotulo="Professores" />
       )}
 
       {form && (
@@ -947,7 +982,7 @@ const GestoresReaisManager = () => {
       ) : gestoresReais.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum supervisor(a) cadastrado</p><p className="mt-1 text-sm text-slate-500">Cadastre o(a) primeiro(a) supervisor(a) com uma conta real.</p></Card>
       ) : (
-        <DataTable columns={columns} rows={gestoresReais} />
+        <ListaPessoas columns={columns} rows={gestoresReais} rotulo="Supervisores" />
       )}
 
       {form && (
@@ -1157,7 +1192,7 @@ const DiretorasReaisManager = () => {
       ) : diretorasReais.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhuma diretora cadastrada</p><p className="mt-1 text-sm text-slate-500">Cadastre a primeira diretora com uma conta real.</p></Card>
       ) : (
-        <DataTable columns={columns} rows={diretorasReais} />
+        <ListaPessoas columns={columns} rows={diretorasReais} rotulo="Diretoras" />
       )}
 
       {form && (
@@ -1536,7 +1571,7 @@ const AuxiliaresReaisManager = ({ user }) => {
       ) : auxiliares.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum Auxiliar ativo</p></Card>
       ) : (
-        <DataTable columns={columns} rows={auxiliares} />
+        <ListaPessoas columns={columns} rows={auxiliares} rotulo="Auxiliares" />
       )}
 
       {form && (

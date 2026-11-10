@@ -62,7 +62,7 @@ try {
   if (semana13) await prisma.respostaSemanaUmTerco.update({ where: { id: semana13.id }, data: { texto: FORMULA_13 } });
 
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   const tkSec = await token(X.page);
 
   // ================= A. PDI (página principal) =================

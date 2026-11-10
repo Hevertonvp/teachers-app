@@ -5,7 +5,7 @@ import { registrar } from './resultados.mjs';
 
 const { browser, page, erros } = await abrir();
 const modal = () => page.locator('div.fixed.inset-0');
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 
 // ---- 1. Perguntas padrão (Configurações) ----
 await page.goto(BASE + '/#/configuracoes'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(1200);

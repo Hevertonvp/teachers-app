@@ -10,13 +10,13 @@ const token = async (email, senha) => (await (await fetch(API + '/api/auth/login
 
 const contar = async () => ({ entregas: await prisma.entregaUmTerco.count({ where: { cicloId: 1 } }), respostas: await prisma.respostaSemanaUmTerco.count({ where: { entrega: { cicloId: 1 } } }) });
 try {
-  const tkS = await token('secretaria@escola.gov.br', '123456');
+  const tkS = await token('secretaria@escola.gov.br', '12345678');
   const tkP = await token('p04@homolog.nexo', 'Nexo!Prof04-2026');
   const antes = await contar();
 
   // Tela: o botão aparece no ciclo com preenchimentos e o aviso diz quantos já começaram.
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle');
   const cartao = X.page.locator('div', { has: X.page.getByRole('heading', { name: /Nov\/2026 \(homolog\)/ }) }).filter({ has: X.page.getByRole('button', { name: 'Painel de entregas' }) }).last();
   await cartao.getByRole('button', { name: 'Inativar' }).click();

@@ -18,7 +18,7 @@ const lerPainel = async (page, titulo) => {
 
 for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular', { width: 390, height: 844 }]]) {
   const X = await abrir({ viewport: vp });
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   const tk = await X.page.evaluate(() => localStorage.getItem('authToken'));
   await X.page.goto(BASE + '/#/dashboard'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2500);
   await foto(X.page, `45-dashboard-${nome}`);

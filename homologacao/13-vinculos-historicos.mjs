@@ -16,7 +16,7 @@ const turma = async (escolaNome, nome) => (await prisma.turma.findFirst({ where:
 
 // ---- Parte A (UI): turma de Educação Infantil na Aurora (P14 não deve receber o formulário) ----
 let b = await abrir();
-await login(b.page, 'secretaria@escola.gov.br', '123456');
+await login(b.page, 'secretaria@escola.gov.br', '12345678');
 if (!(await prisma.turma.count({ where: { etapa: 'EDUCACAO_INFANTIL', escola: { nome: { contains: 'Aurora' } } } }))) {
   await b.page.goto(BASE + '/#/turmas'); await b.page.waitForLoadState('networkidle');
   await b.page.getByRole('button', { name: '+ Nova turma' }).first().click();
@@ -92,7 +92,7 @@ for (const cod of Object.keys(esperadoCards)) {
 //  existentes: P01=1, P02=3, P03=2, P04=7, P05=1, P06=1 → 15 ; novos: P07=1, P08=1, P11=1, P12=2, P15=1 → 6
 async function lerPainel(tag) {
   const s = await abrir();
-  await login(s.page, 'secretaria@escola.gov.br', '123456');
+  await login(s.page, 'secretaria@escola.gov.br', '12345678');
   const ciclo = await prisma.cicloUmTerco.findFirst({ where: { titulo: { contains: 'Nov/2026 (homolog)' } } });
   await s.page.goto(BASE + `/#/formulario-um-terco/ciclos/${ciclo.id}`); await s.page.waitForLoadState('networkidle'); await s.page.waitForTimeout(2000);
   const txt = (await s.page.locator('main').innerText()).replace(/\s+/g, ' ');

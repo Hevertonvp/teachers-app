@@ -7,7 +7,7 @@ import { registrar } from './resultados.mjs';
 const API = 'http://localhost:3340';
 const token = async (email, senha) => (await (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha }) })).json()).token;
 const api = async (t, method, path, body) => { const r = await fetch(API + path, { method, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + t }, body: body ? JSON.stringify(body) : undefined }); let j = null; try { j = await r.json(); } catch {} return { status: r.status, json: j }; };
-const tSec = await token('secretaria@escola.gov.br', '123456');
+const tSec = await token('secretaria@escola.gov.br', '12345678');
 const tGes = await token('gestor.aur@homolog.nexo', 'Nexo!Homolog-2026');
 const tP10 = await token('p10@homolog.nexo', 'Nexo!Prof10-2026');
 

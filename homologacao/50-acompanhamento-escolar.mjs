@@ -20,7 +20,7 @@ const hoje = new Date(new Date().toISOString().slice(0, 10));
 const criadas = [];
 
 try {
-  const tkS = await token('secretaria@escola.gov.br', '123456');
+  const tkS = await token('secretaria@escola.gov.br', '12345678');
   const rede = (await get(tkS, '/api/acompanhamento/rede?atualizar=1')).json;
 
   // 1) PDI bate com /pdi-aplicacoes/indicadores (mesma regra).
@@ -72,7 +72,7 @@ try {
 
   // 6) Tela da Secretaria: rede → escola → rede.
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   await X.page.goto(BASE + '/#/acompanhamento-escolar'); await X.page.waitForLoadState('networkidle');
   await X.page.getByRole('heading', { name: 'Mapa da rede' }).waitFor({ timeout: 15000 });
   const temCartoes = await X.page.locator('.acp-cartao').count();

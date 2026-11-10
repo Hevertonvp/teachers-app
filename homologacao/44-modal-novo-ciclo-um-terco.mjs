@@ -34,7 +34,7 @@ const BOAS = [['2026-11-23', '2026-11-27'], ['2026-12-07', '2026-12-16'], ['2026
 try {
   for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular', { width: 390, height: 844 }]]) {
     const X = await abrir({ viewport: vp });
-    await login(X.page, 'secretaria@escola.gov.br', '123456');
+    await login(X.page, 'secretaria@escola.gov.br', '12345678');
     const tk = await X.page.evaluate(() => localStorage.getItem('authToken'));
     await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1200);
     await X.page.getByRole('button', { name: '+ Novo ciclo' }).first().click(); await X.page.waitForTimeout(600);

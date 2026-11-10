@@ -4,7 +4,7 @@ import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 const r = (id, cen, esp, obs, ok, evid = '') => registrar(`DEF10-${id}`, 'PDI Alunos (DEF-10)', cen, esp, obs, ok ? 'APROVADO' : 'REPROVADO', evid);
 const X = await abrir();
-await login(X.page, 'secretaria@escola.gov.br', '123456');
+await login(X.page, 'secretaria@escola.gov.br', '12345678');
 await X.page.goto(BASE + '/#/pdi/alunos'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2500);
 const filtros = X.page.locator('main select');
 const selEscola = filtros.nth(0); // ordem na tela: Escola, Turma, Ativos e arquivados

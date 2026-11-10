@@ -1,6 +1,6 @@
 import { abrir, login, foto, BASE } from './lib.mjs';
 const { browser, page, erros } = await abrir();
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 await page.goto(BASE + '/#/pdi/formulario'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(1500);
 await foto(page, '16-pdi-formulario-secretaria');
 await page.getByRole('button', { name: '+ Novo modelo' }).first().click();

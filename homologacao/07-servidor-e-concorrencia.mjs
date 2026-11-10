@@ -12,7 +12,7 @@ async function req(metodo, caminho, token, corpo) {
   return { status: r.status, json };
 }
 const entrar = async (email, senha) => (await req('POST', '/auth/login', null, { email, senha })).json.token;
-const sec = await entrar('secretaria@escola.gov.br', '123456');
+const sec = await entrar('secretaria@escola.gov.br', '12345678');
 const p01 = await entrar('p01@homolog.nexo', 'Nexo!Prof01-2026');
 const p04 = await entrar('p04@homolog.nexo', 'Nexo!Prof04-2026');
 const TAG = Date.now().toString(36).slice(-4);

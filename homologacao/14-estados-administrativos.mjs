@@ -4,7 +4,7 @@ import { abrir, login, foto, abrirCartao, sair, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 const API = 'http://localhost:3340/api';
-const tokenSec = (await (await fetch(API + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'secretaria@escola.gov.br', senha: '123456' }) })).json()).token;
+const tokenSec = (await (await fetch(API + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'secretaria@escola.gov.br', senha: '12345678' }) })).json()).token;
 const post = (c) => fetch(API + c, { method: 'POST', headers: { authorization: `Bearer ${tokenSec}`, 'content-type': 'application/json' }, body: '{}' }).then(r => r.status);
 
 // 1) P11 preenche e conclui pela interface
@@ -20,7 +20,7 @@ registrar('UT-EST-01', 'Estados administrativos', 'P11 conclui o 7º História p
 await a.browser.close();
 
 const painel = async (tag) => {
-  const s = await abrir(); await login(s.page, 'secretaria@escola.gov.br', '123456');
+  const s = await abrir(); await login(s.page, 'secretaria@escola.gov.br', '12345678');
   const ciclo = await prisma.cicloUmTerco.findFirst({ where: { titulo: { contains: 'Nov/2026 (homolog)' } } });
   await s.page.goto(BASE + `/#/formulario-um-terco/ciclos/${ciclo.id}`); await s.page.waitForLoadState('networkidle'); await s.page.waitForTimeout(2000);
   const txt = (await s.page.locator('main').innerText()).replace(/\s+/g, ' ');

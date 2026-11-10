@@ -17,7 +17,7 @@ const api = async (t, method, path, body) => { const r = await fetch(API + path,
 const txt = async (page) => (await page.locator('main').innerText().catch(() => '')).replace(/\s+/g, ' ');
 const MARINA = 2, PEDRO = 3, INGLES = 9, AUR_6M2 = 2;
 const SENHA = 'Nexo!Homolog-2026';
-const tSec = await token('secretaria@escola.gov.br', '123456');
+const tSec = await token('secretaria@escola.gov.br', '12345678');
 
 // ---------- Preparação: contas ----------
 const contas = [['GESTOR', 'gestores', 'gestor.bv@homolog.nexo', [2]], ['DIRETORA', 'diretoras', 'diretora.bv@homolog.nexo', [2]], ['GESTOR', 'gestores', 'gestor.aur@homolog.nexo', [1]]];
@@ -68,7 +68,7 @@ for (const [id, quem, email] of [['PDI-TRF-G1', 'Gestor da Boa Vista (nova escol
 // ---------- G4: Secretaria pelas Correções ----------
 {
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   await X.page.goto(`${BASE}/#/correcoes/pdi/${fichaMarIngles.id}`); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2500);
   const tela = await txt(X.page);
   await foto(X.page, '28-PDI-TRF-G4');
@@ -97,7 +97,7 @@ for (const [id, quem, email] of [['PDI-TRF-G1', 'Gestor da Boa Vista (nova escol
 {
   const indAntes = (await api(tSec, 'GET', '/api/pdi-aplicacoes/indicadores')).json;
   const S = await abrir();
-  await login(S.page, 'secretaria@escola.gov.br', '123456');
+  await login(S.page, 'secretaria@escola.gov.br', '12345678');
   await S.page.goto(`${BASE}/#/pdi/alunos/${PEDRO}`); await S.page.waitForLoadState('networkidle'); await S.page.waitForTimeout(1500);
   await S.page.getByRole('button', { name: 'Editar aluno' }).click(); await S.page.waitForTimeout(600);
   const m = S.page.locator('div.fixed.inset-0');
