@@ -667,6 +667,8 @@ Regras:
 
 # 38. Correções
 
+> **MUDOU em 10/11/2026:** fluxo completo de correções para professores (PDI e 1/3). A janela de 3 dias continua, mas vencida não bloqueia mais o professor; salvar não envia mais a correção do bloco; há mensagem automática e conferência da Secretaria. Ver o Registro de alterações (10/11/2026) e REGRAS_DE_NEGOCIO_NEXO.md, seção 23.
+
 Dois fluxos.
 
 ## Específica da Ficha
@@ -2537,3 +2539,69 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
       - sem erros no console.
     - Regressão (33–36) e 45–48 do 1/3: 105 aprovados, nenhum reprovado. Build ok.
     - **Não testado:** produção e celular real.
+- **10/11/2026: fluxo de correções para professores (PDI e Formulário 1/3).** Branch `feature/correcoes-professor` (criada a pedido do usuário, a partir de `fix/reabrir-so-apos-prazo`); commits locais, SEM push.
+  - **Fluxo:**
+    - A Secretaria escreve "O que precisa ser corrigido?" (obrigatório) e confirma.
+    - O prazo é FIXO de 3 dias corridos (72 h, horário de São Paulo), sem configuração.
+    - O professor recebe uma mensagem automática na caixa de mensagens EXISTENTE, com as orientações, o prazo, a identificação e o botão "Abrir formulário".
+    - Ele corrige; salvar é rascunho e só "Enviar correção" envia.
+    - A Secretaria vê "Correção recebida" e aceita, ou devolve de novo.
+  - **Regras:**
+    - Devoluções ilimitadas, uma aberta por vez (isso também segura o duplo clique); histórico completo preservado.
+    - Prazo vencido: "Prazo de correção encerrado", sem bloquear, sem apagar, sem cobrança; o envio tardio fica marcado "fora do prazo".
+    - Libera só aquele formulário, mesmo com a Aplicação ou o ciclo encerrados.
+    - Regras COR-01 a COR-10 em `REGRAS_DE_NEGOCIO_NEXO.md`, seção 23; PDI-11 atualizada.
+  - **Decisões tomadas na implementação (simples; o usuário pode mudar):**
+    - **1/3 não tinha correção nenhuma:** ganhou só a devolução e o aceite. Não foi criada correção direta da Secretaria no 1/3.
+    - **Uma devolução aberta por vez:** devolver de novo exige que o professor tenha enviado a anterior.
+    - **Quem recebe = quem consegue editar** pela regra de acesso já existente (PDI: professor da turma ATUAL do aluno na disciplina; 1/3: o dono da entrega). Aluno transferido de escola, ou sem professor: a devolução é recusada com explicação, e a Secretaria usa a correção direta. Isso trata o DEF-18.
+    - **No PDI, "Enviar correção" é o mesmo botão de concluir.** Ele também envia a correção das perguntas comuns, que ANTES era resolvida só por salvar.
+  - **Banco:** migration ADITIVA `20261112120000_correcoes_fluxo_professor`.
+    - Colunas novas `conferidaEm`, `conferidaPor` e `conferencia` nas duas tabelas de correção do PDI; `observacao` passou de 500 para 2000 caracteres.
+    - Coluna `linkFormulario` em `mensagens`.
+    - Tabela nova `correcoes_entrega_um_terco`.
+    - **Precisa ser aplicada na produção ANTES de publicar o backend** (o Render não roda migrations).
+    - Junto com a do Acompanhamento Escolar, são 25 migrations.
+  - **Backend:**
+    - `domain/correcoes.ts` (situação, prazo, texto da mensagem) e `lib/mensagemCorrecao.ts` (mensagem na mesma transação; notificação com idempotência);
+    - `routes/correcoesPdi.ts`: devolver e devolver-padrao reescritos; aceitar e aceitar-padrao novos; filtro `correcao=em_andamento`; nomes no histórico;
+    - `routes/pdiFichas.ts`: correção aberta sem condição de prazo; concluir envia a da Ficha e a do bloco; correção nas respostas; `correcaoSolicitada` em meus-pdis;
+    - `domain/pdiBlocoPadrao.ts`: correção do bloco sem condição de prazo;
+    - `routes/formularioUmTerco.ts`: devolver e aceitar entrega; edição liberada só da entrega com correção; concluir envia; correção no detalhe, em minhas e no painel; filtro;
+    - `routes/mensagens.ts`: devolve `linkFormulario`.
+  - **Frontend:**
+    - `components/Correcoes.jsx` (selo, formulário ou modal com confirmação, histórico, aviso para o professor);
+    - `CorrecoesPdiDetalhePage.jsx` (a correção direta foi mantida; enviar para correção, aceitar e histórico);
+    - `CorrecoesPdiListaPage.jsx` (selo e "Só com correção em andamento");
+    - `MensagensPage.jsx` (botão "Abrir formulário");
+    - `FormularioPdiAlunoPage.jsx` (orientações e "Enviar correção · disciplina") e `MeusPdisPage.jsx` (selo);
+    - `UmTercoPainelPage.jsx` (enviar, aceitar, histórico, selo e filtro);
+    - `UmTercoProfessorPage.jsx` (selo e botão "Corrigir");
+    - `UmTercoPreenchimentoPage.jsx` (orientações e "Enviar correção");
+    - services `correcoesPdi.js`, `formularioUmTerco.js` e `pdiFichas.js`.
+  - **Testes (banco LOCAL):**
+    - `homologacao/51-correcoes-professor.mjs`: 24/24. Inclui:
+      - orientação obrigatória;
+      - duplo clique;
+      - 72 h exatas;
+      - mensagem com link;
+      - outro professor sem acesso;
+      - sem misturar disciplinas;
+      - rascunho não envia;
+      - envio duplo;
+      - recebida, aceita e aceitar duas vezes;
+      - prazo vencido sem bloqueio e "fora do prazo";
+      - três devoluções com histórico;
+      - Aplicação encerrada sem liberar outra Fichas;
+      - bloco comum;
+      - aluno transferido;
+      - 1/3 com duas correções simultâneas e com o ciclo encerrado;
+      - telas da Secretaria e do professor (celular 390 px), inclusive recarregar a página;
+      - sem erros no console.
+    - Preparação direta no banco: os alunos com Fichas concluídas do P04 tinham sido transferidos por testes antigos. As Fichas 10, 11 e 12 foram marcadas como concluídas e voltaram ao status original no fim.
+    - Regressão: 115 aprovados (33, 30, 30b, 31, 32, 34, 34b, 35, 36, 45, 46, 47, 48, 50), integridade 8/8. Baterias: 1/3 domínio 20/20 e integração 50/50; PDI formulário único 36/36 (uma checagem antiga foi atualizada para a regra nova do bloco) e indicadores 29/29. Build ok.
+  - **Não testado ou limitações:**
+    - Envio pelo botão na tela com Ficha incompleta: o botão fica desabilitado até tudo estar respondido, e o teste enviou pela API.
+    - Falha de rede no meio do envio: coberta pelos testes offline existentes (32), sem caso novo.
+    - Celular físico e produção não testados.
+    - A mensagem vai como conversa nova por devolução; o professor pode responder nela.
