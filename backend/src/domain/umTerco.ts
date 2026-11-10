@@ -87,9 +87,31 @@ export function validarCiclo(entrada: CicloEntrada, janela: JanelaTrimestre | nu
     return { numero, dataInicio: semana.dataInicio, dataFim: semana.dataFim };
   });
 
+  // Regras de 10/11/2026 (decisão do usuário): semanas em ordem e sem sobreposição (buracos entre
+  // elas são permitidos — feriado, recesso; tamanho livre) e nenhuma termina depois do prazo de entrega.
+  const diaPrazo = dataLocalSp(prazoEm);
+  semanas.forEach((semana, i) => {
+    const anterior = semanas[i - 1];
+    if (anterior && semana.dataInicio <= anterior.dataFim) {
+      throw new ValidationError(`Semana ${semana.numero} (início ${formatarDataBr(semana.dataInicio)}) precisa começar depois do fim da Semana ${anterior.numero} (${formatarDataBr(anterior.dataFim)}): as semanas ficam em ordem e não podem se sobrepor.`);
+    }
+    if (semana.dataFim > diaPrazo) {
+      throw new ValidationError(`Semana ${semana.numero} termina em ${formatarDataBr(semana.dataFim)}, depois do prazo de entrega (${formatarDataBr(diaPrazo)}).`);
+    }
+  });
+
   const titulo = (entrada.titulo ?? '').trim() || 'Formulário 1/3';
   if (titulo.length > 200) throw new ValidationError('Título muito longo.');
   return { anoLetivo, trimestre, titulo, abreEm, prazoEm, semanas };
+}
+
+// Abertura nunca no passado (Decisão 3 / UT-06, aprovada pelo usuário em 10/11/2026): o DIA da
+// abertura (São Paulo) precisa ser hoje ou depois. Na criação, sempre; na edição, só quando o dia
+// da abertura muda (um ciclo já aberto naturalmente tem abertura no passado).
+export function exigirAberturaNaoPassada(abreEm: Date, agora: Date = new Date()) {
+  if (dataLocalSp(abreEm) < dataLocalSp(agora)) {
+    throw new ValidationError(`A abertura (${formatarDataBr(dataLocalSp(abreEm))}) não pode ser no passado: escolha hoje ou uma data futura.`);
+  }
 }
 
 export type JanelaInstantes = { inicioEm: Date; fimEm: Date };
