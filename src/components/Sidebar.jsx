@@ -196,7 +196,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
           <NavIcon id={item.icon} />
         </span>
         <span>{item.name}</span>
-        {item.badge > 0 && <span className="ml-auto shrink-0 rounded-full bg-teal-400 px-2 py-0.5 text-xs font-bold text-slate-950">{item.badge}</span>}
+        {item.badge > 0 && <span className="ml-auto shrink-0 rounded-full bg-teal-700 px-2 py-0.5 text-xs font-bold text-white">{item.badge}</span>}
       </Link>
     );
   };

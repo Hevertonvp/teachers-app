@@ -102,7 +102,7 @@ export const Header = ({ onMenuClick }) => {
             aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo noturno'}
             title={isDark ? 'Modo claro' : 'Modo noturno'}
           >
-            <span className={`grid h-5 w-5 place-items-center rounded-full text-sm shadow transition-transform duration-500 sm:h-7 sm:w-7 ${isDark ? 'translate-x-5 bg-cyan-200 text-slate-950 sm:translate-x-7' : 'translate-x-0 bg-white text-slate-800'}`}>
+            <span className={`grid h-5 w-5 place-items-center rounded-full text-sm shadow transition-transform duration-500 sm:h-7 sm:w-7 ${isDark ? 'translate-x-5 bg-slate-300 text-slate-800 sm:translate-x-7' : 'translate-x-0 bg-white text-slate-800'}`}>
               {isDark ? '☾' : '☼'}
             </span>
           </button>

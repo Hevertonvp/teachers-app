@@ -138,6 +138,31 @@ textarea {
 	background-color: #020617 !important;
 }
 
+/* Verdes-água claros (teal) no modo noturno — antes ficavam com a cor do modo claro e pareciam
+   "verde fluorescente" no fundo escuro (pedido do usuário, 10/11/2026). Mesmo estilo dos remapeamentos
+   de ciano/esmeralda abaixo. */
+.theme-dark .bg-teal-50 {
+	background-color: #123b43 !important;
+}
+
+.theme-dark .hover\:bg-teal-100:hover,
+.theme-dark .bg-teal-100 {
+	background-color: rgba(36, 104, 112, 0.45) !important;
+}
+
+.theme-dark .bg-teal-300 {
+	background-color: #2f6f69 !important;
+}
+
+.theme-dark .border-teal-200,
+.theme-dark .border-teal-300 {
+	border-color: rgba(52, 138, 128, 0.45) !important;
+}
+
+.theme-dark .text-teal-900 {
+	color: #b5d8d6 !important;
+}
+
 .theme-dark .bg-cyan-50 {
 	background-color: #123b43 !important;
 }

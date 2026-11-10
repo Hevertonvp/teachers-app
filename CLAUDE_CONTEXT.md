@@ -2468,3 +2468,13 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - `homologacao/48-reabrir-so-apos-prazo.mjs` 3/3: tela do 1/3 (aberto sem botão, encerrado com botão), API do 1/3 (409/201), API do PDI com Aplicação vigente (409).
     
     A tela do PDI não foi testada no navegador; a condição é a mesma linha do botão.
+- **10/11/2026: modo noturno sem "verde fluorescente" (pedido do usuário; mesma branch `fix/reabrir-so-apos-prazo`; só frontend, estética).**
+  - **Causa:** os fundos `bg-teal-50` e `bg-teal-100` e as bordas teal claras não tinham versão noturna (só ciano e esmeralda tinham), então ficavam verde-menta claro no fundo escuro. A bolinha da chave usava `bg-cyan-200`.
+  - **Pontos corrigidos:** faixa "Encontrou um problema…", avatar do topo, ícone do item ativo do menu e semanas preenchidas do 1/3.
+  - **Mudanças:**
+    - `styles/index.css` ganhou as versões noturnas de `bg-teal-50/100/300`, `border-teal-200/300` e `text-teal-900`, no mesmo estilo dos remapeamentos existentes;
+    - a bolinha da chave passou a `bg-slate-300` (`Header.jsx`);
+    - o contador do menu lateral passou de `bg-teal-400` para `bg-teal-700` com número branco (`Sidebar.jsx`);
+    - o topo das barras do logo passou de `#5eead4` para `#7cc2b8` (`Logo.jsx`).
+  - **Modo claro:** sem mudança visual, salvo o logo levemente mais suave.
+  - **Conferido em captura de tela** (modo noturno e modo claro); sem teste automatizado.
