@@ -4860,5 +4860,49 @@
     "evidencia": "37-prod-gestor-perfil.png",
     "nota": "",
     "quando": "2026-11-09T23:23:55.296Z"
+  },
+  {
+    "id": "DEF10-1",
+    "modulo": "PDI Alunos (DEF-10)",
+    "cenario": "Turma com \"Todas as escolas\": opções agrupadas por escola e com o nome da escola",
+    "esperado": "optgroups por escola; \"6M1 — Aurora\" e \"6M1 — Boa Vista\" distintos",
+    "observado": "grupos: ESCOLA TESTE CALENDARIO 13 1794264311073 | ESCOLA TESTE CALENDARIO 13 1794266085016 | ESCOLA TESTE FORM UNICO 1794264302076 | ESCOLA TESTE FORM UNICO 1794266072886 | ESCOLA TESTE INDICADORES 1794264306642 | ESCOLA TESTE INDICADORES 1794266078760 | ZZ-HOMOLOG Escola Aurora | ZZ-HOMOLOG Escola Boa Vista; opções 6M1: 6M1 — ZZ-HOMOLOG Escola Aurora | 6M1 — ZZ-HOMOLOG Escola Boa Vista",
+    "status": "APROVADO",
+    "evidencia": "39-filtros.png",
+    "nota": "",
+    "quando": "2026-11-10T01:55:16.961Z"
+  },
+  {
+    "id": "DEF10-2",
+    "modulo": "PDI Alunos (DEF-10)",
+    "cenario": "Filtro Escola = Boa Vista: tabela só com alunos da Boa Vista (conferido no banco) e turmas só da Boa Vista",
+    "esperado": "5 alunos; 4 turmas + \"Todas\"",
+    "observado": "5 linhas (todas Boa Vista: true); opções de turma: 4",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T01:55:17.883Z"
+  },
+  {
+    "id": "DEF10-3",
+    "modulo": "PDI Alunos (DEF-10)",
+    "cenario": "Turma 6M1 da Boa Vista e 6M1 da Aurora são filtros diferentes, cada um com os alunos certos (banco)",
+    "esperado": "BV 6M1: 5; Aurora 6M1: 0",
+    "observado": "BV 6M1: 5 (todas BV: true); Aurora 6M1: 0 (todas Aurora: true)",
+    "status": "APROVADO",
+    "evidencia": "39-aurora-6m1.png",
+    "nota": "",
+    "quando": "2026-11-10T01:55:20.293Z"
+  },
+  {
+    "id": "DEF10-4",
+    "modulo": "PDI Alunos (DEF-10)",
+    "cenario": "Trocar a escola volta a turma para \"Todas\"",
+    "esperado": "turma = todos",
+    "observado": "todos",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T01:55:20.850Z"
   }
 ]

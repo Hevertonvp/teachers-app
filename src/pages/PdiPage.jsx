@@ -5,7 +5,7 @@ import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPrevi
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
-import { inputClass, turmaName } from '../utils/display';
+import { escolaName, inputClass, turmaName } from '../utils/display';
 import { filterByEscola } from '../utils/escolas';
 import { parentescoOptions } from '../utils/pdi';
 import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico, canViewPdiAlunos } from '../utils/roles';
@@ -39,6 +39,8 @@ export const PdiPage = () => {
   const canEditPdi = canManage && (!isGestor(user) || escolaAtivaSelecionada);
   const turmasDaEscola = filterByEscola(turmas.filter(t => t.status === 'ativa'), activeEscolaId, user);
   const [search, setSearch] = useState('');
+  // DEF-10: filtro por ESCOLA e turma (nomes de turma se repetem entre escolas, ex.: 6M1).
+  const [escolaFiltro, setEscolaFiltro] = useState('todas');
   const [turma, setTurma] = useState('todos');
   const [status, setStatus] = useState('ativo');
   const [form, setForm] = useState(null);
@@ -53,10 +55,15 @@ export const PdiPage = () => {
 
   const alunos = useMemo(() => scopedAlunos.filter(aluno => {
     const matchesSearch = aluno.nome.toLowerCase().includes(search.toLowerCase());
+    const matchesEscola = escolaFiltro === 'todas' || String(aluno.escolaId) === escolaFiltro;
     const matchesTurma = turma === 'todos' || String(aluno.turmaId) === turma;
     const matchesStatus = status === 'todos' || aluno.status === status;
-    return matchesSearch && matchesTurma && matchesStatus;
-  }), [scopedAlunos, search, turma, status]);
+    return matchesSearch && matchesEscola && matchesTurma && matchesStatus;
+  }), [scopedAlunos, search, escolaFiltro, turma, status]);
+
+  // Escolas que aparecem no filtro: as que têm turma ativa visível para este usuário.
+  const escolasDoFiltro = escolas.filter(item => turmasDaEscola.some(t => t.escolaId === item.id)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const turmasDoFiltro = turmasDaEscola.filter(t => escolaFiltro === 'todas' || String(t.escolaId) === escolaFiltro);
 
   if (isAuxiliar(user)) return <Navigate to="/dashboard" replace />;
   // Professor não usa mais esta lista — vai direto para "Meus PDIs" (turmaProfessores, não
@@ -161,6 +168,7 @@ export const PdiPage = () => {
 
   const columns = [
     { key: 'nome', header: 'Aluno', render: row => <button className="font-semibold text-teal-700 hover:underline" onClick={event => { event.stopPropagation(); navigate(`/pdi/alunos/${row.id}`); }}>{row.nome}</button> },
+    { key: 'escola', header: 'Escola', render: row => escolaName(escolas, row.escolaId) },
     { key: 'turma', header: 'Turma', render: row => turmaName(turmas, row.turmaId) },
     { key: 'status', header: 'Status', render: row => row.status === 'arquivado' ? 'Arquivado' : 'Ativo' },
     { key: 'acoes', header: 'Ações', render: row => (
@@ -213,9 +221,14 @@ export const PdiPage = () => {
         )}
 
         <Card>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className={`grid gap-3 ${activeEscolaId === null ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             <FormField label="Busca por nome"><input className={inputClass} value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar aluno" /></FormField>
-            <FormField label="Turma"><select className={inputClass} value={turma} onChange={event => setTurma(event.target.value)}><option value="todos">Todas</option>{turmasDaEscola.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
+            {activeEscolaId === null && (
+              <FormField label="Escola"><select className={inputClass} value={escolaFiltro} onChange={event => { setEscolaFiltro(event.target.value); setTurma('todos'); }}><option value="todas">Todas</option>{escolasDoFiltro.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
+            )}
+            <FormField label="Turma"><select className={inputClass} value={turma} onChange={event => setTurma(event.target.value)}><option value="todos">Todas</option>{escolaFiltro === 'todas' && activeEscolaId === null
+              ? escolasDoFiltro.map(escola => <optgroup key={escola.id} label={escola.nome}>{turmasDoFiltro.filter(t => t.escolaId === escola.id).map(item => <option key={item.id} value={item.id}>{item.nome} — {escola.nome}</option>)}</optgroup>)
+              : turmasDoFiltro.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
             <FormField label="Ativos e arquivados"><select className={inputClass} value={status} onChange={event => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="arquivado">Arquivados</option><option value="todos">Todos</option></select></FormField>
           </div>
         </Card>

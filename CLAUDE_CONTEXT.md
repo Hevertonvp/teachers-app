@@ -2221,3 +2221,4 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Validado no ambiente local:** 16 aprovados; a única falha é a INFRA-2, que só se aplica ao build publicado.
   - **Contra a produção, sem senhas:** INFRA-1 e INFRA-2 aprovados.
   - **Falta:** rodar com as contas reais.
+- **DEF-10 corrigido (branch `fix/filtro-turma-alunos-pdi`, a pedido do usuário):** filtro Escola + Turma em PDI > Alunos, com coluna Escola (`src/pages/PdiPage.jsx`). Teste 39: 4/4. **Não publicado** até autorização. A exportação para Excel (branch `feature/exportacao-excel`) foi pausada antes de qualquer alteração.

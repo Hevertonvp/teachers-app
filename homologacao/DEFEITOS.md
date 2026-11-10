@@ -261,3 +261,13 @@ Ambiente: banco PostgreSQL LOCAL (`nexo_homolog`, porta 54329). Antes dos testes
 - QUE-02 a QUE-08 (pendentes da Secretaria);
 - dependências de `mockData` fora do PDI;
 - agrupamento do bloco comum com fichas de dois professores originais (ver DEF-19, riscos residuais).
+
+## DEF-10 — CORRIGIDO (BAIXO) — PDI > Alunos: filtro de turma sem escola (09/11/2026, branch `fix/filtro-turma-alunos-pdi`)
+- **Antes:** com "Todas as escolas", o filtro Turma listava "6M1 6M1 … 7M1 7M1" sem dizer de qual escola. Os nomes de turma se repetem entre escolas, e o filtro ficava ambíguo.
+- **Solução:** `src/pages/PdiPage.jsx` ganhou:
+  - filtro **Escola** (quando o cabeçalho está em "Todas as escolas");
+  - filtro Turma restrito à escola escolhida;
+  - com "Todas", turmas agrupadas por escola e identificadas ("6M1 — Escola X");
+  - troca de escola limpa a turma escolhida;
+  - nova coluna **Escola** na tabela.
+- **Teste:** `39-filtro-escola-turma-alunos.mjs`, em navegador real, conferido contra o banco e somando todas as páginas da tabela: 4/4.
