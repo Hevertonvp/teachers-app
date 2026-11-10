@@ -12,7 +12,7 @@ const r = (id, cen, esp, obs, ok, evid = '') => registrar(`UI-SEC-${id}`, 'Ajust
 const modal = (page) => page.locator('div.fixed.inset-0.z-50');
 
 const X = await abrir();
-await login(X.page, 'secretaria@escola.gov.br', '123456');
+await login(X.page, 'secretaria@escola.gov.br', '12345678');
 
 // ---- 1. PDI ----
 await X.page.goto(BASE + '/#/pdi'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2000);
@@ -56,7 +56,7 @@ r('3b', 'Fechar o modal sem confirmar não altera vínculos (P01 continua em Mat
 // ---- 4. Assistente do cadastro (Redação: nenhuma turma tem professor dessa disciplina) ----
 for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular', { width: 390, height: 844 }]]) {
   const Y = nome === 'desktop' ? X : await abrir({ viewport: vp });
-  if (nome === 'celular') await login(Y.page, 'secretaria@escola.gov.br', '123456');
+  if (nome === 'celular') await login(Y.page, 'secretaria@escola.gov.br', '12345678');
   await Y.page.goto(BASE + '/#/pessoas'); await Y.page.waitForLoadState('networkidle'); await Y.page.waitForTimeout(1500);
   await Y.page.getByRole('button', { name: '+ Cadastrar professor' }).click(); await Y.page.waitForTimeout(800);
   const c = modal(Y.page);

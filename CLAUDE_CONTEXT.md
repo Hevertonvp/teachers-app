@@ -2625,3 +2625,10 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - Pela API: 10/10 Fichas editáveis para o professor de teste.
     - Pelo site, em navegador real: aluno em Meus PDIs; formulário com as 10 disciplinas e "Preenchimento disponível".
   - A senha da conta da Secretaria foi trocada no banco local e na produção, a pedido do usuário. **Senhas nunca vão para arquivos do repositório.**
+- **10/11/2026: Gestão de Pessoas: inativos fora da lista principal (pedido do usuário; só frontend).**
+  - **Regra nova (vale para o sistema todo):** inativo some da tela principal e vai para uma visão separada, só para consulta e reativação. Nada é apagado.
+  - **Feito:** Professores, Auxiliares, Supervisores e Diretoras mostram só os ativos. Acima da tabela fica o link "Ver inativos (N) →"; na visão de inativos há "← Voltar aos ativos" e o botão Reativar continua. Estado local (não usa a URL, porque as abas dessa página também são estado).
+  - **Já cumpriam a regra, sem mudança:** Formulário 1/3 (ciclos inativos, entrada de 10/11) e PDI (Modelos inativos em "Histórico de Modelos"; Aplicações removidas em seção própria, `FormularioPdiPage.jsx`).
+  - **Fora do escopo, de propósito:** perguntas inativas dentro de um Modelo PDI/Anamnese continuam inline com a etiqueta "Inativa" (a reordenação depende da lista completa); Escolas e Turmas não foram pedidas e não foram alteradas; a exportação Excel de Professores continua com todos e a coluna Status.
+  - Camadas: só frontend (`src/pages/GestaoPessoas.jsx`: `ListaPessoas`, `LinkInativos`, `separarInativos`). Backend e banco não mudaram.
+  - Testado: `vite build` passa. **Não testado no navegador** (nem em celular).

@@ -4,7 +4,7 @@ import { prisma } from './db.mjs';
 
 const { browser, page, erros } = await abrir();
 const modal = () => page.locator('div.fixed.inset-0');
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 
 // ---- Calendário 2026 (dados fictícios de homologação) ----
 await page.goto(BASE + '/#/configuracoes'); await page.waitForLoadState('networkidle');

@@ -4,7 +4,7 @@ import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 
 const { browser, page, erros } = await abrir();
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 const jaExiste = await prisma.cicloUmTerco.count({ where: { titulo: { contains: 'Nov/2026 (homolog)' } } });
 const r = jaExiste ? { ok: true } : await criarCiclo(page, {
   tri: 3, titulo: 'Formulário 1/3 — Nov/2026 (homolog)', abre: '2026-11-02T08:00', prazo: '2026-11-20T18:00',

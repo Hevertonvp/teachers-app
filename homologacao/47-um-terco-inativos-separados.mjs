@@ -12,7 +12,7 @@ const cartoes = (page) => page.locator('h2', { hasText: 'trimestre de' });
 try {
   for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular', { width: 390, height: 844 }]]) {
     const X = await abrir({ viewport: vp });
-    await login(X.page, 'secretaria@escola.gov.br', '123456');
+    await login(X.page, 'secretaria@escola.gov.br', '12345678');
     await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1500);
     const [nAtivos, nInativos] = [await prisma.cicloUmTerco.count({ where: { status: 'ATIVA' } }), await prisma.cicloUmTerco.count({ where: { status: 'INATIVA' } })];
     const telaAtivos = await cartoes(X.page).count();
@@ -40,7 +40,7 @@ try {
 
   // Ciclo de teste: inativar pela tela → sai dos ativos e aparece nos inativos; reativar → volta
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   const tk = await X.page.evaluate(() => localStorage.getItem('authToken'));
   const res = await fetch(API + '/api/formulario-um-terco/ciclos', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tk }, body: JSON.stringify({ anoLetivo: 2026, trimestre: 3, titulo: TITULO, abreEm: '2026-12-01T00:00', prazoEm: '2026-12-18T23:59', semanas: [{ dataInicio: '2026-11-23', dataFim: '2026-11-27' }] }) });
   const criado = await res.json();

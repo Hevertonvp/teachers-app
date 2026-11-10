@@ -21,7 +21,7 @@ for (const c of ['p02', 'p06', 'p12']) await prisma.pessoa.update({ where: { ema
 const token = async (email, senha) => (await (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha }) })).json()).token;
 const api = async (t, method, path, body) => { const r = await fetch(API + path, { method, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + t }, body: body ? JSON.stringify(body) : undefined }); let j = null; try { j = await r.json(); } catch {} return { status: r.status, json: j }; };
 const tk = {}; for (const c of ['p02', 'p04', 'p06', 'p10', 'p12']) tk[c] = await token(`${c}@homolog.nexo`, SENHA(c));
-const tSec = await token('secretaria@escola.gov.br', '123456');
+const tSec = await token('secretaria@escola.gov.br', '12345678');
 const r = (id, cen, esp, obs, ok, evid = '', nota = '') => registrar(`DEF14-${FASE}-${id}`, 'PDI bloco comum (DEF-14)', cen, esp, obs, ok ? 'APROVADO' : 'REPROVADO', evid, nota);
 
 const bloco = (alunoId, turmaId, professorId, aplicacaoId = AP1) => prisma.blocoRespostasPadraoPdi.findUnique({ where: { aplicacaoId_alunoId_turmaId_professorId: { aplicacaoId, alunoId, turmaId, professorId } }, include: { respostas: true } });

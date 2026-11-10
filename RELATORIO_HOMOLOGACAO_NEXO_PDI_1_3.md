@@ -1,4 +1,4 @@
-# Relatório de homologação NEXO — PDI e Formulário 1/3
+*+# Relatório de homologação NEXO — PDI e Formulário 1/3
 
 Data: 04/11/2026. Modo: diagnóstico (código de produção **não alterado**). Banco: PostgreSQL local descartável (nunca o Neon).
 

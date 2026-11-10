@@ -32,7 +32,7 @@ const professorSo = async (escolaId) => {
 
 try {
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   const tk = await X.page.evaluate(() => localStorage.getItem('authToken'));
   await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1200);
   await X.page.getByRole('button', { name: '+ Novo ciclo' }).first().click(); await X.page.waitForTimeout(600);

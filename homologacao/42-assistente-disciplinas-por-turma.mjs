@@ -15,7 +15,7 @@ const geografia = await prisma.disciplina.findFirst({ where: { nome: 'Geografia'
 
 for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular', { width: 390, height: 844 }]]) {
   const X = await abrir({ viewport: vp });
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   await X.page.goto(BASE + '/#/pessoas'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1500);
   await X.page.getByRole('button', { name: '+ Cadastrar professor' }).click(); await X.page.waitForTimeout(800);
   const c = X.page.locator('div.fixed.inset-0.z-50');

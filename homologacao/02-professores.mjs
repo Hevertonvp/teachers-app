@@ -24,7 +24,7 @@ const only = process.argv.slice(2);
 
 const { browser, page, erros } = await abrir();
 const modal = () => page.locator('div.fixed.inset-0');
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 await page.goto(BASE + '/#/pessoas'); await page.waitForLoadState('networkidle');
 
 for (const [codigo, nome, email, plano] of PROFESSORES) {

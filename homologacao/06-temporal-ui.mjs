@@ -37,7 +37,7 @@ const CASOS = [
 
 const TAG = Date.now().toString(36).slice(-4);
 const { browser, page, erros } = await abrir();
-await login(page, 'secretaria@escola.gov.br', '123456');
+await login(page, 'secretaria@escola.gov.br', '12345678');
 
 async function inativar(titulo) {
   await page.goto(BASE + '/#/formulario-um-terco'); await page.waitForLoadState('networkidle');

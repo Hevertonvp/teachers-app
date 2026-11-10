@@ -7,7 +7,7 @@ const txt = async (page) => (await page.locator('main').innerText()).replace(/\s
 // Trechos reais gravados nas fichas da Aurora (Inglês da P04; Arte alterada pelo P10).
 const trechos = ['Conteúdo ainda não consolidado em Inglês', 'P10 ALTEROU a ficha de Arte'];
 
-for (const [quem, email, senha, id] of [['Secretaria', 'secretaria@escola.gov.br', '123456', 'PDI-TRF-E8'], ['P04 (professora da nova escola)', 'p04@homolog.nexo', 'Nexo!Prof04-2026', 'PDI-TRF-E9']]) {
+for (const [quem, email, senha, id] of [['Secretaria', 'secretaria@escola.gov.br', '12345678', 'PDI-TRF-E8'], ['P04 (professora da nova escola)', 'p04@homolog.nexo', 'Nexo!Prof04-2026', 'PDI-TRF-E9']]) {
   const X = await abrir();
   await login(X.page, email, senha);
   await X.page.goto(`${BASE}/#/pdi/alunos/${MARINA}/ficha-anual`); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2500);

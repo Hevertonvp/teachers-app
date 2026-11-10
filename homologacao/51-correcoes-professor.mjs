@@ -25,7 +25,7 @@ const fichasOriginais = await prisma.fichaPdi.findMany({ where: { id: { in: [FIC
 await prisma.fichaPdi.updateMany({ where: { id: { in: [FICHA, FICHA_OUTRA, FICHA_TELA] } }, data: { status: 'CONCLUIDA', concluidaEm: new Date(), concluidaPor: '14' } });
 
 try {
-  const tkS = await token('secretaria@escola.gov.br', '123456');
+  const tkS = await token('secretaria@escola.gov.br', '12345678');
   const tkP = await token('p04@homolog.nexo', 'Nexo!Prof04-2026');
   const tkO = await token('p01@homolog.nexo', 'Nexo!Prof01-2026');
 
@@ -160,7 +160,7 @@ try {
   // ===== Tela =====
   // Secretaria devolve pela tela (orientações + confirmação) a Ficha de Arte do aluno 5 (ficha 14).
   const S = await abrir();
-  await login(S.page, 'secretaria@escola.gov.br', '123456');
+  await login(S.page, 'secretaria@escola.gov.br', '12345678');
   await S.page.goto(BASE + `/#/correcoes/pdi/${FICHA_TELA}`); await S.page.waitForLoadState('networkidle');
   await S.page.getByRole('button', { name: 'Enviar para correção' }).first().click();
   const confirmarDesabilitado = await S.page.getByRole('button', { name: 'Enviar para correção' }).last().isDisabled();

@@ -2,7 +2,7 @@
 import { abrir, login, foto, BASE } from './lib.mjs';
 import { registrar } from './resultados.mjs';
 const X = await abrir({ viewport: { width: 390, height: 844 } });
-await login(X.page, 'secretaria@escola.gov.br', '123456');
+await login(X.page, 'secretaria@escola.gov.br', '12345678');
 for (const [id, rota] of [['pdi', '/pdi'], ['um-terco', '/formulario-um-terco'], ['painel', '/formulario-um-terco/ciclos/1'], ['pessoas', '/pessoas'], ['turmas', '/turmas'], ['alunos', '/pdi/alunos']]) {
   await X.page.goto(BASE + '/#' + rota); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1500);
   const b = X.page.getByRole('button', { name: 'Exportar para Excel' }).first();

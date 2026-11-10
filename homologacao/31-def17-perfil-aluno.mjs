@@ -10,7 +10,7 @@ const FASE = (process.argv[2] || 'depois').toUpperCase();
 const API = 'http://localhost:3340';
 const SENHA = 'Nexo!Homolog-2026';
 const token = async (email, senha) => (await (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha }) })).json()).token;
-const tSec = await token('secretaria@escola.gov.br', '123456');
+const tSec = await token('secretaria@escola.gov.br', '12345678');
 
 // Conta de Diretora da Aurora (criada pela API da Secretaria; senha definida no banco local — declarado).
 if (!(await prisma.pessoa.findUnique({ where: { email: 'diretora.aur@homolog.nexo' } }))) {
@@ -33,7 +33,7 @@ const casos = [
   ['gestor.aur@homolog.nexo', SENHA, 2, false, 'Gestor da Aurora → aluna que saiu da escola (não autorizado)'],
   ['gestor.bv@homolog.nexo', SENHA, 2, true, 'Gestor da Boa Vista → aluna transferida para a escola dele'],
   ['gestor.bv@homolog.nexo', SENHA, 1, false, 'Gestor da Boa Vista → aluno de outra escola (não autorizado)'],
-  ['secretaria@escola.gov.br', '123456', 2, true, 'Secretaria → qualquer aluno'],
+  ['secretaria@escola.gov.br', '12345678', 2, true, 'Secretaria → qualquer aluno'],
 ];
 let i = 0;
 for (const [email, senha, alunoId, espera, rotulo] of casos) {

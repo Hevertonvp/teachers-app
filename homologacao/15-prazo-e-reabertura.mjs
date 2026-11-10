@@ -5,7 +5,7 @@ import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 const API = 'http://localhost:3340/api';
 const tok = async (e, s) => (await (await fetch(API + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: e, senha: s }) })).json()).token;
-const sec = await tok('secretaria@escola.gov.br', '123456');
+const sec = await tok('secretaria@escola.gov.br', '12345678');
 const A = await prisma.cicloUmTerco.findFirst({ where: { titulo: { contains: 'Nov/2026 (homolog)' } }, include: { semanas: { orderBy: { numero: 'asc' } } } });
 const corpoA = (prazo) => ({ anoLetivo: A.anoLetivo, trimestre: A.trimestre, titulo: A.titulo, abreEm: '2026-11-02T08:00', prazoEm: prazo, semanas: A.semanas.map(s => ({ dataInicio: s.dataInicio.toISOString().slice(0, 10), dataFim: s.dataFim.toISOString().slice(0, 10) })) });
 const put = (prazo) => fetch(`${API}/formulario-um-terco/ciclos/${A.id}`, { method: 'PUT', headers: { 'content-type': 'application/json', authorization: `Bearer ${sec}` }, body: JSON.stringify(corpoA(prazo)) }).then(async r => ({ status: r.status, j: await r.json().catch(() => ({})) }));
@@ -49,7 +49,7 @@ registrar('UT-PRZ-05', 'Prazo', 'Prazo vence com a tela aberta: salvar depois do
 
 // Reabertura pela interface da Secretaria
 const s = await abrir();
-await login(s.page, 'secretaria@escola.gov.br', '123456');
+await login(s.page, 'secretaria@escola.gov.br', '12345678');
 await s.page.goto(BASE + '/#/formulario-um-terco'); await s.page.waitForLoadState('networkidle');
 const card = s.page.locator('h2.text-xl', { hasText: 'Nov/2026 (homolog)' }).first().locator('xpath=ancestor::div[contains(@class,"rounded")][1]');
 await card.getByRole('button', { name: 'Reabrir' }).click();

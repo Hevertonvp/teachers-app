@@ -12,7 +12,7 @@ const reabPdiAntes = new Set((await prisma.reaberturaPdi.findMany({ select: { id
 
 try {
   const X = await abrir();
-  await login(X.page, 'secretaria@escola.gov.br', '123456');
+  await login(X.page, 'secretaria@escola.gov.br', '12345678');
   const tk = await X.page.evaluate(() => localStorage.getItem('authToken'));
   await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1500);
   const cartao = (re) => X.page.locator('div', { has: X.page.getByRole('heading', { name: re }) }).filter({ has: X.page.getByRole('button', { name: 'Painel de entregas' }) }).last();
