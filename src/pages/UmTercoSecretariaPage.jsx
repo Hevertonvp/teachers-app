@@ -93,7 +93,42 @@ const validarDatasCiclo = ({ abertura, prazo, semanas, janela, hoje, aberturaMud
   return { ...erros, temErro };
 };
 
-const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
+// Escolas atendidas pelo ciclo (decisão do usuário, 10/11/2026 — substitui o "1/3 global"): "Todas as
+// escolas" (padrão; inclui escolas criadas depois) ou uma lista. Mesmo visual da escolha do PDI.
+const EscolhaEscolas = ({ escolas, todas, selecionadas, onTodas, onAlternar, erro }) => {
+  const [busca, setBusca] = useState('');
+  const visiveis = escolas.filter(e => e.nome.toLowerCase().includes(busca.toLowerCase()));
+  return (
+    <fieldset className="min-w-0 space-y-1">
+      <legend className="mb-1.5 text-sm font-semibold text-slate-700">Escolas atendidas</legend>
+      <div className={`space-y-2 rounded-lg border p-3 ${erro ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}>
+        <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <input type="checkbox" checked={todas} onChange={e => onTodas(e.target.checked)} />
+          Todas as escolas ({escolas.filter(e => e.status === 'ativa').length})
+        </label>
+        {todas
+          ? <p className="text-xs text-slate-500">Vale para todas as escolas, inclusive as que forem criadas depois.</p>
+          : (
+            <div className="border-t border-slate-100 pt-2">
+              {escolas.length > 6 && <input className={`${inputClass} mb-2`} value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar escola..." aria-label="Buscar escola" />}
+              <div className="grid max-h-48 grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
+                {visiveis.map(escola => (
+                  <label key={escola.id} className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked={selecionadas.includes(escola.id)} onChange={() => onAlternar(escola.id)} />
+                    <span className="min-w-0 truncate" title={escola.nome}>{escola.nome}{escola.status !== 'ativa' ? ' (inativa)' : ''}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-xs font-semibold text-slate-600">{selecionadas.length} {selecionadas.length === 1 ? 'escola escolhida' : 'escolas escolhidas'}</p>
+            </div>
+          )}
+      </div>
+      <MsgErro>{erro}</MsgErro>
+    </fieldset>
+  );
+};
+
+const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
   const editando = !!ciclo;
   const travado = editando && ciclo.entregasIniciadas > 0;
   // Abertura e prazo são escolhidos só por DATA (pedido do usuário, 10/11/2026): abre às 00:00 e o
@@ -104,8 +139,16 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
   const [abreEm, setAbreEm] = useState(abreOriginal.slice(0, 10));
   const [prazoEm, setPrazoEm] = useState(prazoOriginal.slice(0, 10));
   const [semanas, setSemanas] = useState(ciclo ? ciclo.semanas.map(s => ({ dataInicio: s.dataInicio, dataFim: s.dataFim })) : Array.from({ length: SEMANAS_PADRAO }, () => ({ ...SEMANA_VAZIA })));
+  const [todasEscolas, setTodasEscolas] = useState(ciclo ? ciclo.todasEscolas !== false : true);
+  const [escolaIds, setEscolaIds] = useState(ciclo?.escolas?.map(e => e.id) ?? []);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  // Escolas que podem ser escolhidas: as ativas + as (inativas) que o ciclo já tem.
+  const escolasEscolhiveis = escolas
+    .filter(e => e.status === 'ativa' || escolaIds.includes(e.id))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const erroEscolas = !todasEscolas && escolaIds.length === 0 ? 'Escolha ao menos uma escola, ou marque "Todas as escolas".' : '';
+  const alternarEscola = (id) => setEscolaIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
   // Ano e trimestre não são escolhidos: saem da data de ABERTURA (o trimestre do calendário que a
   // contém). Na prática é o trimestre vigente, e ainda permite preparar o próximo com antecedência.
@@ -128,13 +171,15 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
     event.preventDefault();
     setErro('');
     if (!janela) { setErro('A data de abertura não está dentro de nenhum trimestre do calendário (Configurações › Trimestres).'); return; }
-    if (v.temErro) { setErro('Corrija as datas marcadas em vermelho.'); return; }
+    if (v.temErro || erroEscolas) { setErro('Corrija os campos marcados em vermelho.'); return; }
     setSalvando(true);
     // Título sempre "Formulário 1/3" (ciclos antigos mantêm o título que já têm).
     const corpo = { anoLetivo: janela.ano, trimestre: trimestreNumero, titulo: editando ? ciclo.titulo : TITULO_PADRAO,
       abreEm: editando && abreEm === abreOriginal.slice(0, 10) ? abreOriginal : `${abreEm}T00:00`,
       prazoEm: editando && prazoEm === prazoOriginal.slice(0, 10) ? prazoOriginal : `${prazoEm}T23:59`,
-      semanas };
+      semanas,
+      todasEscolas,
+      escolaIds: todasEscolas ? [] : escolaIds };
     try {
       if (editando) await atualizarCicloUmTerco(ciclo.id, corpo);
       else await criarCicloUmTerco(corpo);
@@ -151,6 +196,8 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
       <form onSubmit={salvar} className="space-y-4" noValidate>
         {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
         {travado && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Já há Professores preenchendo: o trimestre e a quantidade de semanas não podem mudar. Datas e prazo continuam editáveis.</p>}
+
+        <EscolhaEscolas escolas={escolasEscolhiveis} todas={todasEscolas} selecionadas={escolaIds} onTodas={setTodasEscolas} onAlternar={alternarEscola} erro={erroEscolas} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
@@ -190,7 +237,7 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
                       min={maior(janela?.startDate, semana.dataInicio)} max={menor(janela?.endDate, prazoEm)}
                       onChange={ev => mudarSemana(indice, 'dataFim', ev.target.value)} required />
                   </div>
-                  {(e.inicio || e.fim) && <div className="mt-1 space-y-0.5 sm:pl-[6rem]"><MsgErro>{e.inicio}</MsgErro><MsgErro>{e.fim}</MsgErro></div>}
+                  {(e.inicio || e.fim) && <div className="mt-1 space-y-0.5 sm:pl-24"><MsgErro>{e.inicio}</MsgErro><MsgErro>{e.fim}</MsgErro></div>}
                 </div>
               );
             })}
@@ -199,7 +246,7 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
 
         <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" loading={salvando} disabled={!janela || v.temErro}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
+          <Button type="submit" loading={salvando} disabled={!janela || v.temErro || !!erroEscolas}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
         </div>
       </form>
     </Modal>
@@ -254,7 +301,7 @@ const ReaberturaModal = ({ ciclo, onClose, onSalvo }) => {
 export const UmTercoSecretariaPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { trimestrePeriods } = useData();
+  const { trimestrePeriods, escolas } = useData();
   const [ciclos, setCiclos] = useState(null);
   const [erro, setErro] = useState('');
   const [mensagem, setMensagem] = useState('');
@@ -319,6 +366,11 @@ export const UmTercoSecretariaPage = () => {
                 </div>
                 <h2 className="mt-3 text-xl font-bold text-slate-950">{ciclo.titulo} — {ciclo.trimestre}º trimestre de {ciclo.anoLetivo}</h2>
                 <p className="mt-1 text-sm text-slate-600">Abre {dataSemHoraPadrao(ciclo.abreEm, '00:00')} · prazo {dataSemHoraPadrao(ciclo.prazoEm, '23:59')}</p>
+                <p className="mt-1 text-sm text-slate-600" title={ciclo.todasEscolas ? undefined : ciclo.escolas.map(e => e.nome).join(', ')}>
+                  {ciclo.todasEscolas
+                    ? 'Todas as escolas'
+                    : `${ciclo.escolas.length} ${ciclo.escolas.length === 1 ? 'escola' : 'escolas'}: ${ciclo.escolas.slice(0, 3).map(e => e.nome).join(', ')}${ciclo.escolas.length > 3 ? ` e mais ${ciclo.escolas.length - 3}` : ''}`}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {ciclo.semanas.map(s => <span key={s.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{s.rotulo}: {formatarDiaMes(s.dataInicio)}–{formatarDiaMes(s.dataFim)}</span>)}
                 </div>
@@ -341,6 +393,7 @@ export const UmTercoSecretariaPage = () => {
         <CicloFormModal
           ciclo={formAberto === 'novo' ? null : formAberto}
           janelas={janelas}
+          escolas={escolas}
           onClose={() => setFormAberto(null)}
           onSalvo={() => { setFormAberto(null); setMensagem('Ciclo salvo.'); carregar(); }}
         />

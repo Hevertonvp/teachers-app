@@ -1226,6 +1226,8 @@ Se existir índice/constraint impedindo vários ciclos no mesmo trimestre, criar
 
 # 72. EscolaModulo no 1/3
 
+> **MUDOU em 10/11/2026 (decisão do usuário):** o 1/3 deixou de ser global. Cada ciclo atende as escolas escolhidas pela Secretaria, ou "Todas as escolas". Continua sem `EscolaModulo`, sem script e sem lista fixa. Ver o Registro de alterações (10/11/2026) e UT-01 em REGRAS_DE_NEGOCIO_NEXO.md.
+
 Implementação inicial fez o 1/3 depender de `FORMULARIO_UM_TERCO` em `EscolaModulo`.
 
 Isso foi considerado errado.
@@ -1378,6 +1380,8 @@ Se for preciso consulta por Diretora/Gestor, perguntar antes.
 ---
 
 # 82. Aplicabilidade global do 1/3
+
+> **MUDOU em 10/11/2026:** além das condições abaixo, a escola precisa estar entre as escolas do ciclo (ou o ciclo ser "Todas as escolas"). Ver seção 72.
 
 Não usar `EscolaModulo`.
 
@@ -2376,6 +2380,42 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Achado:** o ciclo #1 do banco local tem a Semana 4 (23–27/11) depois do prazo (20/11). Com a regra nova, ele é acusado no modal e só salva depois de corrigido. **Antes de publicar, conferir se há ciclos assim na produção**: neles, editar exigirá ajustar o prazo ou a semana. Reaberturas não são afetadas.
   - **Testes:**
     - `scripts/umTerco/testar-dominio.ts` 20/20; `testar-integracao.ts` 50/50 (banco local, sem resíduo);
-    - `44-modal-novo-ciclo-um-terco.mjs` **24/24**, desktop e celular. Cobre cada regra na tela, um caso válido com buraco, semana anterior à abertura e tamanhos 5/10/1/1, a gravação exata no banco, o ciclo antigo e a API recusando (400) as mesmas 4 situações;
+    - `44-modal-novo-ciclo-um-terco.mjs` **21/21** (corrigido em 10/11: antes registrado por engano como 24/24), desktop e celular. Cobre cada regra na tela, um caso válido com buraco, semana anterior à abertura e tamanhos 5/10/1/1, a gravação exata no banco, o ciclo antigo e a API recusando (400) as mesmas 4 situações;
     - resultados obsoletos do roteiro 44 (divisão automática) foram removidos da matriz;
     - `REGRAS_DE_NEGOCIO_NEXO.md` atualizado (UT-05, UT-06).
+- **10/11/2026: Formulário 1/3 com ESCOLAS escolhidas por ciclo (pedido do usuário; branch `feature/um-terco-escolas`, a partir da `feature/validacao-datas-um-terco`; banco, backend e frontend).**
+  - **Pedido:** "para abrir um novo formulário 1/3, devemos escolher as escolas que ele vai atender, assim como no PDI. E também temos opção de marcar todas de uma vez".
+  - **Conflito apontado antes de implementar:** a regra "1/3 global" (§72/§82, marcada como definitiva). O usuário confirmou que a mudança a **substitui**. As seções 72 e 82 foram anotadas.
+  - **Decisões do usuário:**
+    1. "Todas as escolas" inclui escolas criadas depois;
+    2. ciclos de escolas diferentes podem ter janelas sobrepostas; ciclos com escola em comum (ou "todas") não podem.
+  - **Proposta técnica aplicada:**
+    - escola com preenchimento iniciado no ciclo não pode ser retirada (409);
+    - acrescentar escola pode;
+    - escola inativa não pode ser escolhida, salvo se já estava no ciclo.
+  - **Banco:** migration aditiva `20261110120000_um_terco_escolas_do_ciclo`:
+    - `ciclos_um_terco.todasEscolas` (padrão true: **ciclos existentes ficam "todas", sem mudança de comportamento**);
+    - tabela `ciclos_um_terco_escolas` (cicloId, escolaId).
+
+    Aplicada **só no banco local**, com diff schema × banco vazio. **Na produção (Neon) precisa ser aplicada com `prisma migrate deploy` antes de publicar o backend**: o build do Render não aplica migrations.
+  - **Backend (`routes/formularioUmTerco.ts`):**
+    - **ciclo na API:** ganhou `todasEscolas` e `escolas[]` na resposta e `todasEscolas`/`escolaIds` na criação e edição. Sem os campos, a API trata como "todas" na criação e mantém as escolas na edição, então clientes antigos não quebram;
+    - **elegibilidade:** `vinculosElegiveis` filtra as turmas pelas escolas do ciclo. Por isso painel, "Meus formulários" do professor, cobertura, exportação e dashboard respeitam as escolas automaticamente;
+    - **sobreposição:** `exigirJanelaLivre` só recusa quando há escola em comum.
+  - **Frontend (`UmTercoSecretariaPage.jsx`):**
+    - "Escolas atendidas" no topo do modal: "Todas as escolas" marcado por padrão; ao desmarcar, aparece a lista com busca (mais de 6 escolas) e a contagem; nenhuma escolhida mostra aviso e bloqueia Salvar;
+    - o cartão do ciclo mostra "Todas as escolas" ou "N escolas: A, B, C e mais X";
+    - no celular, os nomes longos são cortados com "…".
+  - **Testes (banco local):**
+    - `testar-dominio` 20/20; `testar-integracao` 50/50 (ciclos "todas" = comportamento antigo);
+    - **`homologacao/46-um-terco-escolas-do-ciclo.mjs` 8/8:**
+      - modal (padrão "todas", aviso sem escola, gravação no banco, cartão);
+      - painel só com turmas da Aurora;
+      - professor só da Aurora vê o ciclo e o só da Boa Vista não;
+      - sobreposição (só BV 201, com Aurora 409, todas 409);
+      - API sem escola 400;
+      - retirar a Aurora do ciclo #1 com preenchimentos 409, sem gravar nada;
+      - edição pelo modal com a Aurora marcada e conflito mostrado;
+    - regressão: 44 (21/21), 45 (8/8), 43 (21/21).
+  - **Correção de registro:** o roteiro 44 tem **21** casos, não 24 como registrado antes por erro de contagem.
+  - **Infra de teste:** havia 3 processos antigos do backend local (de 09/11) travando o motor do Prisma; foram encerrados. O `reiniciar-backend.sh` atual já derruba o processo da porta 3340.

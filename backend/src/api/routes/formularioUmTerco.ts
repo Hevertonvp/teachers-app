@@ -40,7 +40,15 @@ const chave = (professorId: number, anoSerie: number, disciplinaId: number) => `
 
 // --- Ciclo ---------------------------------------------------------------------------------
 
-const cicloInclude = { semanas: { orderBy: { numero: 'asc' as const } }, reaberturas: { orderBy: { inicioEm: 'asc' as const } } };
+const cicloInclude = {
+  semanas: { orderBy: { numero: 'asc' as const } },
+  reaberturas: { orderBy: { inicioEm: 'asc' as const } },
+  escolas: { include: { escola: { select: { id: true, nome: true } } } },
+};
+
+// Escolas atendidas pelo ciclo (decisão de 10/11/2026): `null` = todas (inclusive as criadas depois).
+type EscopoEscolas = { todasEscolas: boolean; escolas: { escolaId: number }[] };
+const escolasDoCiclo = (ciclo: EscopoEscolas): number[] | null => (ciclo.todasEscolas ? null : ciclo.escolas.map((e) => e.escolaId));
 type CicloCompleto = Prisma.CicloUmTercoGetPayload<{ include: typeof cicloInclude }>;
 
 const janelasDe = (ciclo: CicloCompleto): JanelaInstantes[] => ciclo.reaberturas.map((r) => ({ inicioEm: r.inicioEm, fimEm: r.fimEm }));
@@ -57,6 +65,8 @@ function formatarCiclo(ciclo: CicloCompleto, extra: Record<string, unknown> = {}
     statusRegistro: ciclo.status === 'ATIVA' ? 'ativa' : 'inativa',
     statusPrazo: statusDoCiclo(ciclo, agora),
     editavelAgora: ciclo.status === 'ATIVA' && cicloEditavelAgora(ciclo, janelasDe(ciclo), agora),
+    todasEscolas: ciclo.todasEscolas,
+    escolas: ciclo.escolas.map((e) => ({ id: e.escola.id, nome: e.escola.nome })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
     semanas: ciclo.semanas.map((s) => ({ id: s.id, numero: s.numero, rotulo: `Semana ${s.numero}`, dataInicio: dataIso(s.dataInicio), dataFim: dataIso(s.dataFim) })),
     reaberturas: ciclo.reaberturas.map((r) => ({ id: r.id, inicioEm: iso(r.inicioEm), fimEm: iso(r.fimEm), motivo: r.motivo, createdAt: iso(r.createdAt) })),
     updatedAt: iso(ciclo.updatedAt ?? ciclo.createdAt),
@@ -82,7 +92,23 @@ const cicloSchema = z.object({
   abreEm: z.string(),
   prazoEm: z.string(),
   semanas: z.array(z.object({ dataInicio: z.string().nullish(), dataFim: z.string().nullish() })),
+  // Ausente = todas (compatível com clientes antigos da API, que criavam ciclos globais).
+  todasEscolas: z.boolean().optional(),
+  escolaIds: z.array(z.number().int()).optional(),
 });
+
+// Valida a escolha de escolas: "todas" ou uma lista não vazia de escolas existentes e ATIVAS
+// (escola inativa já escolhida antes pode continuar na lista de um ciclo existente).
+async function validarEscolas(db: Db, dados: { todasEscolas?: boolean; escolaIds?: number[] }, jaNoCiclo: number[] = []): Promise<{ todasEscolas: boolean; escolaIds: number[] }> {
+  if (dados.todasEscolas !== false) return { todasEscolas: true, escolaIds: [] };
+  const escolaIds = [...new Set(dados.escolaIds ?? [])];
+  if (escolaIds.length === 0) throw new ValidationError('Escolha ao menos uma escola, ou marque "Todas as escolas".');
+  const escolas = await db.escola.findMany({ where: { id: { in: escolaIds } }, select: { id: true, nome: true, status: true } });
+  if (escolas.length !== escolaIds.length) throw new ValidationError('Uma das escolas escolhidas não existe.');
+  const inativa = escolas.find((e) => e.status !== 'ATIVA' && !jaNoCiclo.includes(e.id));
+  if (inativa) throw new ValidationError(`A escola "${inativa.nome}" está inativa e não pode ser escolhida.`);
+  return { todasEscolas: false, escolaIds };
+}
 
 // --- Vínculos elegíveis e cobertura ----------------------------------------------------------
 
@@ -97,8 +123,10 @@ type VinculoElegivel = Prisma.ProfessorTurmaDisciplinaGetPayload<{
 // acabou depois do início da janela continua contando (histórico preservado).
 // Escola/turma/professor "ativos" só são exigidos de vínculos ainda em andamento E de ciclos que não
 // terminaram: depois do prazo o passado não é recalculado pelo estado de hoje.
-async function vinculosElegiveis(db: Db, ciclo: { anoLetivo: number; abreEm: Date; prazoEm: Date }, filtro: { professorId?: number; disciplinaId?: number; anoSerie?: number } = {}): Promise<VinculoElegivel[]> {
+// ESCOLAS (10/11/2026): ciclo com escolas escolhidas só considera turmas dessas escolas; "todas" = sem filtro.
+async function vinculosElegiveis(db: Db, ciclo: { anoLetivo: number; abreEm: Date; prazoEm: Date } & EscopoEscolas, filtro: { professorId?: number; disciplinaId?: number; anoSerie?: number } = {}): Promise<VinculoElegivel[]> {
   const cicloEmCurso = ciclo.prazoEm.getTime() >= Date.now();
+  const escolas = escolasDoCiclo(ciclo);
   const vinculos = await db.professorTurmaDisciplina.findMany({
     where: {
       ...(filtro.professorId ? { professorId: filtro.professorId } : {}),
@@ -106,7 +134,7 @@ async function vinculosElegiveis(db: Db, ciclo: { anoLetivo: number; abreEm: Dat
       dataInicio: { lte: dataUtc(dataLocalSp(ciclo.prazoEm)) },
       OR: [{ status: 'ATIVO' }, { dataFim: { gte: dataUtc(dataLocalSp(ciclo.abreEm)) } }],
       professor: { perfil: 'PROFESSOR' },
-      turma: { etapa: 'FUNDAMENTAL', anoSerie: filtro.anoSerie ?? { not: null }, anoLetivo: ciclo.anoLetivo },
+      turma: { etapa: 'FUNDAMENTAL', anoSerie: filtro.anoSerie ?? { not: null }, anoLetivo: ciclo.anoLetivo, ...(escolas ? { escolaId: { in: escolas } } : {}) },
     },
     include: { turma: { include: { escola: true } }, professor: true, disciplina: true },
   });
@@ -120,13 +148,21 @@ async function vinculosElegiveis(db: Db, ciclo: { anoLetivo: number; abreEm: Dat
 // antigo da outra.
 const travarJanelasDeCiclo = (tx: Db) => tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'um-terco-janelas-de-ciclo'}::text))`;
 
-async function exigirJanelaLivre(tx: Db, janela: { abreEm: Date; prazoEm: Date }, ignorarId?: number) {
-  const conflito = await tx.cicloUmTerco.findFirst({
+// ESCOLAS (10/11/2026): a sobreposição só é proibida entre ciclos que atendem alguma escola em comum
+// ("todas" tem tudo em comum com qualquer ciclo). Ciclos de escolas diferentes podem coincidir.
+async function exigirJanelaLivre(tx: Db, janela: { abreEm: Date; prazoEm: Date } & EscopoEscolas, ignorarId?: number) {
+  const candidatos = await tx.cicloUmTerco.findMany({
     where: { status: 'ATIVA', ...(ignorarId ? { id: { not: ignorarId } } : {}), abreEm: { lte: janela.prazoEm }, prazoEm: { gte: janela.abreEm } },
+    include: { escolas: { include: { escola: { select: { nome: true } } } } },
     orderBy: { abreEm: 'asc' },
   });
-  if (conflito) {
-    throw new ConflictError(`A janela de preenchimento se sobrepõe ao "${conflito.titulo}" (${conflito.trimestre}º trimestre, ${formatarDataHoraSp(conflito.abreEm)} a ${formatarDataHoraSp(conflito.prazoEm)}). Dois Formulários 1/3 não podem ficar abertos ao mesmo tempo.`);
+  const minhas = escolasDoCiclo(janela);
+  for (const outro of candidatos) {
+    const dele = escolasDoCiclo(outro);
+    const comuns = minhas && dele ? outro.escolas.filter((e) => minhas.includes(e.escolaId)).map((e) => e.escola.nome) : null;
+    if (comuns && comuns.length === 0) continue;
+    const motivo = comuns ? `as duas atendem ${comuns.slice(0, 3).join(', ')}${comuns.length > 3 ? '…' : ''}` : 'um deles atende todas as escolas';
+    throw new ConflictError(`A janela de preenchimento se sobrepõe ao "${outro.titulo}" (${outro.trimestre}º trimestre, ${formatarDataHoraSp(outro.abreEm)} a ${formatarDataHoraSp(outro.prazoEm)}) e ${motivo}. Dois Formulários 1/3 da mesma escola não podem ficar abertos ao mesmo tempo.`);
   }
 }
 
@@ -142,7 +178,7 @@ async function registrarEvento(db: Db, entregaId: number, tipo: Prisma.Historico
 
 // Mantém a cobertura da entrega alinhada aos vínculos reais: vínculo equivalente novo ganha uma
 // linha (mesma entrega, nunca outra); vínculo perdido só ganha `ate` (o histórico fica).
-async function sincronizarCobertura(db: Db, entrega: { id: number; cicloId: number; professorId: number; anoSerie: number; disciplinaId: number }, ciclo: { anoLetivo: number; abreEm: Date; prazoEm: Date }, pessoaId: number | null) {
+async function sincronizarCobertura(db: Db, entrega: { id: number; cicloId: number; professorId: number; anoSerie: number; disciplinaId: number }, ciclo: { anoLetivo: number; abreEm: Date; prazoEm: Date } & EscopoEscolas, pessoaId: number | null) {
   const elegiveis = (await vinculosElegiveis(db, ciclo, { professorId: entrega.professorId, disciplinaId: entrega.disciplinaId, anoSerie: entrega.anoSerie }));
   const atuais = new Map(elegiveis.map((v) => [v.id, v]));
   const linhas = await db.coberturaEntregaUmTerco.findMany({ where: { entregaId: entrega.id } });
@@ -249,10 +285,13 @@ formularioUmTercoRouter.post('/ciclos', async (req, res) => {
     await travarJanelasDeCiclo(tx);
     const valido = validarCiclo({ ...dados }, await janelaDoTrimestre(tx, dados.anoLetivo, dados.trimestre));
     exigirAberturaNaoPassada(valido.abreEm);
-    await exigirJanelaLivre(tx, valido);
+    const escolha = await validarEscolas(tx, dados);
+    await exigirJanelaLivre(tx, { ...valido, todasEscolas: escolha.todasEscolas, escolas: escolha.escolaIds.map((escolaId) => ({ escolaId })) });
     return tx.cicloUmTerco.create({
       data: {
         anoLetivo: valido.anoLetivo, trimestre: valido.trimestre, titulo: valido.titulo, abreEm: valido.abreEm, prazoEm: valido.prazoEm,
+        todasEscolas: escolha.todasEscolas,
+        escolas: { create: escolha.escolaIds.map((escolaId) => ({ escolaId })) },
         createdBy: String(actor.id),
         semanas: { create: valido.semanas.map((s) => ({ numero: s.numero, dataInicio: dataUtc(s.dataInicio), dataFim: dataUtc(s.dataFim) })) },
       },
@@ -281,9 +320,23 @@ formularioUmTercoRouter.put('/ciclos/:id', async (req, res) => {
     await travarJanelasDeCiclo(tx);
     const valido = validarCiclo({ ...dados }, await janelaDoTrimestre(tx, dados.anoLetivo, dados.trimestre));
     if (dataLocalSp(valido.abreEm) !== dataLocalSp(atual.abreEm)) exigirAberturaNaoPassada(valido.abreEm);
-    if (atual.status === 'ATIVA') await exigirJanelaLivre(tx, valido, id);
+    // Escolas: sem o campo, mantém as que o ciclo já tem (cliente antigo da API não apaga a escolha).
+    const escolha = dados.todasEscolas === undefined
+      ? { todasEscolas: atual.todasEscolas, escolaIds: atual.escolas.map((e) => e.escolaId) }
+      : await validarEscolas(tx, dados, atual.escolas.map((e) => e.escolaId));
+    // Escola com preenchimento iniciado neste ciclo não pode sair (o texto escrito ficaria órfão).
+    if (!escolha.todasEscolas) {
+      const emUso = await tx.coberturaEntregaUmTerco.findMany({
+        where: { entrega: { cicloId: id }, escolaId: { notIn: escolha.escolaIds } },
+        select: { escola: { select: { nome: true } } }, distinct: ['escolaId'],
+      });
+      if (emUso.length) throw new ConflictError(`Não é possível retirar ${emUso.map((e) => `"${e.escola.nome}"`).join(', ')}: já há Professor preenchendo este Formulário 1/3 nessa escola.`);
+    }
+    if (atual.status === 'ATIVA') await exigirJanelaLivre(tx, { ...valido, todasEscolas: escolha.todasEscolas, escolas: escolha.escolaIds.map((escolaId) => ({ escolaId })) }, id);
 
-    await tx.cicloUmTerco.update({ where: { id }, data: { anoLetivo: valido.anoLetivo, trimestre: valido.trimestre, titulo: valido.titulo, abreEm: valido.abreEm, prazoEm: valido.prazoEm, updatedBy: String(actor.id) } });
+    await tx.cicloUmTerco.update({ where: { id }, data: { anoLetivo: valido.anoLetivo, trimestre: valido.trimestre, titulo: valido.titulo, abreEm: valido.abreEm, prazoEm: valido.prazoEm, todasEscolas: escolha.todasEscolas, updatedBy: String(actor.id) } });
+    await tx.cicloUmTercoEscola.deleteMany({ where: { cicloId: id } });
+    if (!escolha.todasEscolas) await tx.cicloUmTercoEscola.createMany({ data: escolha.escolaIds.map((escolaId) => ({ cicloId: id, escolaId })) });
     if (entregas > 0) {
       for (const s of valido.semanas) {
         await tx.semanaUmTerco.update({ where: { cicloId_numero: { cicloId: id, numero: s.numero } }, data: { dataInicio: dataUtc(s.dataInicio), dataFim: dataUtc(s.dataFim) } });
