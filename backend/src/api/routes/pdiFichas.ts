@@ -7,10 +7,11 @@ import { isAplicacaoEditavelAgora, statusVigencia } from '../../domain/pdiAplica
 import { editavelParaProfessor, fichaEditavelAgora, statusAposSalvarResposta, statusVisualItem } from '../../domain/pdiFichas.js';
 import { prepararValoresResposta } from '../../domain/habilidadesCurriculares.js';
 import {
-  exigirBlocoEditavelAgora, identidadeBlocoAtual, identidadeDaFotografia, montarBlocoParaFicha, perguntasPadraoDaFicha, resolverOuCriarBloco,
+  exigirBlocoEditavelAgora, existeCorrecaoBlocoAtiva, identidadeBlocoAtual, identidadeDaFotografia, montarBlocoParaFicha, perguntasPadraoDaFicha, resolverOuCriarBloco,
   type IdentidadeBloco,
 } from '../../domain/pdiBlocoPadrao.js';
 import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
+import { formatarCorrecao } from '../../domain/correcoes.js';
 import { escolasPermitidas } from './pessoas.js';
 
 export const pdiFichasRouter = Router();
@@ -109,7 +110,9 @@ async function exigirAcessoOperacional(client: Cliente, actor: Actor, contexto: 
 // dando false depois de prazoAte passar (mesmo padrão de statusVigencia/domain/pdiAplicacoes.ts).
 async function existeCorrecaoIndividualAtiva(client: Cliente, fichaId: number): Promise<boolean> {
   const correcao = await client.correcaoFichaPdi.findFirst({
-    where: { fichaId, status: 'ABERTA', prazoAte: { gt: new Date() } },
+    // Sem condição de prazo (fluxo de correções, 10/11/2026): vencidos os 3 dias, a correção fica
+    // "com prazo encerrado", mas o Professor não é bloqueado; segue aberta até ele enviar.
+    where: { fichaId, status: 'ABERTA' },
     select: { id: true },
   });
   return !!correcao;
@@ -224,6 +227,16 @@ export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof pr
     existeCorrecaoIndividualAtiva(prisma, ficha.id),
   ]);
 
+  // null = este Modelo não carregou nenhuma pergunta padrão compartilhável (seção 21 do pedido de
+  // bloco comum) — o frontend simplesmente não mostra a seção "Perguntas padrão" nesse caso.
+  const blocoPadrao = await montarBlocoParaFicha(ficha, opcoes ? { identidade: opcoes.identidadeBloco } : undefined);
+  // Correção mais recente da Ficha e do bloco comum (fluxo de correções, 10/11/2026): o Professor vê
+  // as orientações, o prazo e a situação enquanto corrige, sem voltar à caixa de mensagens.
+  const [ultimaDaFicha, ultimaDoBloco] = await Promise.all([
+    prisma.correcaoFichaPdi.findFirst({ where: { fichaId: ficha.id }, orderBy: { criadaEm: 'desc' } }),
+    blocoPadrao?.blocoId ? prisma.correcaoBlocoPadraoPdi.findFirst({ where: { blocoId: blocoPadrao.blocoId }, orderBy: { criadaEm: 'desc' } }) : Promise.resolve(null),
+  ]);
+
   return {
     ficha: formatarFicha(ficha),
     perguntas: perguntas.map(formatarPerguntaSnapshot),
@@ -232,9 +245,11 @@ export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof pr
       escola.status === 'ATIVA',
       editavelParaProfessor(isAplicacaoEditavelAgora(aplicacao, reaberturas), correcaoIndividualAtiva),
     ),
-    // null = este Modelo não carregou nenhuma pergunta padrão compartilhável (seção 21 do pedido de
-    // bloco comum) — o frontend simplesmente não mostra a seção "Perguntas padrão" nesse caso.
-    blocoPadrao: await montarBlocoParaFicha(ficha, opcoes ? { identidade: opcoes.identidadeBloco } : undefined),
+    blocoPadrao,
+    correcao: {
+      ficha: ultimaDaFicha ? formatarCorrecao(ultimaDaFicha) : null,
+      bloco: ultimaDoBloco ? formatarCorrecao(ultimaDoBloco) : null,
+    },
   };
 }
 
@@ -401,6 +416,15 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
     prisma.reaberturaPdi.findMany({ where: { aplicacaoId: { in: aplicacaoIds } }, select: { aplicacaoId: true, dataInicio: true, dataFim: true } }),
   ]);
 
+  // Correções abertas (fluxo de correções, 10/11/2026): da Ficha, ou do bloco comum DESTE professor
+  // para o aluno. Ficha com correção aberta fica editável mesmo fora da vigência, como no formulário.
+  const [correcoesAbertasFicha, correcoesAbertasBloco] = await Promise.all([
+    fichasExistentes.length ? prisma.correcaoFichaPdi.findMany({ where: { status: 'ABERTA', fichaId: { in: fichasExistentes.map((f) => f.id) } }, select: { fichaId: true } }) : Promise.resolve([]),
+    prisma.correcaoBlocoPadraoPdi.findMany({ where: { status: 'ABERTA', bloco: { professorId: actor.id, aplicacaoId: { in: aplicacaoIds } } }, select: { bloco: { select: { aplicacaoId: true, alunoId: true, turmaId: true } } } }),
+  ]);
+  const fichasComCorrecao = new Set(correcoesAbertasFicha.map((c) => c.fichaId));
+  const blocosComCorrecao = new Set(correcoesAbertasBloco.map((c) => `${c.bloco.aplicacaoId}-${c.bloco.alunoId}-${c.bloco.turmaId}`));
+
   const fichaPorChave = new Map(fichasExistentes.map((f) => [`${f.aplicacaoId}-${f.alunoId}-${f.disciplinaId}`, f]));
   const alunoPorId = new Map(alunos.map((a) => [a.id, a]));
   const aplicacaoPorId = new Map(aplicacoes.map((a) => [a.id, a]));
@@ -415,9 +439,10 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
     const aluno = alunoPorId.get(c.alunoId)!;
     const aplicacao = aplicacaoPorId.get(c.aplicacaoId)!;
     const modelo = aplicacao.modelos.find((m) => m.disciplinaId === c.disciplinaId)!;
+    const correcaoSolicitada = (!!ficha && fichasComCorrecao.has(ficha.id)) || blocosComCorrecao.has(`${c.aplicacaoId}-${c.alunoId}-${c.ptd.turmaId}`);
     const editavelAgora = fichaEditavelAgora(
       c.ptd.turma.escola.status === 'ATIVA',
-      isAplicacaoEditavelAgora(aplicacao, reaberturasPorAplicacao.get(c.aplicacaoId) || []),
+      editavelParaProfessor(isAplicacaoEditavelAgora(aplicacao, reaberturasPorAplicacao.get(c.aplicacaoId) || []), !!ficha && fichasComCorrecao.has(ficha.id)),
     );
     return {
       aplicacaoId: c.aplicacaoId,
@@ -437,6 +462,7 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
       fichaId: ficha?.id ?? null,
       statusFicha: ficha?.status ?? null,
       editavelAgora,
+      correcaoSolicitada,
       statusVisual: statusVisualItem((ficha?.status as 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA') ?? null, editavelAgora, statusVigencia(aplicacao)),
     };
   });
@@ -791,13 +817,8 @@ pdiFichasRouter.put('/:id/respostas-padrao', async (req, res) => {
           origem: 'PROFESSOR_POS_DEVOLUCAO' as const,
         })),
       });
-      // Diferente da correção individual de Ficha (que só resolve ao CONCLUIR de novo): o bloco
-      // não tem um "concluir" próprio — "o Professor corrige uma única vez" (seção 16 do pedido)
-      // significa que SALVAR já resolve, pra todas as disciplinas daquele agrupamento de uma vez.
-      await tx.correcaoBlocoPadraoPdi.updateMany({
-        where: { blocoId: bloco.id, status: 'ABERTA', prazoAte: { gt: new Date() } },
-        data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) },
-      });
+      // MUDOU (fluxo de correções, 10/11/2026): salvar é rascunho e NÃO resolve mais a correção do
+      // bloco. Ela é enviada por "Enviar correção" (POST /:id/concluir) em qualquer Ficha do aluno.
     }
   }, { timeout: 15000 });
 
@@ -823,12 +844,22 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
 
   const contexto = await resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId);
-  const [, correcaoIndividualAtiva] = await Promise.all([
-    exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true }),
-    exigirEditavelAgora(prisma, ficha, contexto.aplicacao),
-  ]);
+  await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
+  // "Enviar correção" (fluxo de correções, 10/11/2026) também envia a correção das perguntas
+  // comuns (bloco de quem responde agora). Quando SÓ o bloco foi devolvido e a Aplicação já
+  // encerrou, a Ficha em si não está editável: aí só a correção do bloco é enviada.
+  const blocoAtual = await prisma.blocoRespostasPadraoPdi.findUnique({ where: { aplicacaoId_alunoId_turmaId_professorId: identidadeBlocoAtual(ficha, contexto) ?? identidadeDaFotografia(ficha) } });
+  const correcaoBlocoAberta = blocoAtual ? await existeCorrecaoBlocoAtiva(prisma, blocoAtual.id) : false;
+  let fichaEditavel = true;
+  let correcaoIndividualAtiva = false;
+  try {
+    correcaoIndividualAtiva = await exigirEditavelAgora(prisma, ficha, contexto.aplicacao);
+  } catch (err) {
+    if (!correcaoBlocoAberta) throw err;
+    fichaEditavel = false;
+  }
 
-  if (ficha.status !== 'CONCLUIDA') {
+  if (fichaEditavel && ficha.status !== 'CONCLUIDA') {
     // Seção 11 do pedido de bloco padrão: concluir exige tanto as perguntas específicas desta
     // disciplina quanto as perguntas padrão compartilhadas do bloco comum — nunca exige que as
     // OUTRAS disciplinas do mesmo Professor estejam concluídas (cada Ficha conclui sozinha).
@@ -869,9 +900,17 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   // (seção 29/40 do pedido) é justamente quando a Ficha JÁ estava CONCLUIDA antes de ser
   // devolvida — o bloco de cima é pulado (idempotente), mas a correção em aberto ainda precisa
   // ser resolvida aqui. Nunca mexe em ReaberturaPdi nem na Aplicação, só nesta Ficha.
+  // updateMany com status ABERTA: um segundo clique (ou reenvio da fila offline) não faz nada.
+  // Enviada depois do prazo continua valendo; fica marcada como "fora do prazo" (concluidaEm > prazoAte).
   if (correcaoIndividualAtiva) {
     await prisma.correcaoFichaPdi.updateMany({
-      where: { fichaId, status: 'ABERTA', prazoAte: { gt: new Date() } },
+      where: { fichaId, status: 'ABERTA' },
+      data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) },
+    });
+  }
+  if (correcaoBlocoAberta && blocoAtual) {
+    await prisma.correcaoBlocoPadraoPdi.updateMany({
+      where: { blocoId: blocoAtual.id, status: 'ABERTA' },
       data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) },
     });
   }

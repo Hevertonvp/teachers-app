@@ -210,13 +210,15 @@ async function exigirAcessoConversa(actor: Actor, conversaId: number) {
   return conversa;
 }
 
-const formatarMensagem = (m: { id: number; conversaId: number; remetenteId: number; conteudo: string; lidaEm: Date | null; createdAt: Date; remetente?: { nome: string; perfil: string } }) => ({
+const formatarMensagem = (m: { id: number; conversaId: number; remetenteId: number; conteudo: string; linkFormulario?: string | null; lidaEm: Date | null; createdAt: Date; remetente?: { nome: string; perfil: string } }) => ({
   id: m.id,
   conversaId: m.conversaId,
   remetenteId: m.remetenteId,
   remetenteNome: m.remetente?.nome,
   remetentePerfil: m.remetente?.perfil,
   conteudo: m.conteudo,
+  // Botão "Abrir formulário" das mensagens automáticas de correção (nulo nas comuns).
+  linkFormulario: m.linkFormulario ?? null,
   lidaEm: m.lidaEm,
   createdAt: m.createdAt,
 });
