@@ -6538,21 +6538,21 @@
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "Inativar pela tela: o ciclo sai da lista principal, a mensagem indica onde ele foi parar e ele aparece em \"Ver inativos\"",
     "esperado": "201; estava 1; \"Ciclo inativado. Ele fica em \\\"Ver inativos\\\".\"; sumiu; está nos inativos",
-    "observado": "201; estava 1; \"Ciclo inativado. Ele fica em \"Ver inativos\".\"; sumiu: true; nos inativos: 2",
-    "status": "REPROVADO",
+    "observado": "201; estava 1; \"Ciclo inativado. Ele fica em \"Ver inativos\".\"; sumiu: true; nos inativos: 1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:27:44.409Z"
+    "quando": "2026-11-10T11:28:16.509Z"
   },
   {
     "id": "UT-INAT-5",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "Reativar na tela de inativos: sai de lá e volta para a lista principal (banco ATIVA)",
     "esperado": "saiu; volta 1; ATIVA",
-    "observado": "saiu: false; nos ativos: 1; banco INATIVA",
-    "status": "REPROVADO",
+    "observado": "saiu: true; nos ativos: 1; banco ATIVA",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:27:47.207Z"
+    "quando": "2026-11-10T11:28:19.315Z"
   }
 ]
