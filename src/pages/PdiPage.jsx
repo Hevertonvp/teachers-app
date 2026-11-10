@@ -221,10 +221,15 @@ export const PdiPage = () => {
         )}
 
         <Card>
-          <div className={`grid gap-3 ${activeEscolaId === null ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+          <div className="grid gap-3 md:grid-cols-4">
             <FormField label="Busca por nome"><input className={inputClass} value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar aluno" /></FormField>
-            {activeEscolaId === null && (
+            {/* Filtro Escola SEMPRE visível (pedido do usuário). Com uma escola escolhida no seletor do
+                topo (sempre o caso de Gestor/Diretora), ele mostra essa escola, travado — quem troca a
+                escola é o seletor do topo, que define o que o usuário pode ver. */}
+            {activeEscolaId === null ? (
               <FormField label="Escola"><select className={inputClass} value={escolaFiltro} onChange={event => { setEscolaFiltro(event.target.value); setTurma('todos'); }}><option value="todas">Todas</option>{escolasDoFiltro.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
+            ) : (
+              <FormField label="Escola"><select className={inputClass} value={activeEscolaId} disabled title="Para trocar a escola, use o seletor de escola no topo da tela"><option value={activeEscolaId}>{escolas.find(item => item.id === activeEscolaId)?.nome ?? 'Escola selecionada'}</option></select></FormField>
             )}
             <FormField label="Turma"><select className={inputClass} value={turma} onChange={event => setTurma(event.target.value)}><option value="todos">Todas</option>{escolaFiltro === 'todas' && activeEscolaId === null
               ? escolasDoFiltro.map(escola => <optgroup key={escola.id} label={escola.nome}>{turmasDoFiltro.filter(t => t.escolaId === escola.id).map(item => <option key={item.id} value={item.id}>{item.nome} — {escola.nome}</option>)}</optgroup>)

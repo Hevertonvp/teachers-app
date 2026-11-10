@@ -4870,7 +4870,7 @@
     "status": "APROVADO",
     "evidencia": "39-filtros.png",
     "nota": "",
-    "quando": "2026-11-10T01:55:16.961Z"
+    "quando": "2026-11-10T02:23:31.803Z"
   },
   {
     "id": "DEF10-2",
@@ -4881,7 +4881,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T01:55:17.883Z"
+    "quando": "2026-11-10T02:23:32.721Z"
   },
   {
     "id": "DEF10-3",
@@ -4892,7 +4892,7 @@
     "status": "APROVADO",
     "evidencia": "39-aurora-6m1.png",
     "nota": "",
-    "quando": "2026-11-10T01:55:20.293Z"
+    "quando": "2026-11-10T02:23:35.064Z"
   },
   {
     "id": "DEF10-4",
@@ -4903,7 +4903,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T01:55:20.850Z"
+    "quando": "2026-11-10T02:23:35.646Z"
   },
   {
     "id": "UI-SEC-1",
@@ -5047,5 +5047,71 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-10T02:14:00.288Z"
+  },
+  {
+    "id": "DEF10B-1-desktop",
+    "modulo": "PDI Alunos (filtro Escola sempre visível)",
+    "cenario": "Secretaria (Todas as escolas), desktop: filtro Escola visível e editável",
+    "esperado": "visível, editável",
+    "observado": "visível: true; travado: false; mostra: \"Todas\"",
+    "status": "APROVADO",
+    "evidencia": "41-1-desktop.png",
+    "nota": "",
+    "quando": "2026-11-10T02:23:02.195Z"
+  },
+  {
+    "id": "DEF10B-1-celular",
+    "modulo": "PDI Alunos (filtro Escola sempre visível)",
+    "cenario": "Secretaria (Todas as escolas), celular: filtro Escola visível e editável",
+    "esperado": "visível, editável",
+    "observado": "visível: true; travado: false; mostra: \"Todas\"",
+    "status": "APROVADO",
+    "evidencia": "41-1-celular.png",
+    "nota": "",
+    "quando": "2026-11-10T02:23:07.119Z"
+  },
+  {
+    "id": "DEF10B-2-desktop",
+    "modulo": "PDI Alunos (filtro Escola sempre visível)",
+    "cenario": "Gestor (escola definida no topo), desktop: filtro Escola visível mostrando a escola do topo, travado",
+    "esperado": "visível, travado, com o nome da escola",
+    "observado": "visível: true; travado: true; mostra: \"ZZ-HOMOLOG Escola Aurora\"",
+    "status": "APROVADO",
+    "evidencia": "41-2-desktop.png",
+    "nota": "",
+    "quando": "2026-11-10T02:23:11.832Z"
+  },
+  {
+    "id": "DEF10B-2-celular",
+    "modulo": "PDI Alunos (filtro Escola sempre visível)",
+    "cenario": "Gestor (escola definida no topo), celular: filtro Escola visível mostrando a escola do topo, travado",
+    "esperado": "visível, travado, com o nome da escola",
+    "observado": "visível: true; travado: true; mostra: \"ZZ-HOMOLOG Escola Aurora\"",
+    "status": "APROVADO",
+    "evidencia": "41-2-celular.png",
+    "nota": "",
+    "quando": "2026-11-10T02:23:16.450Z"
+  },
+  {
+    "id": "DEF10B-3-desktop",
+    "modulo": "PDI Alunos (filtro Escola sempre visível)",
+    "cenario": "Diretora (escola definida no topo), desktop: filtro Escola visível mostrando a escola do topo, travado",
+    "esperado": "visível, travado, com o nome da escola",
+    "observado": "visível: true; travado: true; mostra: \"ZZ-HOMOLOG Escola Boa Vista\"",
+    "status": "APROVADO",
+    "evidencia": "41-3-desktop.png",
+    "nota": "",
+    "quando": "2026-11-10T02:23:21.032Z"
+  },
+  {
+    "id": "DEF10B-3-celular",
+    "modulo": "PDI Alunos (filtro Escola sempre visível)",
+    "cenario": "Diretora (escola definida no topo), celular: filtro Escola visível mostrando a escola do topo, travado",
+    "esperado": "visível, travado, com o nome da escola",
+    "observado": "visível: true; travado: true; mostra: \"ZZ-HOMOLOG Escola Boa Vista\"",
+    "status": "APROVADO",
+    "evidencia": "41-3-celular.png",
+    "nota": "",
+    "quando": "2026-11-10T02:23:25.612Z"
   }
 ]
