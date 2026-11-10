@@ -6229,23 +6229,23 @@
     "id": "UT-INAT-1-desktop",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "desktop: tela principal só com ciclos ativos (nenhum selo \"Inativo\") e link \"Ver inativos (N)\"",
-    "esperado": "1 cartões; 0 selos; \"Ver inativos (31) →\"",
-    "observado": "1 cartões; 0 selos; \"Ver inativos (31) →\"",
+    "esperado": "1 cartões; 0 selos; \"Ver inativos (35) →\"",
+    "observado": "1 cartões; 0 selos; \"Ver inativos (35) →\"",
     "status": "APROVADO",
     "evidencia": "47-ativos-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T11:26:12.137Z"
+    "quando": "2026-11-10T11:28:01.816Z"
   },
   {
     "id": "UT-INAT-2-desktop",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "desktop: \"Ver inativos\" abre tela separada (endereço próprio) só com os inativos, cada um com Reativar; sem \"+ Novo ciclo\"; sem rolagem horizontal",
-    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 31 cartões e 31 Reativar; 0 Novo; ≤ 1280px",
-    "observado": "true; \"Formulário 1/3 — Inativos\"; 31 cartões, 31 Reativar; 0 Novo; 1280px",
+    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 35 cartões e 35 Reativar; 0 Novo; ≤ 1280px",
+    "observado": "true; \"Formulário 1/3 — Inativos\"; 35 cartões, 35 Reativar; 0 Novo; 1280px",
     "status": "APROVADO",
     "evidencia": "47-inativos-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T11:26:13.838Z"
+    "quando": "2026-11-10T11:28:03.432Z"
   },
   {
     "id": "UT-INAT-3-desktop",
@@ -6256,29 +6256,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:26:14.871Z"
+    "quando": "2026-11-10T11:28:04.458Z"
   },
   {
     "id": "UT-INAT-1-celular",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "celular: tela principal só com ciclos ativos (nenhum selo \"Inativo\") e link \"Ver inativos (N)\"",
-    "esperado": "1 cartões; 0 selos; \"Ver inativos (31) →\"",
-    "observado": "1 cartões; 0 selos; \"Ver inativos (31) →\"",
+    "esperado": "1 cartões; 0 selos; \"Ver inativos (35) →\"",
+    "observado": "1 cartões; 0 selos; \"Ver inativos (35) →\"",
     "status": "APROVADO",
     "evidencia": "47-ativos-celular.png",
     "nota": "",
-    "quando": "2026-11-10T11:26:18.118Z"
+    "quando": "2026-11-10T11:28:07.627Z"
   },
   {
     "id": "UT-INAT-2-celular",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "celular: \"Ver inativos\" abre tela separada (endereço próprio) só com os inativos, cada um com Reativar; sem \"+ Novo ciclo\"; sem rolagem horizontal",
-    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 31 cartões e 31 Reativar; 0 Novo; ≤ 390px",
-    "observado": "true; \"Formulário 1/3 — Inativos\"; 31 cartões, 31 Reativar; 0 Novo; 390px",
+    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 35 cartões e 35 Reativar; 0 Novo; ≤ 390px",
+    "observado": "true; \"Formulário 1/3 — Inativos\"; 35 cartões, 35 Reativar; 0 Novo; 390px",
     "status": "APROVADO",
     "evidencia": "47-inativos-celular.png",
     "nota": "",
-    "quando": "2026-11-10T11:26:19.732Z"
+    "quando": "2026-11-10T11:28:09.368Z"
   },
   {
     "id": "UT-INAT-3-celular",
@@ -6289,7 +6289,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:26:20.750Z"
+    "quando": "2026-11-10T11:28:10.392Z"
   },
   {
     "id": "UT-INAT-4",
@@ -6300,7 +6300,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:26:27.073Z"
+    "quando": "2026-11-10T11:28:16.509Z"
   },
   {
     "id": "UT-INAT-5",
@@ -6311,6 +6311,6 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:26:29.876Z"
+    "quando": "2026-11-10T11:28:19.315Z"
   }
 ]
