@@ -33,12 +33,11 @@ export async function criarCiclo(page, { ano = 2026, tri, titulo, abre, prazo, s
   await page.goto(BASE + '/#/formulario-um-terco'); await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: '+ Novo ciclo' }).first().click();
   const m = page.locator('div.fixed.inset-0');
-  await m.getByLabel('Ano letivo').fill(String(ano));
-  await m.getByLabel('Trimestre').selectOption(String(tri));
-  await m.getByLabel('Quantidade de semanas').fill(String(semanas.length));
-  if (titulo) await m.getByLabel('Título').fill(titulo);
+  // Modal de 10/11/2026: ano e trimestre saem da abertura; título é sempre 'Formulário 1/3'
+  // (ano, tri e titulo deste helper ficaram sem efeito). Semanas explícitas sobrescrevem a divisão automática.
   await m.getByLabel('Abertura (data e hora)').fill(abre);
   await m.getByLabel('Prazo de entrega (data e hora)').fill(prazo);
+  await m.getByLabel('Quantidade de semanas').fill(String(semanas.length));
   for (let i = 0; i < semanas.length; i++) {
     await m.getByLabel(`Semana ${i + 1}: início`).fill(semanas[i][0]);
     await m.getByLabel(`Semana ${i + 1}: fim`).fill(semanas[i][1]);

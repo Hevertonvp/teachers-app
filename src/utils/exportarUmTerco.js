@@ -18,18 +18,6 @@ export const exportarUmTerco = async ({ cicloId, filtros = {}, rotulos = [], usu
     usuario,
     filtros: [['Ciclo', `${ciclo.titulo} — ${ciclo.trimestre}º trimestre de ${ciclo.anoLetivo}`], ...rotulos],
     abas: [
-      { nome: 'Resumo', linhas: [resumo], colunas: [
-        { titulo: 'Esperadas', valor: r => r.esperado, tipo: 'numero' },
-        { titulo: 'Concluídas', valor: r => r.concluidas, tipo: 'numero' },
-        { titulo: 'Em andamento', valor: r => r.emAndamento, tipo: 'numero' },
-        { titulo: 'Não iniciadas', valor: r => r.naoIniciadas, tipo: 'numero' },
-        { titulo: 'Entrega (%)', valor: r => r.percentualEntrega, tipo: 'numero' },
-      ] },
-      { nome: 'Cobertura por escola', linhas: dados.porEscola, colunas: [
-        { titulo: 'Escola', valor: e => e.escolaNome, largura: 34 },
-        { titulo: 'Esperadas', valor: e => e.esperado, tipo: 'numero' },
-        { titulo: 'Concluídas', valor: e => e.concluidas, tipo: 'numero' },
-      ] },
       { nome: 'Entregas', linhas: dados.linhas, colunas: [
         ...ident,
         { titulo: 'Escolas', valor: l => [...new Set(l.turmas.map(t => t.escolaNome))].join('; '), largura: 34 },
@@ -46,6 +34,18 @@ export const exportarUmTerco = async ({ cicloId, filtros = {}, rotulos = [], usu
         { titulo: 'Início', valor: c => c.semanaInicio, tipo: 'data' },
         { titulo: 'Fim', valor: c => c.semanaFim, tipo: 'data' },
         { titulo: 'Conteúdo', valor: c => c.texto, largura: 80 },
+      ] },
+      { nome: 'Cobertura por escola', linhas: dados.porEscola, colunas: [
+        { titulo: 'Escola', valor: e => e.escolaNome, largura: 34 },
+        { titulo: 'Esperadas', valor: e => e.esperado, tipo: 'numero' },
+        { titulo: 'Concluídas', valor: e => e.concluidas, tipo: 'numero' },
+      ] },
+      { nome: 'Resumo', linhas: [resumo], colunas: [
+        { titulo: 'Esperadas', valor: r => r.esperado, tipo: 'numero' },
+        { titulo: 'Concluídas', valor: r => r.concluidas, tipo: 'numero' },
+        { titulo: 'Em andamento', valor: r => r.emAndamento, tipo: 'numero' },
+        { titulo: 'Não iniciadas', valor: r => r.naoIniciadas, tipo: 'numero' },
+        { titulo: 'Entrega (%)', valor: r => r.percentualEntrega, tipo: 'numero' },
       ] },
     ],
   });

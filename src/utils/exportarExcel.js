@@ -4,7 +4,7 @@
 //   com "=", "+", "-" ou "@" fica como texto puro na célula (tipo String do xlsx), não é calculado.
 // - Datas só-dia ('YYYY-MM-DD' ou ISO à meia-noite UTC do Postgres @db.Date) usam as partes UTC,
 //   para não "voltar um dia" (lição do DEF-16). Data+hora é convertida para o horário de São Paulo.
-// - Primeira aba "Filtros": quem exportou, quando, e os filtros aplicados na tela.
+// - Abas de dados primeiro (o arquivo abre na lista); última aba "Filtros": quem exportou, quando, filtros.
 // - Cada aba: cabeçalho em negrito, primeira linha congelada, filtro automático, larguras ajustadas.
 
 const FUSO = 'America/Sao_Paulo';
@@ -65,14 +65,6 @@ export async function exportarExcel({ arquivo, filtros = [], usuario, abas }) {
   wb.created = new Date();
   const hoje = hojeSaoPaulo();
 
-  const info = wb.addWorksheet('Filtros');
-  info.columns = [{ width: 28 }, { width: 60 }];
-  info.addRow(['Exportado em', hoje.texto]);
-  if (usuario) info.addRow(['Exportado por', String(usuario)]);
-  filtros.forEach(([rotulo, valor]) => info.addRow([String(rotulo), valor === null || valor === undefined || valor === '' ? 'Todos' : String(valor)]));
-  abas.forEach(aba => info.addRow([`Linhas em "${aba.nome}"`, aba.linhas.length]));
-  info.getColumn(1).font = { bold: true };
-
   for (const aba of abas) {
     const ws = wb.addWorksheet(nomeAba(aba.nome), { views: [{ state: 'frozen', ySplit: 1 }] });
     ws.columns = aba.colunas.map(c => ({ header: c.titulo, width: c.largura ?? Math.max(12, Math.min(50, c.titulo.length + 4)) }));
@@ -89,6 +81,17 @@ export async function exportarExcel({ arquivo, filtros = [], usuario, abas }) {
     cab.alignment = { vertical: 'middle' };
     if (aba.colunas.length) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: aba.colunas.length } };
   }
+
+  // Aba 'Filtros' por ÚLTIMO: o arquivo abre direto na lista (antes abria nos filtros e a pessoa
+  // achava que a planilha estava vazia — os dados ficavam escondidos na segunda aba).
+  const info = wb.addWorksheet('Filtros');
+  info.columns = [{ width: 28 }, { width: 60 }];
+  info.addRow(['Exportado em', hoje.texto]);
+  if (usuario) info.addRow(['Exportado por', String(usuario)]);
+  filtros.forEach(([rotulo, valor]) => info.addRow([String(rotulo), valor === null || valor === undefined || valor === '' ? 'Todos' : String(valor)]));
+  abas.forEach(aba => info.addRow([`Linhas em "${aba.nome}"`, String(aba.linhas.length)]));
+  info.getColumn(1).font = { bold: true };
+  wb.views = [{ activeTab: 0, firstSheet: 0, visibility: 'visible' }];
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
