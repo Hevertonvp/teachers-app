@@ -151,6 +151,8 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
 
   const menuDiretora = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
+    // Acompanhamento Escolar da própria escola (decisão do usuário, 10/11/2026).
+    { name: 'Acompanhamento Escolar', path: '/acompanhamento-escolar', icon: 'acompanhamento' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
     itemFeedback,

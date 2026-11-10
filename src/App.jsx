@@ -41,6 +41,7 @@ import { MensagensPage } from './pages/MensagensPage';
 import { FeedbackSistemaPage } from './pages/FeedbackSistemaPage';
 import { FeedbackSistemaDetalhePage } from './pages/FeedbackSistemaDetalhePage';
 import { FeedbacksSistemaListaPage } from './pages/FeedbacksSistemaListaPage';
+import { AcompanhamentoEscolarPage } from './pages/AcompanhamentoEscolarPage';
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -123,7 +124,8 @@ const AppRoutes = () => <Routes>
   <Route path="/planejamento/:id" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/calendario" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/gestao-professores" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
-  <Route path="/acompanhamento-escolar" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  {/* Acompanhamento Escolar: só leitura; Secretaria (rede) e Diretora (própria escola). A página redireciona os demais. */}
+  <Route path="/acompanhamento-escolar" element={<ProtectedRoute><AcompanhamentoEscolarPage /></ProtectedRoute>} />
   <Route path="/notificacoes-atraso" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/configuracoes" element={<ProtectedRoute><ConfiguracoesPage /></ProtectedRoute>} />
 

@@ -2482,3 +2482,58 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - Na lista do Professor, o botão de um formulário 1/3 já concluído (e ainda editável) passou de "Continuar" para "Editar". Só o texto mudou; o comportamento é o mesmo.
   - Camada: só frontend (`src/pages/UmTercoProfessorPage.jsx`).
   - Testado: build; sem teste automatizado.
+- **10/11/2026: PROPOSTA da aba "Acompanhamento Escolar" (só análise; NENHUMA implementação autorizada).**
+  - **Documento completo:** `PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md` (raiz do repositório). Nada foi construído: nenhuma tela, endpoint, migration, estilo ou biblioteca.
+  - **Decisões de planejamento propostas:**
+    - painel só de leitura para a Secretaria (v1), em três camadas: Rede → Prazos → Escola;
+    - mesmas unidades das telas atuais: PDI = Ficha (aluno × disciplina, esperado como em `/pdi-aplicacoes/indicadores`); 1/3 = entrega única (professor × ano/série × disciplina, como em `montarPainel`); recorte do 1/3 por escola é cobertura e não soma;
+    - sem nomes de alunos ou professores, sem ranking de escolas; linguagem "Entregas que merecem acompanhamento";
+    - depois do prazo o item é "não concluído no prazo", não "atrasado" (o professor não consegue preencher sem reabertura);
+    - gráficos em SVG próprio, sem biblioteca nova; identidade visual própria (índigo + verde-água sóbrio + areia + terracota), com modo noturno;
+    - um endpoint agregado novo, só leitura, em lote, com cache curto; sem migration.
+  - **Indicadores analisados:** conclusão do PDI vigente; conclusão do 1/3 por ciclo; prazos próximos; itens que merecem acompanhamento; ritmo de preenchimento (PDI por `concluidaEm`, 1/3 por `HistoricoEntregaUmTerco`); comparativo entre ciclos do 1/3; estrutura da rede. Descartados: ranking, por professor, tempo médio até concluir, total de alunos, percentual de PDI encerrado.
+  - **Limitações encontradas:**
+    - o esperado do PDI é recalculado com os vínculos de hoje, então o percentual de Aplicações já encerradas não é confiável; a proposta usa números absolutos no histórico do PDI. Uma "fotografia do esperado no prazo" exigiria migration (etapa 7, opcional);
+    - o PDI não tem histórico de "em preenchimento" ao longo do tempo;
+    - `AlunoPdi` não é o total de matriculados.
+    - O esperado do 1/3 usa as datas dos vínculos, então é estável e comparável entre ciclos.
+  - **Pendente de decisão do usuário:** limiares de prazo e andamento (§6.2 e §10 do documento), quem acessa, se Correções entram e a paleta.
+  - **Arquivos:** `PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md` (novo) e este registro. Camadas: nenhuma (documentação). Não testado (não há código).
+- **10/11/2026: Acompanhamento Escolar, decisões do usuário sobre a proposta (implementação ainda NÃO autorizada).**
+  - Limiares aprovados: 7 dias, 50%, mínimo de 5 itens, "sem movimento" depois de 7 dias.
+  - Acesso: Secretaria vê a rede inteira, com filtros; Diretora vê só a própria escola; mais ninguém, por enquanto.
+  - Correções abertas entram só como informação; a aba não cria nem apaga nada.
+  - Visual: liberdade criativa, com padrões modernos.
+  - Percentual histórico do PDI (etapa 7): o usuário pediu explicação; a decisão está pendente.
+  - Documento atualizado: `PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md` (§1 e §10).
+- **10/11/2026: Acompanhamento Escolar IMPLEMENTADO (autorizado pelo usuário: "faz isso tudo", inclusive a etapa 7; "se precisar paginar, faça paginação").**
+  - **O que é:** aba só de leitura em `/acompanhamento-escolar` (substituiu o "em construção").
+    - Secretaria: rede inteira; clicar numa escola (ou escolher no seletor do topo) abre a visão da escola.
+    - Diretora: só a própria escola; ganhou o item no menu.
+    - Gestor e os demais perfis: 403.
+    - Regras ACP-01 a ACP-09 em `REGRAS_DE_NEGOCIO_NEXO.md` (seção 22). Proposta e o que mudou: `PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md` (seção 11).
+  - **Backend:**
+    - `GET /api/acompanhamento/rede` e `/escola/:id` (`backend/src/api/routes/acompanhamento.ts`), com cache de 60 s; sem nomes de pessoas;
+    - regras puras em `backend/src/domain/acompanhamento.ts` (limites 7 dias, 50%, mínimo 5, 7 dias sem movimento, 30 dias de encerrado);
+    - contagem de Fichas em lote em `backend/src/lib/contagemFichasPdi.ts` (mesma regra de `/pdi-aplicacoes/indicadores`, que ficou intocado);
+    - `montarPainel` do 1/3 passou a ser exportado (sem mudança de comportamento).
+  - **Banco: migration ADITIVA `20261111120000_fotografia_aplicacao_pdi`** (tabela `fotografias_aplicacao_pdi`).
+    - Job `backend/src/jobs/fotografiaPdiJob.ts`: 08:30 e na subida do servidor; fotografa Aplicações ATIVAS encerradas há 1 a 3 dias; idempotente.
+    - **Precisa ser aplicada na produção ANTES de publicar o backend** (o Render não roda migrations). Sem ela, a aba dá erro 500 e o job só registra erro no log.
+  - **Frontend:**
+    - `src/pages/AcompanhamentoEscolarPage.jsx`, `src/components/acompanhamento/Graficos.jsx` (SVG próprio, sem biblioteca), `src/styles/acompanhamento.css` (tokens próprios sob `.acp`, modo noturno), `src/services/acompanhamento.js`;
+    - menu da Diretora em `Sidebar.jsx`; rota em `App.jsx`;
+    - paginação: mapa 8, lista 5, prazos 6;
+    - filtros (ano, formulário, trimestre ou ciclo) ficam na URL.
+  - **Testado (banco local):**
+    - `homologacao/50-acompanhamento-escolar.mjs`: 10/10. Inclui:
+      - números iguais a `/indicadores` e ao painel do 1/3;
+      - permissões;
+      - foto do PDI;
+      - tela da Secretaria e da Diretora;
+      - filtro na URL;
+      - modo noturno;
+      - celular de 375 px sem rolagem lateral;
+      - sem erros no console.
+    - Regressão (33–36) e 45–48 do 1/3: 105 aprovados, nenhum reprovado. Build ok.
+    - **Não testado:** produção e celular real.

@@ -402,8 +402,9 @@ formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
 });
 
 // Cálculo do painel (esperado/concluído/andamento/não iniciado, por entrega e por escola) com os
-// filtros da tela. Compartilhado pelo painel e pela exportação para Excel — mesmos números.
-async function montarPainel(cicloId: number, q: Record<string, unknown>) {
+// filtros da tela. Compartilhado pelo painel, pela exportação para Excel e pelo Acompanhamento
+// Escolar (routes/acompanhamento.ts) — mesmos números.
+export async function montarPainel(cicloId: number, q: Record<string, unknown>) {
   const ciclo = await buscarCiclo(prisma, cicloId);
   const filtroEscola = q.escolaId ? lerId(q.escolaId, 'Escola') : null;
   const filtroSerie = q.anoSerie ? lerId(q.anoSerie, 'Ano/série') : null;

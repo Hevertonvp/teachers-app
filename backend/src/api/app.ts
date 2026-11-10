@@ -28,6 +28,7 @@ import { habilidadesCurricularesRouter } from './routes/habilidadesCurriculares.
 import { trimestresRouter } from './routes/trimestres.js';
 import { formularioUmTercoRouter } from './routes/formularioUmTerco.js';
 import { pdiIndicadoresRouter } from './routes/pdiIndicadores.js';
+import { acompanhamentoRouter } from './routes/acompanhamento.js';
 
 export function createApp() {
   const app = express();
@@ -101,6 +102,7 @@ export function createApp() {
   app.use('/api/habilidades-curriculares', habilidadesCurricularesRouter);
   app.use('/api/trimestres', trimestresRouter);
   app.use('/api/pdi-indicadores', pdiIndicadoresRouter);
+  app.use('/api/acompanhamento', acompanhamentoRouter); // Acompanhamento Escolar: só leitura (Secretaria e Diretora)
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 

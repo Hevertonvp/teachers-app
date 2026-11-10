@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { prisma } from './lib/prisma.js';
 import { executarVerificacaoPrazosPdi } from './jobs/pdiPrazoJob.js';
 import { executarFechamentoAutomaticoFichaAnual } from './jobs/fichaAnualFechamentoJob.js';
+import { executarFotografiaPdi } from './jobs/fotografiaPdiJob.js';
 import { TIMEZONE_OPERACIONAL } from './domain/notificacoes.js';
 
 // Scheduler in-process: roda dentro do mesmo processo Express (sem serviço externo), por isso
@@ -32,4 +33,15 @@ export function iniciarScheduler(): void {
     { timezone: TIMEZONE_OPERACIONAL },
   );
   console.log(`[scheduler] job de fechamento automático de Ficha Anual PDI agendado para 08:15 (${TIMEZONE_OPERACIONAL})`);
+
+  // "Foto" do PDI no prazo (Acompanhamento Escolar). Roda também uma vez na subida: o servidor
+  // pode ter dormido às 08:30, e o job só fotografa até 3 dias depois do fim (idempotente).
+  const fotografar = () => {
+    executarFotografiaPdi(prisma).catch((err) => {
+      console.error('[scheduler] falha ao tirar a foto do PDI no prazo', err);
+    });
+  };
+  cron.schedule('30 8 * * *', fotografar, { timezone: TIMEZONE_OPERACIONAL });
+  fotografar();
+  console.log(`[scheduler] foto do PDI no prazo agendada para 08:30 (${TIMEZONE_OPERACIONAL}) e executada na subida`);
 }

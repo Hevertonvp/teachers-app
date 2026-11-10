@@ -879,3 +879,19 @@ Nenhuma regra nova. Detalhes em `homologacao/DEFEITOS.md`.
 | UT-07 (preenchimento por semana) | DEF-01: troca de semana com rede lenta; texto digitado durante o envio se perdia | **Corrigida.** |
 
 Regressão final: 78/78 em navegador, 226/226 em API, integridade 8/8 e build de produção 6/6.
+
+## 22. Acompanhamento Escolar (10/11/2026)
+
+Tela só de leitura. Detalhes em `PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md`.
+
+| Regra | Descrição |
+|---|---|
+| ACP-01 | Quem acessa: **Secretaria** vê a rede inteira; **Diretora** vê só as próprias escolas (vínculo ativo). Gestor, Professor, Auxiliar e Suporte recebem 403. |
+| ACP-02 | A tela não cria, não altera e não apaga nada. Correções do PDI em aberto aparecem só como informação. |
+| ACP-03 | Unidades iguais às telas existentes. PDI = Ficha (aluno × disciplina), com o mesmo esperado de `/pdi-aplicacoes/indicadores`. 1/3 = entrega única (professor × ano/série × disciplina), contada uma vez na rede; por escola é cobertura e não soma. |
+| ACP-04 | Nenhum nome de aluno ou professor; nenhum ranking de escolas. A ordem padrão do mapa mostra primeiro as escolas com atividade, em ordem alfabética. |
+| ACP-05 | Depois do prazo, o que não foi concluído é "não concluído no prazo", nunca "atrasado". |
+| ACP-06 | "Merecem acompanhamento" (escola × formulário × período): prazo em até 7 dias com menos de 50% concluído e pelo menos 5 itens esperados; ou aberto há mais de 7 dias sem nenhum início; ou encerrado há até 30 dias, sem reabertura vigente, com itens não concluídos. Esperado zero nunca gera item. |
+| ACP-07 | Percentual só com 5 ou mais itens esperados; abaixo disso, "x de y". |
+| ACP-08 | **Foto do PDI no prazo:** um job diário (08:30, e também na subida do servidor) guarda esperado, concluídas e em preenchimento de cada Aplicação ATIVA encerrada há 1 a 3 dias. Aplicação encerrada há mais tempo nunca ganha foto. Percentual de período do PDI já encerrado só aparece com foto; sem foto, só o número de Fichas concluídas. |
+| ACP-09 | O 1/3 pode ser comparado entre ciclos (o esperado usa as datas dos vínculos); o PDI histórico, só pela foto. |
