@@ -2419,3 +2419,15 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - regressão: 44 (21/21), 45 (8/8), 43 (21/21).
   - **Correção de registro:** o roteiro 44 tem **21** casos, não 24 como registrado antes por erro de contagem.
   - **Infra de teste:** havia 3 processos antigos do backend local (de 09/11) travando o motor do Prisma; foram encerrados. O `reiniciar-backend.sh` atual já derruba o processo da porta 3340.
+- **10/11/2026: estado de publicação conferido (corrige os "sem push" das entradas anteriores).**
+  - **Já está na `main`:** o usuário juntou a `feature/dashboard-entregas` (PRs **#5** e **#6**, 00:42–00:44 de 10/11) e, com ela, exportação para Excel, modal do 1/3 v1 (sem ano/trimestre/título, só data, **com a divisão automática das semanas**) e dashboard. O frontend é publicado pelo GitHub Actions a cada push na `main`, então essas telas estão no ar.
+  - **Commit "." (`0d3cd5c`, do usuário, dentro do PR #6):** levou para a `main` a parte de **backend** das validações de datas, ainda em andamento naquele momento (`domain/umTerco.ts`: semanas em ordem, nenhuma depois do prazo, `exigirAberturaNaoPassada`; rota usando essas regras). Se o Render publicou a `main`, a produção já aplica essas regras no backend. A divisão automática do frontend publicado gera semanas compatíveis com elas.
+  - **Ainda não está na `main`:**
+    - `feature/validacao-datas-um-terco`: frontend com semanas manuais e avisos na hora; remove a divisão automática;
+    - `feature/um-terco-escolas`: escolas por ciclo, **com migration**.
+  - **Ordem obrigatória para publicar as escolas:**
+    1. `prisma migrate deploy` no Neon (aditiva; ciclos atuais ficam "todas");
+    2. juntar à `main`.
+    
+    Juntar antes da migration faz o backend consultar colunas inexistentes e derruba o 1/3.
+  - **Não conferido:** qual commit o Render está rodando.
