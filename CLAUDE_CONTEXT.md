@@ -2358,3 +2358,24 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Fora do escopo, por regra de acesso:** o Gestor e a Diretora não veem o 1/3, porque o painel do 1/3 é só da Secretaria (PER-09). O Dashboard deles não mudou.
   - **Backend:** nada mudou.
   - **Teste:** `homologacao/45-dashboard-entregas.mjs`, desktop e celular, banco local: **8/8**. Compara com as APIs com todas as escolas e com a Aurora selecionada; verifica a página do PDI com os mesmos números e a ausência de rolagem horizontal.
+- **10/11/2026: validação das datas do Formulário 1/3; divisão automática das semanas removida (decisões do usuário; branch `feature/validacao-datas-um-terco`, a partir da `feature/dashboard-entregas`; frontend e backend).**
+  - **Decisão do usuário:** "esquece esse negócio de dividir as datas dentro da janela": as semanas (período de referência) e a abertura/prazo (janela de preenchimento) são independentes (UT-05). A divisão automática e o botão "Redividir" saíram; as semanas voltam a ser preenchidas à mão (4 em branco por padrão).
+  - **Respostas às perguntas de regra:**
+    - semana de tamanho livre;
+    - buracos entre semanas permitidos;
+    - semana depois do prazo **bloqueada**;
+    - abertura "só no futuro": aplicado como **hoje ou depois**; trocar para "a partir de amanhã" é uma linha.
+  - **Backend:**
+    - `validarCiclo` (`domain/umTerco.ts`) recusa semanas fora de ordem ou sobrepostas e semana terminando depois do prazo;
+    - nova `exigirAberturaNaoPassada`: vale sempre na criação e, na edição, só se a data da abertura mudar (`routes/formularioUmTerco.ts`);
+    - nenhuma migration.
+  - **Frontend (`UmTercoSecretariaPage.jsx`):**
+    - as mesmas regras são conferidas **na hora**, com borda vermelha e mensagem embaixo do campo;
+    - Salvar fica bloqueado enquanto houver erro;
+    - os calendários já limitam as datas possíveis (mínimo e máximo).
+  - **Achado:** o ciclo #1 do banco local tem a Semana 4 (23–27/11) depois do prazo (20/11). Com a regra nova, ele é acusado no modal e só salva depois de corrigido. **Antes de publicar, conferir se há ciclos assim na produção**: neles, editar exigirá ajustar o prazo ou a semana. Reaberturas não são afetadas.
+  - **Testes:**
+    - `scripts/umTerco/testar-dominio.ts` 20/20; `testar-integracao.ts` 50/50 (banco local, sem resíduo);
+    - `44-modal-novo-ciclo-um-terco.mjs` **24/24**, desktop e celular. Cobre cada regra na tela, um caso válido com buraco, semana anterior à abertura e tamanhos 5/10/1/1, a gravação exata no banco, o ciclo antigo e a API recusando (400) as mesmas 4 situações;
+    - resultados obsoletos do roteiro 44 (divisão automática) foram removidos da matriz;
+    - `REGRAS_DE_NEGOCIO_NEXO.md` atualizado (UT-05, UT-06).

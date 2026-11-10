@@ -211,15 +211,22 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 **UT-05 · Período de referência × janela de disponibilidade**
 - **Regra:** as **semanas** do ciclo são o período pedagógico de referência. A **abertura e o prazo** são a janela em que o professor pode preencher. As semanas podem ser anteriores à abertura, sempre dentro do mesmo trimestre (CAL-05). São de 1 a 30 semanas, rotuladas pelo sistema ("Semana N").
 - **Exemplo:** ciclo aberto de 10/11 a 20/11 sobre as semanas de 03/11 a 14/11.
-- **Origem:** usuário (§60–61; distinção confirmada em 09/11/2026). **Status:** Implementada. Nenhum campo novo é necessário.
-- **Testes:** testar-dominio.
+- **Origem:** usuário (§60–61; distinção confirmada em 09/11/2026 e de novo em 10/11/2026: "uma coisa não tem nada a ver com a outra"). **Status:** Implementada. Nenhum campo novo é necessário.
+- **Regras das semanas (decisão do usuário, 10/11/2026; implementada no frontend e no backend):**
+  - fim não antes do início;
+  - em ordem e sem sobreposição: cada semana começa depois do fim da anterior;
+  - **buracos entre semanas são permitidos** (feriado, recesso) e o **tamanho é livre** (não precisa ter 7 dias);
+  - **nenhuma semana termina depois do prazo de entrega**;
+  - as datas são preenchidas à mão (a divisão automática pela janela foi descartada pelo usuário).
+- **Consequência:** um ciclo antigo com semana depois do prazo (ex.: o #1 local, Semana 4 de 23 a 27/11 com prazo em 20/11) só volta a ser salvo depois de corrigido (estender o prazo ou ajustar a semana). A reabertura não é afetada.
+- **Testes:** testar-dominio, UT-MODAL-*.
 
 **UT-06 · Abertura atual ou futura**
 - **Regra:** a abertura de um **novo** ciclo deve ser hoje ou no futuro, nunca retroativa. O prazo vem depois da abertura, dentro do trimestre, sem sobreposição.
-- **Origem:** Decisão 3. **Status:** **Proposta (pendente Secretaria)**. Hoje um ciclo com janela no passado é aceito.
-- **Pontos em aberto:** tolerância de "hoje"; edição da abertura de um ciclo que já abriu.
+- **Origem:** Decisão 3. **Status:** **Implementada em 10/11/2026 por decisão do usuário** ("só no futuro", interpretado como hoje ou depois).
+- **Como ficou:** a abertura é só uma data (00:00) e o prazo vai até 23:59. A data da abertura precisa ser hoje ou depois. Em ciclo existente, a regra só vale se a data da abertura mudar: um ciclo já aberto pode ser editado sem mexer nela.
 - **Depende de:** CAL-05.
-- **Testes:** UT-T-S10/S12 (hoje aceitos; passariam a ser recusados).
+- **Testes:** UT-MODAL-2/2b/9/10. Os roteiros antigos UT-T-S10/S12, que criavam ciclos no passado, agora esperariam recusa (não reexecutados).
 
 **UT-07 · Preenchimento e conclusão**
 - **Regra:**
