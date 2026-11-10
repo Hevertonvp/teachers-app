@@ -2245,3 +2245,65 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - altura limitada à tela (`max-h: 100dvh - 4rem`), com rolagem interna no conteúdo e o overlay rolável como reserva.
   - **Teste:** `homologacao/40-ajustes-telas-secretaria.mjs`, navegador real, desktop e celular, banco local: **13/13**. Inclui confirmação no banco de que fechar sem confirmar não altera vínculos e de que os vínculos criados pelo assistente não duplicam.
 - **Assistente de vínculos corrigido conforme o usuário explicou (branch `fix/assistente-disciplinas-por-turma`):** o pedido "turmas já selecionadas devem desaparecer" era, na verdade, que as **disciplinas já escolhidas para aquela turma** sumissem (ex.: depois de 6M1 + História, História some para a 6M1). A turma continua na lista e a disciplina continua disponível para as outras turmas. Substitui a lógica anterior, que escondia a turma. O botão Adicionar fica desabilitado sem turma ou disciplina. Teste `42-assistente-disciplinas-por-turma.mjs`: **8/8** (desktop e celular, conferido no banco, sem duplicar). O roteiro 40 foi ajustado (a parte 4 agora escolhe turma e disciplina a cada vínculo, para não substituir professores no banco local): 9/9; os resultados antigos UI-SEC-4a/4b saíram da matriz.
+- **Exportação para Excel (.xlsx) — 09/11/2026, branch `feature/exportacao-excel` (criada da `main` 621b002). Sem push e sem deploy.**
+  - **Pedido do usuário:** botão "Exportar para Excel" dentro de cada área (ex.: o do PDI na página principal do PDI). A exportação deve respeitar os filtros e o controle de acesso, proteger contra fórmulas e não inventar indicadores.
+  - **Biblioteca:** ExcelJS 4.4.0 (gratuita, MIT), só no frontend. É carregada **só no clique** (import dinâmico): fica num pedaço separado de ~930 kB e o carregamento do app não cresceu.
+  - **Utilitário comum `src/utils/exportarExcel.js`:**
+    - aba "Filtros" com quem exportou, quando (horário de São Paulo), os filtros aplicados e o total de linhas de cada aba;
+    - cabeçalho em negrito, primeira linha congelada, filtro automático e larguras ajustadas;
+    - valores gravados só como texto, número ou data, **nunca como fórmula**: texto começando com "=" fica como texto;
+    - datas só-dia pelas partes UTC (lição do DEF-16), formato dd/mm/aaaa; data e hora convertidas para São Paulo;
+    - campos vazios ficam com a célula vazia;
+    - nome do arquivo: `nexo-<área>-AAAA-MM-DD.xlsx`.
+  - **Botão comum `src/components/BotaoExportarExcel.jsx`:** mostra "Gerando planilha..." e o erro, se houver, e não exporta duas vezes em paralelo.
+  - **Telas e conteúdo:**
+    - **PDI, página principal (`PdiHomePage.jsx`; Secretaria, Gestor e Diretora; respeita a escola do topo):**
+      - "Entrega por escola": os mesmos números do painel, de `/api/pdi-aplicacoes/indicadores`;
+      - "Fichas": escola e turma da Ficha, aluno, disciplina, professor, Aplicação, trimestre, início, fim, status, concluída em, última alteração, **escola e turma atuais do aluno**;
+      - "Respostas": seção, subseção, código, pergunta, resposta, complemento;
+      - "Perguntas comuns".
+    - **Formulário 1/3:** botão em cada ciclo da lista (`UmTercoSecretariaPage.jsx`, sem filtros) e no Painel de entregas (`UmTercoPainelPage.jsx`, **com os filtros da tela**). Só Secretaria. Abas:
+      - "Resumo" (os mesmos números do painel);
+      - "Cobertura por escola";
+      - "Entregas" (professor, ano/série, disciplina, escolas, turmas, status, semanas, concluída em, última alteração);
+      - "Conteúdos" (o texto de cada semana, com início e fim).
+    - **Gestão de Pessoas > Professores (`GestaoPessoas.jsx`):**
+      - "Professores": nome, e-mail, escolas, status, quantidade de vínculos ativos;
+      - "Vínculos": um por linha, professor × escola × turma × disciplina, desde.
+    - **Turmas (`GestaoTurmas.jsx`):**
+      - "Turmas": todas as do filtro, não só a página;
+      - "Professores e disciplinas": vínculos ativos **reais** da API, nunca os contadores de demonstração da tela.
+    - **PDI > Alunos (`PdiPage.jsx`):** todos os alunos dos filtros (busca, escola, turma, status), com responsável legal, parentesco, telefone e data de cadastro.
+  - **Backend (somente leitura; nenhuma migration; nenhuma regra alterada):**
+    - **`GET /api/pdi-fichas/exportacao`:**
+      - **permissões:** Secretaria, Gestor e Diretora; Professor e Auxiliar recebem 403;
+      - **escopo:** extraído da listagem `GET /api/pdi-fichas` para a função `escopoFichas`, sem mudar o comportamento da listagem;
+      - **filtros:** `escolaId` (sempre em AND, nunca substitui o escopo) e `aplicacaoId`;
+      - **respostas por extenso:** CRMG → "Todas as habilidades" ou "código — descrição; ..."; Marcação → Sim/Não; Número → número; ORIENTAÇÃO fica de fora.
+    - **`GET /api/formulario-um-terco/ciclos/:id/exportacao`:**
+      - **permissão:** só Secretaria;
+      - **cálculo:** reaproveita `montarPainel` (extraído da rota do painel), ou seja, mesmos números e mesmos filtros;
+      - **conteúdo extra:** o texto de cada semana.
+  - **Achado documentado, não alterado:** o escopo de Fichas, já existente, segue a escola **atual** do aluno. Um aluno transferido leva a Ficha antiga para a escola nova; ex.: a Diretora da Aurora vê a Ficha feita na Boa Vista do Pedro, transferido. Por isso a planilha mostra "Escola" (da Ficha) e "Escola atual do aluno". Se a Secretaria quiser outra regra, é decisão de negócio.
+  - **Testes (navegador real + banco LOCAL; as planilhas baixadas foram abertas com ExcelJS e conferidas contra o banco):**
+    - `homologacao/43-exportacao-excel.mjs`: **20/20**. Cobre:
+      - quantidades sem omissão nem duplicação: 59 Fichas, 63 respostas, 48 comuns, 43 entregas, 32 conteúdos, 32 professores, 44 vínculos, 7 turmas, 18 alunos;
+      - concluídas, em andamento e não iniciadas;
+      - professor com 9 vínculos;
+      - filtro "Concluído" no painel do 1/3;
+      - filtro de escola em Turmas;
+      - status "Todos" em Alunos;
+      - texto "=1+1 História" e "=HYPERLINK(...) Ação" gravados como texto (alterados temporariamente e **restaurados** no fim);
+      - datas iguais ao banco;
+      - nenhuma célula "undefined", "null" ou com fórmula;
+      - Professor recebe 403 e não vê o botão;
+      - Diretora só recebe Fichas de alunos das escolas dela, e o 1/3 dá 403 para ela.
+    - `43b-exportacao-celular.mjs`: 6/6 (botão inteiro, sem rolagem horizontal a 390 px).
+    - **Regressão completa depois da mudança** (`rodar-regressao.sh exportacao` + roteiros 39, 40 e 42): **99 aprovados, 0 reprovados**. A listagem de Fichas e o painel do 1/3, que agora usam as funções extraídas, continuam iguais.
+    - **Não testado:** abrir os arquivos no Microsoft Excel ou no LibreOffice de verdade (a leitura foi feita pelo ExcelJS).
+  - **Correção de infraestrutura de teste:** `homologacao/reiniciar-backend.sh` agora derruba o processo que estiver na porta 3340 antes de subir. Antes, o antigo continuava respondendo com código velho (a rota nova dava 404).
+  - **Limitações:**
+    - Fichas nunca abertas não existem no banco, por isso não aparecem na aba "Fichas"; o total esperado está em "Entrega por escola";
+    - a exportação de Escolas e de indicadores do Dashboard não foi feita;
+    - a planilha de Alunos contém o telefone do responsável (dado pessoal: o arquivo deve ser tratado como sigiloso);
+    - esta branch saiu da `main` antes do filtro de escola sempre visível (`fix/filtro-escola-sempre-visivel`); pode haver um conflito simples em `PdiPage.jsx` ao juntar.

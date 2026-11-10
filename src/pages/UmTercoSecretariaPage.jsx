@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { MainLayout } from '../layouts/Layouts';
+import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { useAuth } from '../context/AuthContext';
+import { exportarUmTerco } from '../utils/exportarUmTerco';
 import { useData } from '../context/DataContext';
 import {
   atualizarCicloUmTerco, criarCicloUmTerco, criarReaberturaUmTerco, inativarCicloUmTerco, listarCiclosUmTerco, reativarCicloUmTerco,
@@ -181,6 +184,7 @@ const ReaberturaModal = ({ ciclo, onClose, onSalvo }) => {
 
 export const UmTercoSecretariaPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { trimestrePeriods } = useData();
   const [ciclos, setCiclos] = useState(null);
   const [erro, setErro] = useState('');
@@ -252,6 +256,7 @@ export const UmTercoSecretariaPage = () => {
                 <p className="mt-3 text-xs text-slate-500">{ciclo.entregasIniciadas} preenchimento(s) iniciado(s) · {ciclo.reaberturas.length} reabertura(s)</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => navigate(`/formulario-um-terco/ciclos/${ciclo.id}`)}>Painel de entregas</Button>
+                  <BotaoExportarExcel gerar={() => exportarUmTerco({ cicloId: ciclo.id, usuario: user?.nome })} />
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setFormAberto(ciclo)}>Editar</Button>}
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setReabrindo(ciclo)}>Reabrir</Button>}
                   {!inativo && ciclo.entregasIniciadas === 0 && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}

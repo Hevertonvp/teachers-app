@@ -6,3 +6,6 @@ evidencias/traces/
 .senhas.json
 *.log
 saida-*.tmp
+
+# Planilhas baixadas pelos testes de exportação (geradas a cada execução)
+evidencias/*.xlsx

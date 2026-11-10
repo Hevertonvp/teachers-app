@@ -340,8 +340,13 @@ formularioUmTercoRouter.post('/ciclos/:id/reaberturas', async (req, res) => {
 formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
-  const ciclo = await buscarCiclo(prisma, lerId(req.params.id));
-  const q = req.query;
+  res.json(await montarPainel(lerId(req.params.id), req.query));
+});
+
+// Cálculo do painel (esperado/concluído/andamento/não iniciado, por entrega e por escola) com os
+// filtros da tela. Compartilhado pelo painel e pela exportação para Excel — mesmos números.
+async function montarPainel(cicloId: number, q: Record<string, unknown>) {
+  const ciclo = await buscarCiclo(prisma, cicloId);
   const filtroEscola = q.escolaId ? lerId(q.escolaId, 'Escola') : null;
   const filtroSerie = q.anoSerie ? lerId(q.anoSerie, 'Ano/série') : null;
   const filtroDisciplina = q.disciplinaId ? lerId(q.disciplinaId, 'Disciplina') : null;
@@ -416,12 +421,33 @@ formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
     }
   }
 
-  res.json({
+  return {
     ciclo: formatarCiclo(ciclo),
     resumo: { esperado, concluidas, emAndamento, naoIniciadas, percentualEntrega: esperado ? Math.round((concluidas / esperado) * 100) : 0 },
     porEscola: [...porEscola.values()].sort((a, b) => a.escolaNome.localeCompare(b.escolaNome)),
     linhas: todas,
+  };
+}
+
+// Exportação para Excel (somente leitura, só Secretaria): o mesmo painel, com os MESMOS filtros da
+// tela, mais os conteúdos registrados em cada semana das entregas listadas. Nada novo é calculado.
+formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const painel = await montarPainel(lerId(req.params.id), req.query);
+  const entregaIds = painel.linhas.map((l) => l.entregaId).filter((id): id is number => id !== null);
+  const respostas = entregaIds.length
+    ? await prisma.respostaSemanaUmTerco.findMany({ where: { entregaId: { in: entregaIds } }, include: { semana: true }, orderBy: [{ entregaId: 'asc' }, { semana: { numero: 'asc' } }] })
+    : [];
+  const linhaDaEntrega = new Map(painel.linhas.filter((l) => l.entregaId !== null).map((l) => [l.entregaId as number, l]));
+  const conteudos = respostas.map((r) => {
+    const l = linhaDaEntrega.get(r.entregaId)!;
+    return {
+      entregaId: r.entregaId, professorNome: l.professorNome, anoSerie: l.anoSerie, disciplinaNome: l.disciplinaNome,
+      semanaNumero: r.semana.numero, semanaInicio: dataIso(r.semana.dataInicio), semanaFim: dataIso(r.semana.dataFim), texto: r.texto,
+    };
   });
+  res.json({ ...painel, conteudos });
 });
 
 // Secretaria consulta um preenchimento específico (somente leitura, com histórico).

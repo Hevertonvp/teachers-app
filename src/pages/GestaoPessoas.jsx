@@ -8,6 +8,8 @@ import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisc
 import { criarVinculoAuxiliarTurma, encerrarVinculoAuxiliarTurma, listarAuxiliaresReais, listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
 import { criarVinculoEscolarReal, encerrarVinculoEscolarReal, listarVinculosEscolares, reativarVinculoEscolarReal } from '../services/vinculosEscolares';
 import { MainLayout } from '../layouts/Layouts';
+import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { exportarExcel } from '../utils/exportarExcel';
 import { inputClass } from '../utils/display';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
 
@@ -617,6 +619,43 @@ const ProfessoresReaisManager = ({ user }) => {
     }
   };
 
+  // Exportação: os professores desta lista (mesmo escopo da tela) + os vínculos ATIVOS deles
+  // (professor × escola × turma × disciplina), um por linha — professor com vários vínculos aparece
+  // em várias linhas da aba "Vínculos", e uma vez só na aba "Professores".
+  const exportarProfessores = async () => {
+    const vinculos = await listarVinculosProfessorTurmaDisciplina();
+    const idsDaLista = new Set(professores.map(p => p.id));
+    const nomeEscola = new Map(minhasEscolas.map(e => [e.id, e.nome]));
+    professores.forEach(p => p.escolas.forEach(e => nomeEscola.set(e.id, e.nome)));
+    const ativos = vinculos
+      .filter(v => v.status === 'ATIVO' && idsDaLista.has(v.professorId))
+      .map(v => ({ ...v, escolaNome: nomeEscola.get(v.escolaId) ?? `Escola #${v.escolaId}` }))
+      .sort((a, b) => a.professorNome.localeCompare(b.professorNome) || a.escolaNome.localeCompare(b.escolaNome) || a.turmaNome.localeCompare(b.turmaNome) || a.disciplinaNome.localeCompare(b.disciplinaNome));
+    const qtd = new Map();
+    ativos.forEach(v => qtd.set(v.professorId, (qtd.get(v.professorId) ?? 0) + 1));
+    await exportarExcel({
+      arquivo: 'nexo-professores',
+      usuario: user?.nome,
+      filtros: [['Escopo', isSecretaria(user) ? 'Todos os professores' : 'Professores das escolas que você administra']],
+      abas: [
+        { nome: 'Professores', linhas: [...professores].sort((a, b) => a.nome.localeCompare(b.nome)), colunas: [
+          { titulo: 'Nome', valor: p => p.nome, largura: 34 },
+          { titulo: 'E-mail', valor: p => p.email, largura: 34 },
+          { titulo: 'Escolas', valor: p => p.escolas.map(e => e.nome).join('; '), largura: 50 },
+          { titulo: 'Status', valor: p => (p.status === 'ATIVO' ? 'Ativo' : 'Inativo') },
+          { titulo: 'Vínculos ativos', valor: p => qtd.get(p.id) ?? 0, tipo: 'numero' },
+        ] },
+        { nome: 'Vínculos', linhas: ativos, colunas: [
+          { titulo: 'Professor', valor: v => v.professorNome, largura: 34 },
+          { titulo: 'Escola', valor: v => v.escolaNome, largura: 34 },
+          { titulo: 'Turma', valor: v => v.turmaNome },
+          { titulo: 'Disciplina', valor: v => v.disciplinaNome, largura: 22 },
+          { titulo: 'Desde', valor: v => v.dataInicio, tipo: 'data' },
+        ] },
+      ],
+    });
+  };
+
   const columns = [
     { key: 'nome', header: 'Nome', render: row => <PersonName nome={row.nome} /> },
     { key: 'email', header: 'E-mail' },
@@ -648,7 +687,10 @@ const ProfessoresReaisManager = ({ user }) => {
             ? 'Cadastro de contas reais de Professor(a), com login e senha próprios.'
             : 'Professores(as) vinculados às escolas que você administra.'}
         </p>
-        <Button onClick={abrirCadastro} disabled={carregando}>+ Cadastrar professor</Button>
+        <div className="flex flex-wrap items-start gap-2">
+          <BotaoExportarExcel size="md" gerar={exportarProfessores} disabled={carregando || professores.length === 0} />
+          <Button onClick={abrirCadastro} disabled={carregando}>+ Cadastrar professor</Button>
+        </div>
       </div>
 
       {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}

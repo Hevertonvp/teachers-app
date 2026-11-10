@@ -11,6 +11,8 @@ import { parentescoOptions } from '../utils/pdi';
 import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico, canViewPdiAlunos } from '../utils/roles';
 import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 import { MainLayout } from '../layouts/Layouts';
+import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { exportarExcel } from '../utils/exportarExcel';
 
 const blankAluno = (turmaId, escolaId) => ({
   nome: '',
@@ -166,6 +168,34 @@ export const PdiPage = () => {
     setMessage(resultado.ok ? 'Aluno reativado com sucesso.' : resultado.error);
   };
 
+  // Exportação: TODOS os alunos dos filtros atuais (busca, escola, turma, status) — não só a página
+  // visível da tabela. Mesmo escopo de acesso da lista (o backend já só devolve o que a pessoa pode ver).
+  const exportarAlunos = () => {
+    const parentesco = (v) => parentescoOptions.find(o => (o.value ?? o) === v)?.label ?? v;
+    const ordenados = [...alunos].sort((a, b) => escolaName(escolas, a.escolaId).localeCompare(escolaName(escolas, b.escolaId)) || turmaName(turmas, a.turmaId).localeCompare(turmaName(turmas, b.turmaId)) || a.nome.localeCompare(b.nome));
+    return exportarExcel({
+      arquivo: 'nexo-alunos-pdi',
+      usuario: user?.nome,
+      filtros: [
+        ['Escola (topo)', activeEscolaId === null ? 'Todas as escolas' : escolaName(escolas, activeEscolaId)],
+        ['Escola', escolaFiltro === 'todas' ? 'Todas' : escolaName(escolas, Number(escolaFiltro))],
+        ['Turma', turma === 'todos' ? 'Todas' : turmaName(turmas, Number(turma))],
+        ['Ativos e arquivados', { ativo: 'Ativos', arquivado: 'Arquivados', todos: 'Todos' }[status]],
+        ['Busca por nome', search.trim() || 'Nenhuma'],
+      ],
+      abas: [{ nome: 'Alunos PDI', linhas: ordenados, colunas: [
+        { titulo: 'Aluno', valor: a => a.nome, largura: 34 },
+        { titulo: 'Escola', valor: a => escolaName(escolas, a.escolaId), largura: 34 },
+        { titulo: 'Turma', valor: a => turmaName(turmas, a.turmaId), largura: 14 },
+        { titulo: 'Status', valor: a => (a.status === 'arquivado' ? 'Arquivado' : 'Ativo') },
+        { titulo: 'Responsável legal', valor: a => a.responsavelNome, largura: 32 },
+        { titulo: 'Parentesco', valor: a => parentesco(a.responsavelParentesco), largura: 16 },
+        { titulo: 'Telefone do responsável', valor: a => a.responsavelTelefone, largura: 20 },
+        { titulo: 'Cadastrado em', valor: a => a.createdAt, tipo: 'dataHora', largura: 18 },
+      ] }],
+    });
+  };
+
   const columns = [
     { key: 'nome', header: 'Aluno', render: row => <button className="font-semibold text-teal-700 hover:underline" onClick={event => { event.stopPropagation(); navigate(`/pdi/alunos/${row.id}`); }}>{row.nome}</button> },
     { key: 'escola', header: 'Escola', render: row => escolaName(escolas, row.escolaId) },
@@ -196,7 +226,10 @@ export const PdiPage = () => {
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Alunos em acompanhamento</h1>
             <p className="mt-2 max-w-3xl text-slate-600">Cadastro dos alunos acompanhados pelo PDI: turma, escola e responsável legal.</p>
           </div>
-          {canEditPdi && <Button onClick={openCreate} disabled={pdiAlunosReaisLoading}>Novo aluno PDI</Button>}
+          <div className="flex flex-wrap items-start gap-2">
+            <BotaoExportarExcel size="md" gerar={exportarAlunos} disabled={pdiAlunosReaisLoading || alunos.length === 0} />
+            {canEditPdi && <Button onClick={openCreate} disabled={pdiAlunosReaisLoading}>Novo aluno PDI</Button>}
+          </div>
         </div>
 
         {isGestor(user) && activeEscolaId !== null && !escolaAtivaSelecionada && (
