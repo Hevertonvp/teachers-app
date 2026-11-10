@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
@@ -248,6 +248,14 @@ export const UmTercoSecretariaPage = () => {
 
   const janelas = useMemo(() => trimestrePeriods ?? [], [trimestrePeriods]);
 
+  // Inativos ficam numa tela separada (pedido do usuário, 10/11/2026: "se cada inativo ficar ali vai
+  // virar uma bagunça"). Mesma página, endereço próprio (?ver=inativos) para o Voltar do navegador funcionar.
+  const [params] = useSearchParams();
+  const verInativos = params.get('ver') === 'inativos';
+  const ativos = (ciclos || []).filter(c => c.statusRegistro !== 'inativa');
+  const inativos = (ciclos || []).filter(c => c.statusRegistro === 'inativa');
+  const lista = verInativos ? inativos : ativos;
+
   const acao = async (fn, sucesso) => {
     setMensagem('');
     try {
@@ -262,13 +270,22 @@ export const UmTercoSecretariaPage = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        {verInativos ? (
           <div>
-            <h1 className="text-3xl font-bold text-slate-950">Formulário 1/3 — Conteúdos</h1>
-            <p className="mt-2 text-slate-600">Crie o ciclo do trimestre, defina as semanas e o prazo, e acompanhe as entregas.</p>
+            <Link to="/formulario-um-terco" className="text-sm font-semibold text-teal-700 hover:underline">← Voltar aos ciclos ativos</Link>
+            <h1 className="mt-3 text-3xl font-bold text-slate-950">Formulário 1/3 — Inativos</h1>
+            <p className="mt-2 text-slate-600">Ciclos inativados não aparecem para os Professores. Podem ser reativados.</p>
           </div>
-          <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
-        </div>
+        ) : (
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-950">Formulário 1/3 — Conteúdos</h1>
+              <p className="mt-2 text-slate-600">Crie o ciclo do trimestre, defina as semanas e o prazo, e acompanhe as entregas.</p>
+              {ciclos && <Link to="/formulario-um-terco?ver=inativos" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver inativos ({inativos.length}) →</Link>}
+            </div>
+            <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
+          </div>
+        )}
 
         {mensagem && <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800">{mensagem}</div>}
         {erro && (
@@ -278,14 +295,16 @@ export const UmTercoSecretariaPage = () => {
           </div>
         )}
         {ciclos === null && !erro && <LoadingBlock text="Carregando ciclos..." />}
-        {ciclos && ciclos.length === 0 && (
-          <EmptyState title="Nenhum ciclo criado" description="Crie o primeiro Formulário 1/3 escolhendo o trimestre e as semanas.">
-            <Button size="sm" onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
-          </EmptyState>
-        )}
+        {ciclos && lista.length === 0 && (verInativos
+          ? <EmptyState title="Nenhum ciclo inativo" description="Os ciclos inativados aparecem aqui." />
+          : (
+            <EmptyState title={inativos.length ? 'Nenhum ciclo ativo' : 'Nenhum ciclo criado'} description="Crie um Formulário 1/3 com a abertura, o prazo e as semanas.">
+              <Button size="sm" onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
+            </EmptyState>
+          ))}
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {(ciclos || []).map(ciclo => {
+          {lista.map(ciclo => {
             const prazo = STATUS_PRAZO[ciclo.statusPrazo];
             const inativo = ciclo.statusRegistro === 'inativa';
             return (
@@ -307,7 +326,7 @@ export const UmTercoSecretariaPage = () => {
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setFormAberto(ciclo)}>Editar</Button>}
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setReabrindo(ciclo)}>Reabrir</Button>}
                   {!inativo && ciclo.entregasIniciadas === 0 && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}
-                  {inativo && <Button size="sm" variant="outline" onClick={() => acao(() => reativarCicloUmTerco(ciclo.id), 'Ciclo reativado.')}>Reativar</Button>}
+                  {inativo && <Button size="sm" variant="outline" onClick={() => acao(() => reativarCicloUmTerco(ciclo.id), 'Ciclo reativado. Ele voltou para a lista de ciclos ativos.')}>Reativar</Button>}
                 </div>
               </Card>
             );
@@ -330,7 +349,7 @@ export const UmTercoSecretariaPage = () => {
           message={`Inativar "${inativando.titulo}" do ${inativando.trimestre}º trimestre? Nenhum Professor começou a preencher, então nada se perde; dá para reativar depois.`}
           confirmLabel="Inativar"
           onCancel={() => setInativando(null)}
-          onConfirm={() => { const alvo = inativando; setInativando(null); acao(() => inativarCicloUmTerco(alvo.id), 'Ciclo inativado.'); }}
+          onConfirm={() => { const alvo = inativando; setInativando(null); acao(() => inativarCicloUmTerco(alvo.id), 'Ciclo inativado. Ele fica em "Ver inativos".'); }}
         />
       )}
     </MainLayout>
