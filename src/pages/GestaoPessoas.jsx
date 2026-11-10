@@ -365,10 +365,11 @@ const VinculosWizardCriacaoProfessor = ({ professor, escolas, disciplinasReais, 
 
   const escolaAtual = escolas[indice];
   const turmasDaEscola = turmas.filter(turma => turma.status === 'ativa' && turma.escolaId === escolaAtual.id);
-  // Turma já adicionada COM A DISCIPLINA escolhida some do seletor. Continua disponível para outra
-  // disciplina (um professor pode ter várias disciplinas na mesma turma — ex.: Arte e Inglês no 6M1).
+  // Disciplina já adicionada PARA A TURMA escolhida some do seletor de disciplinas (pedido do
+  // usuário: "coloquei 6M1 com História → História some"). A turma continua na lista (o professor
+  // pode ter outras disciplinas nela) e a disciplina continua disponível para as outras turmas.
   const jaAdicionado = (turmaId, disciplinaId) => vinculosAdicionados.some(vinculo => vinculo.turmaId === Number(turmaId) && vinculo.disciplinaId === Number(disciplinaId));
-  const turmasDisponiveis = turmasDaEscola.filter(turma => !jaAdicionado(turma.id, novoVinculo.disciplinaId));
+  const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !jaAdicionado(novoVinculo.turmaId, disciplina.id));
 
   useEffect(() => {
     setNovoVinculo({ turmaId: turmasDaEscola[0]?.id ?? '', disciplinaId: disciplinasReais[0]?.id ?? '' });
@@ -376,11 +377,12 @@ const VinculosWizardCriacaoProfessor = ({ professor, escolas, disciplinasReais, 
     setErro('');
   }, [indice]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Se a turma selecionada acabou de ser adicionada (ou a disciplina mudou), pula para a próxima disponível.
+  // Se a disciplina selecionada acabou de ser adicionada para esta turma (ou a turma mudou e ela já
+  // está lá), pula para a próxima disciplina disponível.
   useEffect(() => {
-    if (turmasDisponiveis.some(turma => turma.id === Number(novoVinculo.turmaId))) return;
-    setNovoVinculo(prev => ({ ...prev, turmaId: turmasDisponiveis[0]?.id ?? '' }));
-  }, [vinculosAdicionados, novoVinculo.disciplinaId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (disciplinasDisponiveis.some(disciplina => disciplina.id === Number(novoVinculo.disciplinaId))) return;
+    setNovoVinculo(prev => ({ ...prev, disciplinaId: disciplinasDisponiveis[0]?.id ?? '' }));
+  }, [vinculosAdicionados, novoVinculo.turmaId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const adicionar = async (event) => {
     event.preventDefault();
@@ -436,16 +438,16 @@ const VinculosWizardCriacaoProfessor = ({ professor, escolas, disciplinasReais, 
           <form onSubmit={adicionar} className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-end">
             <div className="flex-1"><FormField label="Turma">
               <select className={inputClass} value={novoVinculo.turmaId} onChange={event => setNovoVinculo(prev => ({ ...prev, turmaId: event.target.value }))}>
-                {turmasDisponiveis.length === 0 && <option value="" disabled>Todas as turmas já têm esta disciplina</option>}
-                {turmasDisponiveis.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+                {turmasDaEscola.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
               </select>
             </FormField></div>
             <div className="flex-1"><FormField label="Disciplina">
               <select className={inputClass} value={novoVinculo.disciplinaId} onChange={event => setNovoVinculo(prev => ({ ...prev, disciplinaId: event.target.value }))}>
-                {disciplinasReais.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
+                {disciplinasDisponiveis.length === 0 && <option value="" disabled>Todas as disciplinas já adicionadas nesta turma</option>}
+                {disciplinasDisponiveis.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
               </select>
             </FormField></div>
-            <Button type="submit" size="sm" disabled={salvando || !novoVinculo.turmaId}>{salvando ? 'Adicionando...' : '+ Adicionar'}</Button>
+            <Button type="submit" size="sm" disabled={salvando || !novoVinculo.turmaId || !novoVinculo.disciplinaId}>{salvando ? 'Adicionando...' : '+ Adicionar'}</Button>
           </form>
         )}
 
