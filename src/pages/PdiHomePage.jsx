@@ -222,9 +222,8 @@ export const PdiHomePage = () => {
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Plano de Desenvolvimento Individual</h1>
           </div>
           <div className="flex flex-wrap gap-2">
+            {/* "Gerenciar formulário" e "Ver alunos" ficam só nos cartões abaixo (pedido do usuário: sem botões duplicados no topo). */}
             {isProfessorUser && <Link to="/pdi/meus-pdis"><Button>Meus PDIs</Button></Link>}
-            {isGestor && <Link to="/pdi/formulario"><Button>Gerenciar formulário</Button></Link>}
-            {!isProfessorUser && <Link to="/pdi/alunos"><Button variant="outline">Ver alunos</Button></Link>}
           </div>
         </div>
 

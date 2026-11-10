@@ -4904,5 +4904,148 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-10T01:55:20.850Z"
+  },
+  {
+    "id": "UI-SEC-1",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Tela PDI: \"Gerenciar formulário\" e \"Ver alunos\" aparecem uma vez só (nos cartões), não no topo",
+    "esperado": "1 de cada",
+    "observado": "Gerenciar formulário: 1; Ver alunos: 1",
+    "status": "APROVADO",
+    "evidencia": "40-pdi-home.png",
+    "nota": "",
+    "quando": "2026-11-10T02:13:16.889Z"
+  },
+  {
+    "id": "UI-SEC-2a",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Modal \"Turmas e disciplinas\" sem a seção \"Histórico\"",
+    "esperado": "sem \"Histórico\"",
+    "observado": "tem Histórico: false",
+    "status": "APROVADO",
+    "evidencia": "40-modal-substituicao.png",
+    "nota": "",
+    "quando": "2026-11-10T02:13:24.226Z"
+  },
+  {
+    "id": "UI-SEC-2b",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Aviso de substituição mostra o NOME do professor substituído (não o id)",
+    "esperado": "contém \"Ana Paula Ribeiro\" e não \"#11\"",
+    "observado": "Atualmente, Ana Paula Ribeiro leciona esta disciplina nesta turma — vincular aqui substitui esse professor (o vínculo dele é encerrado autom",
+    "status": "APROVADO",
+    "evidencia": "40-modal-substituicao.png",
+    "nota": "",
+    "quando": "2026-11-10T02:13:24.238Z"
+  },
+  {
+    "id": "UI-SEC-3",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Modal não fecha por clique fora nem Esc; fecha pelo \"×\"",
+    "esperado": "aberto, aberto, fechado",
+    "observado": "após clique fora: aberto; após Esc: aberto; após ×: fechado; caixa {\"y\":32,\"h\":736}",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:13:25.966Z"
+  },
+  {
+    "id": "UI-SEC-3b",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Fechar o modal sem confirmar não altera vínculos (P01 continua em Matemática 6M1)",
+    "esperado": "P01",
+    "observado": "professor ativo: P01",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:13:25.990Z"
+  },
+  {
+    "id": "UI-SEC-4a-desktop",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (desktop): turma adicionada com Redação some do seletor enquanto Redação está escolhida",
+    "esperado": "adicionadas ausentes do seletor",
+    "observado": "antes 7; adicionadas 6M1, 6M2, 6M3, 6M4, 7M1, 7M2; depois 1",
+    "status": "APROVADO",
+    "evidencia": "40-wizard-desktop.png",
+    "nota": "",
+    "quando": "2026-11-10T02:13:42.117Z"
+  },
+  {
+    "id": "UI-SEC-4b-desktop",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (desktop): com outra disciplina (Arte), as turmas voltam a aparecer",
+    "esperado": "7 turmas",
+    "observado": "7 turmas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:13:42.124Z"
+  },
+  {
+    "id": "UI-SEC-4c-desktop",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (desktop): com vários vínculos, o modal não passa da altura da tela",
+    "esperado": "altura ≤ 800",
+    "observado": "topo 32, altura 572, base 604",
+    "status": "APROVADO",
+    "evidencia": "40-wizard-desktop.png",
+    "nota": "",
+    "quando": "2026-11-10T02:13:42.130Z"
+  },
+  {
+    "id": "UI-SEC-4d-desktop",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (desktop): vínculos criados no banco = os adicionados (sem duplicar)",
+    "esperado": "6",
+    "observado": "6",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:13:42.140Z"
+  },
+  {
+    "id": "UI-SEC-4a-celular",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (celular): turma adicionada com Redação some do seletor enquanto Redação está escolhida",
+    "esperado": "adicionadas ausentes do seletor",
+    "observado": "antes 7; adicionadas 6M1, 6M2, 6M3, 6M4, 7M1, 7M2; depois 1",
+    "status": "APROVADO",
+    "evidencia": "40-wizard-celular.png",
+    "nota": "",
+    "quando": "2026-11-10T02:14:00.235Z"
+  },
+  {
+    "id": "UI-SEC-4b-celular",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (celular): com outra disciplina (Arte), as turmas voltam a aparecer",
+    "esperado": "7 turmas",
+    "observado": "7 turmas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:14:00.250Z"
+  },
+  {
+    "id": "UI-SEC-4c-celular",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (celular): com vários vínculos, o modal não passa da altura da tela",
+    "esperado": "altura ≤ 844",
+    "observado": "topo 32, altura 717, base 749",
+    "status": "APROVADO",
+    "evidencia": "40-wizard-celular.png",
+    "nota": "",
+    "quando": "2026-11-10T02:14:00.267Z"
+  },
+  {
+    "id": "UI-SEC-4d-celular",
+    "modulo": "Ajustes de tela (Secretaria)",
+    "cenario": "Assistente (celular): vínculos criados no banco = os adicionados (sem duplicar)",
+    "esperado": "6",
+    "observado": "6",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T02:14:00.288Z"
   }
 ]

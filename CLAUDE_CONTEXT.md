@@ -2231,3 +2231,16 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Resultado:** restam os 6 alunos criados em 09/11 (#655–#660, "escola teste"); 0 registros órfãos.
   - **Camadas:** só dados de produção; nenhum código.
 - **Publicação do DEF-10:** a branch `fix/filtro-turma-alunos-pdi` foi juntada à `main` e enviada com autorização do usuário ("sim para ambos"). Só frontend; o backend não mudou.
+- **Ajustes de tela pedidos pelo usuário (perfil Secretaria; branch `fix/ajustes-telas-secretaria`; só frontend):**
+  - **PDI:** saíram do topo os botões "Gerenciar formulário" e "Ver alunos", que ficam só nos cartões (`PdiHomePage.jsx`).
+  - **Modal "Turmas e disciplinas":**
+    - saiu a seção "Histórico" de vínculos encerrados (o usuário quer isso em outro lugar no futuro);
+    - o aviso de substituição mostra o **nome** do professor substituído, que já vinha da API como `professorNome` (`GestaoPessoas.jsx`).
+  - **Assistente de vínculos do cadastro de professor:**
+    - lista de vínculos adicionados com rolagem própria;
+    - a turma já adicionada **com a disciplina escolhida** some do seletor e volta para outra disciplina. Escolha técnica para não contrariar a regra "várias disciplinas na mesma turma"; o usuário pediu "turmas já selecionadas devem desaparecer";
+    - o botão Adicionar fica desabilitado sem turma.
+  - **Todos os modais (`Modal` em `Common.jsx`):**
+    - não fecham mais por clique fora **nem pela tecla Esc**; só pelo "×" ou pelos botões do conteúdo;
+    - altura limitada à tela (`max-h: 100dvh - 4rem`), com rolagem interna no conteúdo e o overlay rolável como reserva.
+  - **Teste:** `homologacao/40-ajustes-telas-secretaria.mjs`, navegador real, desktop e celular, banco local: **13/13**. Inclui confirmação no banco de que fechar sem confirmar não altera vínculos e de que os vínculos criados pelo assistente não duplicam.

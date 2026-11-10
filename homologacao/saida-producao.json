@@ -1,0 +1,19 @@
+{
+  "quando": "2026-11-09T23:34:19.596Z",
+  "front": "https://hevertonvp.github.io/teachers-app/",
+  "api": "https://teachers-app-xokm.onrender.com",
+  "resultados": [
+    {
+      "id": "INFRA-1",
+      "cenario": "Backend (Render) responde /health",
+      "status": "APROVADO",
+      "detalhe": "HTTP 200 em 572 ms"
+    },
+    {
+      "id": "INFRA-2",
+      "cenario": "Frontend publicado tem as correções (DEF-08/19/06) e aponta para a API do Render",
+      "status": "APROVADO",
+      "detalhe": "bundle assets/index-BV9mazxN.js"
+    }
+  ]
+}
