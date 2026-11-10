@@ -2478,3 +2478,7 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - o topo das barras do logo passou de `#5eead4` para `#7cc2b8` (`Logo.jsx`).
   - **Modo claro:** sem mudança visual, salvo o logo levemente mais suave.
   - **Conferido em captura de tela** (modo noturno e modo claro); sem teste automatizado.
+- **10/11/2026: 1/3 do Professor — botão "Editar" depois de concluir.**
+  - Na lista do Professor, o botão de um formulário 1/3 já concluído (e ainda editável) passou de "Continuar" para "Editar". Só o texto mudou; o comportamento é o mesmo.
+  - Camada: só frontend (`src/pages/UmTercoProfessorPage.jsx`).
+  - Testado: build; sem teste automatizado.
