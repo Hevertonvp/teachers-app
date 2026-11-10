@@ -51,6 +51,12 @@ const LinhaDoTempo = ({ janela, semanas }) => {
 };
 
 const TITULO_PADRAO = 'Formulário 1/3';
+// Cartão do ciclo: só a data quando a hora é a padrão (abre 00:00, prazo 23:59); ciclos antigos com
+// hora própria continuam mostrando a hora.
+const dataSemHoraPadrao = (iso, horaPadrao) => {
+  const local = paraInputDataHora(iso);
+  return local.slice(11, 16) === horaPadrao ? dataFmt(local.slice(0, 10)) : formatarDataHora(iso);
+};
 const SEMANAS_PADRAO = 4;
 
 // Data 'YYYY-MM-DD' <-> dia inteiro (UTC), para dividir o período sem efeito de fuso.
@@ -73,8 +79,13 @@ const dividirPeriodo = (inicio, fim, n) => {
 const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
   const editando = !!ciclo;
   const travado = editando && ciclo.entregasIniciadas > 0;
-  const [abreEm, setAbreEm] = useState(paraInputDataHora(ciclo?.abreEm));
-  const [prazoEm, setPrazoEm] = useState(paraInputDataHora(ciclo?.prazoEm));
+  // Abertura e prazo são escolhidos só por DATA (pedido do usuário, 10/11/2026): abre às 00:00 e o
+  // prazo vale até 23:59 do dia (horário de São Paulo). Ciclo antigo com hora própria (ex.: prazo
+  // 18:00) mantém essa hora enquanto a data não for alterada — editar não muda o prazo sem querer.
+  const abreOriginal = paraInputDataHora(ciclo?.abreEm);
+  const prazoOriginal = paraInputDataHora(ciclo?.prazoEm);
+  const [abreEm, setAbreEm] = useState(abreOriginal.slice(0, 10));
+  const [prazoEm, setPrazoEm] = useState(prazoOriginal.slice(0, 10));
   const [semanas, setSemanas] = useState(ciclo ? ciclo.semanas.map(s => ({ dataInicio: s.dataInicio, dataFim: s.dataFim })) : Array.from({ length: SEMANAS_PADRAO }, () => ({ ...SEMANA_VAZIA })));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -111,7 +122,10 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
     if (!janela) { setErro('A data de abertura não está dentro de nenhum trimestre do calendário (Configurações › Trimestres).'); return; }
     setSalvando(true);
     // Título sempre "Formulário 1/3" (ciclos antigos mantêm o título que já têm).
-    const corpo = { anoLetivo: janela.ano, trimestre: trimestreNumero, titulo: editando ? ciclo.titulo : TITULO_PADRAO, abreEm, prazoEm, semanas };
+    const corpo = { anoLetivo: janela.ano, trimestre: trimestreNumero, titulo: editando ? ciclo.titulo : TITULO_PADRAO,
+      abreEm: editando && abreEm === abreOriginal.slice(0, 10) ? abreOriginal : `${abreEm}T00:00`,
+      prazoEm: editando && prazoEm === prazoOriginal.slice(0, 10) ? prazoOriginal : `${prazoEm}T23:59`,
+      semanas };
     try {
       if (editando) await atualizarCicloUmTerco(ciclo.id, corpo);
       else await criarCicloUmTerco(corpo);
@@ -130,8 +144,8 @@ const CicloFormModal = ({ ciclo, janelas, onClose, onSalvo }) => {
         {travado && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Já há Professores preenchendo: o trimestre e a quantidade de semanas não podem mudar. Datas e prazo continuam editáveis.</p>}
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField label="Abertura (data e hora)"><input type="datetime-local" className={inputClass} value={abreEm} onChange={e => mudarAbertura(e.target.value)} required /></FormField>
-          <FormField label="Prazo de entrega (data e hora)"><input type="datetime-local" className={inputClass} value={prazoEm} onChange={e => mudarPrazo(e.target.value)} required /></FormField>
+          <FormField label="Abertura"><input type="date" className={inputClass} value={abreEm} onChange={e => mudarAbertura(e.target.value)} required /></FormField>
+          <FormField label="Prazo de entrega"><input type="date" className={inputClass} value={prazoEm} onChange={e => mudarPrazo(e.target.value)} required /></FormField>
         </div>
 
         {janela
@@ -282,7 +296,7 @@ export const UmTercoSecretariaPage = () => {
                   {ciclo.editavelAgora && ciclo.statusPrazo === 'encerrado' && <Badge variant="blue">Reaberto</Badge>}
                 </div>
                 <h2 className="mt-3 text-xl font-bold text-slate-950">{ciclo.titulo} — {ciclo.trimestre}º trimestre de {ciclo.anoLetivo}</h2>
-                <p className="mt-1 text-sm text-slate-600">Abre {formatarDataHora(ciclo.abreEm)} · prazo {formatarDataHora(ciclo.prazoEm)}</p>
+                <p className="mt-1 text-sm text-slate-600">Abre {dataSemHoraPadrao(ciclo.abreEm, '00:00')} · prazo {dataSemHoraPadrao(ciclo.prazoEm, '23:59')}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {ciclo.semanas.map(s => <span key={s.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{s.rotulo}: {formatarDiaMes(s.dataInicio)}–{formatarDiaMes(s.dataFim)}</span>)}
                 </div>

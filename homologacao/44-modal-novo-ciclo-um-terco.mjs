@@ -24,12 +24,14 @@ try {
     await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1200);
     await X.page.getByRole('button', { name: '+ Novo ciclo' }).first().click(); await X.page.waitForTimeout(600);
     const m = modal(X.page);
+    const tipos = [await m.getByLabel('Abertura', { exact: true }).getAttribute('type'), await m.getByLabel('Prazo de entrega', { exact: true }).getAttribute('type')];
+    r(`0-${nome}`, `${nome}: abertura e prazo são só DATA (sem hora)`, 'date, date', tipos.join(', '), tipos.every(x => x === 'date'));
     const campos = { ano: await m.getByLabel('Ano letivo').count(), tri: await m.getByLabel('Trimestre', { exact: true }).count(), titulo: await m.getByLabel('Título').count() };
     const qtdPadrao = await m.getByLabel('Quantidade de semanas').inputValue();
     r(`1-${nome}`, `${nome}: modal novo sem Ano letivo, Trimestre e Título; 4 semanas por padrão`, 'ano 0, tri 0, título 0; 4 semanas', `ano ${campos.ano}, tri ${campos.tri}, título ${campos.titulo}; ${qtdPadrao} semanas`, campos.ano + campos.tri + campos.titulo === 0 && qtdPadrao === '4');
 
-    await m.getByLabel('Abertura (data e hora)').fill('2026-12-01T08:00');
-    await m.getByLabel('Prazo de entrega (data e hora)').fill('2026-12-18T18:00'); await X.page.waitForTimeout(300);
+    await m.getByLabel('Abertura', { exact: true }).fill('2026-12-01');
+    await m.getByLabel('Prazo de entrega', { exact: true }).fill('2026-12-18'); await X.page.waitForTimeout(300);
     const div4 = await semanasNaTela(m);
     const info = ((await m.innerText()).match(/\dº trimestre de \d{4}[^\n]*/) || [''])[0];
     const esperado4 = [['2026-12-01', '2026-12-04'], ['2026-12-05', '2026-12-09'], ['2026-12-10', '2026-12-13'], ['2026-12-14', '2026-12-18']];
@@ -50,12 +52,17 @@ try {
       const sem = criado?.semanas.map(s => [s.dataInicio.toISOString().slice(0, 10), s.dataFim.toISOString().slice(0, 10)]) ?? [];
       r('4', 'Salvar com uma semana editada à mão: banco grava título "Formulário 1/3", 2026/3º tri e as semanas exatamente como na tela', 'Formulário 1/3; 2026/3; 01–04, 05–08, 09–13, 14–18', criado ? `${criado.titulo}; ${criado.anoLetivo}/${criado.trimestre}; ${txt(sem)}; modal fechou: ${fechou}` : 'nenhum ciclo criado', !!criado && fechou && criado.titulo === 'Formulário 1/3' && criado.anoLetivo === 2026 && criado.trimestre === 3 && txt(sem) === '01/12–04/12, 05/12–08/12, 09/12–13/12, 14/12–18/12');
 
+      if (criado) {
+        const sp = (d) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(d);
+        const cartaoTxt = (await X.page.getByText(/Abre 01\/12\/2026/).first().innerText().catch(() => '')).trim();
+        r('4b', 'Banco: abertura 01/12 às 00:00 e prazo 18/12 às 23:59 (São Paulo); cartão mostra só as datas', '2026-12-01 00:00 → 2026-12-18 23:59; "Abre 01/12/2026 · prazo 18/12/2026"', `${sp(criado.abreEm)} → ${sp(criado.prazoEm)}; "${cartaoTxt}"`, sp(criado.abreEm) === '2026-12-01 00:00' && sp(criado.prazoEm) === '2026-12-18 23:59' && cartaoTxt === 'Abre 01/12/2026 · prazo 18/12/2026');
+      }
       // edição: mudar o prazo NÃO redivide sozinho; botão "Redividir pelo período" existe
       if (criado) {
         const cartao = X.page.locator('div', { has: X.page.getByText('Abre 01/12/2026', { exact: false }) }).filter({ has: X.page.getByRole('button', { name: 'Editar' }) }).last();
         await cartao.getByRole('button', { name: 'Editar' }).click(); await X.page.waitForTimeout(600);
         const e = modal(X.page);
-        await e.getByLabel('Prazo de entrega (data e hora)').fill('2026-12-17T18:00'); await X.page.waitForTimeout(300);
+        await e.getByLabel('Prazo de entrega', { exact: true }).fill('2026-12-17'); await X.page.waitForTimeout(300);
         const aposPrazo = await semanasNaTela(e);
         const temRedividir = await e.getByRole('button', { name: 'Redividir pelo período' }).count();
         await foto(X.page, '44-modal-edicao');
@@ -63,16 +70,25 @@ try {
         await e.getByRole('button', { name: 'Cancelar' }).click(); await X.page.waitForTimeout(400);
       }
 
+      // ciclo ANTIGO com hora própria (o ativo #1: prazo 20/11 18:00): salvar sem mudar a data mantém a hora
+      const c1 = await prisma.cicloUmTerco.findUnique({ where: { id: 1 } });
+      const cartao1 = X.page.locator('div', { has: X.page.getByRole('heading', { name: /Nov\/2026 \(homolog\)/ }) }).filter({ has: X.page.getByRole('button', { name: 'Editar' }) }).last();
+      await cartao1.getByRole('button', { name: 'Editar' }).click(); await X.page.waitForTimeout(600);
+      await modal(X.page).getByRole('button', { name: 'Salvar' }).click(); await X.page.waitForTimeout(2000);
+      const c1d = await prisma.cicloUmTerco.findUnique({ where: { id: 1 } });
+      r('8', 'Editar e salvar ciclo antigo SEM mudar as datas mantém a hora original (prazo 18:00 não vira 23:59)', `${c1.abreEm.toISOString()} → ${c1.prazoEm.toISOString()}`, `${c1d.abreEm.toISOString()} → ${c1d.prazoEm.toISOString()}; modal fechou: ${(await modal(X.page).count()) === 0}`, c1d.abreEm.getTime() === c1.abreEm.getTime() && c1d.prazoEm.getTime() === c1.prazoEm.getTime());
+      if (await modal(X.page).count()) await modal(X.page).getByRole('button', { name: 'Cancelar' }).click();
+
       // abertura fora de qualquer trimestre (recesso) e período mais curto que as semanas
       await X.page.getByRole('button', { name: '+ Novo ciclo' }).first().click(); await X.page.waitForTimeout(600);
       const n = modal(X.page);
-      await n.getByLabel('Abertura (data e hora)').fill('2026-12-26T08:00');
-      await n.getByLabel('Prazo de entrega (data e hora)').fill('2026-12-30T18:00'); await X.page.waitForTimeout(300);
+      await n.getByLabel('Abertura', { exact: true }).fill('2026-12-26');
+      await n.getByLabel('Prazo de entrega', { exact: true }).fill('2026-12-30'); await X.page.waitForTimeout(300);
       const avisoRecesso = /não está dentro de nenhum trimestre/.test(await n.innerText());
       const salvarDesab = await n.getByRole('button', { name: 'Salvar' }).isDisabled();
       r('6', 'Abertura em data fora de qualquer trimestre (26/12, recesso): aviso e Salvar desabilitado', 'aviso; desabilitado', `aviso: ${avisoRecesso}; desabilitado: ${salvarDesab}`, avisoRecesso && salvarDesab);
-      await n.getByLabel('Abertura (data e hora)').fill('2026-12-15T08:00');
-      await n.getByLabel('Prazo de entrega (data e hora)').fill('2026-12-17T18:00'); await X.page.waitForTimeout(300);
+      await n.getByLabel('Abertura', { exact: true }).fill('2026-12-15');
+      await n.getByLabel('Prazo de entrega', { exact: true }).fill('2026-12-17'); await X.page.waitForTimeout(300);
       const avisoCurto = /menos dias que a quantidade de semanas/.test(await n.innerText());
       r('7', 'Período de 3 dias com 4 semanas: aviso para preencher à mão ou diminuir a quantidade (não inventa datas)', 'aviso', `aviso: ${avisoCurto}`, avisoCurto);
       await n.getByRole('button', { name: 'Cancelar' }).click();

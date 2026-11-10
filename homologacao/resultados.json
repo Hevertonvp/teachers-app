@@ -5992,7 +5992,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:11.147Z"
+    "quando": "2026-11-10T03:26:33.127Z"
   },
   {
     "id": "UT-MODAL-2-desktop",
@@ -6003,7 +6003,7 @@
     "status": "APROVADO",
     "evidencia": "44-modal-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T03:19:11.878Z"
+    "quando": "2026-11-10T03:26:34.011Z"
   },
   {
     "id": "UT-MODAL-3-desktop",
@@ -6014,7 +6014,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:12.244Z"
+    "quando": "2026-11-10T03:26:34.382Z"
   },
   {
     "id": "UT-MODAL-4",
@@ -6025,7 +6025,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:14.702Z"
+    "quando": "2026-11-10T03:26:36.860Z"
   },
   {
     "id": "UT-MODAL-5",
@@ -6036,7 +6036,7 @@
     "status": "APROVADO",
     "evidencia": "44-modal-edicao.png",
     "nota": "",
-    "quando": "2026-11-10T03:19:16.159Z"
+    "quando": "2026-11-10T03:26:38.406Z"
   },
   {
     "id": "UT-MODAL-6",
@@ -6047,7 +6047,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:17.730Z"
+    "quando": "2026-11-10T03:26:42.850Z"
   },
   {
     "id": "UT-MODAL-7",
@@ -6058,7 +6058,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:18.109Z"
+    "quando": "2026-11-10T03:26:43.231Z"
   },
   {
     "id": "UT-MODAL-1-celular",
@@ -6069,7 +6069,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:22.236Z"
+    "quando": "2026-11-10T03:26:47.453Z"
   },
   {
     "id": "UT-MODAL-2-celular",
@@ -6080,7 +6080,7 @@
     "status": "APROVADO",
     "evidencia": "44-modal-celular.png",
     "nota": "",
-    "quando": "2026-11-10T03:19:22.920Z"
+    "quando": "2026-11-10T03:26:48.125Z"
   },
   {
     "id": "UT-MODAL-3-celular",
@@ -6091,6 +6091,50 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T03:19:23.273Z"
+    "quando": "2026-11-10T03:26:48.496Z"
+  },
+  {
+    "id": "UT-MODAL-0-desktop",
+    "modulo": "Formulário 1/3 — modal de novo ciclo",
+    "cenario": "desktop: abertura e prazo são só DATA (sem hora)",
+    "esperado": "date, date",
+    "observado": "date, date",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T03:26:33.094Z"
+  },
+  {
+    "id": "UT-MODAL-4b",
+    "modulo": "Formulário 1/3 — modal de novo ciclo",
+    "cenario": "Banco: abertura 01/12 às 00:00 e prazo 18/12 às 23:59 (São Paulo); cartão mostra só as datas",
+    "esperado": "2026-12-01 00:00 → 2026-12-18 23:59; \"Abre 01/12/2026 · prazo 18/12/2026\"",
+    "observado": "2026-12-01 00:00 → 2026-12-18 23:59; \"Abre 01/12/2026 · prazo 18/12/2026\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T03:26:36.931Z"
+  },
+  {
+    "id": "UT-MODAL-8",
+    "modulo": "Formulário 1/3 — modal de novo ciclo",
+    "cenario": "Editar e salvar ciclo antigo SEM mudar as datas mantém a hora original (prazo 18:00 não vira 23:59)",
+    "esperado": "2026-11-02T11:00:00.000Z → 2026-11-20T21:00:00.000Z",
+    "observado": "2026-11-02T11:00:00.000Z → 2026-11-20T21:00:00.000Z; modal fechou: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T03:26:41.744Z"
+  },
+  {
+    "id": "UT-MODAL-0-celular",
+    "modulo": "Formulário 1/3 — modal de novo ciclo",
+    "cenario": "celular: abertura e prazo são só DATA (sem hora)",
+    "esperado": "date, date",
+    "observado": "date, date",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T03:26:47.430Z"
   }
 ]
