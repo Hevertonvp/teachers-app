@@ -384,6 +384,9 @@ formularioUmTercoRouter.post('/ciclos/:id/reaberturas', async (req, res) => {
   await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM ciclos_um_terco WHERE id = ${id} FOR UPDATE`;
     const ciclo = await buscarCiclo(tx, id);
+    // Reabrir só depois do prazo (decisão do usuário, 10/11/2026); para estender um ciclo ainda
+    // agendado ou aberto, o caminho é "Editar" o prazo.
+    if (statusDoCiclo(ciclo) !== 'encerrado') throw new ConflictError('Só é possível reabrir depois do prazo. Para estender o prazo, use "Editar".');
     const janela = validarReabertura(dados, janelasDe(ciclo));
     await tx.reaberturaUmTerco.create({ data: { cicloId: id, inicioEm: janela.inicioEm, fimEm: janela.fimEm, motivo: dados.motivo || null, createdBy: String(actor.id) } });
   });
@@ -399,8 +402,9 @@ formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
 });
 
 // Cálculo do painel (esperado/concluído/andamento/não iniciado, por entrega e por escola) com os
-// filtros da tela. Compartilhado pelo painel e pela exportação para Excel — mesmos números.
-async function montarPainel(cicloId: number, q: Record<string, unknown>) {
+// filtros da tela. Compartilhado pelo painel, pela exportação para Excel e pelo Acompanhamento
+// Escolar (routes/acompanhamento.ts) — mesmos números.
+export async function montarPainel(cicloId: number, q: Record<string, unknown>) {
   const ciclo = await buscarCiclo(prisma, cicloId);
   const filtroEscola = q.escolaId ? lerId(q.escolaId, 'Escola') : null;
   const filtroSerie = q.anoSerie ? lerId(q.anoSerie, 'Ano/série') : null;

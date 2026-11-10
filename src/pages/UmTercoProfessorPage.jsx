@@ -71,7 +71,7 @@ export const UmTercoProfessorPage = () => {
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold text-slate-600">{item.semanasPreenchidas}/{item.totalSemanas} semanas</span>
                   <Button onClick={() => navigate(`/formulario-um-terco/${item.ciclo.id}/${item.anoSerie}/${item.disciplinaId}`)}>
-                    {item.editavelAgora ? (item.status === 'nao_iniciado' ? 'Preencher' : 'Continuar') : 'Ver'}
+                    {item.editavelAgora ? (item.status === 'nao_iniciado' ? 'Preencher' : item.status === 'concluida' ? 'Editar' : 'Continuar') : 'Ver'}
                   </Button>
                 </div>
               </Card>

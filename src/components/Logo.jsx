@@ -23,7 +23,7 @@ export const Logo = ({ size = 40, className = '', rounded = true }) => {
         </linearGradient>
         <linearGradient id={gradientId} x1="0" y1="30" x2="0" y2="6" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#0d9488" />
-          <stop offset="100%" stopColor="#5eead4" />
+          <stop offset="100%" stopColor="#7cc2b8" />
         </linearGradient>
       </defs>
       <rect width="40" height="40" rx={rounded ? 10 : 0} fill={`url(#${bgGradientId})`} />

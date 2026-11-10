@@ -527,6 +527,7 @@ model AplicacaoPdi {
   fichas          FichaPdi[]
   perguntasPadrao AplicacaoPerguntaPadraoPdi[]
   blocosPadrao    BlocoRespostasPadraoPdi[]
+  fotografia      FotografiaAplicacaoPdi?
 
   @@index([escolaId, dataInicio, dataFim])
   @@map("aplicacoes_pdi")
@@ -1661,4 +1662,22 @@ model HistoricoEntregaUmTerco {
 
   @@index([entregaId, quando])
   @@map("historico_entrega_um_terco")
+}
+
+// "Foto" do PDI no prazo (Acompanhamento Escolar, 10/11/2026). O esperado das Fichas é sempre
+// recalculado com os vínculos de HOJE, então o percentual de uma Aplicação já encerrada muda com
+// transferências e trocas de professor. Esta tabela congela os números logo depois do prazo
+// (job diário, só até 3 dias depois do fim). Nunca editada. Aplicações encerradas antes desta
+// tabela existir não ganham foto (ficam só com números absolutos).
+model FotografiaAplicacaoPdi {
+  aplicacaoId Int          @id
+  aplicacao   AplicacaoPdi @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
+  escolaId    Int
+  esperado    Int
+  concluidas  Int
+  emAndamento Int
+  tiradaEm    DateTime     @default(now())
+
+  @@index([escolaId])
+  @@map("fotografias_aplicacao_pdi")
 }

@@ -151,6 +151,8 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
 
   const menuDiretora = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
+    // Acompanhamento Escolar da própria escola (decisão do usuário, 10/11/2026).
+    { name: 'Acompanhamento Escolar', path: '/acompanhamento-escolar', icon: 'acompanhamento' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },
     itemFeedback,
@@ -196,7 +198,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
           <NavIcon id={item.icon} />
         </span>
         <span>{item.name}</span>
-        {item.badge > 0 && <span className="ml-auto shrink-0 rounded-full bg-teal-400 px-2 py-0.5 text-xs font-bold text-slate-950">{item.badge}</span>}
+        {item.badge > 0 && <span className="ml-auto shrink-0 rounded-full bg-teal-700 px-2 py-0.5 text-xs font-bold text-white">{item.badge}</span>}
       </Link>
     );
   };

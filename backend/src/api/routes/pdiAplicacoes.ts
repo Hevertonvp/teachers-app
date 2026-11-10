@@ -603,6 +603,11 @@ pdiAplicacoesRouter.post('/:id/reaberturas', async (req, res) => {
   validarPeriodo(dados.dataInicio, dados.dataFim);
   await exigirEscolaAtiva(aplicacao.escolaId);
 
+  // Reabrir só depois que a vigência original terminou (decisão do usuário, 10/11/2026). Para estender
+  // uma Aplicação ainda agendada ou vigente, o caminho é "Editar vigência".
+  if (statusVigencia(aplicacao) !== 'expired') {
+    throw new ConflictError('Só é possível reabrir depois que a vigência termina. Para estender o prazo, use "Editar vigência".');
+  }
   if (dados.dataInicio <= aplicacao.dataFim) {
     throw new ValidationError('A reabertura só pode começar depois do fim da vigência original da Aplicação.');
   }
