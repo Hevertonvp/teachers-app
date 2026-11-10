@@ -2339,3 +2339,22 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Efeito na regra UT-04 (sem sobreposição):** dois ciclos não podem compartilhar o mesmo dia (um termina 23:59, o seguinte abre 00:00 do dia seguinte).
   - **Backend:** nada mudou.
   - **Teste:** `44-modal-novo-ciclo-um-terco.mjs`: **14/14**. Novos casos: campos do tipo data, banco com 00:00 → 23:59, cartão sem hora, ciclo antigo mantém a hora ao salvar sem mudar a data. O helper `criarCiclo` passou a usar só a data.
+- **10/11/2026: Dashboard da Secretaria com a entrega do PDI e do Formulário 1/3, em gráficos (pedido do usuário; branch `feature/dashboard-entregas`, criada a partir da `feature/modal-ciclo-um-terco`; só frontend).**
+  - **Dashboard (`DashboardSecretaria.jsx`):** os três números soltos do PDI (esperadas, concluídas, %) viraram dois painéis lado a lado (empilhados no celular), cada um com:
+    - percentual concluído;
+    - barra parte do todo (concluídas, em preenchimento, não iniciadas) com legenda numérica;
+    - as 5 escolas com **menor** entrega primeiro;
+    - atalho "Abrir PDI" / "Abrir 1/3".
+    
+    Os painéis respeitam a escola escolhida no topo.
+  - **Números:** os mesmos das telas de cada módulo, sem cálculo novo:
+    - **PDI:** `/api/pdi-aplicacoes/indicadores`, mesmo cálculo da página do PDI;
+    - **1/3:** resumo do Painel de entregas (`/ciclos/:id/painel`) do ciclo escolhido. Ordem de escolha: o aberto agora; senão um reaberto; senão o último encerrado; senão o próximo agendado;
+    - **por escola no 1/3:** uma entrega aparece em cada escola que atinge, mesma regra da "Cobertura por escola"; isso está escrito no rodapé.
+  - **Refatoração sem mudança visual:**
+    - o painel de entrega da página do PDI foi extraído para `src/components/PainelEntrega.jsx` (com variante `compacto`) e `src/components/EntregaPdiGestao.jsx`;
+    - novo `src/components/EntregaUmTercoGestao.jsx`.
+  - **Cores:** a mesma rampa ordinal azul do PDI (`vizTema.js`), conferida com o validador do skill de dataviz. Para rampa ordinal vale a progressão de claridade, que está correta. O aviso de contraste da cor mais clara é compensado pela legenda com números e pelos 2 px entre segmentos.
+  - **Fora do escopo, por regra de acesso:** o Gestor e a Diretora não veem o 1/3, porque o painel do 1/3 é só da Secretaria (PER-09). O Dashboard deles não mudou.
+  - **Backend:** nada mudou.
+  - **Teste:** `homologacao/45-dashboard-entregas.mjs`, desktop e celular, banco local: **8/8**. Compara com as APIs com todas as escolas e com a Aurora selecionada; verifica a página do PDI com os mesmos números e a ausência de rolagem horizontal.

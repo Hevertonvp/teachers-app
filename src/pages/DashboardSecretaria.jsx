@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Badge, Button, Card, DataTable, StatCard } from '../components/Common';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
+import { EntregaPdiGestao } from '../components/EntregaPdiGestao';
+import { EntregaUmTercoGestao } from '../components/EntregaUmTercoGestao';
 import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
 import { obterIndicadoresPdiReais } from '../services/pdiAplicacoes';
@@ -60,10 +62,6 @@ export const DashboardSecretaria = () => {
   const descricao = activeEscolaId === null ? 'Indicadores gerais da rede municipal de ensino.' : 'Indicadores agregados da escola selecionada.';
 
   const indicadorPorEscola = new Map(indicadores.map(item => [item.escolaId, item]));
-  const indicadoresVisualizados = activeEscolaId === null ? indicadores : indicadores.filter(item => item.escolaId === activeEscolaId);
-  const totalEsperadoRede = indicadoresVisualizados.reduce((soma, item) => soma + item.totalEsperado, 0);
-  const totalConcluidasRede = indicadoresVisualizados.reduce((soma, item) => soma + item.concluidas, 0);
-  const percentualRede = totalEsperadoRede > 0 ? Math.round((totalConcluidasRede / totalEsperadoRede) * 100) : null;
 
   const resumos = escolasVisualizadas.map(escola => ({
     id: escola.id,
@@ -110,22 +108,10 @@ export const DashboardSecretaria = () => {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Preenchimento do PDI</p>
-          </div>
-          {indicadoresError ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
-              <span>Não foi possível carregar os indicadores de PDI: {indicadoresError}</span>
-              <Button size="sm" variant="outline" onClick={carregarIndicadores}>Tentar novamente</Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <StatCard label="Fichas esperadas" value={indicadoresLoading ? '—' : totalEsperadoRede} description={activeEscolaId === null ? 'na rede, agora' : 'na escola, agora'} />
-              <StatCard label="Concluídas" value={indicadoresLoading ? '—' : totalConcluidasRede} description="fichas" />
-              <StatCard label="Preenchimento" value={indicadoresLoading ? '—' : (percentualRede === null ? '—' : `${percentualRede}%`)} description="do esperado" />
-            </div>
-          )}
+        {/* Entrega do PDI e do Formulário 1/3 — mesmos números das telas de cada módulo (versão compacta). */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <EntregaPdiGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/pdi', texto: 'Abrir PDI' }} />
+          <EntregaUmTercoGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/formulario-um-terco', texto: 'Abrir 1/3' }} />
         </section>
 
         <section>
