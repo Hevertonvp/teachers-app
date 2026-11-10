@@ -6554,5 +6554,38 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-10T11:28:19.315Z"
+  },
+  {
+    "id": "REAB-1",
+    "modulo": "Reabrir só após o prazo",
+    "cenario": "1/3 na tela: ciclo ABERTO não mostra \"Reabrir\"; ciclo ENCERRADO mostra",
+    "esperado": "aberto 0; encerrado 1",
+    "observado": "aberto 0; encerrado 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T11:50:27.930Z"
+  },
+  {
+    "id": "REAB-2",
+    "modulo": "Reabrir só após o prazo",
+    "cenario": "1/3 pela API: reabrir ciclo aberto é recusado (409); ciclo encerrado aceita (201)",
+    "esperado": "409; 201",
+    "observado": "409 Só é possível reabrir depois do prazo. Para estender o prazo, use \"Editar\".; 201",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T11:50:27.996Z"
+  },
+  {
+    "id": "REAB-3",
+    "modulo": "Reabrir só após o prazo",
+    "cenario": "PDI pela API: reabrir Aplicação VIGENTE (mesmo com datas depois do fim) é recusado (409)",
+    "esperado": "409",
+    "observado": "409 Só é possível reabrir depois que a vigência termina. Para estender o prazo, use \"Editar vigência\".",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-10T11:50:28.014Z"
   }
 ]

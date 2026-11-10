@@ -436,6 +436,7 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Testes:** UT-PRZ-01 a 05.
 
 **PRZ-02 · Reabertura do 1/3 (atual)**
+- **Atualização 10/11/2026 (usuário):** reabrir só é possível **depois do prazo** (1/3) ou **depois do fim da vigência** (PDI). Antes disso o botão não aparece e o servidor recusa; para estender, usa-se Editar / Editar vigência.
 - **Regra:** só a Secretaria reabre. A reabertura vale para o **ciclo inteiro** e não altera o prazo original. Não pode coincidir com outra reabertura do mesmo ciclo. O motivo é opcional, e a reabertura não pode ser editada nem excluída.
 - **Origem:** usuário (§64). **Status:** Implementada.
 - **Testes:** UT-REA-01 a 05, UT-PRZ-06 a 08.

@@ -2456,3 +2456,15 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - no GitHub: as 5 dessas que existiam lá.
   - **Publicação dos inativos separados:** pela `feature/um-terco-escolas`, que é a base da `main` atual e entra sem conflito: PR `main...feature/um-terco-escolas`, aberto pelo usuário no GitHub (o `gh` não está instalado). A `fix/um-terco-inativos-separados` tem a mesma mudança, mas saiu da `main` antiga (daria conflito); ficou redundante.
   - **Achado:** `fix/filtro-escola-sempre-visivel` (`53fc076`, "PDI > Alunos: filtro Escola sempre visível") **nunca entrou na `main`**, então o filtro de escola publicado continua aparecendo só com "Todas as escolas" no topo.
+- **10/11/2026: "Reabrir" só depois do prazo, no 1/3 e na Aplicação PDI (pedido do usuário; branch `fix/reabrir-so-apos-prazo`; frontend e backend).**
+  - **Antes:** o botão aparecia em qualquer ciclo/Aplicação não inativo, inclusive aberto ou agendado, onde não tem efeito. O backend aceitava a reabertura.
+  - **Agora:**
+    - o botão só aparece com o prazo encerrado (1/3: `statusPrazo === 'encerrado'`; PDI: `status === 'expired'`);
+    - o backend responde 409 antes disso, com a mensagem "use Editar" ou "Editar vigência" para estender o prazo.
+    
+    O resto da validação de reabertura não mudou.
+  - **Testes:**
+    - `testar-integracao` 1/3: 50/50;
+    - `homologacao/48-reabrir-so-apos-prazo.mjs` 3/3: tela do 1/3 (aberto sem botão, encerrado com botão), API do 1/3 (409/201), API do PDI com Aplicação vigente (409).
+    
+    A tela do PDI não foi testada no navegador; a condição é a mesma linha do botão.

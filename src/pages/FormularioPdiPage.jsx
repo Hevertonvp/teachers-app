@@ -379,7 +379,7 @@ export const FormularioPdiPage = () => {
           {souSecretaria && aplicacao.statusRegistro !== 'inativa' && (
             <>
               <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(aplicacao); setAplicacaoError(''); setAplicacaoForm({ dataInicio: aplicacao.dataInicio, dataFim: aplicacao.dataFim }); }}>Editar vigência</Button>
-              <Button size="sm" onClick={() => abrirReabertura(aplicacao)}>Reabrir</Button>
+              {/* Reabrir só depois que a vigência termina; antes, estende-se por Editar vigência. */}{status === 'expired' && <Button size="sm" onClick={() => abrirReabertura(aplicacao)}>Reabrir</Button>}
               <Button size="sm" variant="danger" onClick={() => setRemovendoAplicacao(aplicacao)}>Remover</Button>
             </>
           )}
