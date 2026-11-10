@@ -2222,3 +2222,12 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Contra a produção, sem senhas:** INFRA-1 e INFRA-2 aprovados.
   - **Falta:** rodar com as contas reais.
 - **DEF-10 corrigido (branch `fix/filtro-turma-alunos-pdi`, a pedido do usuário):** filtro Escola + Turma em PDI > Alunos, com coluna Escola (`src/pages/PdiPage.jsx`). Teste 39: 4/4. **Não publicado** até autorização. A exportação para Excel (branch `feature/exportacao-excel`) foi pausada antes de qualquer alteração.
+- **Exclusão autorizada na PRODUÇÃO (Neon `ep-little-voice-b53ix6xw`, 09/11/2026 ~23:04, pedido do usuário: "apague todos alunos PDI, exceto os criados hoje"; confirmação explícita "sim"):**
+  - **O que foi apagado:** os 13 alunos de teste #642–#654 (`*_ia` de 25/10 e `*_criado_por_ia` de 03/11, todos arquivados), com 4 fichas, 8 respostas, 1 bloco de perguntas comuns, 3 respostas desse bloco e 13 movimentações. Não havia anamnese, ficha anual nem correção.
+  - **Como foi feito:**
+    - levantamento prévio só de leitura;
+    - cópia de segurança em JSON em `C:\Users\hevertonvp\Desktop\backup-nexo-2026-11-09\` (fora do repositório);
+    - exclusão por lista de IDs numa única transação, abortando se as quantidades diferissem do levantamento.
+  - **Resultado:** restam os 6 alunos criados em 09/11 (#655–#660, "escola teste"); 0 registros órfãos.
+  - **Camadas:** só dados de produção; nenhum código.
+- **Publicação do DEF-10:** a branch `fix/filtro-turma-alunos-pdi` foi juntada à `main` e enviada com autorização do usuário ("sim para ambos"). Só frontend; o backend não mudou.
