@@ -2431,3 +2431,18 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     
     Juntar antes da migration faz o backend consultar colunas inexistentes e derruba o 1/3.
   - **Não conferido:** qual commit o Render está rodando.
+- **10/11/2026: Formulário 1/3: ciclos inativos em tela separada (pedido do usuário; branch `fix/um-terco-inativos-separados`, criada da `main` fb332b8 para poder ser publicada sem a migration das escolas; só frontend).**
+  - **Contexto:** o usuário pediu para "remover o único formulário 1/3 aberto" na produção. O levantamento mostrou que o único ciclo da produção (#8, abertura 11/11, prazo 16/12) **já estava inativo**, então nada foi apagado: a trava "exatamente 1 ciclo aberto" abortou a exclusão. O usuário esclareceu que não queria apagar, e sim **tirar os inativos da tela principal** ("se cada inativo ficar ali vai virar uma bagunça"). O script de exclusão foi descartado sem uso.
+  - **Mudança (`UmTercoSecretariaPage.jsx`):**
+    - a lista principal mostra só os ciclos ativos;
+    - abaixo do título fica o link **"Ver inativos (N) →"**;
+    - a lista de inativos abre na mesma página, com endereço próprio (`#/formulario-um-terco?ver=inativos`), para o Voltar do navegador funcionar. Ela tem o título "Formulário 1/3 — Inativos", "← Voltar aos ciclos ativos", Reativar em cada ciclo e não tem "+ Novo ciclo";
+    - as mensagens de inativar e reativar dizem onde o ciclo foi parar.
+  - **Backend:** nada mudou. O dashboard e a exportação já usavam só os ciclos ativos.
+  - **Teste:** `homologacao/47-um-terco-inativos-separados.mjs`, desktop e celular, banco local: **8/8**. Cobre:
+    - contagens iguais às do banco (1 ativo, 31 inativos);
+    - nenhum selo "Inativo" na lista principal;
+    - endereço próprio e Voltar;
+    - ciclo de teste inativado pela tela saindo da lista e aparecendo em inativos, depois reativado e voltando.
+    
+    O ciclo do teste ficou inativo no fim.
