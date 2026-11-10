@@ -35,8 +35,9 @@ export async function criarCiclo(page, { ano = 2026, tri, titulo, abre, prazo, s
   const m = page.locator('div.fixed.inset-0');
   // Modal de 10/11/2026: ano e trimestre saem da abertura; título é sempre 'Formulário 1/3'
   // (ano, tri e titulo deste helper ficaram sem efeito). Semanas explícitas sobrescrevem a divisão automática.
-  await m.getByLabel('Abertura (data e hora)').fill(abre);
-  await m.getByLabel('Prazo de entrega (data e hora)').fill(prazo);
+  // Desde 10/11/2026 abertura e prazo são só DATA (abre 00:00, prazo até 23:59): a hora passada aqui é ignorada.
+  await m.getByLabel('Abertura', { exact: true }).fill(abre.slice(0, 10));
+  await m.getByLabel('Prazo de entrega', { exact: true }).fill(prazo.slice(0, 10));
   await m.getByLabel('Quantidade de semanas').fill(String(semanas.length));
   for (let i = 0; i < semanas.length; i++) {
     await m.getByLabel(`Semana ${i + 1}: início`).fill(semanas[i][0]);

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card, LoadingBlock } from '../components/Common';
-import { BarraEmpilhada } from '../components/pdi/Graficos';
-import { useVizTema } from '../components/pdi/vizTema';
+import { EntregaPdiGestao } from '../components/EntregaPdiGestao';
+import { PainelEntrega, ordenarPorEntrega, textoPrazo } from '../components/PainelEntrega';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
@@ -21,143 +21,6 @@ import { exportarExcel } from '../utils/exportarExcel';
 //   pela escola selecionada no topo quando houver.
 // - Professor: as próprias Fichas (GET /api/pdi-fichas/meus-pdis), só das Aplicações vigentes.
 
-const hojeUTC = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
-const diasAte = (iso) => {
-  const [ano, mes, dia] = iso.slice(0, 10).split('-').map(Number);
-  return Math.round((Date.UTC(ano, mes - 1, dia) - hojeUTC()) / 86400000);
-};
-const percentual = (parte, total) => (total ? Math.round((parte / total) * 100) : 0);
-
-const segmentosEntrega = (tema, { concluidas, emAndamento, naoIniciadas }) => [
-  { id: 'c', rotulo: 'Concluídas', valor: concluidas, cor: tema.ordinal.forte },
-  { id: 'a', rotulo: 'Em preenchimento', valor: emAndamento, cor: tema.ordinal.medio },
-  { id: 'n', rotulo: 'Não iniciadas', valor: naoIniciadas, cor: tema.ordinal.fraco },
-];
-
-const LegendaEntrega = ({ tema, valores }) => (
-  <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-    {segmentosEntrega(tema, valores).map(seg => (
-      <li key={seg.id} className="flex items-center gap-2">
-        <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: seg.cor }} />
-        <span className="font-bold text-slate-950">{seg.valor}</span>
-        <span className="text-slate-500">{seg.rotulo}</span>
-      </li>
-    ))}
-  </ul>
-);
-
-// Painel de entrega: número principal (percentual concluído), barra parte-do-todo e lista por
-// grupo (escola ou disciplina), do menor percentual para o maior — quem precisa de atenção primeiro.
-const PainelEntrega = ({ titulo, descricao, totais, grupos, vazio, rodape }) => {
-  const tema = useVizTema();
-  const total = totais.concluidas + totais.emAndamento + totais.naoIniciadas;
-  return (
-    <Card className="overflow-hidden p-0">
-      <div className={`grid gap-6 p-5 sm:p-6 ${grupos.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]' : ''}`}>
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{titulo}</p>
-          <p className="mt-1 text-sm text-slate-500">{descricao}</p>
-          {total === 0 ? (
-            <p className="mt-6 text-sm text-slate-500">{vazio}</p>
-          ) : (
-            <>
-              <p className="mt-5 flex items-baseline gap-2">
-                <span className="text-6xl font-bold tracking-tight text-slate-950">{percentual(totais.concluidas, total)}%</span>
-                <span className="text-sm font-semibold text-slate-500">concluído</span>
-              </p>
-              <p className="mt-1 text-sm text-slate-500">{totais.concluidas} de {total} fichas</p>
-              <div className="mt-5"><BarraEmpilhada rotulo="Entrega do PDI" altura={14} segmentos={segmentosEntrega(tema, totais)} /></div>
-              <div className="mt-4"><LegendaEntrega tema={tema} valores={totais} /></div>
-            </>
-          )}
-        </div>
-        {grupos.length > 0 && (
-          <div className="min-w-0 lg:border-l lg:border-slate-200 lg:pl-6">
-            <ul className="space-y-4 lg:max-h-[26rem] lg:overflow-y-auto lg:pr-2">
-              {grupos.map(grupo => {
-                const totalGrupo = grupo.concluidas + grupo.emAndamento + grupo.naoIniciadas;
-                return (
-                  <li key={grupo.id}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="min-w-0 truncate text-sm font-semibold text-slate-800" title={grupo.nome}>{grupo.nome}</p>
-                      <p className="shrink-0 text-sm font-bold tabular-nums text-slate-950">{percentual(grupo.concluidas, totalGrupo)}%</p>
-                    </div>
-                    <div className="mt-1.5"><BarraEmpilhada rotulo={grupo.nome} altura={8} segmentos={segmentosEntrega(tema, grupo)} /></div>
-                    <p className="mt-1 text-xs text-slate-500">{grupo.concluidas} de {totalGrupo} concluídas{grupo.detalhe ? ` · ${grupo.detalhe}` : ''}</p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-      </div>
-      {rodape && <div className="border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500 sm:px-6">{rodape}</div>}
-    </Card>
-  );
-};
-
-const textoPrazo = (dataFimIso) => {
-  const dias = diasAte(dataFimIso);
-  if (dias < 0) return 'prazo encerrado';
-  if (dias === 0) return 'encerra hoje';
-  return `encerra em ${dias} ${dias === 1 ? 'dia' : 'dias'} (${formatFullDate(dataFimIso.slice(0, 10))})`;
-};
-
-const EntregaGestao = ({ activeEscolaId }) => {
-  const [indicadores, setIndicadores] = useState(null);
-  const [erro, setErro] = useState('');
-  const carregar = () => { setErro(''); obterIndicadoresPdiReais().then(setIndicadores).catch(error => setErro(error.message)); };
-  useEffect(carregar, []);
-
-  if (erro) {
-    return (
-      <Card className="flex flex-wrap items-center justify-between gap-3 border-red-200 bg-red-50 text-sm font-semibold text-red-800">
-        <span>Não foi possível carregar a entrega do PDI: {erro}</span>
-        <Button size="sm" variant="outline" onClick={carregar}>Tentar novamente</Button>
-      </Card>
-    );
-  }
-  if (!indicadores) return <Card><LoadingBlock text="Carregando..." className="py-4" /></Card>;
-
-  const escopo = activeEscolaId === null ? indicadores : indicadores.filter(item => item.escolaId === activeEscolaId);
-  const comAplicacao = escopo.filter(item => item.aplicacaoId !== null);
-  // Aplicação aberta mas nenhuma Ficha esperada (nenhum professor/aluno vinculado às disciplinas
-  // dela) não é "0% entregue" — sai da lista e vira nota de rodapé, para não parecer atraso.
-  const semFichasEsperadas = comAplicacao.filter(item => item.totalEsperado === 0).length;
-  const grupos = comAplicacao
-    .filter(item => item.totalEsperado > 0)
-    .map(item => {
-      const emAndamento = item.emAndamento ?? 0;
-      return {
-        id: item.escolaId,
-        nome: item.escolaNome,
-        concluidas: item.concluidas,
-        emAndamento,
-        naoIniciadas: Math.max(0, item.totalEsperado - item.concluidas - emAndamento),
-        detalhe: item.aplicacaoDataFim ? textoPrazo(item.aplicacaoDataFim) : null,
-      };
-    })
-    .sort((a, b) => percentual(a.concluidas, a.concluidas + a.emAndamento + a.naoIniciadas) - percentual(b.concluidas, b.concluidas + b.emAndamento + b.naoIniciadas));
-  const totais = grupos.reduce((acc, g) => ({ concluidas: acc.concluidas + g.concluidas, emAndamento: acc.emAndamento + g.emAndamento, naoIniciadas: acc.naoIniciadas + g.naoIniciadas }), { concluidas: 0, emAndamento: 0, naoIniciadas: 0 });
-  const semAplicacao = escopo.length - comAplicacao.length;
-
-  return (
-    <PainelEntrega
-      titulo="Entrega do PDI"
-      descricao={grupos.length === 1
-        ? `${grupos[0].nome}${grupos[0].detalhe ? ` · ${grupos[0].detalhe}` : ''}`
-        : activeEscolaId === null ? 'Aplicações vigentes' : 'Aplicação vigente'}
-      totais={totais}
-      grupos={grupos.length > 1 ? grupos : []}
-      vazio="Nenhuma Aplicação vigente."
-      rodape={[
-        semAplicacao > 0 ? `${semAplicacao} ${semAplicacao === 1 ? 'escola sem Aplicação vigente' : 'escolas sem Aplicação vigente'}.` : null,
-        semFichasEsperadas > 0 ? `${semFichasEsperadas} ${semFichasEsperadas === 1 ? 'escola com Aplicação, sem professor/aluno vinculado' : 'escolas com Aplicação, sem professor/aluno vinculado'}.` : null,
-      ].filter(Boolean).join(' ') || null}
-    />
-  );
-};
-
 const EntregaProfessor = () => {
   const { meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
   useEffect(() => { loadMeusPdisReais(); }, [loadMeusPdisReais]);
@@ -171,8 +34,8 @@ const EntregaProfessor = () => {
     naoIniciadas: itens.filter(i => i.statusVisual === 'nao_iniciado' || i.statusVisual === 'prazo_encerrado').length,
   });
   const porDisciplina = [...new Map(vigentes.map(i => [i.disciplinaId, i.disciplinaNome])).entries()]
-    .map(([id, nome]) => ({ id, nome, ...contar(vigentes.filter(i => i.disciplinaId === id)) }))
-    .sort((a, b) => percentual(a.concluidas, a.concluidas + a.emAndamento + a.naoIniciadas) - percentual(b.concluidas, b.concluidas + b.emAndamento + b.naoIniciadas));
+    .map(([id, nome]) => ({ id, nome, ...contar(vigentes.filter(i => i.disciplinaId === id)) }));
+  const porDisciplinaOrdenada = ordenarPorEntrega(porDisciplina);
   const alunos = new Set(vigentes.map(i => `${i.aplicacaoId}-${i.alunoId}`)).size;
   const prazoMaisProximo = vigentes.map(i => i.dataFim).filter(Boolean).sort()[0];
 
@@ -181,7 +44,7 @@ const EntregaProfessor = () => {
       titulo="Minhas fichas"
       descricao={vigentes.length ? `${alunos} ${alunos === 1 ? 'aluno' : 'alunos'}${prazoMaisProximo ? ` · ${textoPrazo(prazoMaisProximo)}` : ''}` : null}
       totais={contar(vigentes)}
-      grupos={porDisciplina.length > 1 ? porDisciplina : []}
+      grupos={porDisciplinaOrdenada.length > 1 ? porDisciplinaOrdenada : []}
       vazio="Nenhuma Aplicação aberta."
       rodape={agendadas > 0 ? `${agendadas} ${agendadas === 1 ? 'ficha agendada' : 'fichas agendadas'}.` : null}
     />
@@ -301,7 +164,7 @@ export const PdiHomePage = () => {
           </div>
         </div>
 
-        {veEntregaGestao && <EntregaGestao activeEscolaId={activeEscolaId} />}
+        {veEntregaGestao && <EntregaPdiGestao activeEscolaId={activeEscolaId} />}
         {isProfessorUser && <EntregaProfessor />}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
