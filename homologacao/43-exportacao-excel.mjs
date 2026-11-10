@@ -13,12 +13,15 @@ const SENHA_GD = 'Nexo!Homolog-2026';
 const FORMULA_PDI = '=1+1 História (teste de fórmula)';
 const FORMULA_13 = '=HYPERLINK("http://exemplo.invalido";"clique") Ação, reflexão e ênfase';
 
+const ORDEM = []; // por arquivo: primeira aba, última aba, aba ativa ao abrir, linhas da primeira aba
 async function baixar(page, botao, nome) {
   const [download] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), botao.click()]);
   const caminho = EVID + nome + '.xlsx';
   await download.saveAs(caminho);
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(caminho);
+  const primeira = wb.worksheets[0];
+  ORDEM.push({ nome, primeira: primeira.name, ultima: wb.worksheets.at(-1).name, ativa: wb.views?.[0]?.activeTab ?? 0, linhas: primeira.rowCount - 1, cab: primeira.getRow(1).values.slice(1, 4).join(" | ") });
   return { wb, arquivo: download.suggestedFilename() };
 }
 // Aba -> lista de objetos { cabeçalho: célula }
@@ -210,6 +213,10 @@ try {
   const d13 = await apiGet(await token(D.page), '/api/formulario-um-terco/ciclos/1/exportacao');
   r('F2', `Diretora (escolas: ${nomesEscDir.join(', ')}): exporta só Fichas de alunos das próprias escolas — mesmo escopo da listagem de Fichas; 1/3 continua só da Secretaria`, `${fichasDir} Fichas (listagem: ${listagemDir.length}), 0 de aluno fora das escolas dela; 1/3: 403`, `${fDir.linhas.length} Fichas, ${foraDoEscopo} fora; ${feitasEmOutra} feita(s) em outra escola antes de transferência (coluna "Escola atual do aluno"); 1/3: ${d13.status}`, fDir.linhas.length === fichasDir && (escDirSel || fDir.linhas.length === listagemDir.length) && foraDoEscopo === 0 && d13.status === 403, '43-pdi-diretora.xlsx');
   await D.browser.close();
+
+  // ================= G. O arquivo abre NA LISTA (não na aba Filtros) =================
+  const ruins = ORDEM.filter(o => o.primeira === 'Filtros' || o.ultima !== 'Filtros' || o.ativa !== 0 || o.linhas < 1);
+  r('G1', 'Toda exportação abre na aba de dados (com linhas); a aba Filtros é a última', 'todas', ORDEM.map(o => `${o.nome}: abre em "${o.primeira}" (${o.linhas} linhas; ${o.cab}), última "${o.ultima}"`).join(' ¦ '), ruins.length === 0);
 } finally {
   if (respostaPdi) await prisma.respostaPdi.update({ where: { id: respostaPdi.id }, data: { valor: respostaPdiOriginal } });
   if (semana13) await prisma.respostaSemanaUmTerco.update({ where: { id: semana13.id }, data: { texto: semana13Original } });

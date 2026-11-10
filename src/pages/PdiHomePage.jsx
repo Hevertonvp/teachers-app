@@ -209,16 +209,6 @@ const exportarPdi = async ({ activeEscolaId, escolaNome, usuario }) => {
     usuario,
     filtros: [['Escola', activeEscolaId === null ? 'Todas as escolas (do seu acesso)' : escolaNome]],
     abas: [
-      { nome: 'Entrega por escola', linhas: entrega, colunas: [
-        { titulo: 'Escola', valor: i => i.escolaNome, largura: 30 },
-        { titulo: 'Aplicação vigente', valor: i => i.aplicacaoId === null ? 'Sem Aplicação vigente' : (i.aplicacaoNome || `Aplicação #${i.aplicacaoId}`), largura: 28 },
-        { titulo: 'Início', valor: i => i.aplicacaoDataInicio, tipo: 'data' },
-        { titulo: 'Fim', valor: i => i.aplicacaoDataFim, tipo: 'data' },
-        { titulo: 'Fichas esperadas', valor: i => i.totalEsperado, tipo: 'numero' },
-        { titulo: 'Concluídas', valor: i => i.concluidas, tipo: 'numero' },
-        { titulo: 'Em andamento', valor: i => i.emAndamento ?? 0, tipo: 'numero' },
-        { titulo: 'Não iniciadas', valor: i => Math.max(0, i.totalEsperado - i.concluidas - (i.emAndamento ?? 0)), tipo: 'numero' },
-      ] },
       { nome: 'Fichas', linhas: dados.fichas, colunas: [
         ...ident,
         { titulo: 'Disciplina', valor: f => f.disciplinaNome, largura: 20 },
@@ -253,6 +243,16 @@ const exportarPdi = async ({ activeEscolaId, escolaNome, usuario }) => {
         { titulo: 'Pergunta', valor: r => r.pergunta, largura: 50 },
         { titulo: 'Resposta', valor: r => r.resposta, largura: 50 },
         { titulo: 'Complemento', valor: r => r.complemento, largura: 40 },
+      ] },
+      { nome: 'Entrega por escola', linhas: entrega, colunas: [
+        { titulo: 'Escola', valor: i => i.escolaNome, largura: 30 },
+        { titulo: 'Aplicação vigente', valor: i => i.aplicacaoId === null ? 'Sem Aplicação vigente' : (i.aplicacaoNome || `Aplicação #${i.aplicacaoId}`), largura: 28 },
+        { titulo: 'Início', valor: i => i.aplicacaoDataInicio, tipo: 'data' },
+        { titulo: 'Fim', valor: i => i.aplicacaoDataFim, tipo: 'data' },
+        { titulo: 'Fichas esperadas', valor: i => i.totalEsperado, tipo: 'numero' },
+        { titulo: 'Concluídas', valor: i => i.concluidas, tipo: 'numero' },
+        { titulo: 'Em andamento', valor: i => i.emAndamento ?? 0, tipo: 'numero' },
+        { titulo: 'Não iniciadas', valor: i => Math.max(0, i.totalEsperado - i.concluidas - (i.emAndamento ?? 0)), tipo: 'numero' },
       ] },
     ],
   });

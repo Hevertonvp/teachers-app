@@ -2307,3 +2307,10 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - a exportação de Escolas e de indicadores do Dashboard não foi feita;
     - a planilha de Alunos contém o telefone do responsável (dado pessoal: o arquivo deve ser tratado como sigiloso);
     - esta branch saiu da `main` antes do filtro de escola sempre visível (`fix/filtro-escola-sempre-visivel`); pode haver um conflito simples em `PdiPage.jsx` ao juntar.
+- **10/11/2026: ordem das abas na exportação para Excel (branch `feature/exportacao-excel`, só frontend).**
+  - **Reclamação do usuário:** a planilha de Alunos PDI "veio inútil". Na verdade, os dados estavam na 2ª aba e o arquivo abria na aba "Filtros".
+  - **Correções:**
+    - a aba "Filtros" passou a ser a **última**, e o arquivo abre na primeira aba de dados (`src/utils/exportarExcel.js`);
+    - as listas detalhadas vêm primeiro: no PDI, Fichas → Respostas → Perguntas comuns → Entrega por escola; no 1/3, Entregas → Conteúdos → Cobertura por escola → Resumo;
+    - Professores, Turmas e Alunos já começavam pela lista.
+  - **Teste:** `43-exportacao-excel.mjs` ganhou o EXP-G1 (toda exportação abre numa aba de dados com linhas; "Filtros" é a última): **21/21**.
