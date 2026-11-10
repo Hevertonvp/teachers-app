@@ -2314,3 +2314,21 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - as listas detalhadas vêm primeiro: no PDI, Fichas → Respostas → Perguntas comuns → Entrega por escola; no 1/3, Entregas → Conteúdos → Cobertura por escola → Resumo;
     - Professores, Turmas e Alunos já começavam pela lista.
   - **Teste:** `43-exportacao-excel.mjs` ganhou o EXP-G1 (toda exportação abre numa aba de dados com linhas; "Filtros" é a última): **21/21**.
+- **10/11/2026: modal "Novo Formulário 1/3" simplificado (pedido do usuário; branch `feature/modal-ciclo-um-terco`, criada a partir da `feature/exportacao-excel`; só frontend).**
+  - **Respostas do usuário às perguntas de regra:**
+    - ano e trimestre são identificados **pelas datas** (a abertura), não pela data de hoje: dá o mesmo resultado que "o vigente" no dia a dia e permite preparar o próximo trimestre com antecedência;
+    - "início e fim" são a **abertura e o prazo**;
+    - semanas: **4 por padrão**, quantidade ainda alterável (1 a 30).
+  - **Mudanças (`src/pages/UmTercoSecretariaPage.jsx`):**
+    - saíram os campos Ano letivo, Trimestre e Título;
+    - o título é sempre "Formulário 1/3"; ciclos antigos mantêm o título que já têm;
+    - o trimestre aparece só como informação; abertura fora de qualquer trimestre mostra aviso e desabilita Salvar.
+  - **Divisão automática:**
+    - **ciclo novo:** ao escolher abertura e prazo ou ao mudar a quantidade, as semanas são divididas por igual e de forma contínua dentro da janela (ex.: 01/12–18/12 em 4 → 01–04, 05–09, 10–13, 14–18). Continuam editáveis. Se o período tiver menos dias que semanas, aparece um aviso e nada é inventado;
+    - **ciclo existente:** mudar abertura ou prazo **não** redivide sozinho, porque os professores podem já estar preenchendo; há o botão "Redividir pelo período".
+  - **Celular:** as linhas das semanas passaram a ter o rótulo em cima; antes, a data de fim saía cortada para fora do modal (defeito antigo).
+  - **Backend:** nada mudou; continua recebendo ano, trimestre, título e semanas e validando tudo (CAL-05, UT-04).
+  - **Teste:** `homologacao/44-modal-novo-ciclo-um-terco.mjs`, desktop e celular, banco local: **10/10**. O ciclo criado pelo teste é inativado no fim.
+  - **Ajustes de teste:**
+    - o helper `criarCiclo` (`lib.mjs`) foi adaptado: os parâmetros `ano`, `tri` e `titulo` ficaram sem efeito;
+    - os roteiros antigos 04 e 06, que identificavam ciclos pelo título, não foram executados de novo.
