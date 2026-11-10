@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import {
-  cicloEditavelAgora, dataLocalSp, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
+  cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
 
@@ -248,6 +248,7 @@ formularioUmTercoRouter.post('/ciclos', async (req, res) => {
   const criado = await prisma.$transaction(async (tx) => {
     await travarJanelasDeCiclo(tx);
     const valido = validarCiclo({ ...dados }, await janelaDoTrimestre(tx, dados.anoLetivo, dados.trimestre));
+    exigirAberturaNaoPassada(valido.abreEm);
     await exigirJanelaLivre(tx, valido);
     return tx.cicloUmTerco.create({
       data: {
@@ -279,6 +280,7 @@ formularioUmTercoRouter.put('/ciclos/:id', async (req, res) => {
     }
     await travarJanelasDeCiclo(tx);
     const valido = validarCiclo({ ...dados }, await janelaDoTrimestre(tx, dados.anoLetivo, dados.trimestre));
+    if (dataLocalSp(valido.abreEm) !== dataLocalSp(atual.abreEm)) exigirAberturaNaoPassada(valido.abreEm);
     if (atual.status === 'ATIVA') await exigirJanelaLivre(tx, valido, id);
 
     await tx.cicloUmTerco.update({ where: { id }, data: { anoLetivo: valido.anoLetivo, trimestre: valido.trimestre, titulo: valido.titulo, abreEm: valido.abreEm, prazoEm: valido.prazoEm, updatedBy: String(actor.id) } });
