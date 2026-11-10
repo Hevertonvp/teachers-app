@@ -2446,3 +2446,7 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - ciclo de teste inativado pela tela saindo da lista e aparecendo em inativos, depois reativado e voltando.
     
     O ciclo do teste ficou inativo no fim.
+- **10/11/2026: migration das escolas do 1/3 confirmada na produção.**
+  - **Situação:** o usuário juntou a `feature/um-terco-escolas` à `main` pelo GitHub (PR **#7**, `906e234`) e depois rodou `npx prisma migrate status` no Neon (`ep-little-voice-b53ix6xw`): "23 migrations found… Database schema is up to date!". São 23 também na pasta `prisma/migrations`, então `20261110120000_um_terco_escolas_do_ciclo` está aplicada. O ciclo #8 da produção ficou "todas as escolas".
+  - **Não confirmado por mim:** se a migration foi aplicada antes ou depois do deploy do PR #7 no Render, ou seja, se houve um intervalo com o 1/3 fora do ar. Também não testei o app publicado.
+  - **Branches:** o usuário reclamou do excesso. Regra nova: uma branch de trabalho por lote de publicação (memória `feedback_poucas_branches`). A única mudança ainda não publicada é a dos inativos separados (`fix/um-terco-inativos-separados`, também no topo da `feature/um-terco-escolas`). As outras 7 branches já estão inteiras na `main` e aguardam autorização para serem apagadas.
