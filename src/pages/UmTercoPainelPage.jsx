@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BackButton, Badge, Button, Card, EmptyState, LoadingBlock, Modal, StatCard } from '../components/Common';
 import { MainLayout } from '../layouts/Layouts';
+import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { useAuth } from '../context/AuthContext';
+import { exportarUmTerco } from '../utils/exportarUmTerco';
 import { obterEntregaUmTerco, obterPainelUmTerco } from '../services/formularioUmTerco';
 import { inputClass } from '../utils/display';
 import { agruparPorEscola, formatarDataHora, formatarPeriodo, STATUS_ENTREGA } from '../utils/umTerco';
@@ -61,6 +64,7 @@ const DetalheEntregaModal = ({ cicloId, linha, onClose }) => {
 
 export const UmTercoPainelPage = () => {
   const { cicloId } = useParams();
+  const { user } = useAuth();
   const [filtros, setFiltros] = useState({ escolaId: '', anoSerie: '', disciplinaId: '', professorId: '', status: '' });
   const [painel, setPainel] = useState(null);
   const [opcoes, setOpcoes] = useState(null); // visão sem filtros, só para preencher os selects
@@ -91,15 +95,30 @@ export const UmTercoPainelPage = () => {
 
   const definir = (campo) => (event) => setFiltros(prev => ({ ...prev, [campo]: event.target.value }));
   const resumo = painel?.resumo;
+  // Exporta com os MESMOS filtros da tela (o backend aplica os mesmos filtros do painel).
+  const nomeDe = (lista, id) => lista.find(([v]) => String(v) === String(id))?.[1];
+  const exportar = () => exportarUmTerco({
+    cicloId, filtros, usuario: user?.nome,
+    rotulos: [
+      ['Escola', filtros.escolaId ? nomeDe(selects.escolas, filtros.escolaId) : 'Todas as escolas'],
+      ['Ano/série', filtros.anoSerie ? `${filtros.anoSerie}º ano` : 'Todos os anos'],
+      ['Disciplina', filtros.disciplinaId ? nomeDe(selects.disciplinas, filtros.disciplinaId) : 'Todas as disciplinas'],
+      ['Professor', filtros.professorId ? nomeDe(selects.professores, filtros.professorId) : 'Todos os professores'],
+      ['Status', filtros.status ? STATUS_ENTREGA[filtros.status]?.label : 'Todos os status'],
+    ],
+  });
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <BackButton />
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Painel de entregas</h1>
           {painel && <p className="mt-2 text-slate-600">{painel.ciclo.titulo} — {painel.ciclo.trimestre}º trimestre de {painel.ciclo.anoLetivo} · prazo {formatarDataHora(painel.ciclo.prazoEm)}</p>}
           <p className="mt-1 text-xs text-slate-500">Cada entrega é única por Professor + ano/série + disciplina, mesmo que valha para várias turmas e escolas.</p>
+        </div>
+        <BotaoExportarExcel gerar={exportar} disabled={!painel} />
         </div>
 
         {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}

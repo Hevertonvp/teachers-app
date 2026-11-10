@@ -471,15 +471,23 @@ pdiFichasRouter.get('/', async (req, res) => {
   const { alunoId, aplicacaoId, status } = req.query;
   const statusValido = status === 'PENDENTE' || status === 'EM_ANDAMENTO' || status === 'CONCLUIDA' ? status : undefined;
 
-  const where: Prisma.FichaPdiWhereInput = {
+  const where = await escopoFichas(actor, {
     ...(alunoId ? { alunoId: Number(alunoId) } : {}),
     ...(aplicacaoId ? { aplicacaoId: Number(aplicacaoId) } : {}),
     ...(statusValido ? { status: statusValido } : {}),
-  };
+  });
+  if (!where) return res.json([]);
 
+  const fichas = await prisma.fichaPdi.findMany({ where, orderBy: { updatedAt: 'desc' } });
+  res.json(fichas.map(formatarFicha));
+});
+
+// Escopo de Fichas por perfil — o MESMO da listagem acima (extraído para ser reaproveitado pela
+// exportação; comportamento da listagem inalterado). `null` = este ator não enxerga nenhuma Ficha.
+async function escopoFichas(actor: Actor, where: Prisma.FichaPdiWhereInput): Promise<Prisma.FichaPdiWhereInput | null> {
   if (actor.perfil === 'PROFESSOR') {
     const ptds = await prisma.professorTurmaDisciplina.findMany({ where: { professorId: actor.id, status: 'ATIVO' }, select: { turmaId: true, disciplinaId: true } });
-    if (ptds.length === 0) return res.json([]);
+    if (ptds.length === 0) return null;
     where.OR = ptds.map((p) => ({ aluno: { turmaId: p.turmaId }, disciplinaId: p.disciplinaId }));
   } else if (actor.perfil === 'GESTOR' || actor.perfil === 'DIRETORA' || actor.perfil === 'SECRETARIA') {
     const permitidas = await escolasPermitidas(actor);
@@ -487,16 +495,87 @@ pdiFichasRouter.get('/', async (req, res) => {
   } else if (actor.perfil === 'AUXILIAR') {
     const vinculosEscolares = await prisma.vinculoEscolar.findMany({ where: { pessoaId: actor.id, status: 'ATIVO' }, select: { escolaId: true } });
     const escolaIds = vinculosEscolares.map((v) => v.escolaId);
-    if (escolaIds.length === 0) return res.json([]);
+    if (escolaIds.length === 0) return null;
     const auxiliarTurmas = await prisma.auxiliarTurma.findMany({ where: { auxiliarId: actor.id, status: 'ATIVO', turma: { escolaId: { in: escolaIds } } }, select: { turmaId: true } });
-    if (auxiliarTurmas.length === 0) return res.json([]);
+    if (auxiliarTurmas.length === 0) return null;
     where.aluno = { turmaId: { in: auxiliarTurmas.map((t) => t.turmaId) } };
   } else {
     throw new ForbiddenError('Você não tem permissão para consultar Fichas PDI.');
   }
+  return where;
+}
 
-  const fichas = await prisma.fichaPdi.findMany({ where, orderBy: { updatedAt: 'desc' } });
-  res.json(fichas.map(formatarFicha));
+// Resposta salva -> texto legível na planilha (sem interpretar nada além do que a tela já mostra).
+function valorEmTexto(tipo: string, valor: unknown): string | number {
+  const v = (valor ?? {}) as { resposta?: unknown; todas?: boolean; habilidades?: { codigo?: string; descricao?: string }[] };
+  if (tipo === 'HABILIDADE_CRMG') {
+    if (v.todas) return 'Todas as habilidades';
+    return (v.habilidades ?? []).map((h) => [h.codigo, h.descricao].filter(Boolean).join(' — ')).join('; ');
+  }
+  if (tipo === 'MARCACAO') return v.resposta === true ? 'Sim' : v.resposta === false ? 'Não' : '';
+  if (tipo === 'NUMERO') return typeof v.resposta === 'number' ? v.resposta : (v.resposta == null ? '' : String(v.resposta));
+  return v.resposta == null ? '' : String(v.resposta);
+}
+const complementoDe = (valor: unknown) => String((valor as { complementarTexto?: unknown } | null)?.complementarTexto ?? '');
+
+// Exportação para Excel (somente leitura): Fichas no escopo do usuário (mesmo da listagem) + respostas
+// por extenso + perguntas comuns. Só Secretaria, Gestor e Diretora. Filtros opcionais: aplicacaoId, escolaId.
+pdiFichasRouter.get('/exportacao', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  if (!['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(actor.perfil)) throw new ForbiddenError('Você não tem permissão para exportar o PDI.');
+  const { aplicacaoId, escolaId } = req.query;
+  const where = await escopoFichas(actor, {
+    ...(aplicacaoId ? { aplicacaoId: Number(aplicacaoId) } : {}),
+    // Filtro de escola sempre em AND, para nunca substituir o escopo do perfil.
+    ...(escolaId ? { AND: [{ aluno: { turma: { escolaId: Number(escolaId) } } }] } : {}),
+  });
+  if (!where) return res.json({ fichas: [], respostas: [], perguntasComuns: [] });
+
+  const fichas = await prisma.fichaPdi.findMany({
+    where,
+    include: {
+      aplicacao: { select: { id: true, nome: true, dataInicio: true, dataFim: true, trimestre: true } },
+      respostas: { include: { aplicacaoPergunta: true } },
+      // Escola/turma ATUAL do aluno: o escopo (igual ao da listagem) segue o aluno, então um aluno
+      // transferido leva a Ficha antiga para a escola nova — a planilha mostra as duas escolas.
+      aluno: { select: { turma: { select: { nome: true, escola: { select: { nome: true } } } } } },
+    },
+    orderBy: [{ escolaNomeSnapshot: 'asc' }, { alunoNomeSnapshot: 'asc' }, { disciplinaNomeSnapshot: 'asc' }],
+  });
+
+  const respostas = fichas.flatMap((f) => [...f.respostas]
+    .filter((r) => r.aplicacaoPergunta.tipoResposta !== 'ORIENTACAO')
+    .sort((a, b) => a.aplicacaoPergunta.ordem - b.aplicacaoPergunta.ordem)
+    .map((r) => ({
+      fichaId: f.id, aplicacaoId: f.aplicacaoId, escolaNome: f.escolaNomeSnapshot, turmaNome: f.turmaNomeSnapshot,
+      alunoNome: f.alunoNomeSnapshot, disciplinaNome: f.disciplinaNomeSnapshot, professorNome: f.professorNomeSnapshot,
+      secao: r.aplicacaoPergunta.secao, subsecao: r.aplicacaoPergunta.subsecao, codigo: r.aplicacaoPergunta.codigo,
+      pergunta: r.aplicacaoPergunta.texto, resposta: valorEmTexto(r.aplicacaoPergunta.tipoResposta, r.valor), complemento: complementoDe(r.valor),
+    })));
+
+  // Perguntas comuns: blocos dos mesmos alunos e Aplicações das Fichas exportadas.
+  const alunoIds = [...new Set(fichas.map((f) => f.alunoId))];
+  const aplicacaoIds = [...new Set(fichas.map((f) => f.aplicacaoId))];
+  const blocos = alunoIds.length ? await prisma.blocoRespostasPadraoPdi.findMany({
+    where: { alunoId: { in: alunoIds }, aplicacaoId: { in: aplicacaoIds } },
+    include: {
+      respostas: { include: { aplicacaoPerguntaPadrao: true } },
+      aluno: { select: { nome: true } }, professor: { select: { nome: true } }, turma: { include: { escola: { select: { nome: true } } } },
+    },
+  }) : [];
+  const perguntasComuns = blocos.flatMap((b) => [...b.respostas]
+    .filter((r) => r.aplicacaoPerguntaPadrao.tipoResposta !== 'ORIENTACAO')
+    .sort((x, y) => x.aplicacaoPerguntaPadrao.ordem - y.aplicacaoPerguntaPadrao.ordem)
+    .map((r) => ({
+      aplicacaoId: b.aplicacaoId, escolaNome: b.turma.escola.nome, turmaNome: b.turma.nome, alunoNome: b.aluno.nome, professorNome: b.professor.nome,
+      pergunta: r.aplicacaoPerguntaPadrao.texto, resposta: valorEmTexto(r.aplicacaoPerguntaPadrao.tipoResposta, r.valor), complemento: complementoDe(r.valor),
+    })));
+
+  res.json({
+    fichas: fichas.map((f) => ({ ...formatarFicha(f), aplicacaoNome: f.aplicacao.nome, aplicacaoTrimestre: f.aplicacao.trimestre, alunoEscolaAtualNome: f.aluno.turma.escola.nome, alunoTurmaAtualNome: f.aluno.turma.nome })),
+    respostas,
+    perguntasComuns,
+  });
 });
 
 const respostaItemSchema = z.object({

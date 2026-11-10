@@ -11,6 +11,9 @@ import { obterIndicadoresPdiReais } from '../services/pdiAplicacoes';
 import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
 import { canManagePedagogico, isDiretora, isProfessor as isProfessorRole, isSecretaria } from '../utils/roles';
 import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
+import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { obterExportacaoPdi } from '../services/exportacoes';
+import { exportarExcel } from '../utils/exportarExcel';
 
 // Página principal do PDI: painel de ENTREGA (dados reais) + atalhos do módulo.
 // - Secretaria/Gestor/Diretora: GET /api/pdi-aplicacoes/indicadores (Fichas esperadas x concluídas
@@ -185,6 +188,76 @@ const EntregaProfessor = () => {
   );
 };
 
+const STATUS_FICHA = { PENDENTE: 'Não iniciada', EM_ANDAMENTO: 'Em andamento', CONCLUIDA: 'Concluída' };
+
+// Exportação do PDI: entrega por escola (mesmos números do painel acima) + Fichas, respostas e
+// perguntas comuns no escopo de quem exporta. Respeita a escola escolhida no topo.
+const exportarPdi = async ({ activeEscolaId, escolaNome, usuario }) => {
+  const [indicadores, dados] = await Promise.all([
+    obterIndicadoresPdiReais(),
+    obterExportacaoPdi({ escolaId: activeEscolaId }),
+  ]);
+  const entrega = (activeEscolaId === null ? indicadores : indicadores.filter(i => i.escolaId === activeEscolaId));
+  const aplicacaoNome = new Map(dados.fichas.map(f => [f.aplicacaoId, f.aplicacaoNome]));
+  const ident = [
+    { titulo: 'Escola', valor: l => l.escolaNome, largura: 30 },
+    { titulo: 'Turma', valor: l => l.turmaNome },
+    { titulo: 'Aluno', valor: l => l.alunoNome, largura: 32 },
+  ];
+  await exportarExcel({
+    arquivo: 'nexo-pdi',
+    usuario,
+    filtros: [['Escola', activeEscolaId === null ? 'Todas as escolas (do seu acesso)' : escolaNome]],
+    abas: [
+      { nome: 'Entrega por escola', linhas: entrega, colunas: [
+        { titulo: 'Escola', valor: i => i.escolaNome, largura: 30 },
+        { titulo: 'Aplicação vigente', valor: i => i.aplicacaoId === null ? 'Sem Aplicação vigente' : (i.aplicacaoNome || `Aplicação #${i.aplicacaoId}`), largura: 28 },
+        { titulo: 'Início', valor: i => i.aplicacaoDataInicio, tipo: 'data' },
+        { titulo: 'Fim', valor: i => i.aplicacaoDataFim, tipo: 'data' },
+        { titulo: 'Fichas esperadas', valor: i => i.totalEsperado, tipo: 'numero' },
+        { titulo: 'Concluídas', valor: i => i.concluidas, tipo: 'numero' },
+        { titulo: 'Em andamento', valor: i => i.emAndamento ?? 0, tipo: 'numero' },
+        { titulo: 'Não iniciadas', valor: i => Math.max(0, i.totalEsperado - i.concluidas - (i.emAndamento ?? 0)), tipo: 'numero' },
+      ] },
+      { nome: 'Fichas', linhas: dados.fichas, colunas: [
+        ...ident,
+        { titulo: 'Disciplina', valor: f => f.disciplinaNome, largura: 20 },
+        { titulo: 'Professor', valor: f => f.professorNome, largura: 30 },
+        { titulo: 'Aplicação', valor: f => f.aplicacaoNome || `Aplicação #${f.aplicacaoId}`, largura: 28 },
+        { titulo: 'Trimestre', valor: f => f.aplicacaoTrimestre, tipo: 'numero' },
+        { titulo: 'Início', valor: f => f.aplicacaoDataInicio, tipo: 'data' },
+        { titulo: 'Fim', valor: f => f.aplicacaoDataFim, tipo: 'data' },
+        { titulo: 'Status', valor: f => STATUS_FICHA[f.status] ?? f.status },
+        { titulo: 'Concluída em', valor: f => f.concluidaEm, tipo: 'dataHora', largura: 18 },
+        { titulo: 'Última alteração', valor: f => f.updatedAt, tipo: 'dataHora', largura: 18 },
+        // A Ficha guarda a escola/turma de quando foi feita; o aluno pode ter sido transferido depois.
+        { titulo: 'Escola atual do aluno', valor: f => f.alunoEscolaAtualNome, largura: 30 },
+        { titulo: 'Turma atual do aluno', valor: f => f.alunoTurmaAtualNome },
+      ] },
+      { nome: 'Respostas', linhas: dados.respostas, colunas: [
+        ...ident,
+        { titulo: 'Disciplina', valor: r => r.disciplinaNome, largura: 20 },
+        { titulo: 'Professor', valor: r => r.professorNome, largura: 30 },
+        { titulo: 'Aplicação', valor: r => aplicacaoNome.get(r.aplicacaoId) || `Aplicação #${r.aplicacaoId}`, largura: 28 },
+        { titulo: 'Seção', valor: r => r.secao, largura: 24 },
+        { titulo: 'Subseção', valor: r => r.subsecao, largura: 20 },
+        { titulo: 'Código', valor: r => r.codigo },
+        { titulo: 'Pergunta', valor: r => r.pergunta, largura: 50 },
+        { titulo: 'Resposta', valor: r => r.resposta, largura: 50 },
+        { titulo: 'Complemento', valor: r => r.complemento, largura: 40 },
+      ] },
+      { nome: 'Perguntas comuns', linhas: dados.perguntasComuns, colunas: [
+        ...ident,
+        { titulo: 'Professor', valor: r => r.professorNome, largura: 30 },
+        { titulo: 'Aplicação', valor: r => aplicacaoNome.get(r.aplicacaoId) || `Aplicação #${r.aplicacaoId}`, largura: 28 },
+        { titulo: 'Pergunta', valor: r => r.pergunta, largura: 50 },
+        { titulo: 'Resposta', valor: r => r.resposta, largura: 50 },
+        { titulo: 'Complemento', valor: r => r.complemento, largura: 40 },
+      ] },
+    ],
+  });
+};
+
 const Atalho = ({ eyebrow, titulo, descricao, children }) => (
   <Card className="flex h-full flex-col justify-between gap-5 transition hover:border-slate-300 hover:shadow-md">
     <div>
@@ -199,7 +272,7 @@ const Atalho = ({ eyebrow, titulo, descricao, children }) => (
 export const PdiHomePage = () => {
   const { user } = useAuth();
   const { pdiAplicacoesReais, loadPdiAplicacoesReais } = useData();
-  const { activeEscolaId } = useEscola();
+  const { activeEscolaId, userEscolas } = useEscola();
   const isGestor = canManagePedagogico(user);
   const isProfessorUser = isProfessorRole(user);
   const souSecretaria = isSecretaria(user);
@@ -224,6 +297,7 @@ export const PdiHomePage = () => {
           <div className="flex flex-wrap gap-2">
             {/* "Gerenciar formulário" e "Ver alunos" ficam só nos cartões abaixo (pedido do usuário: sem botões duplicados no topo). */}
             {isProfessorUser && <Link to="/pdi/meus-pdis"><Button>Meus PDIs</Button></Link>}
+            {veEntregaGestao && <BotaoExportarExcel gerar={() => exportarPdi({ activeEscolaId, escolaNome: userEscolas.find(e => e.id === activeEscolaId)?.nome, usuario: user?.nome })} />}
           </div>
         </div>
 

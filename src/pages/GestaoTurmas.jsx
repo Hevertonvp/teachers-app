@@ -4,11 +4,14 @@ import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, 
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { MainLayout } from '../layouts/Layouts';
+import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { exportarExcel } from '../utils/exportarExcel';
 import { escolaName, inputClass } from '../utils/display';
 import { canManageTurmas } from '../utils/roles';
 import {
   ANOS_FUNDAMENTAL, ETAPAS, SEGMENTOS_INFANTIL, TURNOS,
-  descricaoTurma, niveisDoSegmento, vinculosDaTurma,
+  descricaoTurma, niveisDoSegmento, turnoLabel, vinculosDaTurma,
 } from '../utils/turmas';
 
 const ANO_LETIVO_PADRAO = 2026;
@@ -118,6 +121,50 @@ export const GestaoTurmas = () => {
     fecharModal();
   };
 
+  // Exportação: TODAS as turmas dos filtros escolhidos (não só a página visível) + professores e
+  // disciplinas ATIVOS dessas turmas (vínculos reais da API, nunca os dados de demonstração).
+  const exportarTurmas = async () => {
+    const ids = new Set(turmasFiltradas.map(t => t.id));
+    const vinculos = (await listarVinculosProfessorTurmaDisciplina())
+      .filter(v => v.status === 'ATIVO' && ids.has(v.turmaId));
+    const turmaPorId = new Map(turmasFiltradas.map(t => [t.id, t]));
+    const nomeEscola = (id) => escolaName(escolas, id);
+    const ordenadas = [...turmasFiltradas].sort((a, b) => nomeEscola(a.escolaId).localeCompare(nomeEscola(b.escolaId)) || (a.nome || '').localeCompare(b.nome || ''));
+    const linhasVinculos = vinculos
+      .map(v => ({ ...v, escolaNome: nomeEscola(turmaPorId.get(v.turmaId).escolaId) }))
+      .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome) || a.turmaNome.localeCompare(b.turmaNome) || a.disciplinaNome.localeCompare(b.disciplinaNome));
+    const rotulo = (lista, v) => lista.find(i => String(i.value) === String(v))?.label;
+    await exportarExcel({
+      arquivo: 'nexo-turmas',
+      usuario: user?.nome,
+      filtros: [
+        ['Escola', filtroEscolaId === 'todas' ? 'Todas as escolas' : nomeEscola(Number(filtroEscolaId))],
+        ['Ano letivo', filtroAnoLetivo === 'todos' ? 'Todos' : filtroAnoLetivo],
+        ['Etapa', filtroEtapa === 'todas' ? 'Todas' : rotulo(ETAPAS, filtroEtapa)],
+        ['Status', { ativa: 'Ativas', inativa: 'Inativas', todas: 'Todas' }[filtroStatus]],
+      ],
+      abas: [
+        { nome: 'Turmas', linhas: ordenadas, colunas: [
+          { titulo: 'Escola', valor: t => nomeEscola(t.escolaId), largura: 34 },
+          { titulo: 'Turma', valor: t => t.nome, largura: 24 },
+          { titulo: 'Etapa', valor: t => rotulo(ETAPAS, t.etapa) ?? t.etapa, largura: 20 },
+          { titulo: 'Ano/série', valor: t => (t.anoSerie ? `${t.anoSerie}º ano` : '') },
+          { titulo: 'Turno', valor: t => (t.turno ? turnoLabel(t.turno) : '') },
+          { titulo: 'Ano letivo', valor: t => t.anoLetivo, tipo: 'numero' },
+          { titulo: 'Status', valor: t => (t.status === 'ativa' ? 'Ativa' : 'Inativa') },
+          { titulo: 'Professores/disciplinas ativos', valor: t => vinculos.filter(v => v.turmaId === t.id).length, tipo: 'numero', largura: 18 },
+        ] },
+        { nome: 'Professores e disciplinas', linhas: linhasVinculos, colunas: [
+          { titulo: 'Escola', valor: v => v.escolaNome, largura: 34 },
+          { titulo: 'Turma', valor: v => v.turmaNome, largura: 24 },
+          { titulo: 'Disciplina', valor: v => v.disciplinaNome, largura: 22 },
+          { titulo: 'Professor', valor: v => v.professorNome, largura: 34 },
+          { titulo: 'Desde', valor: v => v.dataInicio, tipo: 'data' },
+        ] },
+      ],
+    });
+  };
+
   const vinculosDaTurmaEmEdicao = editingTurma ? vinculosDaTurma(editingTurma.id, { turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos }) : null;
 
   return (
@@ -127,7 +174,10 @@ export const GestaoTurmas = () => {
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Turmas</h1>
           </div>
-          <Button onClick={abrirNovaTurma} disabled={escolasOrdenadas.length === 0 || turmasLoading}>+ Nova turma</Button>
+          <div className="flex flex-wrap items-start gap-2">
+            <BotaoExportarExcel size="md" gerar={exportarTurmas} disabled={turmasLoading || turmasFiltradas.length === 0} />
+            <Button onClick={abrirNovaTurma} disabled={escolasOrdenadas.length === 0 || turmasLoading}>+ Nova turma</Button>
+          </div>
         </div>
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
