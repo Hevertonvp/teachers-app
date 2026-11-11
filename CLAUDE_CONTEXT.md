@@ -2696,3 +2696,8 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
     - **120 usuários, 3 min: 3.996 requisições (20,7/s), 0 erros.** Salvar semana p50 0,25 s / p95 0,45 s / p99 0,75 s. Concluir p95 0,35 s.
     - Ponto fraco: **login em massa**. 120 logins espalhados em 10 s → p50 7,5 s / máx 14 s; 120 logins no mesmo instante → todos em ~18 s; login isolado ~0,8 s. Causa: bcrypt (`bcryptjs`, custo 10) com 0,5 CPU. Durante o pico, as outras requisições também esperam (p95 até ~11 s nos primeiros segundos). A sessão dura 12 h (JWT), então cada professor entra ~1 vez por dia. Começando com uma escola, um pico real fica bem abaixo de 120. **Não alterado.** Se for preciso depois: biblioteca `bcrypt` nativa ou instância maior por alguns dias.
   - Os dados ZZCARGA continuam no banco para um teste final pelo domínio novo. **Rodar `npx tsx scripts/lancamento/teste-carga.ts --limpar` antes do lançamento.**
+- **11/11/2026: site passa a usar a API de Ohio (pedido do usuário). Etapa 1 de 2 da publicação.**
+  - `.github/workflows/deploy.yml`: `VITE_API_URL` → `https://educa-sao-joao-api.onrender.com`. Vale quando a branch `lancamento/educa-sao-joao` entrar na `main`. Nessa publicação também entram o nome "Educa São João" e o PDI desligado.
+  - CORS conferido na API nova: `https://hevertonvp.github.io` é aceito. As origens `educasaojoao.com.br`/`www` ainda não (dão 500 no preflight), e precisam entrar em `FRONTEND_ORIGIN` na etapa 2 (domínio).
+  - DNS conferido: já publicado (servidores `a/c.sec.dns.br`; `www` → `hevertonvp.github.io`).
+  - Para voltar atrás: reverter este commit (ou o merge) na `main`. O site volta a usar o serviço antigo de Oregon, que continua no ar.
