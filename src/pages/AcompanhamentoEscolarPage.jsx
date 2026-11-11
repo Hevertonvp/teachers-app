@@ -6,6 +6,7 @@ import { useEscola } from '../context/EscolaContext';
 import { isDiretora, isSecretaria } from '../utils/roles';
 import { obterAcompanhamentoEscola, obterAcompanhamentoRede } from '../services/acompanhamento';
 import { BarraSituacao, fmt, fmtData, GraficoRitmo, LegendaSituacao, LinhaTempo, Paginacao, pct, usePaginas } from '../components/acompanhamento/Graficos';
+import { PDI_ATIVO } from '../config/modulos';
 import '../styles/acompanhamento.css';
 
 // Acompanhamento Escolar (decisões do usuário, 10/11/2026; ver PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md).
@@ -314,7 +315,7 @@ const VisaoRede = ({ dados, form, abrirEscola }) => {
       </div>
       <MapaRede escolas={dados.escolas} form={form} minimo={minimo} abrirEscola={abrirEscola} />
       <ListaAcompanhamento itens={dados.acompanhamento} form={form} acaoItem={(i) => abrirEscola(i.escolaId)} rotuloAcao={() => 'Abrir escola →'} />
-      <EstruturaRede escolas={dados.escolas} totais={totais} />
+      {PDI_ATIVO && <EstruturaRede escolas={dados.escolas} totais={totais} />}
     </>
   );
 };
@@ -338,8 +339,8 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
   const contagemDe = (p) => (p && p.situacao !== 'agendado' ? p : null);
   if (form !== 'umTerco') cartoes.push(<CartaoContagem key="pdi" rotulo={pdi ? `PDI · ${SITUACAO[pdi.situacao]}` : 'PDI'} contagem={contagemDe(pdi)} unidade="Fichas" minimo={minimo} vazio={pdi ? (pdi.situacao === 'agendado' ? textoPrazo(pdi) : `${fmt(pdi.concluidas)} Fichas concluídas · sem percentual`) : 'Sem Aplicação no período'} nota={pdi ? `${pdi.titulo} · ${textoPrazo(pdi)}${pdi.fonte === 'foto' ? ' · números do prazo' : ''}` : null} atraso={0} />);
   if (form !== 'pdi') cartoes.push(<CartaoContagem key="um" rotulo={umTerco ? `1/3 · ${SITUACAO[umTerco.situacao]}` : 'Formulário 1/3'} contagem={contagemDe(umTerco)} unidade="entregas" minimo={minimo} vazio={umTerco ? textoPrazo(umTerco) : 'Fora dos ciclos do ano'} nota={umTerco ? `${umTerco.titulo} · ${textoPrazo(umTerco)}` : null} atraso={60} />);
-  cartoes.push(<Cartao key="est" rotulo="Estrutura" valor={fmt(estrutura.turmas)} unidade="turmas" sub={`${fmt(estrutura.professores)} professores · ${fmt(estrutura.alunosPdi)} alunos com PDI`} atraso={120} />);
-  cartoes.push(<Cartao key="corr" rotulo="Correções do PDI" valor={fmt(dados.correcoesAbertas)} sub="em aberto · informativo" atraso={180} />);
+  cartoes.push(<Cartao key="est" rotulo="Estrutura" valor={fmt(estrutura.turmas)} unidade="turmas" sub={PDI_ATIVO ? `${fmt(estrutura.professores)} professores · ${fmt(estrutura.alunosPdi)} alunos com PDI` : `${fmt(estrutura.professores)} professores`} atraso={120} />);
+  if (PDI_ATIVO) cartoes.push(<Cartao key="corr" rotulo="Correções do PDI" valor={fmt(dados.correcoesAbertas)} sub="em aberto · informativo" atraso={180} />);
 
   const disciplinas = dados.porDisciplina.map((d) => ({
     chave: d.disciplinaId, rotulo: d.disciplina,
@@ -426,7 +427,8 @@ export const AcompanhamentoEscolarPage = () => {
   const diretora = isDiretora(user);
   const anoAtual = new Date().getFullYear();
   const ano = Number(params.get('ano')) || anoAtual;
-  const form = ['pdi', 'umTerco'].includes(params.get('form')) ? params.get('form') : 'ambos';
+  // PDI desligado (src/config/modulos.js): a tela fica presa no 1/3.
+  const form = !PDI_ATIVO ? 'umTerco' : ['pdi', 'umTerco'].includes(params.get('form')) ? params.get('form') : 'ambos';
   const trimestre = form === 'pdi' ? params.get('tri') || '' : '';
   const cicloId = form === 'umTerco' ? params.get('ciclo') || '' : '';
   const escolaId = activeEscolaId;
@@ -478,11 +480,11 @@ export const AcompanhamentoEscolarPage = () => {
             <select aria-label="Ano letivo" value={ano} onChange={(e) => definir({ ano: e.target.value, tri: '', ciclo: '' })}>
               {[anoAtual + 1, anoAtual, anoAtual - 1, anoAtual - 2].map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
-            <div className="acp-seg" role="group" aria-label="Formulário">
+            {PDI_ATIVO && <div className="acp-seg" role="group" aria-label="Formulário">
               {[['ambos', 'Todos'], ['pdi', 'PDI'], ['umTerco', '1/3']].map(([v, r]) => (
                 <button key={v} type="button" aria-pressed={form === v} onClick={() => definir({ form: v === 'ambos' ? '' : v, tri: '', ciclo: '' })}>{r}</button>
               ))}
-            </div>
+            </div>}
             {form === 'pdi' && (
               <select aria-label="Período do PDI" value={trimestre} onChange={(e) => definir({ tri: e.target.value })}>
                 <option value="">Período em foco</option>

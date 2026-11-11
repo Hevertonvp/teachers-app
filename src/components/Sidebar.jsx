@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { PDI_ATIVO } from '../config/modulos';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -178,7 +179,9 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     : isAuxiliar(user) ? menuAuxiliar
     : isSuporteSistema(user) ? menuSuporte
     : menuGestor;
-  const menuWithUnread = menu.map(item => item.path === '/mensagens' ? { ...item, badge: mensagensNaoLidas } : item);
+  // PDI desligado (src/config/modulos.js): some o PDI e as Correções (hoje só do PDI; as do 1/3 ficam dentro do próprio 1/3).
+  const menuVisivel = PDI_ATIVO ? menu : menu.filter(item => item.path !== '/pdi' && item.path !== '/correcoes');
+  const menuWithUnread = menuVisivel.map(item => item.path === '/mensagens' ? { ...item, badge: mensagensNaoLidas } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'perfil' }, { name: 'Configurações', path: '/configuracoes', icon: 'configuracoes' }];
 
   const renderLink = (item) => {

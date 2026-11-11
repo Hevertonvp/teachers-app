@@ -5992,18 +5992,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:17.306Z"
+    "quando": "2026-11-11T15:34:06.405Z"
   },
   {
     "id": "UT-MODAL-2-desktop",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "desktop: abertura ontem (2026-11-09) → aviso na hora e Salvar bloqueado",
+    "cenario": "desktop: abertura ontem (2026-11-10) → aviso na hora e Salvar bloqueado",
     "esperado": "aviso \"não pode ser no passado\"; bloqueado",
     "observado": "A abertura não pode ser no passado: escolha hoje ou uma data futura.; bloqueado: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:17.598Z"
+    "quando": "2026-11-11T15:34:06.906Z"
   },
   {
     "id": "UT-MODAL-3-desktop",
@@ -6014,7 +6014,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:18.175Z"
+    "quando": "2026-11-11T15:34:07.817Z"
   },
   {
     "id": "UT-MODAL-1-celular",
@@ -6025,18 +6025,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:28.733Z"
+    "quando": "2026-11-11T15:34:30.056Z"
   },
   {
     "id": "UT-MODAL-2-celular",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "celular: abertura ontem (2026-11-09) → aviso na hora e Salvar bloqueado",
+    "cenario": "celular: abertura ontem (2026-11-10) → aviso na hora e Salvar bloqueado",
     "esperado": "aviso \"não pode ser no passado\"; bloqueado",
     "observado": "A abertura não pode ser no passado: escolha hoje ou uma data futura.; bloqueado: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:29.026Z"
+    "quando": "2026-11-11T15:34:30.541Z"
   },
   {
     "id": "UT-MODAL-3-celular",
@@ -6047,7 +6047,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:29.608Z"
+    "quando": "2026-11-11T15:34:31.413Z"
   },
   {
     "id": "UT-MODAL-8",
@@ -6058,7 +6058,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:22.294Z"
+    "quando": "2026-11-11T15:34:15.322Z"
   },
   {
     "id": "DASH-1-desktop",
@@ -6151,13 +6151,13 @@
   {
     "id": "UT-MODAL-2b-desktop",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "desktop: abertura hoje (2026-11-10) é aceita",
+    "cenario": "desktop: abertura hoje (2026-11-11) é aceita",
     "esperado": "sem aviso de passado",
     "observado": "sem aviso",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:17.873Z"
+    "quando": "2026-11-11T15:34:07.297Z"
   },
   {
     "id": "UT-MODAL-4-desktop",
@@ -6168,7 +6168,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:18.517Z"
+    "quando": "2026-11-11T15:34:08.937Z"
   },
   {
     "id": "UT-MODAL-5-desktop",
@@ -6179,7 +6179,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T11:11:19.448Z"
+    "quando": "2026-11-11T15:34:11.020Z"
   },
   {
     "id": "UT-MODAL-6-desktop",
@@ -6190,7 +6190,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:19.776Z"
+    "quando": "2026-11-11T15:34:11.687Z"
   },
   {
     "id": "UT-MODAL-7-desktop",
@@ -6201,7 +6201,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:20.211Z"
+    "quando": "2026-11-11T15:34:13.092Z"
   },
   {
     "id": "UT-MODAL-9",
@@ -6212,18 +6212,18 @@
     "status": "APROVADO",
     "evidencia": "44-ciclo-antigo.png",
     "nota": "",
-    "quando": "2026-11-10T11:11:23.956Z"
+    "quando": "2026-11-11T15:34:17.753Z"
   },
   {
     "id": "UT-MODAL-10",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
     "cenario": "API recusa (400) abertura no passado, semanas sobrepostas, fora de ordem e semana depois do prazo — mesmo sem passar pela tela",
     "esperado": "400 nos 4",
-    "observado": "passado: 400 A abertura (09/11/2026) não pode ser no passado: escolha hoje ou uma data futura. | sobreposta: 400 Semana 2 (início 27/11/2026) precisa começar depois do fim da Semana 1 (27/11/2026): as semanas ficam em ordem e não | foraDeOrdem: 400 Semana 2 (início 23/11/2026) precisa começar depois",
+    "observado": "passado: 400 A abertura (10/11/2026) não pode ser no passado: escolha hoje ou uma data futura. | sobreposta: 400 Semana 2 (início 27/11/2026) precisa começar depois do fim da Semana 1 (27/11/2026): as semanas ficam em ordem e não | foraDeOrdem: 400 Semana 2 (início 23/11/2026) precisa começar depois",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:24.030Z"
+    "quando": "2026-11-11T15:34:18.567Z"
   },
   {
     "id": "UT-MODAL-11",
@@ -6234,18 +6234,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:25.014Z"
+    "quando": "2026-11-11T15:34:20.006Z"
   },
   {
     "id": "UT-MODAL-2b-celular",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "celular: abertura hoje (2026-11-10) é aceita",
+    "cenario": "celular: abertura hoje (2026-11-11) é aceita",
     "esperado": "sem aviso de passado",
     "observado": "sem aviso",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:29.301Z"
+    "quando": "2026-11-11T15:34:30.922Z"
   },
   {
     "id": "UT-MODAL-4-celular",
@@ -6256,7 +6256,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:29.943Z"
+    "quando": "2026-11-11T15:34:32.258Z"
   },
   {
     "id": "UT-MODAL-5-celular",
@@ -6267,7 +6267,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-10T11:11:30.792Z"
+    "quando": "2026-11-11T15:34:34.468Z"
   },
   {
     "id": "UT-MODAL-6-celular",
@@ -6278,7 +6278,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:31.134Z"
+    "quando": "2026-11-11T15:34:35.216Z"
   },
   {
     "id": "UT-MODAL-7-celular",
@@ -6289,7 +6289,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T11:11:31.547Z"
+    "quando": "2026-11-11T15:34:36.736Z"
   },
   {
     "id": "UT-MODAL-12-celular",
@@ -6300,7 +6300,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-10T11:11:31.555Z"
+    "quando": "2026-11-11T15:34:36.774Z"
   },
   {
     "id": "UT-ESC-1",
@@ -6311,7 +6311,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:21.202Z"
+    "quando": "2026-11-11T15:34:52.494Z"
   },
   {
     "id": "UT-ESC-2",
@@ -6322,7 +6322,7 @@
     "status": "APROVADO",
     "evidencia": "46-modal-escolas.png",
     "nota": "",
-    "quando": "2026-11-10T15:08:23.828Z"
+    "quando": "2026-11-11T15:34:56.156Z"
   },
   {
     "id": "UT-ESC-3",
@@ -6333,7 +6333,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:23.877Z"
+    "quando": "2026-11-11T15:34:56.443Z"
   },
   {
     "id": "UT-ESC-4",
@@ -6344,7 +6344,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:24.145Z"
+    "quando": "2026-11-11T15:34:58.199Z"
   },
   {
     "id": "UT-ESC-5",
@@ -6355,7 +6355,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:24.202Z"
+    "quando": "2026-11-11T15:34:58.472Z"
   },
   {
     "id": "UT-ESC-6",
@@ -6366,7 +6366,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:24.214Z"
+    "quando": "2026-11-11T15:34:58.530Z"
   },
   {
     "id": "UT-ESC-7",
@@ -6377,7 +6377,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:24.278Z"
+    "quando": "2026-11-11T15:34:58.812Z"
   },
   {
     "id": "UT-ESC-8",
@@ -6388,7 +6388,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:08:29.037Z"
+    "quando": "2026-11-11T15:35:06.712Z"
   },
   {
     "id": "UT-MODAL-4",
@@ -6471,23 +6471,23 @@
     "id": "UT-INAT-1-desktop",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "desktop: tela principal só com ciclos ativos (nenhum selo \"Inativo\") e link \"Ver inativos (N)\"",
-    "esperado": "1 cartões; 0 selos; \"Ver inativos (46) →\"",
-    "observado": "1 cartões; 0 selos; \"Ver inativos (46) →\"",
+    "esperado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
+    "observado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
     "status": "APROVADO",
     "evidencia": "47-ativos-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T15:29:22.746Z"
+    "quando": "2026-11-11T15:35:20.333Z"
   },
   {
     "id": "UT-INAT-2-desktop",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "desktop: \"Ver inativos\" abre tela separada (endereço próprio) só com os inativos, cada um com Reativar; sem \"+ Novo ciclo\"; sem rolagem horizontal",
-    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 46 cartões e 46 Reativar; 0 Novo; ≤ 1280px",
-    "observado": "true; \"Formulário 1/3 — Inativos\"; 46 cartões, 46 Reativar; 0 Novo; 1280px",
+    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 50 cartões e 50 Reativar; 0 Novo; ≤ 1280px",
+    "observado": "true; \"Formulário 1/3 — Inativos\"; 50 cartões, 50 Reativar; 0 Novo; 1280px",
     "status": "APROVADO",
     "evidencia": "47-inativos-desktop.png",
     "nota": "",
-    "quando": "2026-11-10T15:29:24.363Z"
+    "quando": "2026-11-11T15:35:26.220Z"
   },
   {
     "id": "UT-INAT-3-desktop",
@@ -6498,29 +6498,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:25.396Z"
+    "quando": "2026-11-11T15:35:27.306Z"
   },
   {
     "id": "UT-INAT-1-celular",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "celular: tela principal só com ciclos ativos (nenhum selo \"Inativo\") e link \"Ver inativos (N)\"",
-    "esperado": "1 cartões; 0 selos; \"Ver inativos (46) →\"",
-    "observado": "1 cartões; 0 selos; \"Ver inativos (46) →\"",
+    "esperado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
+    "observado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
     "status": "APROVADO",
     "evidencia": "47-ativos-celular.png",
     "nota": "",
-    "quando": "2026-11-10T15:29:28.512Z"
+    "quando": "2026-11-11T15:35:34.882Z"
   },
   {
     "id": "UT-INAT-2-celular",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "celular: \"Ver inativos\" abre tela separada (endereço próprio) só com os inativos, cada um com Reativar; sem \"+ Novo ciclo\"; sem rolagem horizontal",
-    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 46 cartões e 46 Reativar; 0 Novo; ≤ 390px",
-    "observado": "true; \"Formulário 1/3 — Inativos\"; 46 cartões, 46 Reativar; 0 Novo; 390px",
+    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 50 cartões e 50 Reativar; 0 Novo; ≤ 390px",
+    "observado": "true; \"Formulário 1/3 — Inativos\"; 50 cartões, 50 Reativar; 0 Novo; 390px",
     "status": "APROVADO",
     "evidencia": "47-inativos-celular.png",
     "nota": "",
-    "quando": "2026-11-10T15:29:30.093Z"
+    "quando": "2026-11-11T15:35:39.782Z"
   },
   {
     "id": "UT-INAT-3-celular",
@@ -6531,7 +6531,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:31.113Z"
+    "quando": "2026-11-11T15:35:40.871Z"
   },
   {
     "id": "UT-INAT-4",
@@ -6542,7 +6542,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:37.189Z"
+    "quando": "2026-11-11T15:35:52.614Z"
   },
   {
     "id": "UT-INAT-5",
@@ -6553,7 +6553,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:39.997Z"
+    "quando": "2026-11-11T15:35:56.997Z"
   },
   {
     "id": "REAB-1",
@@ -6971,7 +6971,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:18.989Z"
+    "quando": "2026-11-11T15:36:10.252Z"
   },
   {
     "id": "INA-2",
@@ -6982,7 +6982,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:19.019Z"
+    "quando": "2026-11-11T15:36:10.415Z"
   },
   {
     "id": "INA-3",
@@ -6993,6 +6993,512 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-10T15:29:19.046Z"
+    "quando": "2026-11-11T15:36:10.580Z"
+  },
+  {
+    "id": "PDI-DESL-prof-pc-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof (pc): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Formulário 1/3 | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:36.266Z"
+  },
+  {
+    "id": "PDI-DESL-prof-pc-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof (pc): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:36.301Z"
+  },
+  {
+    "id": "PDI-DESL-prof-pc-atalho",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "Professor: atalho para o 1/3 no Dashboard",
+    "esperado": "1 atalho",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:36.354Z"
+  },
+  {
+    "id": "PDI-DESL-prof-rota/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof: abrir /pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:36.568Z"
+  },
+  {
+    "id": "PDI-DESL-prof-rota/pdi/meus-pdis",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof: abrir /pdi/meus-pdis direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:36.777Z"
+  },
+  {
+    "id": "PDI-DESL-prof-rota/correcoes",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof: abrir /correcoes direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:37.041Z"
+  },
+  {
+    "id": "PDI-DESL-prof-rota/correcoes/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof: abrir /correcoes/pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:37.291Z"
+  },
+  {
+    "id": "PDI-DESL-prof-pc-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof (pc): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:37.342Z"
+  },
+  {
+    "id": "PDI-DESL-prof-cel-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof (cel): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Formulário 1/3 | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:45.315Z"
+  },
+  {
+    "id": "PDI-DESL-prof-cel-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof (cel): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:45.349Z"
+  },
+  {
+    "id": "PDI-DESL-prof-cel-atalho",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "Professor: atalho para o 1/3 no Dashboard",
+    "esperado": "1 atalho",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:45.399Z"
+  },
+  {
+    "id": "PDI-DESL-prof-cel-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "prof (cel): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:46.181Z"
+  },
+  {
+    "id": "PDI-DESL-sec-pc-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (pc): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Gestão de Pessoas | Escolas | Turmas | Acompanhamento Escolar | Formulário 1/3 | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:54.879Z"
+  },
+  {
+    "id": "PDI-DESL-sec-pc-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (pc): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:54.927Z"
+  },
+  {
+    "id": "PDI-DESL-sec-rota/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec: abrir /pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:55.243Z"
+  },
+  {
+    "id": "PDI-DESL-sec-rota/pdi/meus-pdis",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec: abrir /pdi/meus-pdis direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:55.588Z"
+  },
+  {
+    "id": "PDI-DESL-sec-rota/correcoes",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec: abrir /correcoes direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:55.935Z"
+  },
+  {
+    "id": "PDI-DESL-sec-rota/correcoes/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec: abrir /correcoes/pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:32:56.255Z"
+  },
+  {
+    "id": "PDI-DESL-sec-pc-acomp",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (pc): Acompanhamento só com 1/3",
+    "esperado": "sem PDI, sem seletor, com 1/3, sem rolagem lateral",
+    "observado": "PDI: false; seletor: 0; 1/3: true; largura ok: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:00.354Z"
+  },
+  {
+    "id": "PDI-DESL-sec-pc-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (pc): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:00.391Z"
+  },
+  {
+    "id": "PDI-DESL-sec-cel-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (cel): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Gestão de Pessoas | Escolas | Turmas | Acompanhamento Escolar | Formulário 1/3 | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:08.834Z"
+  },
+  {
+    "id": "PDI-DESL-sec-cel-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (cel): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:08.880Z"
+  },
+  {
+    "id": "PDI-DESL-sec-cel-acomp",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (cel): Acompanhamento só com 1/3",
+    "esperado": "sem PDI, sem seletor, com 1/3, sem rolagem lateral",
+    "observado": "PDI: false; seletor: 0; 1/3: true; largura ok: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:12.926Z"
+  },
+  {
+    "id": "PDI-DESL-sec-cel-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "sec (cel): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:12.952Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-pc-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor (pc): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Gestão de Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:20.160Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-pc-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor (pc): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:20.186Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-rota/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor: abrir /pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:20.394Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-rota/pdi/meus-pdis",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor: abrir /pdi/meus-pdis direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:20.590Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-rota/correcoes",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor: abrir /correcoes direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:20.779Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-rota/correcoes/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor: abrir /correcoes/pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:21.104Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-pc-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor (pc): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:21.175Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-cel-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor (cel): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Gestão de Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:29.094Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-cel-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor (cel): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:29.124Z"
+  },
+  {
+    "id": "PDI-DESL-gestor-cel-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "gestor (cel): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:29.743Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-pc-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (pc): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Acompanhamento Escolar | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:37.051Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-pc-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (pc): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:37.078Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-rota/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora: abrir /pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:37.280Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-rota/pdi/meus-pdis",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora: abrir /pdi/meus-pdis direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:37.467Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-rota/correcoes",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora: abrir /correcoes direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:37.645Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-rota/correcoes/pdi",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora: abrir /correcoes/pdi direto volta ao Dashboard",
+    "esperado": "#/dashboard",
+    "observado": "#/dashboard",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:37.925Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-pc-acomp",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (pc): Acompanhamento só com 1/3",
+    "esperado": "sem PDI, sem seletor, com 1/3, sem rolagem lateral",
+    "observado": "PDI: false; seletor: 0; 1/3: true; largura ok: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:41.417Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-pc-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (pc): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:41.456Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-cel-menu",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (cel): menu sem PDI e sem Correções",
+    "esperado": "sem PDI/Correções",
+    "observado": "Dashboard | Acompanhamento Escolar | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:49.206Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-cel-dash",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (cel): Dashboard sem PDI",
+    "esperado": "nenhum \"PDI\" no painel",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:49.239Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-cel-acomp",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (cel): Acompanhamento só com 1/3",
+    "esperado": "sem PDI, sem seletor, com 1/3, sem rolagem lateral",
+    "observado": "PDI: false; seletor: 0; 1/3: true; largura ok: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:52.469Z"
+  },
+  {
+    "id": "PDI-DESL-diretora-cel-console",
+    "modulo": "PDI desligado (lançamento)",
+    "cenario": "diretora (cel): sem erros no console",
+    "esperado": "0 erros",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T15:33:52.506Z"
   }
 ]

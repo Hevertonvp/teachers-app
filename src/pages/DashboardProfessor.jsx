@@ -7,6 +7,7 @@ import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { MainLayout } from '../layouts/Layouts';
+import { PDI_ATIVO } from '../config/modulos';
 
 export const DashboardProfessor = () => {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export const DashboardProfessor = () => {
   const [meusVinculosLoading, setMeusVinculosLoading] = useState(true);
 
   useEffect(() => {
-    loadMeusPdisReais();
+    if (PDI_ATIVO) loadMeusPdisReais();
     listarVinculosProfessorTurmaDisciplina()
       .then((vinculos) => setMeusVinculos(vinculos.filter((v) => v.status === 'ATIVO')))
       .catch(() => setMeusVinculos([]))
@@ -64,7 +65,7 @@ export const DashboardProfessor = () => {
           </div>
         </section>
 
-        <section>
+        {PDI_ATIVO && <section>
           <Card>
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-slate-950">Formulário PDI</h2>
@@ -82,13 +83,15 @@ export const DashboardProfessor = () => {
               </div>
             )}
           </Card>
-        </section>
+        </section>}
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card>
             <h2 className="text-xl font-bold text-slate-950">Atalhos</h2>
             <div className="mt-4 grid gap-3">
-              <Link to="/pdi"><Button className="w-full" variant="primary">Acessar PDI</Button></Link>
+              {PDI_ATIVO
+                ? <Link to="/pdi"><Button className="w-full" variant="primary">Acessar PDI</Button></Link>
+                : <Link to="/formulario-um-terco"><Button className="w-full" variant="primary">Abrir Formulário 1/3</Button></Link>}
             </div>
           </Card>
 

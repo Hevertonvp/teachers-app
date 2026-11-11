@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useEscola } from '../context/EscolaContext';
 import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
+import { PDI_ATIVO } from '../config/modulos';
 
 export const DashboardGestor = () => {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ export const DashboardGestor = () => {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {PDI_ATIVO && <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card>
             <h2 className="text-xl font-bold text-slate-950">PDI</h2>
             <div className="mt-4 grid gap-3">
@@ -38,7 +39,7 @@ export const DashboardGestor = () => {
               <Link to="/pdi/alunos"><Button className="w-full" variant="outline">Ver Alunos PDI</Button></Link>
             </div>
           </Card>
-        </section>
+        </section>}
       </div>
     </MainLayout>
   );

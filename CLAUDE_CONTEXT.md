@@ -2645,3 +2645,15 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - Arquivos Excel exportados: o prefixo `nexo-` virou `educa-sao-joao-` (`GestaoPessoas`, `GestaoTurmas`, `PdiHomePage`, `PdiPage`, `exportarUmTerco`), e o autor da planilha passou de `NEXO` para `Educa São João` (`exportarExcel.js`). Comentários internos com "NEXO" (ex.: `acompanhamento.css`) e nomes de documentos (`REGRAS_DE_NEGOCIO_NEXO.md`) não mudaram.
   - Backend e banco não mudaram.
   - Testado: `vite build` passa. **Não visto no navegador.** Quem já instalou o app no celular (PWA) pode continuar vendo o nome antigo no ícone até reinstalar.
+- **11/11/2026: PDI desligado na interface para o lançamento (decisão do usuário; só frontend).**
+  - Chave única: `src/config/modulos.js` → `PDI_ATIVO = false`. Para religar, basta trocar para `true` (tudo volta como era).
+  - Efeitos com a chave desligada:
+    - Menu (`Sidebar.jsx`): somem "PDI" e "Correções" (a tela de Correções hoje só tem o PDI; as correções do 1/3 continuam dentro do próprio 1/3).
+    - Rotas (`App.jsx`, guarda `SoComPdi`): `/pdi/*`, `/correcoes`, `/correcoes/pdi/*` e `/correcoes-simulados` redirecionam ao Dashboard, inclusive por link direto ou de mensagem/notificação.
+    - Dashboard do Professor: sem o cartão "Formulário PDI" e sem carregar `meus-pdis`. O atalho "Acessar PDI" virou "Abrir Formulário 1/3".
+    - Dashboard da Secretaria: sem o cartão de entrega do PDI, sem a coluna "PDI preenchido" e sem carregar os indicadores do PDI.
+    - Dashboard do Gestor: sem o cartão do PDI (fica só a saudação).
+    - Acompanhamento Escolar: preso no 1/3 (`form = 'umTerco'`), sem o seletor Todos/PDI/1/3, sem o painel "Estrutura da rede" (que só fala de PDI) e, na visão da escola, sem "alunos com PDI" e sem o cartão "Correções do PDI".
+  - **Não mudou:** backend, banco e dados do PDI (a API do PDI continua respondendo para quem chamar direto). O perfil Auxiliar ("Meus alunos", que é do PDI) não foi mexido, porque nenhum Auxiliar será cadastrado no lançamento. A Aplicação 177 ainda **não** foi apagada (próximo passo, com dry-run).
+  - Testado (banco local, navegador real): `homologacao/53-pdi-desligado.mjs` **46/46** (Professor, Secretaria, Gestor e Diretora, no computador e no celular de 390 px: menu, Dashboard, rotas diretas, Acompanhamento sem PDI e sem rolagem lateral, nenhum erro no console). Regressão do 1/3: 44 (21/21), 46 (8/8), 47 (8/8) e 52 (3/3). Build ok.
+  - **Esperado de propósito:** os testes antigos do PDI (16–36, 45, 50) falham enquanto a chave estiver desligada, porque as telas do PDI redirecionam. Para rodá-los, religar a chave localmente.

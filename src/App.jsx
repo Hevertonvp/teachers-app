@@ -1,4 +1,5 @@
 import { HashRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { PDI_ATIVO } from './config/modulos';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { EscolaProvider } from './context/EscolaContext';
@@ -43,6 +44,9 @@ import { FeedbackSistemaDetalhePage } from './pages/FeedbackSistemaDetalhePage';
 import { FeedbacksSistemaListaPage } from './pages/FeedbacksSistemaListaPage';
 import { AcompanhamentoEscolarPage } from './pages/AcompanhamentoEscolarPage';
 
+// PDI desligado (src/config/modulos.js): qualquer rota do PDI volta ao Dashboard.
+const SoComPdi = ({ children }) => (PDI_ATIVO ? children : <Navigate to="/dashboard" replace />);
+
 const DashboardRouter = () => {
   const { user } = useAuth();
   if (isProfessor(user)) return <DashboardProfessor />;
@@ -81,34 +85,34 @@ const AppRoutes = () => <Routes>
   <Route path="/login" element={<LoginPage />} />
   <Route path="/primeiro-acesso" element={<PrimeiroAcessoRoute><PrimeiroAcessoPage /></PrimeiroAcessoRoute>} />
   <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
-  <Route path="/pdi" element={<ProtectedRoute><PdiHomePage /></ProtectedRoute>} />
-  <Route path="/pdi/formulario" element={<ProtectedRoute><FormularioPdiPage /></ProtectedRoute>} />
-  <Route path="/pdi/meus-pdis" element={<ProtectedRoute><MeusPdisPage /></ProtectedRoute>} />
-  <Route path="/pdi/alunos" element={<ProtectedRoute><PdiPage /></ProtectedRoute>} />
-  <Route path="/pdi/alunos/:id" element={<ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute>} />
-  <Route path="/pdi/fichas/:aplicacaoId/:disciplinaId/:alunoId" element={<ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute>} />
-  <Route path="/pdi/aluno/:aplicacaoId/:alunoId" element={<ProtectedRoute><FormularioPdiAlunoPage /></ProtectedRoute>} />
-  <Route path="/pdi/alunos/:id/anamnese" element={<ProtectedRoute><AnamnesePage /></ProtectedRoute>} />
-  <Route path="/pdi/alunos/:id/ficha-anual" element={<ProtectedRoute><FichaAnualPdiPage /></ProtectedRoute>} />
-  <Route path="/pdi/anamnese-modelo" element={<ProtectedRoute><AnamneseModeloPage /></ProtectedRoute>} />
-  <Route path="/pdi/anamnese/pendentes" element={<ProtectedRoute><AnamnesesPendentesPage /></ProtectedRoute>} />
+  <Route path="/pdi" element={<SoComPdi><ProtectedRoute><PdiHomePage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/formulario" element={<SoComPdi><ProtectedRoute><FormularioPdiPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/meus-pdis" element={<SoComPdi><ProtectedRoute><MeusPdisPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/alunos" element={<SoComPdi><ProtectedRoute><PdiPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/alunos/:id" element={<SoComPdi><ProtectedRoute><PdiAlunoPerfil /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/fichas/:aplicacaoId/:disciplinaId/:alunoId" element={<SoComPdi><ProtectedRoute><FormularioPdiProfessor /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/aluno/:aplicacaoId/:alunoId" element={<SoComPdi><ProtectedRoute><FormularioPdiAlunoPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/alunos/:id/anamnese" element={<SoComPdi><ProtectedRoute><AnamnesePage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/alunos/:id/ficha-anual" element={<SoComPdi><ProtectedRoute><FichaAnualPdiPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/anamnese-modelo" element={<SoComPdi><ProtectedRoute><AnamneseModeloPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/pdi/anamnese/pendentes" element={<SoComPdi><ProtectedRoute><AnamnesesPendentesPage /></ProtectedRoute></SoComPdi>} />
   <Route path="/meus-alunos" element={<ProtectedRoute><MeusAlunosAuxiliarPage /></ProtectedRoute>} />
   <Route path="/meus-alunos/:id" element={<ProtectedRoute><AuxiliarAlunoPerfilPage /></ProtectedRoute>} />
   <Route path="/escolas" element={<ProtectedRoute><GestaoEscolas /></ProtectedRoute>} />
   <Route path="/turmas" element={<ProtectedRoute><GestaoTurmas /></ProtectedRoute>} />
   <Route path="/pessoas" element={<ProtectedRoute><GestaoPessoas /></ProtectedRoute>} />
   <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
-  <Route path="/correcoes" element={<ProtectedRoute><CorrecoesHomePage /></ProtectedRoute>} />
+  <Route path="/correcoes" element={<SoComPdi><ProtectedRoute><CorrecoesHomePage /></ProtectedRoute></SoComPdi>} />
   {/* Formulário 1/3: só Secretaria (administra) e Professor (preenche) — qualquer outro perfil volta ao dashboard. */}
   <Route path="/formulario-um-terco" element={<ProtectedRoute><UmTercoEntrada /></ProtectedRoute>} />
   <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><UmTercoSomenteSecretaria><UmTercoPainelPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
   <Route path="/formulario-um-terco/:cicloId/:anoSerie/:disciplinaId" element={<ProtectedRoute><UmTercoSomenteProfessor><UmTercoPreenchimentoPage /></UmTercoSomenteProfessor></ProtectedRoute>} />
-  <Route path="/correcoes/pdi" element={<ProtectedRoute><CorrecoesPdiListaPage /></ProtectedRoute>} />
-  <Route path="/correcoes/pdi/:fichaId" element={<ProtectedRoute><CorrecoesPdiDetalhePage /></ProtectedRoute>} />
+  <Route path="/correcoes/pdi" element={<SoComPdi><ProtectedRoute><CorrecoesPdiListaPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/correcoes/pdi/:fichaId" element={<SoComPdi><ProtectedRoute><CorrecoesPdiDetalhePage /></ProtectedRoute></SoComPdi>} />
 
   {/* Fora do escopo desta entrega (só PDI) — "em construção" para todos os perfis. */}
-  <Route path="/pdi/acompanhamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
-  <Route path="/correcoes-simulados" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/pdi/acompanhamento" element={<SoComPdi><ProtectedRoute><EmConstrucaoPage /></ProtectedRoute></SoComPdi>} />
+  <Route path="/correcoes-simulados" element={<SoComPdi><ProtectedRoute><EmConstrucaoPage /></ProtectedRoute></SoComPdi>} />
   <Route path="/pendencias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/eventos" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/noticias" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
