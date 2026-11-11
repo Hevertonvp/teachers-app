@@ -2665,3 +2665,7 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - Verificado no painel (Backup & Restore): plano Free, projeto `gestao-escolar`, branch `production`, **janela de restauração de 6 horas**. Nenhum snapshot criado e sem agendamento (snapshots agendados exigem upgrade).
   - Compensação combinada: (1) snapshot manual ("Create") logo antes da abertura do 1/3, no momento que o Claude indicar; (2) cópia diária do banco salva no notebook do usuário (`pg_dump`), ainda a montar. Nesta máquina não há `pg_dump` (o embedded-postgres da homologação não traz). Será preciso instalar o cliente do PostgreSQL na versão do Neon. A cópia contém dados pessoais e não pode ir para o Git.
   - Risco aceito: um problema percebido mais de 6 h depois só volta até o último snapshot ou a última cópia diária.
+- **11/11/2026: proteção do login (rate limit) ADIADA — decisão do usuário.**
+  - Proposta apresentada: 5 erros por e-mail+IP em 15 min e 50 por IP, com `trust proxy` no Render. O usuário achou arriscado mexer a 3 dias do lançamento, porque uma configuração errada do proxy poderia bloquear todos.
+  - Decisão: fazer **depois da primeira semana** do lançamento, com o sistema estável. Opção de menor risco já levantada para quando for feito: limitar só por e-mail (5 erros → 15 min), sem depender do IP nem do proxy.
+  - Continua no plano antes da abertura: trocar a senha do Neon e o `JWT_SECRET`.
