@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { PDI_ATIVO } from '../config/modulos';
+import { PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } from '../config/modulos';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -179,8 +179,10 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     : isAuxiliar(user) ? menuAuxiliar
     : isSuporteSistema(user) ? menuSuporte
     : menuGestor;
-  // PDI desligado (src/config/modulos.js): some o PDI e as Correções (hoje só do PDI; as do 1/3 ficam dentro do próprio 1/3).
-  const menuVisivel = PDI_ATIVO ? menu : menu.filter(item => item.path !== '/pdi' && item.path !== '/correcoes');
+  // PDI (src/config/modulos.js): oculto → somem PDI e Correções (hoje só do PDI); em desenvolvimento →
+  // continuam no menu, com o selo "em desenvolvimento", e abrem o aviso.
+  const ehDoPdi = (item) => item.path === '/pdi' || item.path === '/correcoes';
+  const menuVisivel = PDI_VISIVEL ? menu.map(item => (PDI_EM_DESENVOLVIMENTO && ehDoPdi(item) ? { ...item, emDesenvolvimento: true } : item)) : menu.filter(item => !ehDoPdi(item));
   const menuWithUnread = menuVisivel.map(item => item.path === '/mensagens' ? { ...item, badge: mensagensNaoLidas } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'perfil' }, { name: 'Configurações', path: '/configuracoes', icon: 'configuracoes' }];
 
@@ -200,7 +202,12 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
         }`}>
           <NavIcon id={item.icon} />
         </span>
-        <span>{item.name}</span>
+        {item.emDesenvolvimento ? (
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span>{item.name}</span>
+            <span className={`text-[10px] font-semibold uppercase tracking-wide ${active ? 'text-amber-700' : 'text-amber-300'}`}>em desenvolvimento</span>
+          </span>
+        ) : <span>{item.name}</span>}
         {item.badge > 0 && <span className="ml-auto shrink-0 rounded-full bg-teal-700 px-2 py-0.5 text-xs font-bold text-white">{item.badge}</span>}
       </Link>
     );

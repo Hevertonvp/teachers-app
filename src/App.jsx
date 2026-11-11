@@ -1,5 +1,6 @@
 import { HashRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
-import { PDI_ATIVO } from './config/modulos';
+import { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from './config/modulos';
+import { PdiDesenvolvimentoPage } from './components/PdiDesenvolvimento';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { EscolaProvider } from './context/EscolaContext';
@@ -44,8 +45,13 @@ import { FeedbackSistemaDetalhePage } from './pages/FeedbackSistemaDetalhePage';
 import { FeedbacksSistemaListaPage } from './pages/FeedbacksSistemaListaPage';
 import { AcompanhamentoEscolarPage } from './pages/AcompanhamentoEscolarPage';
 
-// PDI desligado (src/config/modulos.js): qualquer rota do PDI volta ao Dashboard.
-const SoComPdi = ({ children }) => (PDI_ATIVO ? children : <Navigate to="/dashboard" replace />);
+// PDI (src/config/modulos.js): ativo → a tela normal; em desenvolvimento → aviso "PDI em desenvolvimento";
+// oculto → volta ao Dashboard. Vale também para links diretos (mensagens, notificações, favoritos).
+const SoComPdi = ({ children }) => {
+  if (PDI_ATIVO) return children;
+  if (PDI_EM_DESENVOLVIMENTO) return <ProtectedRoute><PdiDesenvolvimentoPage /></ProtectedRoute>;
+  return <Navigate to="/dashboard" replace />;
+};
 
 const DashboardRouter = () => {
   const { user } = useAuth();

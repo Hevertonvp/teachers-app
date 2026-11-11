@@ -5992,7 +5992,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:06.405Z"
+    "quando": "2026-11-11T18:51:14.638Z"
   },
   {
     "id": "UT-MODAL-2-desktop",
@@ -6003,7 +6003,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:06.906Z"
+    "quando": "2026-11-11T18:51:15.047Z"
   },
   {
     "id": "UT-MODAL-3-desktop",
@@ -6014,7 +6014,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:07.817Z"
+    "quando": "2026-11-11T18:51:15.825Z"
   },
   {
     "id": "UT-MODAL-1-celular",
@@ -6025,7 +6025,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:30.056Z"
+    "quando": "2026-11-11T18:51:28.946Z"
   },
   {
     "id": "UT-MODAL-2-celular",
@@ -6036,7 +6036,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:30.541Z"
+    "quando": "2026-11-11T18:51:29.335Z"
   },
   {
     "id": "UT-MODAL-3-celular",
@@ -6047,7 +6047,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:31.413Z"
+    "quando": "2026-11-11T18:51:30.127Z"
   },
   {
     "id": "UT-MODAL-8",
@@ -6058,7 +6058,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:15.322Z"
+    "quando": "2026-11-11T18:51:20.857Z"
   },
   {
     "id": "DASH-1-desktop",
@@ -6157,7 +6157,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:07.297Z"
+    "quando": "2026-11-11T18:51:15.423Z"
   },
   {
     "id": "UT-MODAL-4-desktop",
@@ -6168,7 +6168,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:08.937Z"
+    "quando": "2026-11-11T18:51:16.325Z"
   },
   {
     "id": "UT-MODAL-5-desktop",
@@ -6179,7 +6179,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-desktop.png",
     "nota": "",
-    "quando": "2026-11-11T15:34:11.020Z"
+    "quando": "2026-11-11T18:51:17.495Z"
   },
   {
     "id": "UT-MODAL-6-desktop",
@@ -6190,7 +6190,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:11.687Z"
+    "quando": "2026-11-11T18:51:17.932Z"
   },
   {
     "id": "UT-MODAL-7-desktop",
@@ -6201,7 +6201,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:13.092Z"
+    "quando": "2026-11-11T18:51:18.686Z"
   },
   {
     "id": "UT-MODAL-9",
@@ -6212,7 +6212,7 @@
     "status": "APROVADO",
     "evidencia": "44-ciclo-antigo.png",
     "nota": "",
-    "quando": "2026-11-11T15:34:17.753Z"
+    "quando": "2026-11-11T18:51:22.595Z"
   },
   {
     "id": "UT-MODAL-10",
@@ -6223,7 +6223,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:18.567Z"
+    "quando": "2026-11-11T18:51:22.812Z"
   },
   {
     "id": "UT-MODAL-11",
@@ -6234,7 +6234,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:20.006Z"
+    "quando": "2026-11-11T18:51:23.964Z"
   },
   {
     "id": "UT-MODAL-2b-celular",
@@ -6245,7 +6245,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:30.922Z"
+    "quando": "2026-11-11T18:51:29.652Z"
   },
   {
     "id": "UT-MODAL-4-celular",
@@ -6256,7 +6256,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:32.258Z"
+    "quando": "2026-11-11T18:51:30.613Z"
   },
   {
     "id": "UT-MODAL-5-celular",
@@ -6267,7 +6267,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-11T15:34:34.468Z"
+    "quando": "2026-11-11T18:51:31.775Z"
   },
   {
     "id": "UT-MODAL-6-celular",
@@ -6278,7 +6278,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:35.216Z"
+    "quando": "2026-11-11T18:51:32.212Z"
   },
   {
     "id": "UT-MODAL-7-celular",
@@ -6289,7 +6289,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:34:36.736Z"
+    "quando": "2026-11-11T18:51:32.980Z"
   },
   {
     "id": "UT-MODAL-12-celular",
@@ -6300,7 +6300,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-11T15:34:36.774Z"
+    "quando": "2026-11-11T18:51:33.023Z"
   },
   {
     "id": "UT-ESC-1",
@@ -6471,23 +6471,23 @@
     "id": "UT-INAT-1-desktop",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "desktop: tela principal só com ciclos ativos (nenhum selo \"Inativo\") e link \"Ver inativos (N)\"",
-    "esperado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
-    "observado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
+    "esperado": "1 cartões; 0 selos; \"Ver inativos (52) →\"",
+    "observado": "1 cartões; 0 selos; \"Ver inativos (52) →\"",
     "status": "APROVADO",
     "evidencia": "47-ativos-desktop.png",
     "nota": "",
-    "quando": "2026-11-11T15:35:20.333Z"
+    "quando": "2026-11-11T18:51:38.680Z"
   },
   {
     "id": "UT-INAT-2-desktop",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "desktop: \"Ver inativos\" abre tela separada (endereço próprio) só com os inativos, cada um com Reativar; sem \"+ Novo ciclo\"; sem rolagem horizontal",
-    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 50 cartões e 50 Reativar; 0 Novo; ≤ 1280px",
-    "observado": "true; \"Formulário 1/3 — Inativos\"; 50 cartões, 50 Reativar; 0 Novo; 1280px",
+    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 52 cartões e 52 Reativar; 0 Novo; ≤ 1280px",
+    "observado": "true; \"Formulário 1/3 — Inativos\"; 52 cartões, 52 Reativar; 0 Novo; 1280px",
     "status": "APROVADO",
     "evidencia": "47-inativos-desktop.png",
     "nota": "",
-    "quando": "2026-11-11T15:35:26.220Z"
+    "quando": "2026-11-11T18:51:41.717Z"
   },
   {
     "id": "UT-INAT-3-desktop",
@@ -6498,29 +6498,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:35:27.306Z"
+    "quando": "2026-11-11T18:51:42.773Z"
   },
   {
     "id": "UT-INAT-1-celular",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "celular: tela principal só com ciclos ativos (nenhum selo \"Inativo\") e link \"Ver inativos (N)\"",
-    "esperado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
-    "observado": "1 cartões; 0 selos; \"Ver inativos (50) →\"",
+    "esperado": "1 cartões; 0 selos; \"Ver inativos (52) →\"",
+    "observado": "1 cartões; 0 selos; \"Ver inativos (52) →\"",
     "status": "APROVADO",
     "evidencia": "47-ativos-celular.png",
     "nota": "",
-    "quando": "2026-11-11T15:35:34.882Z"
+    "quando": "2026-11-11T18:51:47.318Z"
   },
   {
     "id": "UT-INAT-2-celular",
     "modulo": "Formulário 1/3 — inativos separados",
     "cenario": "celular: \"Ver inativos\" abre tela separada (endereço próprio) só com os inativos, cada um com Reativar; sem \"+ Novo ciclo\"; sem rolagem horizontal",
-    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 50 cartões e 50 Reativar; 0 Novo; ≤ 390px",
-    "observado": "true; \"Formulário 1/3 — Inativos\"; 50 cartões, 50 Reativar; 0 Novo; 390px",
+    "esperado": "?ver=inativos; \"Formulário 1/3 — Inativos\"; 52 cartões e 52 Reativar; 0 Novo; ≤ 390px",
+    "observado": "true; \"Formulário 1/3 — Inativos\"; 52 cartões, 52 Reativar; 0 Novo; 390px",
     "status": "APROVADO",
     "evidencia": "47-inativos-celular.png",
     "nota": "",
-    "quando": "2026-11-11T15:35:39.782Z"
+    "quando": "2026-11-11T18:51:50.322Z"
   },
   {
     "id": "UT-INAT-3-celular",
@@ -6531,7 +6531,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:35:40.871Z"
+    "quando": "2026-11-11T18:51:51.382Z"
   },
   {
     "id": "UT-INAT-4",
@@ -6542,7 +6542,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:35:52.614Z"
+    "quando": "2026-11-11T18:51:58.886Z"
   },
   {
     "id": "UT-INAT-5",
@@ -6553,7 +6553,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:35:56.997Z"
+    "quando": "2026-11-11T18:52:01.829Z"
   },
   {
     "id": "REAB-1",
@@ -6971,7 +6971,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:36:10.252Z"
+    "quando": "2026-11-11T18:52:06.568Z"
   },
   {
     "id": "INA-2",
@@ -6982,7 +6982,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:36:10.415Z"
+    "quando": "2026-11-11T18:52:06.615Z"
   },
   {
     "id": "INA-3",
@@ -6993,7 +6993,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-11T15:36:10.580Z"
+    "quando": "2026-11-11T18:52:06.658Z"
   },
   {
     "id": "PDI-DESL-prof-pc-menu",
@@ -7500,5 +7500,489 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-11T15:33:52.506Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-pc-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof (pc): PDI no menu com selo \"em desenvolvimento\"",
+    "esperado": "PDI…em desenvolvimento",
+    "observado": "Dashboard | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:41.391Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-pc-dash",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof (pc): Dashboard mostra PDI \"Em desenvolvimento\"",
+    "esperado": "aviso visível",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.435Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-rota/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof: /pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.483Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-rota/pdi/meus-pdis",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.557Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-rota/correcoes",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof: /correcoes mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.583Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-rota/correcoes/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.620Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-pc-1-3",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "Professor: Formulário 1/3 continua abrindo",
+    "esperado": "título",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.786Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-pc-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof (pc): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:42.798Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-cel-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof (cel): PDI no menu com selo \"em desenvolvimento\"",
+    "esperado": "PDI…em desenvolvimento",
+    "observado": "Dashboard | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:45.714Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-cel-dash",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof (cel): Dashboard mostra PDI \"Em desenvolvimento\"",
+    "esperado": "aviso visível",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:46.639Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-cel-1-3",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "Professor: Formulário 1/3 continua abrindo",
+    "esperado": "título",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:46.689Z"
+  },
+  {
+    "id": "PDI-DESENV-prof-cel-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "prof (cel): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:46.698Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-pc-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (pc): PDI no menu com selo \"em desenvolvimento\"",
+    "esperado": "PDI…em desenvolvimento",
+    "observado": "Dashboard | Gestão de Pessoas | Escolas | Turmas | Acompanhamento Escolar | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:49.635Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-pc-dash",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (pc): Dashboard mostra PDI \"Em desenvolvimento\"",
+    "esperado": "aviso visível",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:50.667Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-rota/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec: /pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:50.750Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-rota/pdi/meus-pdis",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:50.796Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-rota/correcoes",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec: /correcoes mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:50.839Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-rota/correcoes/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:50.876Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-pc-acomp",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (pc): Acompanhamento com PDI em desenvolvimento e 1/3 normal",
+    "esperado": "cartão em desenvolvimento, botão PDI desabilitado, 1/3, sem rolagem",
+    "observado": "desenv: true; botão desab: true; 1/3: true; largura: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:52.164Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-pc-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (pc): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:52.173Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-cel-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (cel): PDI no menu com selo \"em desenvolvimento\"",
+    "esperado": "PDI…em desenvolvimento",
+    "observado": "Dashboard | Gestão de Pessoas | Escolas | Turmas | Acompanhamento Escolar | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:55.106Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-cel-dash",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (cel): Dashboard mostra PDI \"Em desenvolvimento\"",
+    "esperado": "aviso visível",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:56.133Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-cel-acomp",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (cel): Acompanhamento com PDI em desenvolvimento e 1/3 normal",
+    "esperado": "cartão em desenvolvimento, botão PDI desabilitado, 1/3, sem rolagem",
+    "observado": "desenv: true; botão desab: true; 1/3: true; largura: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:57.353Z"
+  },
+  {
+    "id": "PDI-DESENV-sec-cel-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "sec (cel): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:53:57.362Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-pc-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor (pc): PDI no menu com selo \"em desenvolvimento\"",
+    "esperado": "PDI…em desenvolvimento",
+    "observado": "Dashboard | PDIem desenvolvimento | Correçõesem desenvolvimento | Gestão de Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:00.032Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-pc-dash",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor (pc): Dashboard mostra PDI \"Em desenvolvimento\"",
+    "esperado": "aviso visível",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:00.926Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-rota/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor: /pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:01.001Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-rota/pdi/meus-pdis",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:01.036Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-rota/correcoes",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor: /correcoes mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:01.063Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-rota/correcoes/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:01.101Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-pc-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor (pc): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:01.208Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-cel-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor (cel): PDI no menu com selo \"em desenvolvimento\"",
+    "esperado": "PDI…em desenvolvimento",
+    "observado": "Dashboard | PDIem desenvolvimento | Correçõesem desenvolvimento | Gestão de Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:04.109Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-cel-dash",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor (cel): Dashboard mostra PDI \"Em desenvolvimento\"",
+    "esperado": "aviso visível",
+    "observado": "ok",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:05.027Z"
+  },
+  {
+    "id": "PDI-DESENV-gestor-cel-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "gestor (cel): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:05.034Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-pc-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora (pc): menu sem PDI (perfil nunca teve)",
+    "esperado": "sem PDI",
+    "observado": "Dashboard | Acompanhamento Escolar | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:07.574Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-rota/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora: /pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:08.503Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-rota/pdi/meus-pdis",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:08.559Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-rota/correcoes",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora: /correcoes mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:08.583Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-rota/correcoes/pdi",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
+    "esperado": "aviso",
+    "observado": "1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:08.609Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-pc-acomp",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora (pc): Acompanhamento com PDI em desenvolvimento e 1/3 normal",
+    "esperado": "cartão em desenvolvimento, botão PDI desabilitado, 1/3, sem rolagem",
+    "observado": "desenv: true; botão desab: true; 1/3: true; largura: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:09.937Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-pc-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora (pc): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:09.947Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-cel-menu",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora (cel): menu sem PDI (perfil nunca teve)",
+    "esperado": "sem PDI",
+    "observado": "Dashboard | Acompanhamento Escolar | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:12.643Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-cel-acomp",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora (cel): Acompanhamento com PDI em desenvolvimento e 1/3 normal",
+    "esperado": "cartão em desenvolvimento, botão PDI desabilitado, 1/3, sem rolagem",
+    "observado": "desenv: true; botão desab: true; 1/3: true; largura: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:14.749Z"
+  },
+  {
+    "id": "PDI-DESENV-diretora-cel-console",
+    "modulo": "PDI em desenvolvimento",
+    "cenario": "diretora (cel): sem erros no console",
+    "esperado": "0",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-11T18:54:14.754Z"
   }
 ]

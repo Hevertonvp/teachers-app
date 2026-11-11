@@ -88,6 +88,7 @@
 .acp-filtros select option { color: #141b2d; background: #fff; }
 .acp-seg { display: inline-flex; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px; padding: 3px; }
 .acp-seg button { border: 0; background: transparent; color: var(--acp-hero-muted); font-size: 0.82rem; font-weight: 600; padding: 5px 14px; border-radius: 999px; cursor: pointer; }
+.acp-seg button:disabled { opacity: 0.45; cursor: not-allowed; }
 .acp-seg button[aria-pressed="true"] { background: var(--acp-hero-ink); color: var(--acp-hero-1); }
 .acp-botao-hero { border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08); color: var(--acp-hero-ink); border-radius: 999px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 .acp-botao-hero:hover { background: rgba(255, 255, 255, 0.16); }
