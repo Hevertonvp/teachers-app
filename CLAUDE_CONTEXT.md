@@ -2701,3 +2701,8 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - CORS conferido na API nova: `https://hevertonvp.github.io` é aceito. As origens `educasaojoao.com.br`/`www` ainda não (dão 500 no preflight), e precisam entrar em `FRONTEND_ORIGIN` na etapa 2 (domínio).
   - DNS conferido: já publicado (servidores `a/c.sec.dns.br`; `www` → `hevertonvp.github.io`).
   - Para voltar atrás: reverter este commit (ou o merge) na `main`. O site volta a usar o serviço antigo de Oregon, que continua no ar.
+- **11/11/2026: PUBLICADO (PR #13, merge 9402229) e etapa 2 (domínio) em andamento.**
+  - No ar em `https://hevertonvp.github.io/teachers-app/`: nome "Educa São João", PDI desligado e API de Ohio. Conferido em navegador real com as contas ZZCARGA (`homologacao/54-producao-publicacao.mjs`): 23/24 OK (título, menu sem PDI, 1/3 abre, sem rolagem lateral, todas as chamadas para `educa-sao-joao-api.onrender.com`, sem erros no console, no computador e no celular). A falha foi o menu da Secretaria no computador lido vazio. No celular, com a mesma conta, veio certo; provável leitura cedo demais no teste, a repetir.
+  - Decisão: a API fica no endereço `educa-sao-joao-api.onrender.com`. O `api.educasaojoao.com.br` não será usado por enquanto (menos passos). O CNAME `api` no registro.br ainda aponta para o serviço antigo, mas não é usado.
+  - Render (novo): `FRONTEND_ORIGIN` ganhou `https://educasaojoao.com.br` e `https://www.educasaojoao.com.br`. CORS conferido para as 3 origens.
+  - GitHub Pages: custom domain `educasaojoao.com.br` salvo, "DNS check successful". Aguardando a emissão do certificado para marcar "Enforce HTTPS". Até lá o domínio mostra aviso de https.
