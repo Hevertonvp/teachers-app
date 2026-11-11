@@ -6,7 +6,7 @@ import { useEscola } from '../context/EscolaContext';
 import { isDiretora, isSecretaria } from '../utils/roles';
 import { obterAcompanhamentoEscola, obterAcompanhamentoRede } from '../services/acompanhamento';
 import { BarraSituacao, fmt, fmtData, GraficoRitmo, LegendaSituacao, LinhaTempo, Paginacao, pct, usePaginas } from '../components/acompanhamento/Graficos';
-import { PDI_ATIVO } from '../config/modulos';
+import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
 import '../styles/acompanhamento.css';
 
 // Acompanhamento Escolar (decisões do usuário, 10/11/2026; ver PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md).
@@ -303,6 +303,7 @@ const VisaoRede = ({ dados, form, abrirEscola }) => {
   const itens = dados.acompanhamento.filter((i) => form === 'ambos' || i.formulario === form);
   const cartoes = [];
   if (form !== 'umTerco') cartoes.push(<CartaoContagem key="pdi" rotulo="PDI" contagem={totais.pdi} unidade="Fichas" minimo={minimo} vazio="Nenhuma Aplicação no período" nota={totais.pdi ? `${totais.pdi.escolas} ${totais.pdi.escolas === 1 ? 'escola' : 'escolas'}${totais.pdi.aoVivo ? '' : ' · inclui números do prazo'}` : null} atraso={0} />);
+  if (PDI_EM_DESENVOLVIMENTO) cartoes.push(<Cartao key="pdi" rotulo="PDI · Em desenvolvimento" valor="—" sub={AVISO_PDI_DESENVOLVIMENTO} atraso={0} />);
   if (form !== 'pdi') cartoes.push(<CartaoContagem key="um" rotulo="Formulário 1/3" contagem={totais.umTerco} unidade="entregas" minimo={minimo} vazio="Nenhum ciclo no período" nota="Cada entrega conta uma vez, mesmo valendo para várias escolas" atraso={60} />);
   cartoes.push(<Cartao key="prazos" rotulo="Prazos próximos" valor={fmt(totais.prazosProximos)} sub={`períodos abertos que terminam em até ${limites.diasPrazoProximo} dias`} atraso={120} />);
   cartoes.push(<Cartao key="acomp" rotulo="Merecem acompanhamento" valor={fmt(itens.length)} tom={itens.length ? 'atencao' : undefined} sub={itens.length ? 'situações de escola × formulário' : 'nenhuma situação agora'} nota={form !== 'umTerco' && totais.correcoesAbertas ? `${fmt(totais.correcoesAbertas)} correções do PDI em aberto (informativo)` : null} atraso={180} />);
@@ -338,6 +339,7 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
   const cartoes = [];
   const contagemDe = (p) => (p && p.situacao !== 'agendado' ? p : null);
   if (form !== 'umTerco') cartoes.push(<CartaoContagem key="pdi" rotulo={pdi ? `PDI · ${SITUACAO[pdi.situacao]}` : 'PDI'} contagem={contagemDe(pdi)} unidade="Fichas" minimo={minimo} vazio={pdi ? (pdi.situacao === 'agendado' ? textoPrazo(pdi) : `${fmt(pdi.concluidas)} Fichas concluídas · sem percentual`) : 'Sem Aplicação no período'} nota={pdi ? `${pdi.titulo} · ${textoPrazo(pdi)}${pdi.fonte === 'foto' ? ' · números do prazo' : ''}` : null} atraso={0} />);
+  if (PDI_EM_DESENVOLVIMENTO) cartoes.push(<Cartao key="pdi" rotulo="PDI · Em desenvolvimento" valor="—" sub={AVISO_PDI_DESENVOLVIMENTO} atraso={0} />);
   if (form !== 'pdi') cartoes.push(<CartaoContagem key="um" rotulo={umTerco ? `1/3 · ${SITUACAO[umTerco.situacao]}` : 'Formulário 1/3'} contagem={contagemDe(umTerco)} unidade="entregas" minimo={minimo} vazio={umTerco ? textoPrazo(umTerco) : 'Fora dos ciclos do ano'} nota={umTerco ? `${umTerco.titulo} · ${textoPrazo(umTerco)}` : null} atraso={60} />);
   cartoes.push(<Cartao key="est" rotulo="Estrutura" valor={fmt(estrutura.turmas)} unidade="turmas" sub={PDI_ATIVO ? `${fmt(estrutura.professores)} professores · ${fmt(estrutura.alunosPdi)} alunos com PDI` : `${fmt(estrutura.professores)} professores`} atraso={120} />);
   if (PDI_ATIVO) cartoes.push(<Cartao key="corr" rotulo="Correções do PDI" valor={fmt(dados.correcoesAbertas)} sub="em aberto · informativo" atraso={180} />);
@@ -480,9 +482,9 @@ export const AcompanhamentoEscolarPage = () => {
             <select aria-label="Ano letivo" value={ano} onChange={(e) => definir({ ano: e.target.value, tri: '', ciclo: '' })}>
               {[anoAtual + 1, anoAtual, anoAtual - 1, anoAtual - 2].map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
-            {PDI_ATIVO && <div className="acp-seg" role="group" aria-label="Formulário">
+            {(PDI_ATIVO || PDI_EM_DESENVOLVIMENTO) && <div className="acp-seg" role="group" aria-label="Formulário">
               {[['ambos', 'Todos'], ['pdi', 'PDI'], ['umTerco', '1/3']].map(([v, r]) => (
-                <button key={v} type="button" aria-pressed={form === v} onClick={() => definir({ form: v === 'ambos' ? '' : v, tri: '', ciclo: '' })}>{r}</button>
+                <button key={v} type="button" aria-pressed={form === v} disabled={!PDI_ATIVO && v !== 'umTerco'} title={!PDI_ATIVO && v !== 'umTerco' ? AVISO_PDI_DESENVOLVIMENTO : undefined} onClick={() => definir({ form: v === 'ambos' ? '' : v, tri: '', ciclo: '' })}>{r}{!PDI_ATIVO && v === 'pdi' ? ' 🚧' : ''}</button>
               ))}
             </div>}
             {form === 'pdi' && (

@@ -7,7 +7,8 @@ import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { MainLayout } from '../layouts/Layouts';
-import { PDI_ATIVO } from '../config/modulos';
+import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { SeloDesenvolvimento } from '../components/PdiDesenvolvimento';
 
 export const DashboardProfessor = () => {
   const { user } = useAuth();
@@ -85,6 +86,24 @@ export const DashboardProfessor = () => {
           </Card>
         </section>}
 
+        {PDI_EM_DESENVOLVIMENTO && <section>
+          <Card className="bg-slate-50">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-bold text-slate-500">Formulário PDI</h2>
+                <SeloDesenvolvimento />
+              </div>
+              <Button size="sm" variant="outline" disabled>Meus PDIs</Button>
+            </div>
+            <p className="mb-4 text-sm text-slate-600">{AVISO_PDI_DESENVOLVIMENTO}</p>
+            <div className="grid grid-cols-2 gap-3 text-sm opacity-50 sm:grid-cols-5" aria-hidden="true">
+              {['Não iniciados', 'Agendados', 'Em preenchimento', 'Concluídos', 'Prazo encerrado'].map((rotulo) => (
+                <div key={rotulo} className="rounded-lg bg-white p-3"><p className="text-slate-500">{rotulo}</p><p className="text-2xl font-bold text-slate-400">—</p></div>
+              ))}
+            </div>
+          </Card>
+        </section>}
+
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card>
             <h2 className="text-xl font-bold text-slate-950">Atalhos</h2>
@@ -92,6 +111,7 @@ export const DashboardProfessor = () => {
               {PDI_ATIVO
                 ? <Link to="/pdi"><Button className="w-full" variant="primary">Acessar PDI</Button></Link>
                 : <Link to="/formulario-um-terco"><Button className="w-full" variant="primary">Abrir Formulário 1/3</Button></Link>}
+              {PDI_EM_DESENVOLVIMENTO && <Button className="w-full" variant="outline" disabled title={AVISO_PDI_DESENVOLVIMENTO}>Acessar PDI (em desenvolvimento)</Button>}
             </div>
           </Card>
 

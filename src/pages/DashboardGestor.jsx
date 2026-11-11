@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useEscola } from '../context/EscolaContext';
 import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
-import { PDI_ATIVO } from '../config/modulos';
+import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { SeloDesenvolvimento } from '../components/PdiDesenvolvimento';
 
 export const DashboardGestor = () => {
   const { user } = useAuth();
@@ -37,6 +38,20 @@ export const DashboardGestor = () => {
             <div className="mt-4 grid gap-3">
               <Link to="/pdi"><Button className="w-full" variant="primary">Acessar PDI</Button></Link>
               <Link to="/pdi/alunos"><Button className="w-full" variant="outline">Ver Alunos PDI</Button></Link>
+            </div>
+          </Card>
+        </section>}
+
+        {PDI_EM_DESENVOLVIMENTO && <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Card className="bg-slate-50">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-xl font-bold text-slate-500">PDI</h2>
+              <SeloDesenvolvimento />
+            </div>
+            <p className="mt-3 text-sm text-slate-600">{AVISO_PDI_DESENVOLVIMENTO}</p>
+            <div className="mt-4 grid gap-3">
+              <Button className="w-full" variant="primary" disabled>Acessar PDI</Button>
+              <Button className="w-full" variant="outline" disabled>Ver Alunos PDI</Button>
             </div>
           </Card>
         </section>}

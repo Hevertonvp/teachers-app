@@ -7,7 +7,8 @@ import { EntregaUmTercoGestao } from '../components/EntregaUmTercoGestao';
 import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
 import { obterIndicadoresPdiReais } from '../services/pdiAplicacoes';
-import { PDI_ATIVO } from '../config/modulos';
+import { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { CartaoPdiDesenvolvimento } from '../components/PdiDesenvolvimento';
 
 export const DashboardSecretaria = () => {
   const { escolas, turmas, escolasLoading, escolasError, turmasLoading, loadEscolas } = useData();
@@ -75,6 +76,7 @@ export const DashboardSecretaria = () => {
     { key: 'escola', header: 'Escola', render: row => row.escola.nome },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.escola.status === 'ativa' ? 'green' : 'gray'}>{row.escola.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge> },
     { key: 'totalTurmas', header: 'Turmas' },
+    ...(PDI_EM_DESENVOLVIMENTO ? [{ key: 'pdi', header: 'PDI preenchido', render: () => <span className="text-slate-400">Em desenvolvimento</span> }] : []),
     ...(!PDI_ATIVO ? [] : [{
       key: 'pdi',
       header: 'PDI preenchido',
@@ -112,6 +114,7 @@ export const DashboardSecretaria = () => {
         {/* Entrega do PDI e do Formulário 1/3 — mesmos números das telas de cada módulo (versão compacta). */}
         <section className="grid gap-6 lg:grid-cols-2">
           {PDI_ATIVO && <EntregaPdiGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/pdi', texto: 'Abrir PDI' }} />}
+          {PDI_EM_DESENVOLVIMENTO && <CartaoPdiDesenvolvimento titulo="Entrega do PDI" className="lg:self-start" />}
           <EntregaUmTercoGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/formulario-um-terco', texto: 'Abrir 1/3' }} />
         </section>
 
