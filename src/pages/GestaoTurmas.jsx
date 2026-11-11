@@ -135,7 +135,7 @@ export const GestaoTurmas = () => {
       .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome) || a.turmaNome.localeCompare(b.turmaNome) || a.disciplinaNome.localeCompare(b.disciplinaNome));
     const rotulo = (lista, v) => lista.find(i => String(i.value) === String(v))?.label;
     await exportarExcel({
-      arquivo: 'nexo-turmas',
+      arquivo: 'educa-sao-joao-turmas',
       usuario: user?.nome,
       filtros: [
         ['Escola', filtroEscolaId === 'todas' ? 'Todas as escolas' : nomeEscola(Number(filtroEscolaId))],

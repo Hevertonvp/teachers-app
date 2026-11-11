@@ -14,7 +14,7 @@ export const Logo = ({ size = 40, className = '', rounded = true }) => {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Gestão Pedagógica"
+      aria-label="Educa São João"
     >
       <defs>
         <linearGradient id={bgGradientId} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">

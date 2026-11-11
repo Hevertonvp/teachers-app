@@ -91,7 +91,7 @@ export const Header = ({ onMenuClick }) => {
             ☰
           </button>
           <div className="hidden sm:block">
-            <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Gestão Pedagógica</h1>
+            <h1 className="truncate text-lg font-bold text-slate-900 md:text-xl">Educa São João</h1>
             <p className="truncate text-xs text-slate-500">Rede Municipal de Ensino</p>
           </div>
           <EscolaSelector />

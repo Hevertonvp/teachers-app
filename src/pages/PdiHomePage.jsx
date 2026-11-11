@@ -68,7 +68,7 @@ const exportarPdi = async ({ activeEscolaId, escolaNome, usuario }) => {
     { titulo: 'Aluno', valor: l => l.alunoNome, largura: 32 },
   ];
   await exportarExcel({
-    arquivo: 'nexo-pdi',
+    arquivo: 'educa-sao-joao-pdi',
     usuario,
     filtros: [['Escola', activeEscolaId === null ? 'Todas as escolas (do seu acesso)' : escolaNome]],
     abas: [

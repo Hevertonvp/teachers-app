@@ -1,7 +1,7 @@
 {
-  "name": "Gestão Pedagógica",
-  "short_name": "Gestão Pedag.",
-  "description": "Sistema de Gestão Pedagógica da Rede Municipal de Ensino",
+  "name": "Educa São João",
+  "short_name": "Educa São João",
+  "description": "Educa São João — Rede Municipal de Ensino",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

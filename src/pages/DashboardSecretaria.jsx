@@ -7,6 +7,7 @@ import { EntregaUmTercoGestao } from '../components/EntregaUmTercoGestao';
 import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
 import { obterIndicadoresPdiReais } from '../services/pdiAplicacoes';
+import { PDI_ATIVO } from '../config/modulos';
 
 export const DashboardSecretaria = () => {
   const { escolas, turmas, escolasLoading, escolasError, turmasLoading, loadEscolas } = useData();
@@ -30,7 +31,7 @@ export const DashboardSecretaria = () => {
     }
   };
 
-  useEffect(() => { carregarIndicadores(); }, []);
+  useEffect(() => { if (PDI_ATIVO) carregarIndicadores(); }, []);
 
   // Sem isso, a tela mostrava "0" em tudo por um instante a cada carregamento (e, num cold start
   // do backend em produção, por bem mais que um instante) — fácil de confundir com "sumiram as
@@ -74,7 +75,7 @@ export const DashboardSecretaria = () => {
     { key: 'escola', header: 'Escola', render: row => row.escola.nome },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.escola.status === 'ativa' ? 'green' : 'gray'}>{row.escola.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge> },
     { key: 'totalTurmas', header: 'Turmas' },
-    {
+    ...(!PDI_ATIVO ? [] : [{
       key: 'pdi',
       header: 'PDI preenchido',
       render: row => {
@@ -85,7 +86,7 @@ export const DashboardSecretaria = () => {
         const percentual = Math.round((concluidas / totalEsperado) * 100);
         return <span className="font-semibold text-slate-800">{concluidas}/{totalEsperado} <span className="font-normal text-slate-500">({percentual}%)</span></span>;
       },
-    },
+    }]),
   ];
 
   return (
@@ -110,7 +111,7 @@ export const DashboardSecretaria = () => {
 
         {/* Entrega do PDI e do Formulário 1/3 — mesmos números das telas de cada módulo (versão compacta). */}
         <section className="grid gap-6 lg:grid-cols-2">
-          <EntregaPdiGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/pdi', texto: 'Abrir PDI' }} />
+          {PDI_ATIVO && <EntregaPdiGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/pdi', texto: 'Abrir PDI' }} />}
           <EntregaUmTercoGestao activeEscolaId={activeEscolaId} compacto link={{ para: '/formulario-um-terco', texto: 'Abrir 1/3' }} />
         </section>
 

@@ -14,7 +14,7 @@ export const exportarUmTerco = async ({ cicloId, filtros = {}, rotulos = [], usu
     { titulo: 'Disciplina', valor: l => l.disciplinaNome, largura: 20 },
   ];
   await exportarExcel({
-    arquivo: `nexo-formulario-1-3-${ciclo.anoLetivo}-${ciclo.trimestre}tri`,
+    arquivo: `educa-sao-joao-formulario-1-3-${ciclo.anoLetivo}-${ciclo.trimestre}tri`,
     usuario,
     filtros: [['Ciclo', `${ciclo.titulo} — ${ciclo.trimestre}º trimestre de ${ciclo.anoLetivo}`], ...rotulos],
     abas: [
