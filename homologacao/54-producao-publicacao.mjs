@@ -26,6 +26,7 @@ for (const [quem, email] of [['prof', 'zzcarga-1@teste.invalid'], ['sec', 'zzcar
       await page.waitForFunction(() => !location.hash.includes('/login'), null, { timeout: 30000 });
       await page.waitForLoadState('networkidle');
       if (tela === 'cel') await page.getByRole('button', { name: 'Abrir menu' }).click().catch(() => {});
+      await page.getByRole('link', { name: 'Formulário 1/3' }).first().waitFor({ timeout: 20000 }).catch(() => {});
       const menu = (await page.locator('aside a, nav a').allTextContents()).map((t) => t.trim()).join(' | ');
       ok(!/\bPDI\b|Correções/.test(menu) && /Formulário 1\/3/.test(menu), `${quem}/${tela}: menu sem PDI, com 1/3 → ${menu}`);
       await page.goto(SITE + '#/formulario-um-terco', { waitUntil: 'networkidle' });
