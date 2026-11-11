@@ -174,7 +174,7 @@ export const PdiPage = () => {
     const parentesco = (v) => parentescoOptions.find(o => (o.value ?? o) === v)?.label ?? v;
     const ordenados = [...alunos].sort((a, b) => escolaName(escolas, a.escolaId).localeCompare(escolaName(escolas, b.escolaId)) || turmaName(turmas, a.turmaId).localeCompare(turmaName(turmas, b.turmaId)) || a.nome.localeCompare(b.nome));
     return exportarExcel({
-      arquivo: 'nexo-alunos-pdi',
+      arquivo: 'educa-sao-joao-alunos-pdi',
       usuario: user?.nome,
       filtros: [
         ['Escola (topo)', activeEscolaId === null ? 'Todas as escolas' : escolaName(escolas, activeEscolaId)],

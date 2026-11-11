@@ -53,7 +53,7 @@ const nomeAba = (nome) => String(nome).replace(/[\\/?*[\]:]/g, ' ').slice(0, 31)
 
 /**
  * @param {object} cfg
- * @param {string} cfg.arquivo  base do nome do arquivo (sem data nem extensão), ex.: 'nexo-pdi'
+ * @param {string} cfg.arquivo  base do nome do arquivo (sem data nem extensão), ex.: 'educa-sao-joao-pdi'
  * @param {Array<[string,string]>} [cfg.filtros]  filtros aplicados na tela: [['Escola','Todas'], ...]
  * @param {string} [cfg.usuario]  nome de quem exportou
  * @param {Array<{nome:string, colunas:Array<{titulo:string, valor:(linha)=>any, tipo?:'texto'|'numero'|'data'|'dataHora', largura?:number}>, linhas:any[]}>} cfg.abas
@@ -61,7 +61,7 @@ const nomeAba = (nome) => String(nome).replace(/[\\/?*[\]:]/g, ' ').slice(0, 31)
 export async function exportarExcel({ arquivo, filtros = [], usuario, abas }) {
   const { default: ExcelJS } = await import('exceljs');
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'NEXO';
+  wb.creator = 'Educa São João';
   wb.created = new Date();
   const hoje = hojeSaoPaulo();
 

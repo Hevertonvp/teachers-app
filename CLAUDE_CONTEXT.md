@@ -2632,3 +2632,16 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Fora do escopo, de propósito:** perguntas inativas dentro de um Modelo PDI/Anamnese continuam inline com a etiqueta "Inativa" (a reordenação depende da lista completa); Escolas e Turmas não foram pedidas e não foram alteradas; a exportação Excel de Professores continua com todos e a coluna Status.
   - Camadas: só frontend (`src/pages/GestaoPessoas.jsx`: `ListaPessoas`, `LinkInativos`, `separarInativos`). Backend e banco não mudaram.
   - Testado: `vite build` passa. **Não testado no navegador** (nem em celular).
+- **11/11/2026: LANÇAMENTO "Educa São João" — decisões do usuário (plano em andamento).**
+  - Lançamento em ~3 dias (até ~14/11/2026). Média de 30 usuários simultâneos, pico possível de 120. **Só o Formulário 1/3 será aberto.** O PDI não foi testado e não será usado.
+  - Começa com **uma escola** (ainda a definir). A lista de professores ainda não chegou e é o maior risco do prazo.
+  - Nome do sistema: **"Educa São João"** (substitui o provisório "Nexo"). Domínio **`educasaojoao.com.br`**, já comprado pelo usuário no registro.br. O DNS ainda não foi configurado.
+  - Infraestrutura mantida para gastar pouco e mudar pouco: GitHub Pages (site, futuro `educasaojoao.com.br`), Render no plano Starter de US$ 7 (API, futuro `api.educasaojoao.com.br`), Neon (banco; o plano e a janela de PITR ainda não foram verificados), UptimeRobot grátis (monitoramento de `/health`, ainda não criado).
+  - Decisões: (1) esconder o PDI no frontend e **apagar a Aplicação 177** da produção; (2) **apagar os dados de teste da produção** (professor 137, aluno 662 e o que depender deles), sempre mostrando ao usuário antes o que vai ser apagado; (3) **sem migrations até o fim do preenchimento**, para poder voltar atrás; (4) rate limit no login; (5) trocar a senha do Neon e o `JWT_SECRET` antes da abertura; (6) manter a origem `github.io` no `FRONTEND_ORIGIN` como reserva.
+  - Volta atrás: tag `v1.0-lancamento`; revert na `main` (Pages); Rollback do Render; branch `pre-lancamento` no Neon + PITR.
+  - Branch única do lote: `lancamento/educa-sao-joao` (criada da `main` f92698c). `fix/filtro-escola-sempre-visivel` fica de fora de propósito (é do PDI). `fix/um-terco-inativos-separados` é redundante (a mudança já está na `main` como 712518a).
+- **11/11/2026: nome "Educa São João" na interface (só frontend).**
+  - Troca de "Gestão Pedagógica" por "Educa São João": `index.html` (title e apple-mobile-web-app-title), `public/manifest.webmanifest` (name, short_name, description), `Header.jsx`, `Sidebar.jsx`, `LoginPage.jsx` e `Logo.jsx` (aria-label). O subtítulo "Rede Municipal de Ensino" foi mantido.
+  - Arquivos Excel exportados: o prefixo `nexo-` virou `educa-sao-joao-` (`GestaoPessoas`, `GestaoTurmas`, `PdiHomePage`, `PdiPage`, `exportarUmTerco`), e o autor da planilha passou de `NEXO` para `Educa São João` (`exportarExcel.js`). Comentários internos com "NEXO" (ex.: `acompanhamento.css`) e nomes de documentos (`REGRAS_DE_NEGOCIO_NEXO.md`) não mudaram.
+  - Backend e banco não mudaram.
+  - Testado: `vite build` passa. **Não visto no navegador.** Quem já instalou o app no celular (PWA) pode continuar vendo o nome antigo no ícone até reinstalar.

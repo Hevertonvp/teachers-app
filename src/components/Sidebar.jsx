@@ -219,7 +219,7 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
             <div className="flex items-center gap-2.5">
               <Logo size={34} />
               <div>
-                <p className="text-sm font-bold text-white">Gestão Pedagógica</p>
+                <p className="text-sm font-bold text-white">Educa São João</p>
                 <p className="text-xs text-slate-400">Menu principal</p>
               </div>
             </div>

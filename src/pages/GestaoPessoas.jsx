@@ -669,7 +669,7 @@ const ProfessoresReaisManager = ({ user }) => {
     const qtd = new Map();
     ativos.forEach(v => qtd.set(v.professorId, (qtd.get(v.professorId) ?? 0) + 1));
     await exportarExcel({
-      arquivo: 'nexo-professores',
+      arquivo: 'educa-sao-joao-professores',
       usuario: user?.nome,
       filtros: [['Escopo', isSecretaria(user) ? 'Todos os professores' : 'Professores das escolas que você administra']],
       abas: [
