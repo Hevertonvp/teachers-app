@@ -4,7 +4,7 @@ import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { calcularExpiracaoSenhaTemporaria, gerarSenhaTemporaria } from '../../domain/senhaTemporaria.js';
 import bcrypt from 'bcryptjs';
-import { MAX_CARGOS_ATIVOS } from '../../domain/cargos.js';
+import { lerComposicao, MAX_CARGOS_ATIVOS } from '../../domain/cargos.js';
 import { criarCargo, lerData, validarComposicaoNoBanco } from '../../lib/cargos.js';
 
 export const pessoasRouter = Router();
@@ -73,18 +73,29 @@ pessoasRouter.get('/professores', async (req, res) => {
       ...(permitidas ? { vinculosEscolares: { some: { status: 'ATIVO', escolaId: { in: permitidas } } } } : {}),
     },
     orderBy: { nome: 'asc' },
-    include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } }, _count: { select: { cargos: { where: { status: 'ATIVO' } } } } },
+    include: {
+      vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } },
+      cargos: { where: { status: 'ATIVO' }, select: { versoes: { orderBy: { criadaEm: 'desc' }, take: 1, select: { composicao: true } } } },
+    },
   });
 
-  res.json(professores.map((professor) => ({
-    ...formatarPessoa(professor),
-    senhaTemporaria: professor.senhaTemporaria,
-    // Professor sem cargo ativo = cadastro incompleto para a Secretaria corrigir (decisão de 12/11/2026).
-    cargosAtivos: professor._count.cargos,
-    escolas: professor.vinculosEscolares
+  res.json(professores.map((professor) => {
+    const escolas = professor.vinculosEscolares
       .filter((vinculo) => !permitidas || permitidas.includes(vinculo.escolaId))
-      .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome })),
-  })));
+      .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome }));
+    // Escolas com vínculo ativo que não estão em nenhum cargo ativo (versão atual) — alerta de cadastro
+    // incompleto para a Secretaria resolver (decisão do usuário, 12/11/2026). Só leitura; vazio quando o
+    // professor não tem cargo (aí o alerta é "Sem cargo").
+    const nosCargos = new Set(professor.cargos.flatMap((c) => lerComposicao(c.versoes[0]?.composicao).map((p) => p.escolaId)));
+    return {
+      ...formatarPessoa(professor),
+      senhaTemporaria: professor.senhaTemporaria,
+      // Professor sem cargo ativo = cadastro incompleto para a Secretaria corrigir (decisão de 12/11/2026).
+      cargosAtivos: professor.cargos.length,
+      escolas,
+      escolasForaDosCargos: professor.cargos.length === 0 ? [] : escolas.filter((e) => !nosCargos.has(e.id)),
+    };
+  }));
 });
 
 const criarOuVincularProfessorSchema = z.object({

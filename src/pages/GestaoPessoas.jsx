@@ -13,7 +13,7 @@ import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { exportarExcel } from '../utils/exportarExcel';
 import { inputClass } from '../utils/display';
 import { CargosModal, EditorCargo, NumeroDeCargos, novoRascunhoCargo, validarRascunhoCargo } from '../components/CargosProfessor';
-import { listarAtuacoes } from '../services/cargos';
+import { listarAtuacoes, listarCargos } from '../services/cargos';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
 
 // Vínculos reais (ProfessorTurmaDisciplina/AuxiliarTurma) guardam `dataInicio`/`dataFim` como
@@ -61,8 +61,24 @@ const LinkInativos = ({ ver, setVer, qtd, rotulo }) => {
 // vínculos pedagógicos (ProfessorTurmaDisciplina/AuxiliarTurma) ativos daquela escola — a
 // mensagem de sucesso avisa isso explicitamente pra não parecer mágica. Reativar NUNCA ressuscita
 // esses vínculos operacionais (regra explícita do pedido); se precisar, cria-se de novo à parte.
-const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
+// Escola nova (ou reativada) fora de qualquer cargo ativo (decisão do usuário, 12/11/2026): a Secretaria
+// escolhe na hora em qual cargo ela entra — sem "Agora não" — e o editor de cargo abre com a escola
+// preenchida (onEscolherCargo). Diretora não edita cargos: só vê que ficou pendente para a Secretaria.
+const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose, ehProfessor = false, podeEditarCargos = false, onEscolherCargo }) => {
   const escolaDoTopo = useEscolaDoTopo();
+  const [pergunta, setPergunta] = useState(null); // { escolaId, escolaNome, cargos } | { escolaNome, pendente: true }
+  const conferirCargos = async (idEscola) => {
+    setPergunta(null);
+    if (!ehProfessor) return;
+    try {
+      const cargos = await listarCargos(pessoa.id);
+      if (cargos.some(c => c.composicao.some(p => p.escolaId === idEscola))) return;
+      const escolaNome = minhasEscolas.find(e => e.id === idEscola)?.nome ?? 'Escola';
+      setPergunta(podeEditarCargos ? { escolaId: idEscola, escolaNome, cargos } : { escolaNome, pendente: true });
+    } catch {
+      // Sem a lista de cargos não dá para perguntar; o alerta "Escola fora dos cargos" na lista cobre.
+    }
+  };
   const [vinculos, setVinculos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
@@ -112,10 +128,12 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
     setErroForm('');
     setSalvando(true);
     try {
-      await criarVinculoEscolarReal({ pessoaId: pessoa.id, escolaId: Number(escolaId) });
+      const idEscola = Number(escolaId);
+      await criarVinculoEscolarReal({ pessoaId: pessoa.id, escolaId: idEscola });
       setMensagem('Vínculo criado com sucesso.');
       setEscolaId('');
       await carregar();
+      await conferirCargos(idEscola);
     } catch (error) {
       setErroForm(error.message);
     } finally {
@@ -138,6 +156,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
       await reativarVinculoEscolarReal(vinculo.id);
       setMensagem('Vínculo reativado com sucesso. Vínculos pedagógicos anteriores NÃO voltam automaticamente — crie-os de novo se necessário.');
       await carregar();
+      await conferirCargos(vinculo.escolaId);
     } catch (error) {
       setMensagem(error.message);
     }
@@ -146,7 +165,26 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
   return (
     <Modal title={`Escolas — ${pessoa.nome}`} onClose={onClose}>
       <div className="space-y-5">
-        {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
+        {pergunta && !pergunta.pendente && (
+          <div className="space-y-3 rounded-xl border-2 border-teal-300 bg-teal-50 p-4" role="alert">
+            <p className="text-sm font-semibold text-teal-900">{pergunta.escolaNome} adicionada.</p>
+            <p className="text-base font-bold text-slate-900">Em qual cargo essa escola entra?</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {pergunta.cargos.map(c => (
+                <Button key={c.id} onClick={() => onEscolherCargo?.({ escolaId: pergunta.escolaId, cargoId: c.id })}>Incluir no {c.rotulo}</Button>
+              ))}
+              {pergunta.cargos.length < 2 && (
+                <Button variant={pergunta.cargos.length ? 'outline' : 'primary'} onClick={() => onEscolherCargo?.({ escolaId: pergunta.escolaId, cargoId: 'novo' })}>Criar Cargo {pergunta.cargos.length + 1}</Button>
+              )}
+            </div>
+          </div>
+        )}
+        {pergunta?.pendente && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+            {pergunta.escolaNome} ainda não está em nenhum cargo do professor. A Secretaria precisa incluí-la — até lá, aparece como "Escola fora dos cargos".
+          </div>
+        )}
+        {mensagem && !pergunta && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
         {erro && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
             <span>Não foi possível carregar os vínculos: {erro}</span>
@@ -725,8 +763,20 @@ const ProfessoresReaisManager = ({ user }) => {
         : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
     ) },
     // Professor sem cargo = cadastro incompleto (a Secretaria corrige em "Cargos").
+    // Escola com vínculo mas fora de todos os cargos ativos = cadastro inconsistente (12/11/2026): alerta,
+    // nunca estado normal. Acontece quando a escola entra por outro fluxo ou pela Diretora.
     { key: 'cargos', header: 'Cargos', render: row => (row.cargosAtivos > 0
-      ? <span className="whitespace-nowrap text-sm text-slate-700">{row.cargosAtivos} {row.cargosAtivos === 1 ? 'cargo' : 'cargos'}</span>
+      ? (
+        <div className="space-y-1">
+          <span className="whitespace-nowrap text-sm text-slate-700">{row.cargosAtivos} {row.cargosAtivos === 1 ? 'cargo' : 'cargos'}</span>
+          {(row.escolasForaDosCargos ?? []).length > 0 && (
+            <div title={row.escolasForaDosCargos.map(e => e.nome).join(', ')}>
+              <Badge variant="yellow">Escola fora dos cargos</Badge>
+              <p className="mt-0.5 text-xs text-amber-800">{row.escolasForaDosCargos.map(e => e.nome).join(', ')}</p>
+            </div>
+          )}
+        </div>
+      )
       : <span className="whitespace-nowrap"><Badge variant="yellow">Sem cargo</Badge></span>) },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ATIVO' ? 'green' : 'gray'}>{row.status === 'ATIVO' ? 'Ativo' : 'Inativo'}</Badge> },
     { key: 'acoes', header: 'Ações', render: row => (
@@ -885,6 +935,9 @@ const ProfessoresReaisManager = ({ user }) => {
         <VinculosEscolaModal
           pessoa={managingEscolas}
           minhasEscolas={minhasEscolas}
+          ehProfessor
+          podeEditarCargos={comCargos}
+          onEscolherCargo={(iniciar) => { const p = managingEscolas; setManagingEscolas(null); setManagingCargos({ ...p, iniciar }); carregar(); }}
           onClose={() => { setManagingEscolas(null); carregar(); }}
         />
       )}
@@ -892,6 +945,7 @@ const ProfessoresReaisManager = ({ user }) => {
       {managingCargos && (
         <CargosModal
           professor={managingCargos}
+          iniciar={managingCargos.iniciar}
           podeEditar={comCargos}
           escolas={minhasEscolas}
           disciplinas={disciplinasDoCargo}

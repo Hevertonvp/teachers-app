@@ -137,7 +137,9 @@ export const NumeroDeCargos = ({ valor, onChange, desabilitado = false }) => (
 );
 
 // Janela "Cargos" de um Professor já cadastrado. Secretaria cadastra, altera e encerra; a Diretora só vê.
-export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], onClose, onAlterado }) => {
+// `iniciar` ({ escolaId, cargoId: id | 'novo' }) vem da janela "Escolas": abre o editor já com a escola nova
+// (cargo novo ou bloco a mais no cargo escolhido). Nada é salvo sem a Secretaria confirmar.
+export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], onClose, onAlterado, iniciar = null }) => {
   const [cargos, setCargos] = useState(null);
   const [encerrados, setEncerrados] = useState(null);
   const [verEncerrados, setVerEncerrados] = useState(false);
@@ -153,6 +155,16 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
     try {
       const lista = await listarCargos(professor.id);
       setCargos(lista);
+      const alvo = podeEditar && iniciar && iniciar.cargoId !== 'novo' ? lista.find(c => c.id === iniciar.cargoId) : null;
+      if (alvo) {
+        const rascunho = rascunhoDoCargo(alvo);
+        if (!rascunho.partes.some(p => p.escolaId === String(iniciar.escolaId))) {
+          rascunho.partes.push({ chave: novaChave(), escolaId: String(iniciar.escolaId), disciplinaIds: [''], atuacaoIds: [] });
+        }
+        setEditando(prev => prev ?? { id: alvo.id, rascunho, base: alvo.updatedAt });
+      } else if (podeEditar && iniciar?.cargoId === 'novo' && lista.length < 2) {
+        setEditando(prev => prev ?? { id: 'novo', rascunho: novoRascunhoCargo(iniciar.escolaId) });
+      }
       if (podeEditar && lista.length === 0) setEditando(prev => prev ?? { id: 'novo', rascunho: novoRascunhoCargo() });
       if (verEncerrados) setEncerrados((await listarCargos(professor.id, { incluirEncerrados: true })).filter(c => c.status === 'encerrado'));
     } catch (e) { setErro(e.message); }
