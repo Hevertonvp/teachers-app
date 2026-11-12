@@ -6,7 +6,8 @@
 //                  "Em desenvolvimento" (decisão do usuário, 11/11/2026: esconder assustaria as escolas; "manutenção" soava mal).
 //   'oculto'     → PDI some da interface (menu, cartões) e as rotas voltam ao Dashboard.
 // Só muda o frontend; a API e os dados do PDI continuam intactos.
-export const MODO_PDI = 'desenvolvimento';
+// 12/11/2026: PDI liberado por inteiro até segunda ordem (pedido do usuário). Para voltar ao aviso, use 'desenvolvimento'.
+export const MODO_PDI = 'ativo';
 
 export const PDI_ATIVO = MODO_PDI === 'ativo';
 export const PDI_EM_DESENVOLVIMENTO = MODO_PDI === 'desenvolvimento';

@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
+import { travarVinculosEscolares, diaDeHojeSp } from '../../lib/cargos.js';
 import { escolasPermitidas, exigirSecretariaOuDiretora, type Actor } from './pessoas.js';
 
 export const vinculosEscolaresRouter = Router();
@@ -108,16 +109,18 @@ vinculosEscolaresRouter.post('/', async (req, res) => {
   const escola = await prisma.escola.findUnique({ where: { id: escolaId } });
   if (!escola) throw new NotFoundError('Escola não encontrada.');
 
-  const existente = await prisma.vinculoEscolar.findFirst({ where: { pessoaId, escolaId, status: 'ATIVO' } });
-  if (existente) {
-    return res.json(formatarVinculo({ ...existente, escola }));
-  }
-
-  const criado = await prisma.vinculoEscolar.create({
-    data: { pessoaId, escolaId, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) },
+  // Em fila por pessoa: clique duplo/duas abas não criam dois vínculos ativos na mesma escola.
+  const { vinculo, novo } = await prisma.$transaction(async (tx) => {
+    await travarVinculosEscolares(tx, pessoaId);
+    const existente = await tx.vinculoEscolar.findFirst({ where: { pessoaId, escolaId, status: 'ATIVO' } });
+    if (existente) return { vinculo: existente, novo: false };
+    const criado = await tx.vinculoEscolar.create({
+      data: { pessoaId, escolaId, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) },
+    });
+    return { vinculo: criado, novo: true };
   });
 
-  res.status(201).json(formatarVinculo({ ...criado, escola }));
+  res.status(novo ? 201 : 200).json(formatarVinculo({ ...vinculo, escola }));
 });
 
 // Encerra o vínculo escolar E, na MESMA transação, encerra os vínculos operacionais ativos que
@@ -168,6 +171,13 @@ vinculosEscolaresRouter.post('/:id/reativar', async (req, res) => {
   await exigirEscopoParaPessoa(actor, vinculo.pessoa, vinculo.escolaId);
   if (vinculo.status !== 'ENCERRADO') throw new ValidationError('Este vínculo já está ativo.');
 
-  const atualizado = await prisma.vinculoEscolar.update({ where: { id }, data: { status: 'ATIVO', dataFim: null } });
+  const atualizado = await prisma.$transaction(async (tx) => {
+    await travarVinculosEscolares(tx, vinculo.pessoaId);
+    const outroAtivo = await tx.vinculoEscolar.findFirst({ where: { pessoaId: vinculo.pessoaId, escolaId: vinculo.escolaId, status: 'ATIVO', id: { not: id } } });
+    if (outroAtivo) throw new ConflictError('Já existe um vínculo ativo com esta escola. Não é preciso reativar o antigo.');
+    const { count } = await tx.vinculoEscolar.updateMany({ where: { id, status: 'ENCERRADO' }, data: { status: 'ATIVO', dataFim: null } });
+    if (count !== 1) throw new ValidationError('Este vínculo já está ativo.');
+    return tx.vinculoEscolar.findUniqueOrThrow({ where: { id } });
+  });
   res.json(formatarVinculo({ ...atualizado, escola: vinculo.escola }));
 });

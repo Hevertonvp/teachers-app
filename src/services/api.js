@@ -1,3 +1,5 @@
+import { registrarHoraServidor } from '../utils/horaServidor';
+
 const API_URL = import.meta.env.VITE_API_URL;
 export const API_BASE_URL = API_URL;
 const TOKEN_KEY = 'authToken';
@@ -68,6 +70,7 @@ export async function apiFetch(path, options = {}) {
   }
   // Teve resposta (mesmo 4xx/5xx) = a rede está de pé, só uma regra de negócio recusou a chamada.
   onNetworkSuccess?.();
+  registrarHoraServidor(response.headers.get('X-Hora-Servidor'));
 
   let data = null;
   try {

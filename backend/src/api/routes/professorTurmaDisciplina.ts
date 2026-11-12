@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { diaDeHojeSp } from '../../lib/cargos.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { escolasPermitidas, exigirSecretariaOuDiretora, type Actor } from './pessoas.js';
 
@@ -123,7 +124,7 @@ professorTurmaDisciplinaRouter.post('/', async (req, res) => {
       await tx.professorTurmaDisciplina.update({ where: { id: atual.id }, data: { status: 'ENCERRADO', dataFim: new Date() } });
     }
     return tx.professorTurmaDisciplina.create({
-      data: { turmaId, professorId, disciplinaId, status: 'ATIVO', dataInicio: new Date() },
+      data: { turmaId, professorId, disciplinaId, status: 'ATIVO', dataInicio: diaDeHojeSp() },
     });
   });
 

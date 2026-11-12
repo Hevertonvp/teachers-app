@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:41.884Z"
+    "quando": "2026-11-12T18:20:46.375Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:42.061Z"
+    "quando": "2026-11-12T18:20:46.547Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:42.427Z"
+    "quando": "2026-11-12T18:20:46.921Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:42.745Z"
+    "quando": "2026-11-12T18:20:47.189Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:43.014Z"
+    "quando": "2026-11-12T18:20:47.452Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:46.507Z"
+    "quando": "2026-11-12T18:20:50.987Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:50.185Z"
+    "quando": "2026-11-12T18:20:54.653Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:51.662Z"
+    "quando": "2026-11-12T18:20:56.144Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:52.526Z"
+    "quando": "2026-11-12T18:20:57.016Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:52.913Z"
+    "quando": "2026-11-12T18:20:57.402Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:56.770Z"
+    "quando": "2026-11-12T18:21:01.309Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 14:44ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos",
+    "observado": "Não iniciadoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 15:21ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:44:59.844Z"
+    "quando": "2026-11-12T18:21:04.445Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:00.714Z"
+    "quando": "2026-11-12T18:21:05.306Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":135,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":137,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:03.254Z"
+    "quando": "2026-11-12T18:21:07.873Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:03.362Z"
+    "quando": "2026-11-12T18:21:07.988Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "ConcluídoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 14:44ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos, q",
+    "observado": "ConcluídoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 15:21ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos, q",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:06.974Z"
+    "quando": "2026-11-12T18:21:11.391Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,7 +8434,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:07.047Z"
+    "quando": "2026-11-12T18:21:11.443Z"
   },
   {
     "id": "CARGO-16",
@@ -8445,7 +8445,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:10.828Z"
+    "quando": "2026-11-12T18:21:15.147Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:45:10.842Z"
+    "quando": "2026-11-12T18:21:15.154Z"
   },
   {
     "id": "UT-P04-02",
@@ -9633,7 +9633,7 @@
     "status": "APROVADO",
     "evidencia": "64-configuracoes-atuacoes.png",
     "nota": "",
-    "quando": "2026-11-12T18:02:37.553Z"
+    "quando": "2026-11-12T18:21:21.772Z"
   },
   {
     "id": "ATU-5/2",
@@ -9644,7 +9644,7 @@
     "status": "APROVADO",
     "evidencia": "64-cadastro-regente.png",
     "nota": "",
-    "quando": "2026-11-12T18:02:43.123Z"
+    "quando": "2026-11-12T18:21:25.729Z"
   },
   {
     "id": "ATU-6/7",
@@ -9655,7 +9655,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T18:02:55.577Z"
+    "quando": "2026-11-12T18:21:37.843Z"
   },
   {
     "id": "ATU-8",
@@ -9666,7 +9666,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T18:02:56.245Z"
+    "quando": "2026-11-12T18:21:38.179Z"
   },
   {
     "id": "ATU-9/10",
@@ -9677,7 +9677,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T18:02:56.325Z"
+    "quando": "2026-11-12T18:21:38.227Z"
   },
   {
     "id": "XLS13-6b",
@@ -9689,5 +9689,60 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-12T17:42:10.532Z"
+  },
+  {
+    "id": "ESC-1",
+    "modulo": "Escola nova entra no cargo",
+    "cenario": "1 cargo: pergunta \"Escola … adicionada. Em qual cargo essa escola entra?\" com Incluir no Cargo 1 e Criar Cargo 2 (sem \"Agora não\"); Incluir abre o editor com Boa Vista preenchida, sem salvar sozinho; Secretaria completa a disciplina e salva",
+    "esperado": "botões [Incluir no Cargo 1, Criar Cargo 2]; editor com Boa Vista; banco só muda ao salvar",
+    "observado": "aviso: ZZ-HOMOLOG Escola Boa Vista adicionada. Em qual cargo essa escola entra? Incluir no Cargo 1 Criar Cargo 2; botões: [\"Incluir no Cargo 1\",\"Criar Cargo 2\"]; Escola 2: ZZ-HOMOLOG Escola Boa Vista; não salvou antes: true; depois: [[{\"escolaId\":1,\"atuacaoIds\":[],\"disciplinaIds\":[9]},{\"escolaId\":2,",
+    "status": "APROVADO",
+    "evidencia": "65-editor-cargo-1-com-boa-vista.png",
+    "nota": "",
+    "quando": "2026-11-12T18:20:22.383Z"
+  },
+  {
+    "id": "ESC-2",
+    "modulo": "Escola nova entra no cargo",
+    "cenario": "Sem cargo ativo: só \"Criar Cargo 1\"; o editor abre com a escola nova e cadastra o cargo ao confirmar",
+    "esperado": "botões [Criar Cargo 1]; Escola 1 = Boa Vista; 1 cargo com Boa Vista",
+    "observado": "botões: [\"Criar Cargo 1\"]; Escola 1: ZZ-HOMOLOG Escola Boa Vista; depois: [[{\"escolaId\":2,\"atuacaoIds\":[],\"disciplinaIds\":[9]}]]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T18:20:23.919Z"
+  },
+  {
+    "id": "ESC-3",
+    "modulo": "Escola nova entra no cargo",
+    "cenario": "2 cargos: só \"Incluir no Cargo 1\" e \"Incluir no Cargo 2\" (nunca Cargo 3); editor do Cargo 2 com a escola; Cancelar não salva e a lista mostra \"Escola fora dos cargos\" com o nome",
+    "esperado": "botões [Incluir no Cargo 1, Incluir no Cargo 2]; cargos intactos; alerta com Boa Vista",
+    "observado": "botões: [\"Incluir no Cargo 1\",\"Incluir no Cargo 2\"]; Escola 2: ZZ-HOMOLOG Escola Boa Vista; intactos: true; linha: Aaa ZZESC Professor dois zzesc-dois@teste.invalid ZZ-HOMOLOG Escola Aurora ZZ-HOMOLOG Escola Boa Vista 2 cargos Escola fora dos cargos ZZ-HOMOLOG Escola Boa Vis",
+    "status": "APROVADO",
+    "evidencia": "65-lista-escola-fora-dos-cargos.png",
+    "nota": "",
+    "quando": "2026-11-12T18:20:27.456Z"
+  },
+  {
+    "id": "ESC-4",
+    "modulo": "Escola nova entra no cargo",
+    "cenario": "Diretora vincula o professor à escola dela: nenhum cargo é criado nem alterado; Secretaria e Diretora veem \"Escola fora dos cargos\" (Aurora)",
+    "esperado": "vínculo ok; cargo intacto; escolasForaDosCargos = [Aurora] nas duas visões; alerta na tela da Diretora",
+    "observado": "vínculo: 201; cargos: [[{\"escolaId\":2,\"atuacaoIds\":[],\"disciplinaIds\":[9]}]]; sec: [{\"id\":1,\"nome\":\"ZZ-HOMOLOG Escola Aurora\"}]; dir: [{\"id\":1,\"nome\":\"ZZ-HOMOLOG Escola Aurora\"}]; tela: Aaa ZZESC Professor Diretora zzesc-dir@teste.invalid ZZ-HOMOLOG Escola Aurora 1 cargo Escola fora dos cargos ZZ-HO",
+    "status": "APROVADO",
+    "evidencia": "65-diretora-escola-fora-dos-cargos.png",
+    "nota": "",
+    "quando": "2026-11-12T18:20:31.704Z"
+  },
+  {
+    "id": "ESC-5",
+    "modulo": "Escola nova entra no cargo",
+    "cenario": "Professor com todas as escolas nos cargos (p05: 1 cargo, Aurora + Boa Vista) não ganha alerta",
+    "esperado": "escolasForaDosCargos = []",
+    "observado": "[]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T18:20:31.849Z"
   }
 ]

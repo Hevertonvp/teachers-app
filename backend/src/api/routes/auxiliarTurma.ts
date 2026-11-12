@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { diaDeHojeSp } from '../../lib/cargos.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { escolasPermitidas, exigirSecretariaOuDiretora, type Actor } from './pessoas.js';
 
@@ -102,7 +103,7 @@ auxiliarTurmaRouter.post('/', async (req, res) => {
     if (atual) {
       await tx.auxiliarTurma.update({ where: { id: atual.id }, data: { status: 'ENCERRADO', dataFim: new Date() } });
     }
-    return tx.auxiliarTurma.create({ data: { turmaId, auxiliarId, status: 'ATIVO', dataInicio: new Date() } });
+    return tx.auxiliarTurma.create({ data: { turmaId, auxiliarId, status: 'ATIVO', dataInicio: diaDeHojeSp() } });
   });
 
   res.status(201).json(formatarVinculo({ ...novo, turma, auxiliar }));

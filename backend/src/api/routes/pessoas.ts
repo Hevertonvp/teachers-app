@@ -4,8 +4,8 @@ import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { calcularExpiracaoSenhaTemporaria, gerarSenhaTemporaria } from '../../domain/senhaTemporaria.js';
 import bcrypt from 'bcryptjs';
-import { MAX_CARGOS_ATIVOS } from '../../domain/cargos.js';
-import { criarCargo, lerData, validarComposicaoNoBanco } from '../../lib/cargos.js';
+import { lerComposicao, MAX_CARGOS_ATIVOS } from '../../domain/cargos.js';
+import { criarCargo, lerData, travarVinculosEscolares, validarComposicaoNoBanco, diaDeHojeSp } from '../../lib/cargos.js';
 
 export const pessoasRouter = Router();
 
@@ -73,18 +73,29 @@ pessoasRouter.get('/professores', async (req, res) => {
       ...(permitidas ? { vinculosEscolares: { some: { status: 'ATIVO', escolaId: { in: permitidas } } } } : {}),
     },
     orderBy: { nome: 'asc' },
-    include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } }, _count: { select: { cargos: { where: { status: 'ATIVO' } } } } },
+    include: {
+      vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } },
+      cargos: { where: { status: 'ATIVO' }, select: { versoes: { orderBy: { criadaEm: 'desc' }, take: 1, select: { composicao: true } } } },
+    },
   });
 
-  res.json(professores.map((professor) => ({
-    ...formatarPessoa(professor),
-    senhaTemporaria: professor.senhaTemporaria,
-    // Professor sem cargo ativo = cadastro incompleto para a Secretaria corrigir (decisão de 12/11/2026).
-    cargosAtivos: professor._count.cargos,
-    escolas: professor.vinculosEscolares
+  res.json(professores.map((professor) => {
+    const escolas = professor.vinculosEscolares
       .filter((vinculo) => !permitidas || permitidas.includes(vinculo.escolaId))
-      .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome })),
-  })));
+      .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome }));
+    // Escolas com vínculo ativo que não estão em nenhum cargo ativo (versão atual) — alerta de cadastro
+    // incompleto para a Secretaria resolver (decisão do usuário, 12/11/2026). Só leitura; vazio quando o
+    // professor não tem cargo (aí o alerta é "Sem cargo").
+    const nosCargos = new Set(professor.cargos.flatMap((c) => lerComposicao(c.versoes[0]?.composicao).map((p) => p.escolaId)));
+    return {
+      ...formatarPessoa(professor),
+      senhaTemporaria: professor.senhaTemporaria,
+      // Professor sem cargo ativo = cadastro incompleto para a Secretaria corrigir (decisão de 12/11/2026).
+      cargosAtivos: professor.cargos.length,
+      escolas,
+      escolasForaDosCargos: professor.cargos.length === 0 ? [] : escolas.filter((e) => !nosCargos.has(e.id)),
+    };
+  }));
 });
 
 const criarOuVincularProfessorSchema = z.object({
@@ -144,8 +155,11 @@ pessoasRouter.post('/professores', async (req, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
+      await travarVinculosEscolares(tx, existente.id);
+      const jaAgora = new Set((await tx.vinculoEscolar.findMany({ where: { pessoaId: existente.id, status: 'ATIVO' }, select: { escolaId: true } })).map((v) => v.escolaId));
       for (const escolaId of novasEscolas) {
-        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+        if (jaAgora.has(escolaId)) continue;
+        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
         await tx.pessoaEvento.create({ data: { pessoaId: existente.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
       }
     });
@@ -169,7 +183,7 @@ pessoasRouter.post('/professores', async (req, res) => {
     });
     await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'CRIACAO', autorId: actor.id } });
     for (const escolaId of escolaIds) {
-      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
       await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
     }
     // Os vínculos acima já cobrem as escolas dos cargos; criarCargo só reusa (nunca duplica).
@@ -307,7 +321,7 @@ async function criarOuVincularPessoaComLogin(
 
     await prisma.$transaction(async (tx) => {
       for (const escolaId of novasEscolas) {
-        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
         await tx.pessoaEvento.create({ data: { pessoaId: existente.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
       }
     });
@@ -331,7 +345,7 @@ async function criarOuVincularPessoaComLogin(
     });
     await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'CRIACAO', autorId: actor.id } });
     for (const escolaId of escolaIds) {
-      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
       await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
     }
     return pessoa;
