@@ -1,6 +1,6 @@
 // Formulário 1/3 — regras puras (sem I/O): datas/fuso, validação do ciclo contra o calendário
 // global de trimestres, janela de edição e reabertura. A identidade do preenchimento é
-// ciclo + professor + anoSerie + disciplina (ver EntregaUmTerco no schema).
+// ciclo + professor + cargo desde 12/11/2026 (ver domain/cargos.ts e EntregaUmTerco no schema).
 import { ValidationError } from './errors.js';
 
 // Fuso operacional fixo (mesmo de domain/notificacoes.ts). Sem horário de verão desde 2019.

@@ -129,3 +129,32 @@ export const useEscola = () => {
   }
   return context;
 };
+
+// Escola que vem marcada ao abrir um modal com campo de escola (pedido do usuário, 12/11/2026):
+// se o seletor do topo tem uma escola e ela está entre as opções do modal, ela é o padrão; senão,
+// vale o padrão que o modal já usava (`padrao`). Só o valor inicial: a pessoa pode trocar à vontade.
+export const useEscolaDoTopo = () => {
+  const { activeEscolaId } = useEscola();
+  return useCallback(
+    (opcoes, padrao = '') => (activeEscolaId != null && (opcoes ?? []).some(escola => Number(escola.id) === activeEscolaId) ? activeEscolaId : padrao),
+    [activeEscolaId],
+  );
+};
+
+// Filtro de escola de uma tela interna (pedido do usuário, 12/11/2026): começa com a escola do topo e
+// ACOMPANHA o topo quando ele muda; mudar o filtro NÃO muda o topo (sentido único). `vazio` é o valor
+// de "Todas" do filtro. `opcoes` (ids), quando dado: se a escola do topo não está entre elas, o filtro
+// fica em "Todas". Devolve [valor, setValor], com o id em texto (como num <select>).
+// Não usar em telas do Professor: lá a visão é unificada entre escolas (decisão do usuário).
+export const useFiltroEscolaDoTopo = (vazio = '', opcoes = null) => {
+  const { activeEscolaId } = useEscola();
+  const chaveOpcoes = opcoes ? opcoes.map(Number).sort((a, b) => a - b).join(',') : null;
+  const doTopo = () => {
+    if (activeEscolaId == null) return vazio;
+    if (opcoes && !opcoes.some(id => Number(id) === activeEscolaId)) return vazio;
+    return String(activeEscolaId);
+  };
+  const [valor, setValor] = useState(doTopo);
+  useEffect(() => { setValor(doTopo()); }, [activeEscolaId, chaveOpcoes]); // eslint-disable-line react-hooks/exhaustive-deps
+  return [valor, setValor];
+};

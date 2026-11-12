@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscolaDoTopo } from '../context/EscolaContext';
 import {
   listarConversasReais, listarDestinatariosReais, obterConversaReal,
   criarConversaReal, responderConversaReal, ocultarConversaReal,
@@ -19,6 +20,7 @@ export const MensagensPage = () => {
   const { user } = useAuth();
   const userId = user?.email?.toLowerCase();
   const { loadMensagensNaoLidas } = useData();
+  const escolaDoTopo = useEscolaDoTopo();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [tab, setTab] = useState('entrada');
@@ -139,6 +141,11 @@ export const MensagensPage = () => {
       // Restaura rascunho de uma nova conversa ainda não enviada.
       const draft = await lerDraft(`${userId}::mensagem-nova::rascunho`);
       if (draft?.form) setForm(prev => ({ ...prev, ...draft.form }));
+      // Com mais de uma escola, já vem a escola do seletor do topo (se o rascunho não trouxer outra).
+      const escolaPadrao = escolaDoTopo(resultado.escolas, null);
+      if ((resultado.escolas || []).length > 1 && escolaPadrao !== null && !draft?.form?.escolaId) {
+        await escolherEscola(escolaPadrao);
+      }
     } catch (error) {
       setComposeError(error.message);
     }

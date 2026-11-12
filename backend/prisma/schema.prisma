@@ -235,8 +235,57 @@ model Pessoa {
   mensagensFeedbackSistema  MensagemFeedbackSistema[]  @relation("MensagemFeedbackSistemaAutor")
   eventosFeedbackSistema    FeedbackSistemaEvento[]    @relation("FeedbackSistemaEventoAutor")
   entregasUmTerco           EntregaUmTerco[]           @relation("EntregaUmTercoProfessor")
+  cargos                    CargoProfessor[]           @relation("CargoDoProfessor")
 
   @@map("pessoas")
+}
+
+enum StatusCargo {
+  ATIVO
+  ENCERRADO
+}
+
+// Cargo administrativo do Professor (decisão do usuário, 12/11/2026): Professor → Cargo(s) →
+// Escola(s) → Disciplina(s). No máximo 2 ATIVOS por Professor (validado na rota, com trava).
+// "Cargo 1/2" é só rótulo de tela; a identidade é o id. Nunca apagado: perder o cargo = ENCERRADO
+// (dataFim é a data real informada; encerradoEm é o momento do registro). Não tem turma nem série.
+// A composição (escolas → disciplinas) mora em CargoVersao, uma linha por alteração, para o 1/3 usar
+// a versão que valia na abertura do ciclo. NÃO é acoplado ao ProfessorTurmaDisciplina.
+model CargoProfessor {
+  id          Int         @id @default(autoincrement())
+  professorId Int
+  professor   Pessoa      @relation("CargoDoProfessor", fields: [professorId], references: [id], onDelete: Restrict)
+  status      StatusCargo @default(ATIVO)
+  dataInicio  DateTime    @db.Date
+  dataFim     DateTime?   @db.Date
+
+  createdAt    DateTime  @default(now())
+  createdBy    String?   @db.VarChar(200)
+  updatedAt    DateTime  @updatedAt
+  updatedBy    String?   @db.VarChar(200)
+  encerradoEm  DateTime?
+  encerradoPor String?   @db.VarChar(200)
+
+  versoes         CargoVersao[]
+  entregasUmTerco EntregaUmTercoCargo[]
+
+  @@index([professorId, status])
+  @@map("cargos_professor")
+}
+
+// Composição de um cargo a partir de `criadaEm`. Nunca editada: mudar a composição cria uma linha nova.
+// composicao = [{ escolaId, disciplinaIds: number[] }] (ordenada; disciplinaIds vazio = escola sem
+// disciplina específica, caso da Educação Infantil — decisão do usuário, 12/11/2026).
+model CargoVersao {
+  id         Int            @id @default(autoincrement())
+  cargoId    Int
+  cargo      CargoProfessor @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+  criadaEm   DateTime       @default(now())
+  criadaPor  String?        @db.VarChar(200)
+  composicao Json
+
+  @@index([cargoId, criadaEm])
+  @@map("cargo_versoes")
 }
 
 enum TipoEventoPessoa {
@@ -1594,9 +1643,18 @@ model EntregaUmTerco {
   ciclo        CicloUmTerco         @relation(fields: [cicloId], references: [id], onDelete: Restrict)
   professorId  Int
   professor    Pessoa               @relation("EntregaUmTercoProfessor", fields: [professorId], references: [id], onDelete: Restrict)
-  anoSerie     Int
-  disciplinaId Int
-  disciplina   Disciplina           @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  // Modelo ANTIGO (até 12/11/2026): identidade professor + ano/série + disciplina. Ficaram opcionais
+  // só para não apagar nada; entregas novas (por cargo) não usam.
+  anoSerie     Int?
+  disciplinaId Int?
+  disciplina   Disciplina?          @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  // Modelo POR CARGO (12/11/2026): ids dos cargos cobertos, ordenados e separados por vírgula ("7" ou
+  // "7,9" quando dois cargos idênticos dividem a folha). Os mesmos cargos estão em `cargos`
+  // (EntregaUmTercoCargo); esta coluna só existe para o índice único segurar duas abas criando a
+  // mesma folha. `composicao` é a foto do que a folha cobre neste ciclo:
+  // [{ escolaId, escolaNome, disciplinas: [{ id, nome }] }]. Nunca recalculada depois.
+  chaveCargos  String?              @db.VarChar(100)
+  composicao   Json?
   status       StatusEntregaUmTerco @default(EM_ANDAMENTO)
 
   iniciadaEm  DateTime  @default(now())
@@ -1609,12 +1667,26 @@ model EntregaUmTerco {
   cobertura CoberturaEntregaUmTerco[]
   historico HistoricoEntregaUmTerco[]
   correcoes CorrecaoEntregaUmTerco[]
+  cargos    EntregaUmTercoCargo[]
 
   // Garante no banco: nunca dois preenchimentos para a mesma combinação (duas turmas, duas
-  // escolas, duas abas, duplo clique).
+  // escolas, duas abas, duplo clique). O primeiro é do modelo antigo; o segundo, do modelo por cargo.
   @@unique([cicloId, professorId, anoSerie, disciplinaId])
+  @@unique([cicloId, professorId, chaveCargos])
   @@index([professorId])
   @@map("entregas_um_terco")
+}
+
+// Cargos cobertos por uma entrega do 1/3 (um, ou dois quando idênticos naquele ciclo).
+model EntregaUmTercoCargo {
+  entregaId Int
+  entrega   EntregaUmTerco @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  cargoId   Int
+  cargo     CargoProfessor @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+
+  @@id([entregaId, cargoId])
+  @@index([cargoId])
+  @@map("entregas_um_terco_cargos")
 }
 
 model RespostaSemanaUmTerco {

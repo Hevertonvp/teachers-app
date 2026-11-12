@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscolaDoTopo, useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
@@ -34,8 +35,9 @@ export const GestaoTurmas = () => {
     escolas, turmas, turmasLoading, turmasError, loadTurmas, turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos,
     createTurma, updateTurma, inativarTurma, reativarTurma,
   } = useData();
+  const escolaDoTopo = useEscolaDoTopo();
 
-  const [filtroEscolaId, setFiltroEscolaId] = useState('todas');
+  const [filtroEscolaId, setFiltroEscolaId] = useFiltroEscolaDoTopo('todas');
   const [filtroAnoLetivo, setFiltroAnoLetivo] = useState('todos');
   const [filtroEtapa, setFiltroEtapa] = useState('todas');
   const [filtroStatus, setFiltroStatus] = useState('ativa');
@@ -66,7 +68,7 @@ export const GestaoTurmas = () => {
   const paginaAtualTurmas = Math.min(paginaTurmas, totalPaginasTurmas);
   const turmasPaginadas = turmasFiltradas.slice((paginaAtualTurmas - 1) * TURMAS_POR_PAGINA, paginaAtualTurmas * TURMAS_POR_PAGINA);
 
-  const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(blankTurma(escolasOrdenadas[0]?.id)); };
+  const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(blankTurma(escolaDoTopo(escolasOrdenadas, escolasOrdenadas[0]?.id))); };
   // Turmas legadas sem turno/identificador definidos (ver mockData.js) recebem aqui um valor de
   // partida editável — só passam a valer de fato quando a Secretaria confirmar "Salvar".
   const abrirEdicao = (turma) => {

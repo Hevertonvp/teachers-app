@@ -4,6 +4,8 @@ import { prisma } from '../../lib/prisma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { calcularExpiracaoSenhaTemporaria, gerarSenhaTemporaria } from '../../domain/senhaTemporaria.js';
 import bcrypt from 'bcryptjs';
+import { MAX_CARGOS_ATIVOS } from '../../domain/cargos.js';
+import { criarCargo, lerData, validarComposicaoNoBanco } from '../../lib/cargos.js';
 
 export const pessoasRouter = Router();
 
@@ -71,12 +73,14 @@ pessoasRouter.get('/professores', async (req, res) => {
       ...(permitidas ? { vinculosEscolares: { some: { status: 'ATIVO', escolaId: { in: permitidas } } } } : {}),
     },
     orderBy: { nome: 'asc' },
-    include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } } },
+    include: { vinculosEscolares: { where: { status: 'ATIVO' }, include: { escola: true } }, _count: { select: { cargos: { where: { status: 'ATIVO' } } } } },
   });
 
   res.json(professores.map((professor) => ({
     ...formatarPessoa(professor),
     senhaTemporaria: professor.senhaTemporaria,
+    // Professor sem cargo ativo = cadastro incompleto para a Secretaria corrigir (decisão de 12/11/2026).
+    cargosAtivos: professor._count.cargos,
     escolas: professor.vinculosEscolares
       .filter((vinculo) => !permitidas || permitidas.includes(vinculo.escolaId))
       .map((vinculo) => ({ id: vinculo.escola.id, nome: vinculo.escola.nome })),
@@ -86,7 +90,10 @@ pessoasRouter.get('/professores', async (req, res) => {
 const criarOuVincularProfessorSchema = z.object({
   nome: z.string().trim().min(1).optional(),
   email: z.string().trim().email('E-mail inválido.'),
-  escolaIds: z.array(z.number().int().positive()).min(1, 'Selecione ao menos uma escola.'),
+  escolaIds: z.array(z.number().int().positive()).default([]),
+  // Cargos (12/11/2026, só Secretaria): 1 ou 2, cada um com início e composição escolas → disciplinas.
+  // As escolas dos cargos viram vínculos escolares automaticamente.
+  cargos: z.array(z.object({ dataInicio: z.string(), composicao: z.unknown() })).max(MAX_CARGOS_ATIVOS, `No máximo ${MAX_CARGOS_ATIVOS} cargos.`).optional(),
 });
 
 async function validarEscopoEscolas(actor: Actor, escolaIds: number[]) {
@@ -102,8 +109,16 @@ async function validarEscopoEscolas(actor: Actor, escolaIds: number[]) {
 pessoasRouter.post('/professores', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretariaOuDiretora(actor);
-  const { nome, email, escolaIds } = criarOuVincularProfessorSchema.parse(req.body);
+  const { nome, email, cargos } = criarOuVincularProfessorSchema.parse(req.body);
   const emailNormalizado = email.toLowerCase();
+  if (cargos?.length && actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria cadastra cargos.');
+
+  // Cargos validados antes de tudo; as escolas deles entram nos vínculos.
+  const cargosValidos = cargos?.length
+    ? await Promise.all(cargos.map(async (c) => ({ dataInicio: lerData(c.dataInicio, 'Início do cargo'), composicao: await validarComposicaoNoBanco(prisma, c.composicao) })))
+    : [];
+  const escolaIds = [...new Set([...criarOuVincularProfessorSchema.parse(req.body).escolaIds, ...cargosValidos.flatMap((c) => c.composicao.map((i) => i.escolaId))])];
+  if (escolaIds.length === 0) throw new ValidationError(actor.perfil === 'SECRETARIA' ? 'Cadastre ao menos um cargo, com a escola.' : 'Selecione ao menos uma escola.');
 
   await validarEscopoEscolas(actor, escolaIds);
 
@@ -111,6 +126,9 @@ pessoasRouter.post('/professores', async (req, res) => {
 
   if (existente && existente.perfil !== 'PROFESSOR') {
     throw new ConflictError('Já existe uma conta com este e-mail, de outro perfil. Procure a Secretaria.');
+  }
+  if (existente && cargosValidos.length) {
+    throw new ConflictError('Já existe um Professor com este e-mail. Para mudar os cargos dele, use "Cargos" na lista de professores.');
   }
 
   if (existente) {
@@ -154,6 +172,8 @@ pessoasRouter.post('/professores', async (req, res) => {
       await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
       await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
     }
+    // Os vínculos acima já cobrem as escolas dos cargos; criarCargo só reusa (nunca duplica).
+    for (const cargo of cargosValidos) await criarCargo(tx, pessoa.id, cargo, actor.id);
     return pessoa;
   });
 

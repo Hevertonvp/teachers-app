@@ -62,7 +62,7 @@ export const EntregaUmTercoGestao = ({ activeEscolaId, compacto = false, link = 
   const porEscola = new Map();
   if (activeEscolaId === null) {
     for (const linha of painel.linhas) {
-      for (const [escolaId, escolaNome] of new Map(linha.turmas.map(t => [t.escolaId, t.escolaNome]))) {
+      for (const { escolaId, escolaNome } of linha.escolas) {
         const g = porEscola.get(escolaId) ?? { id: escolaId, nome: escolaNome, concluidas: 0, emAndamento: 0, naoIniciadas: 0 };
         if (linha.status === 'concluida') g.concluidas += 1;
         else if (linha.status === 'em_andamento') g.emAndamento += 1;
@@ -83,7 +83,7 @@ export const EntregaUmTercoGestao = ({ activeEscolaId, compacto = false, link = 
       compacto={compacto}
       link={link}
       vazio="Nenhuma entrega esperada neste ciclo."
-      rodape={grupos.length > 1 ? 'Uma entrega vale para todas as turmas do mesmo ano/série e disciplina do professor: ela aparece em cada escola que atinge.' : null}
+      rodape={grupos.length > 1 ? 'Cada entrega é um formulário por cargo do professor; quando o cargo tem duas escolas, ela aparece nas duas.' : null}
     />
   );
 };

@@ -14,9 +14,9 @@ import { montarPainel } from './formularioUmTerco.js';
 // Acompanhamento Escolar (decisões do usuário, 10/11/2026; ver PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md).
 // SÓ LEITURA: nenhuma rota aqui cria, altera ou apaga nada.
 // Acesso: Secretaria (rede inteira) e Diretora (só as próprias escolas, via escolasPermitidas).
-// Nenhum nome de aluno ou professor sai daqui; só números por escola, disciplina e ano/série.
+// Nenhum nome de aluno ou professor sai daqui; só números por escola e disciplina.
 // Unidades iguais às telas existentes: PDI = Ficha (aluno × disciplina); 1/3 = entrega única
-// (professor × ano/série × disciplina), contada uma vez na rede e por cobertura em cada escola.
+// (folha de cargo do Professor, 12/11/2026), contada uma vez na rede e em cada escola que cobre.
 
 export const acompanhamentoRouter = Router();
 
@@ -112,7 +112,7 @@ function contagemAplicacao(a: Aplicacao, vivas: Map<number, ContagemAplicacao>, 
 }
 
 // Linhas de um painel do 1/3 que tocam uma escola (cobertura).
-const linhasDaEscola = (p: Painel, escolaId: number) => p.linhas.filter((l) => l.turmas.some((t) => t.escolaId === escolaId));
+const linhasDaEscola = (p: Painel, escolaId: number) => p.linhas.filter((l) => l.escolas.some((e) => e.escolaId === escolaId));
 const contarLinhas = (linhas: Painel['linhas']): Contagem => ({
   esperado: linhas.length,
   concluidas: linhas.filter((l) => l.status === 'concluida').length,
@@ -257,7 +257,7 @@ async function ritmo(base: Base, escolaId: number | null, cicloIdFiltro: number 
   let umTerco = null;
   if (ciclo && situacaoCiclo(ciclo) !== 'agendado') {
     const serie = async (c: Ciclo, painel: Painel) => {
-      const linhas = painel.linhas.filter((l) => !escolaId || l.turmas.some((t) => t.escolaId === escolaId)).filter((l) => escolaId || l.turmas.some((t) => escolas.includes(t.escolaId)));
+      const linhas = painel.linhas.filter((l) => !escolaId || l.escolas.some((e) => e.escolaId === escolaId)).filter((l) => escolaId || l.escolas.some((e) => escolas.includes(e.escolaId)));
       const ids = linhas.map((l) => l.entregaId).filter((x): x is number => x !== null);
       const entregas = ids.length ? await prisma.entregaUmTerco.findMany({ where: { id: { in: ids } }, select: { iniciadaEm: true, concluidaEm: true, status: true } }) : [];
       const ate = new Date(Math.max(c.prazoEm.getTime(), ...c.reaberturas.map((r) => r.fimEm.getTime())));
@@ -345,7 +345,7 @@ acompanhamentoRouter.get('/rede', async (req, res) => {
       const c = base.focoCicloPorEscola.get(e.id);
       const painel = c && base.paineis.get(c.id);
       if (!painel || situacaoCiclo(c) === 'agendado') continue;
-      for (const l of linhasDaEscola(painel, e.id)) unicas.set(`${c.id}:${l.professorId}:${l.anoSerie}:${l.disciplinaId}`, l);
+      for (const l of linhasDaEscola(painel, e.id)) unicas.set(`${c.id}:${l.professorId}:${l.cargoId}`, l);
     }
     const umTerco = unicas.size ? { ...contarLinhas([...unicas.values()]), ciclos: new Set([...unicas.keys()].map((k) => k.split(':')[0])).size } : null;
 
@@ -396,20 +396,9 @@ acompanhamentoRouter.get('/escola/:id', async (req, res) => {
       porDisciplina.sort((a, b) => a.disciplina.localeCompare(b.disciplina));
     }
 
-    // 1/3: matriz ano/série × disciplina do ciclo em foco, só das entregas que cobrem esta escola.
-    let matriz: { anoSerie: number; disciplinaId: number; disciplina: string; esperado: number; concluidas: number; emAndamento: number }[] = [];
-    if (ciclo) {
-      const painel = base.paineis.get(ciclo.id);
-      const celulas = new Map<string, (typeof matriz)[number]>();
-      for (const l of painel ? linhasDaEscola(painel, escolaId) : []) {
-        const k = `${l.anoSerie}:${l.disciplinaId}`;
-        const c = celulas.get(k) ?? { anoSerie: l.anoSerie, disciplinaId: l.disciplinaId, disciplina: l.disciplinaNome, esperado: 0, concluidas: 0, emAndamento: 0 };
-        c.esperado += 1;
-        if (l.status === 'concluida') c.concluidas += 1; else if (l.status === 'em_andamento') c.emAndamento += 1;
-        celulas.set(k, c);
-      }
-      matriz = [...celulas.values()].sort((a, b) => a.anoSerie - b.anoSerie || a.disciplina.localeCompare(b.disciplina));
-    }
+    // 1/3 por cargo (12/11/2026): a matriz ano/série × disciplina saiu (decisão do usuário: nada de
+    // ano/série nem gráfico por ano/série). Mantido vazio para clientes antigos da API.
+    const matriz: never[] = [];
 
     // Histórico do ano. PDI: percentual só com foto; sem foto, número absoluto. 1/3: todos os ciclos
     // que atendem a escola (o esperado do 1/3 é estável, então o percentual é seguro).

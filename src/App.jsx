@@ -112,7 +112,7 @@ const AppRoutes = () => <Routes>
   {/* Formulário 1/3: só Secretaria (administra) e Professor (preenche) — qualquer outro perfil volta ao dashboard. */}
   <Route path="/formulario-um-terco" element={<ProtectedRoute><UmTercoEntrada /></ProtectedRoute>} />
   <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><UmTercoSomenteSecretaria><UmTercoPainelPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
-  <Route path="/formulario-um-terco/:cicloId/:anoSerie/:disciplinaId" element={<ProtectedRoute><UmTercoSomenteProfessor><UmTercoPreenchimentoPage /></UmTercoSomenteProfessor></ProtectedRoute>} />
+  <Route path="/formulario-um-terco/:cicloId/cargo/:cargoId" element={<ProtectedRoute><UmTercoSomenteProfessor><UmTercoPreenchimentoPage /></UmTercoSomenteProfessor></ProtectedRoute>} />
   <Route path="/correcoes/pdi" element={<SoComPdi><ProtectedRoute><CorrecoesPdiListaPage /></ProtectedRoute></SoComPdi>} />
   <Route path="/correcoes/pdi/:fichaId" element={<SoComPdi><ProtectedRoute><CorrecoesPdiDetalhePage /></ProtectedRoute></SoComPdi>} />
 

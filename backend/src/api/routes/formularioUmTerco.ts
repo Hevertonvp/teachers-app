@@ -7,15 +7,18 @@ import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
+import { calcularFolhas, chaveDeCargos, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
 import { formatarCorrecao, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecao, textoMensagemCorrecao } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 
 // Formulário 1/3 — registro dos conteúdos ensinados, por semana.
-// Identidade do preenchimento: ciclo + professor + anoSerie + disciplina (EntregaUmTerco, única no
-// banco). Escola/turma só dizem a quais vínculos ele vale (CoberturaEntregaUmTerco). Rede inteira e
-// global (sem módulo por escola): vários ciclos por trimestre são permitidos, mas as janelas
-// (abertura → prazo) nunca se sobrepõem; só entram turmas do Fundamental (anoSerie estruturado). Acesso: Secretaria (administra) e Professor
-// (preenche o que é seu); nenhum outro perfil.
+// POR CARGO (decisão do usuário, 12/11/2026; substitui ano/série + disciplina): a identidade do
+// preenchimento é ciclo + professor + cargo. Cada cargo gera UMA folha (um texto por semana, sem bloco
+// por disciplina, sem turmas); dois cargos do mesmo Professor com a mesma parte no ciclo dividem a folha.
+// A parte do cargo é a composição que valia na ABERTURA (versões em CargoVersao), restrita às escolas
+// do ciclo. Vale para TODOS os Professores (Educação Infantil, Fundamental I e II): nada filtra por etapa.
+// Ciclos: vários por trimestre, janelas (abertura → prazo) nunca se sobrepõem entre ciclos com escola
+// em comum. Acesso: Secretaria (administra) e Professor (preenche o que é seu).
 export const formularioUmTercoRouter = Router();
 
 type Actor = { id: number; perfil: string };
@@ -38,7 +41,6 @@ const iso = (d: Date | null) => (d ? d.toISOString() : null);
 const dataIso = (d: Date) => paraDataIsoUtc(d);
 const dataUtc = (s: string) => new Date(`${s}T00:00:00Z`);
 const ehConflitoUnico = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
-const chave = (professorId: number, anoSerie: number, disciplinaId: number) => `${professorId}:${anoSerie}:${disciplinaId}`;
 
 // --- Ciclo ---------------------------------------------------------------------------------
 
@@ -112,38 +114,6 @@ async function validarEscolas(db: Db, dados: { todasEscolas?: boolean; escolaIds
   return { todasEscolas: false, escolaIds };
 }
 
-// --- Vínculos elegíveis e cobertura ----------------------------------------------------------
-
-type VinculoElegivel = Prisma.ProfessorTurmaDisciplinaGetPayload<{
-  include: { turma: { include: { escola: true } }; professor: true; disciplina: true };
-}>;
-
-// Vínculos que pertencem ao Formulário 1/3 de um ciclo. Global: vale para TODAS as escolas (nada de
-// módulo por escola nem lista de IDs) — basta ter turma do Fundamental com anoSerie, do ano letivo do
-// ciclo. REGRA DE "ESPERADO": quem teve vínculo em algum momento DENTRO da janela do ciclo
-// (abertura → prazo). Vínculo que só nasceu depois do prazo nunca entra retroativamente; vínculo que
-// acabou depois do início da janela continua contando (histórico preservado).
-// Escola/turma/professor "ativos" só são exigidos de vínculos ainda em andamento E de ciclos que não
-// terminaram: depois do prazo o passado não é recalculado pelo estado de hoje.
-// ESCOLAS (10/11/2026): ciclo com escolas escolhidas só considera turmas dessas escolas; "todas" = sem filtro.
-async function vinculosElegiveis(db: Db, ciclo: { anoLetivo: number; abreEm: Date; prazoEm: Date } & EscopoEscolas, filtro: { professorId?: number; disciplinaId?: number; anoSerie?: number } = {}): Promise<VinculoElegivel[]> {
-  const cicloEmCurso = ciclo.prazoEm.getTime() >= Date.now();
-  const escolas = escolasDoCiclo(ciclo);
-  const vinculos = await db.professorTurmaDisciplina.findMany({
-    where: {
-      ...(filtro.professorId ? { professorId: filtro.professorId } : {}),
-      ...(filtro.disciplinaId ? { disciplinaId: filtro.disciplinaId } : {}),
-      dataInicio: { lte: dataUtc(dataLocalSp(ciclo.prazoEm)) },
-      OR: [{ status: 'ATIVO' }, { dataFim: { gte: dataUtc(dataLocalSp(ciclo.abreEm)) } }],
-      professor: { perfil: 'PROFESSOR' },
-      turma: { etapa: 'FUNDAMENTAL', anoSerie: filtro.anoSerie ?? { not: null }, anoLetivo: ciclo.anoLetivo, ...(escolas ? { escolaId: { in: escolas } } : {}) },
-    },
-    include: { turma: { include: { escola: true } }, professor: true, disciplina: true },
-  });
-  if (!cicloEmCurso) return vinculos;
-  return vinculos.filter((v) => v.status === 'ENCERRADO' || (v.professor.status === 'ATIVO' && v.turma.status === 'ATIVA' && v.turma.escola.status === 'ATIVA'));
-}
-
 // Janelas (abertura → prazo) de ciclos ATIVOS nunca se sobrepõem. Vários ciclos no mesmo trimestre
 // são permitidos, desde que não fiquem abertos ao mesmo tempo. Chamar DENTRO da transação, depois de
 // travar (travarJanelasDeCiclo), para duas gravações simultâneas não validarem uma contra o estado
@@ -170,109 +140,185 @@ async function exigirJanelaLivre(tx: Db, janela: { abreEm: Date; prazoEm: Date }
 
 const formatarDataHoraSp = (d: Date) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
 
-const apenasAtivos = (vinculos: VinculoElegivel[]) => vinculos.filter((v) => v.status === 'ATIVO');
-
-const descreverVinculo = (v: VinculoElegivel) => ({ vinculoId: v.id, turmaId: v.turmaId, turmaNome: v.turma.nome, escolaId: v.turma.escolaId, escolaNome: v.turma.escola.nome });
-
 async function registrarEvento(db: Db, entregaId: number, tipo: Prisma.HistoricoEntregaUmTercoUncheckedCreateInput['tipo'], pessoaId: number | null, detalhe?: Prisma.InputJsonValue) {
   await db.historicoEntregaUmTerco.create({ data: { entregaId, tipo, pessoaId, detalhe } });
 }
 
-// Mantém a cobertura da entrega alinhada aos vínculos reais: vínculo equivalente novo ganha uma
-// linha (mesma entrega, nunca outra); vínculo perdido só ganha `ate` (o histórico fica).
-async function sincronizarCobertura(db: Db, entrega: { id: number; cicloId: number; professorId: number; anoSerie: number; disciplinaId: number }, ciclo: { anoLetivo: number; abreEm: Date; prazoEm: Date } & EscopoEscolas, pessoaId: number | null) {
-  const elegiveis = (await vinculosElegiveis(db, ciclo, { professorId: entrega.professorId, disciplinaId: entrega.disciplinaId, anoSerie: entrega.anoSerie }));
-  const atuais = new Map(elegiveis.map((v) => [v.id, v]));
-  const linhas = await db.coberturaEntregaUmTerco.findMany({ where: { entregaId: entrega.id } });
-  const existentes = new Set(linhas.map((l) => l.vinculoId));
+// --- Folhas por cargo --------------------------------------------------------------------------
 
-  for (const v of elegiveis) {
-    if (existentes.has(v.id)) continue;
-    // O período da cobertura é o do próprio vínculo (início real; fim só se já encerrou).
-    await db.coberturaEntregaUmTerco.create({ data: { entregaId: entrega.id, vinculoId: v.id, turmaId: v.turmaId, escolaId: v.turma.escolaId, desde: v.dataInicio, ate: v.status === 'ENCERRADO' ? v.dataFim : null } });
-    await registrarEvento(db, entrega.id, 'COBERTURA_ADICIONADA', pessoaId, { turma: v.turma.nome, escola: v.turma.escola.nome });
-  }
-  for (const linha of linhas) {
-    const v = atuais.get(linha.vinculoId);
-    const aindaVale = v && v.status === 'ATIVO';
-    if (linha.ate === null && !aindaVale) {
-      await db.coberturaEntregaUmTerco.update({ where: { id: linha.id }, data: { ate: v?.dataFim ?? new Date() } });
-      await registrarEvento(db, entrega.id, 'COBERTURA_ENCERRADA', pessoaId, { turmaId: linha.turmaId });
-    }
-  }
+// Composição com nomes, no formato da tela e da foto gravada na entrega: escola → disciplinas.
+type ParteNomeada = { escolaId: number; escolaNome: string; disciplinas: { id: number; nome: string }[] };
+
+async function carregarNomes(db: Db) {
+  const [escolas, disciplinas] = await Promise.all([
+    db.escola.findMany({ select: { id: true, nome: true } }),
+    db.disciplina.findMany({ select: { id: true, nome: true } }),
+  ]);
+  return { escola: new Map(escolas.map((e) => [e.id, e.nome])), disciplina: new Map(disciplinas.map((d) => [d.id, d.nome])) };
+}
+type Nomes = Awaited<ReturnType<typeof carregarNomes>>;
+
+const ordenarPartes = (partes: ParteNomeada[]) => partes
+  .map((p) => ({ ...p, disciplinas: [...p.disciplinas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }))
+  .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'));
+
+const nomear = (composicao: Composicao, nomes: Nomes): ParteNomeada[] => ordenarPartes(composicao.map((i) => ({
+  escolaId: i.escolaId,
+  escolaNome: nomes.escola.get(i.escolaId) ?? '—',
+  disciplinas: i.disciplinaIds.map((id) => ({ id, nome: nomes.disciplina.get(id) ?? '—' })),
+})));
+
+// Foto gravada na entrega (nunca recalculada). Tolerante a formatos estranhos.
+function lerFoto(json: unknown): ParteNomeada[] {
+  if (!Array.isArray(json)) return [];
+  return ordenarPartes(json.map((p) => ({
+    escolaId: Number((p as ParteNomeada)?.escolaId),
+    escolaNome: String((p as ParteNomeada)?.escolaNome ?? '—'),
+    disciplinas: Array.isArray((p as ParteNomeada)?.disciplinas) ? (p as ParteNomeada).disciplinas.map((d) => ({ id: Number(d.id), nome: String(d.nome) })) : [],
+  })).filter((p) => Number.isInteger(p.escolaId)));
 }
 
-// --- Montagem do detalhe de uma entrega (Professor e Secretaria) ---------------------------------
+// "Prudenciana — Inglês, Geografia" (escola sem disciplina: só o nome da escola).
+const descreverParte = (p: ParteNomeada) => (p.disciplinas.length ? `${p.escolaNome} — ${p.disciplinas.map((d) => d.nome).join(', ')}` : p.escolaNome);
 
-async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, anoSerie: number, disciplinaId: number, opcoes: { podeEditar: boolean }) {
-  const [entrega, disciplina, professor] = await Promise.all([
-    db.entregaUmTerco.findUnique({
-      where: { cicloId_professorId_anoSerie_disciplinaId: { cicloId: ciclo.id, professorId, anoSerie, disciplinaId } },
-      include: {
-        respostas: true,
-        cobertura: { include: { turma: { include: { escola: true } } }, orderBy: { desde: 'asc' } },
-        historico: { orderBy: { quando: 'asc' } },
-        correcoes: { orderBy: { criadaEm: 'desc' } },
-      },
+export const AVISO_FOLHA_COMPARTILHADA = 'Este formulário representa os dois cargos cadastrados, pois possuem a mesma configuração de escolas e disciplinas.';
+
+const entregaInclude = {
+  respostas: true,
+  cargos: { select: { cargoId: true } },
+  professor: { select: { id: true, nome: true } },
+  correcoes: { orderBy: { criadaEm: 'desc' as const } },
+} satisfies Prisma.EntregaUmTercoInclude;
+type EntregaCarregada = Prisma.EntregaUmTercoGetPayload<{ include: typeof entregaInclude }>;
+
+type Folha = {
+  professorId: number;
+  professorNome: string;
+  cargoIds: number[]; // ordenados; o menor é o id usado na rota
+  idRota: number;
+  composicao: ParteNomeada[];
+  esperada: boolean; // conta no esperado do ciclo (cargo não encerrado até o prazo)
+  rotulo: string;
+  entrega: EntregaCarregada | null;
+};
+
+// Folhas de um ciclo (de um Professor, ou de todos):
+// 1. calcula as folhas esperadas pelos cargos (domain/cargos.ts: versão da abertura, cadastro antes da
+//    abertura, parte nas escolas do ciclo, cargos iguais juntos);
+// 2. casa cada entrega já existente com a folha que tem algum cargo em comum (a entrega nunca muda de
+//    folha por causa de mudanças posteriores no cadastro);
+// 3. entrega que não casa com nenhuma folha esperada (cargo encerrado) continua listada como histórico,
+//    fora do esperado. Entregas do modelo antigo (sem cargos) são ignoradas.
+async function folhasDoCiclo(db: Db, ciclo: CicloCompleto, filtro: { professorId?: number } = {}): Promise<Folha[]> {
+  const cicloEmCurso = ciclo.prazoEm.getTime() >= Date.now();
+  const [cargos, entregas, nomes] = await Promise.all([
+    db.cargoProfessor.findMany({
+      where: { createdAt: { lte: ciclo.abreEm }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
+      include: { versoes: { where: { criadaEm: { lte: ciclo.abreEm } }, orderBy: { criadaEm: 'desc' }, take: 1 }, professor: { select: { id: true, nome: true, status: true } } },
     }),
-    db.disciplina.findUnique({ where: { id: disciplinaId } }),
-    db.pessoa.findUnique({ where: { id: professorId }, select: { id: true, nome: true } }),
+    db.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, chaveCargos: { not: null }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) }, include: entregaInclude }),
+    carregarNomes(db),
   ]);
-  if (!disciplina || !professor) throw new NotFoundError('Formulário não encontrado.');
+  const professores = new Map(cargos.map((c) => [c.professorId, c.professor]));
+  const calculadas = calcularFolhas(cargos, ciclo, escolasDoCiclo(ciclo));
 
-  const elegiveis = await vinculosElegiveis(db, ciclo, { professorId, disciplinaId, anoSerie });
-  const ativos = apenasAtivos(elegiveis);
-  if (!entrega && elegiveis.length === 0) throw new NotFoundError('Formulário não encontrado para este Professor.');
+  // Rótulos "Cargo 1/2" pelos cargos de HOJE do Professor (só visual).
+  const ids = [...new Set([...calculadas.map((f) => f.professorId), ...entregas.map((e) => e.professorId)])];
+  const todosCargos = ids.length ? await db.cargoProfessor.findMany({ where: { professorId: { in: ids } }, select: { id: true, professorId: true, status: true, dataInicio: true } }) : [];
+  const rotulosPorProfessor = new Map<number, Map<number, string>>();
+  for (const id of ids) rotulosPorProfessor.set(id, rotulosDosCargos(todosCargos.filter((c) => c.professorId === id)));
 
+  const folhas: Folha[] = calculadas.map((f) => {
+    const professor = professores.get(f.professorId)!;
+    return {
+      professorId: f.professorId, professorNome: professor.nome, cargoIds: f.cargoIds, idRota: f.cargoIds[0],
+      composicao: nomear(f.composicao, nomes),
+      // Professor inativo deixa de ser esperado enquanto o ciclo corre (depois do prazo o passado não muda).
+      esperada: f.esperada && (!cicloEmCurso || professor.status === 'ATIVO'),
+      rotulo: '', entrega: null,
+    };
+  });
+  for (const e of entregas) {
+    const cargosDaEntrega = e.cargos.map((c) => c.cargoId).sort((a, b) => a - b);
+    const folha = folhas.find((f) => f.professorId === e.professorId && !f.entrega && f.cargoIds.some((id) => cargosDaEntrega.includes(id)));
+    if (folha) {
+      folha.entrega = e;
+      folha.composicao = lerFoto(e.composicao);
+      folha.cargoIds = [...new Set([...folha.cargoIds, ...cargosDaEntrega])].sort((a, b) => a - b);
+      folha.idRota = folha.cargoIds[0];
+    } else {
+      folhas.push({ professorId: e.professorId, professorNome: e.professor.nome, cargoIds: cargosDaEntrega, idRota: cargosDaEntrega[0], composicao: lerFoto(e.composicao), esperada: false, rotulo: '', entrega: e });
+    }
+  }
+  for (const f of folhas) f.rotulo = rotuloDaFolha(f.cargoIds, rotulosPorProfessor.get(f.professorId) ?? new Map());
+  return folhas.sort((a, b) => a.professorNome.localeCompare(b.professorNome, 'pt-BR') || a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+}
+
+const statusDaEntrega = (e: EntregaCarregada | null) => (e ? (e.status === 'CONCLUIDA' ? 'concluida' : 'em_andamento') : 'nao_iniciado');
+const semanasPreenchidas = (e: EntregaCarregada | null) => (e ? e.respostas.filter((r) => r.texto.trim().length > 0).length : 0);
+
+// Campos comuns da folha para as telas (sem turmas, sem séries).
+const resumoFolha = (f: Folha) => ({
+  professorId: f.professorId,
+  professorNome: f.professorNome,
+  cargoId: f.idRota,
+  cargoIds: f.cargoIds,
+  rotulo: f.rotulo,
+  compartilhada: f.cargoIds.length > 1,
+  composicao: f.composicao,
+  esperada: f.esperada,
+});
+
+// --- Montagem do detalhe de uma folha (Professor e Secretaria) -----------------------------------
+
+async function buscarFolha(db: Db, ciclo: CicloCompleto, professorId: number, cargoId: number) {
+  const folha = (await folhasDoCiclo(db, ciclo, { professorId })).find((f) => f.cargoIds.includes(cargoId));
+  if (!folha) throw new NotFoundError('Formulário não encontrado para este cargo neste ciclo.');
+  return folha;
+}
+
+async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, cargoId: number, opcoes: { podeEditar: boolean }) {
+  const folha = await buscarFolha(db, ciclo, professorId, cargoId);
+  const entrega = folha.entrega;
+  const historico = entrega ? await db.historicoEntregaUmTerco.findMany({ where: { entregaId: entrega.id }, orderBy: { quando: 'asc' } }) : [];
   const respostaPorSemana = new Map((entrega?.respostas ?? []).map((r) => [r.semanaId, r.texto]));
-  const agora = new Date();
-  const prazoAberto = ciclo.status === 'ATIVA' && cicloEditavelAgora(ciclo, janelasDe(ciclo), agora);
+  const prazoAberto = ciclo.status === 'ATIVA' && cicloEditavelAgora(ciclo, janelasDe(ciclo), new Date());
   // Correções desta entrega (fluxo de correções, 10/11/2026), mais recente primeiro.
   const correcoes = entrega?.correcoes ?? [];
   const nomes = await nomesDePessoas(db, idsDePessoasDasCorrecoes(correcoes));
   const correcaoAberta = correcoes.some((c) => c.status === 'ABERTA');
   return {
     ciclo: formatarCiclo(ciclo),
-    professorId: professor.id,
-    professorNome: professor.nome,
-    anoSerie,
-    disciplinaId,
-    disciplinaNome: disciplina.nome,
-    rotulo: `${anoSerie}º ano — ${disciplina.nome}`,
+    ...resumoFolha(folha),
+    avisoCompartilhada: folha.cargoIds.length > 1 ? AVISO_FOLHA_COMPARTILHADA : null,
     entregaId: entrega?.id ?? null,
-    status: entrega ? (entrega.status === 'CONCLUIDA' ? 'concluida' : 'em_andamento') : 'nao_iniciado',
+    status: statusDaEntrega(entrega),
     iniciadaEm: iso(entrega?.iniciadaEm ?? null),
     concluidaEm: iso(entrega?.concluidaEm ?? null),
     updatedAt: iso(entrega?.updatedAt ?? null),
-    // Pode editar = prazo/reabertura aberto E ainda leciona (vínculo ativo equivalente), ou há uma
-    // correção aberta para esta entrega (devolvida pela Secretaria).
-    editavelAgora: opcoes.podeEditar && ciclo.status === 'ATIVA' && ((prazoAberto && ativos.length > 0) || correcaoAberta),
+    // Pode editar = prazo/reabertura aberto E o cargo ainda é esperado neste ciclo, ou há uma correção
+    // aberta para esta entrega (devolvida pela Secretaria).
+    editavelAgora: opcoes.podeEditar && ciclo.status === 'ATIVA' && ((prazoAberto && folha.esperada) || correcaoAberta),
     correcao: correcoes[0] ? formatarCorrecao(correcoes[0], nomes) : null,
     correcoes: correcoes.map((c) => formatarCorrecao(c, nomes)),
     semanas: ciclo.semanas.map((s) => ({
       id: s.id, numero: s.numero, rotulo: `Semana ${s.numero}`, dataInicio: dataIso(s.dataInicio), dataFim: dataIso(s.dataFim),
       texto: respostaPorSemana.get(s.id) ?? '',
     })),
-    validoPara: ativos.map(descreverVinculo),
-    coberturaHistorica: (entrega?.cobertura ?? []).map((c) => ({
-      turmaId: c.turmaId, turmaNome: c.turma.nome, escolaId: c.escolaId, escolaNome: c.turma.escola.nome, desde: iso(c.desde), ate: iso(c.ate),
-    })),
-    historico: (entrega?.historico ?? []).map((h) => ({ id: h.id, tipo: h.tipo, pessoaId: h.pessoaId, quando: iso(h.quando), detalhe: h.detalhe })),
+    historico: historico.map((h) => ({ id: h.id, tipo: h.tipo, pessoaId: h.pessoaId, quando: iso(h.quando), detalhe: h.detalhe })),
   };
 }
 
 const paramsFormulario = (req: { params: Record<string, string | string[] | undefined> }) => ({
   cicloId: lerId(req.params.cicloId, 'Ciclo'),
-  anoSerie: lerId(req.params.anoSerie, 'Ano/série'),
-  disciplinaId: lerId(req.params.disciplinaId, 'Disciplina'),
+  cargoId: lerId(req.params.cargoId, 'Cargo'),
 });
 
-// Professor só enxerga/edita o que é dele: precisa ter vínculo elegível OU entrega já existente.
-async function carregarParaProfessor(actor: Actor, cicloId: number, anoSerie: number, disciplinaId: number) {
+// Professor só enxerga/edita o que é dele: a folha precisa ser de um cargo dele neste ciclo.
+async function carregarParaProfessor(actor: Actor, cicloId: number, cargoId: number) {
   exigirProfessor(actor);
   const ciclo = await buscarCiclo(prisma, cicloId);
-  const detalhe = await montarDetalhe(prisma, ciclo, actor.id, anoSerie, disciplinaId, { podeEditar: true });
-  return { ciclo, detalhe };
+  return montarDetalhe(prisma, ciclo, actor.id, cargoId, { podeEditar: true });
 }
 
 // ===== Secretaria: ciclos ===================================================================
@@ -310,6 +356,19 @@ formularioUmTercoRouter.post('/ciclos', async (req, res) => {
   res.status(201).json(formatarCiclo(await buscarCiclo(prisma, criado.id)));
 });
 
+// Escolas com preenchimento iniciado neste ciclo (pela foto das entregas por cargo e, nas entregas
+// antigas, pela cobertura de turmas).
+async function escolasComPreenchimento(tx: Db, cicloId: number): Promise<Map<number, string>> {
+  const [porCargo, antigas] = await Promise.all([
+    tx.entregaUmTerco.findMany({ where: { cicloId, chaveCargos: { not: null } }, select: { composicao: true } }),
+    tx.coberturaEntregaUmTerco.findMany({ where: { entrega: { cicloId } }, select: { escolaId: true, escola: { select: { nome: true } } }, distinct: ['escolaId'] }),
+  ]);
+  const mapa = new Map<number, string>();
+  for (const e of porCargo) for (const p of lerFoto(e.composicao)) mapa.set(p.escolaId, p.escolaNome);
+  for (const c of antigas) mapa.set(c.escolaId, c.escola.nome);
+  return mapa;
+}
+
 // Editar: livre enquanto nenhum Professor começou. Com entregas iniciadas, ano/trimestre e a
 // QUANTIDADE de semanas ficam travados (reduzir semanas apagaria texto já escrito); datas, prazo
 // e título continuam editáveis, sempre revalidados contra o calendário.
@@ -329,22 +388,23 @@ formularioUmTercoRouter.put('/ciclos/:id', async (req, res) => {
     }
     await travarJanelasDeCiclo(tx);
     const valido = validarCiclo({ ...dados }, await janelaDoTrimestre(tx, dados.anoLetivo, dados.trimestre));
-    if (dataLocalSp(valido.abreEm) !== dataLocalSp(atual.abreEm)) exigirAberturaNaoPassada(valido.abreEm);
+    if (dataLocalSp(valido.abreEm) !== dataLocalSp(atual.abreEm)) {
+      exigirAberturaNaoPassada(valido.abreEm);
+      // A abertura define a foto dos cargos: com preenchimento iniciado ela não muda de dia.
+      if (entregas > 0) throw new ConflictError('A data de abertura não pode mudar depois que algum Professor começou a preencher.');
+    }
     // Escolas: sem o campo, mantém as que o ciclo já tem (cliente antigo da API não apaga a escolha).
     const escolha = dados.todasEscolas === undefined
       ? { todasEscolas: atual.todasEscolas, escolaIds: atual.escolas.map((e) => e.escolaId) }
       : await validarEscolas(tx, dados, atual.escolas.map((e) => e.escolaId));
     // Escola com preenchimento iniciado neste ciclo não pode sair (o texto escrito ficaria órfão).
     if (!escolha.todasEscolas) {
-      const emUso = await tx.coberturaEntregaUmTerco.findMany({
-        where: { entrega: { cicloId: id }, escolaId: { notIn: escolha.escolaIds } },
-        select: { escola: { select: { nome: true } } }, distinct: ['escolaId'],
-      });
-      if (emUso.length) throw new ConflictError(`Não é possível retirar ${emUso.map((e) => `"${e.escola.nome}"`).join(', ')}: já há Professor preenchendo este Formulário 1/3 nessa escola.`);
+      const emUso = [...(await escolasComPreenchimento(tx, id)).entries()].filter(([escolaId]) => !escolha.escolaIds.includes(escolaId)).map(([, nome]) => nome);
+      if (emUso.length) throw new ConflictError(`Não é possível retirar ${emUso.map((nome) => `"${nome}"`).join(', ')}: já há Professor preenchendo este Formulário 1/3 nessa escola.`);
     }
     if (atual.status === 'ATIVA') await exigirJanelaLivre(tx, { ...valido, todasEscolas: escolha.todasEscolas, escolas: escolha.escolaIds.map((escolaId) => ({ escolaId })) }, id);
 
-    await tx.cicloUmTerco.update({ where: { id }, data: { anoLetivo: valido.anoLetivo, trimestre: valido.trimestre, titulo: valido.titulo, abreEm: valido.abreEm, prazoEm: valido.prazoEm, todasEscolas: escolha.todasEscolas, updatedBy: String(actor.id) } });
+    await tx.cicloUmTerco.update({ where: { id }, data: { anoLetivo: valido.anoLetivo, trimestre: valido.trimestre, titulo: valido.titulo, abreEm: entregas > 0 ? atual.abreEm : valido.abreEm, prazoEm: valido.prazoEm, todasEscolas: escolha.todasEscolas, updatedBy: String(actor.id) } });
     await tx.cicloUmTercoEscola.deleteMany({ where: { cicloId: id } });
     if (!escolha.todasEscolas) await tx.cicloUmTercoEscola.createMany({ data: escolha.escolaIds.map((escolaId) => ({ cicloId: id, escolaId })) });
     if (entregas > 0) {
@@ -413,95 +473,70 @@ formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
   res.json(await montarPainel(lerId(req.params.id), req.query));
 });
 
-// Cálculo do painel (esperado/concluído/andamento/não iniciado, por entrega e por escola) com os
-// filtros da tela. Compartilhado pelo painel, pela exportação para Excel e pelo Acompanhamento
-// Escolar (routes/acompanhamento.ts) — mesmos números.
+// Cálculo do painel (esperado/concluído/andamento/não iniciado, por folha e por escola) com os filtros
+// da tela. Compartilhado pelo painel, pela exportação para Excel e pelo Acompanhamento Escolar
+// (routes/acompanhamento.ts) — mesmos números.
+// Unidade = FOLHA (cargo, ou cargos iguais juntos). Folha que cobre duas escolas aparece no filtro de
+// cada uma e conta UMA vez no total (regra mantida por enquanto, a discutir com a equipe).
+// Folhas fora do esperado (cargo encerrado durante o ciclo, já com texto) vão em `foraDoEsperado`:
+// preservadas para consulta, sem entrar nas contagens nem nos percentuais.
 export async function montarPainel(cicloId: number, q: Record<string, unknown>) {
   const ciclo = await buscarCiclo(prisma, cicloId);
   const filtroEscola = q.escolaId ? lerId(q.escolaId, 'Escola') : null;
-  const filtroSerie = q.anoSerie ? lerId(q.anoSerie, 'Ano/série') : null;
   const filtroDisciplina = q.disciplinaId ? lerId(q.disciplinaId, 'Disciplina') : null;
   const filtroProfessor = q.professorId ? lerId(q.professorId, 'Professor') : null;
   const filtroStatus = typeof q.status === 'string' && ['nao_iniciado', 'em_andamento', 'concluida'].includes(q.status) ? q.status : null;
   // Fluxo de correções (10/11/2026): só as entregas cuja correção aguarda o professor ou a conferência.
   const filtroCorrecao = q.correcao === 'em_andamento';
 
-  const [elegiveis, entregas] = await Promise.all([
-    vinculosElegiveis(prisma, ciclo),
-    prisma.entregaUmTerco.findMany({
-      where: { cicloId: ciclo.id },
-      include: { respostas: true, professor: { select: { id: true, nome: true } }, disciplina: true, cobertura: { include: { turma: { include: { escola: true } } } }, correcoes: { orderBy: { criadaEm: 'desc' }, take: 1 } },
-    }),
-  ]);
-
-  // Unidade = professor+anoSerie+disciplina. Esperado vem dos vínculos; entregas já existentes
-  // entram sempre (histórico), mesmo que o vínculo tenha acabado depois.
-  type Linha = {
-    chave: string; professorId: number; professorNome: string; anoSerie: number; disciplinaId: number; disciplinaNome: string;
-    turmas: Map<number, { turmaId: number; turmaNome: string; escolaId: number; escolaNome: string }>;
-    entrega: (typeof entregas)[number] | null;
-  };
-  const linhas = new Map<string, Linha>();
-  for (const v of elegiveis) {
-    const k = chave(v.professorId, v.turma.anoSerie!, v.disciplinaId);
-    const linha = linhas.get(k) ?? { chave: k, professorId: v.professorId, professorNome: v.professor.nome, anoSerie: v.turma.anoSerie!, disciplinaId: v.disciplinaId, disciplinaNome: v.disciplina.nome, turmas: new Map(), entrega: null };
-    linha.turmas.set(v.turmaId, { turmaId: v.turmaId, turmaNome: v.turma.nome, escolaId: v.turma.escolaId, escolaNome: v.turma.escola.nome });
-    linhas.set(k, linha);
-  }
-  for (const e of entregas) {
-    const k = chave(e.professorId, e.anoSerie, e.disciplinaId);
-    const linha = linhas.get(k) ?? { chave: k, professorId: e.professorId, professorNome: e.professor.nome, anoSerie: e.anoSerie, disciplinaId: e.disciplinaId, disciplinaNome: e.disciplina.nome, turmas: new Map(), entrega: null };
-    linha.entrega = e;
-    for (const c of e.cobertura) {
-      if (!linha.turmas.has(c.turmaId)) linha.turmas.set(c.turmaId, { turmaId: c.turmaId, turmaNome: c.turma.nome, escolaId: c.escolaId, escolaNome: c.turma.escola.nome });
-    }
-    linhas.set(k, linha);
-  }
-
+  const folhas = await folhasDoCiclo(prisma, ciclo);
   const totalSemanas = ciclo.semanas.length;
-  const todas = [...linhas.values()].map((l) => {
-    const status = l.entrega ? (l.entrega.status === 'CONCLUIDA' ? 'concluida' : 'em_andamento') : 'nao_iniciado';
-    const preenchidas = l.entrega ? l.entrega.respostas.filter((r) => r.texto.trim().length > 0).length : 0;
-    const turmas = [...l.turmas.values()].sort((a, b) => a.escolaNome.localeCompare(b.escolaNome) || a.turmaNome.localeCompare(b.turmaNome));
+  const linha = (f: Folha) => {
+    const disciplinas = new Map<number, string>();
+    for (const p of f.composicao) for (const d of p.disciplinas) disciplinas.set(d.id, d.nome);
     return {
-      professorId: l.professorId, professorNome: l.professorNome, anoSerie: l.anoSerie, disciplinaId: l.disciplinaId, disciplinaNome: l.disciplinaNome,
-      entregaId: l.entrega?.id ?? null, status, semanasPreenchidas: preenchidas, totalSemanas,
+      ...resumoFolha(f),
+      escolas: f.composicao.map((p) => ({ escolaId: p.escolaId, escolaNome: p.escolaNome })),
+      disciplinas: [...disciplinas.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+      entregaId: f.entrega?.id ?? null, status: statusDaEntrega(f.entrega), semanasPreenchidas: semanasPreenchidas(f.entrega), totalSemanas,
       // Situação da correção mais recente (nula = nunca devolvida). Ver domain/correcoes.ts.
-      correcao: l.entrega?.correcoes[0] ? situacaoCorrecao(l.entrega.correcoes[0]) : null,
-      concluidaEm: iso(l.entrega?.concluidaEm ?? null), atualizadoEm: iso(l.entrega?.updatedAt ?? null),
-      turmas,
+      correcao: f.entrega?.correcoes[0] ? situacaoCorrecao(f.entrega.correcoes[0]) : null,
+      concluidaEm: iso(f.entrega?.concluidaEm ?? null), atualizadoEm: iso(f.entrega?.updatedAt ?? null),
     };
-  }).filter((l) => (!filtroEscola || l.turmas.some((t) => t.escolaId === filtroEscola))
-    && (!filtroSerie || l.anoSerie === filtroSerie)
-    && (!filtroDisciplina || l.disciplinaId === filtroDisciplina)
+  };
+  type Linha = ReturnType<typeof linha>;
+  const passaFiltros = (l: Linha) => (!filtroEscola || l.escolas.some((e) => e.escolaId === filtroEscola))
+    && (!filtroDisciplina || l.disciplinas.some((d) => d.id === filtroDisciplina))
     && (!filtroProfessor || l.professorId === filtroProfessor)
     && (!filtroStatus || l.status === filtroStatus)
-    && (!filtroCorrecao || ['solicitada', 'prazo_encerrado', 'recebida'].includes(l.correcao ?? '')))
-    .sort((a, b) => a.professorNome.localeCompare(b.professorNome) || a.anoSerie - b.anoSerie || a.disciplinaNome.localeCompare(b.disciplinaNome));
+    && (!filtroCorrecao || ['solicitada', 'prazo_encerrado', 'recebida'].includes(l.correcao ?? ''));
 
-  // Total é por entrega ÚNICA (nunca multiplica por escola/turma).
+  const todas = folhas.filter((f) => f.esperada).map(linha).filter(passaFiltros);
+  const foraDoEsperado = folhas.filter((f) => !f.esperada && f.entrega).map(linha).filter(passaFiltros);
+
+  // Total é por folha ÚNICA (nunca multiplica por escola ou disciplina).
   const esperado = todas.length;
   const concluidas = todas.filter((l) => l.status === 'concluida').length;
   const emAndamento = todas.filter((l) => l.status === 'em_andamento').length;
   const naoIniciadas = todas.filter((l) => l.status === 'nao_iniciado').length;
 
-  // Cobertura por escola: uma mesma entrega aparece em cada escola que ela atinge — é visão de
-  // cobertura, NÃO soma ao total acima.
+  // Por escola: uma mesma folha aparece em cada escola que ela cobre — visão por escola, NÃO soma ao total.
   const porEscola = new Map<number, { escolaId: number; escolaNome: string; esperado: number; concluidas: number }>();
   for (const l of todas) {
-    for (const escola of new Map(l.turmas.map((t) => [t.escolaId, t.escolaNome])).entries()) {
-      const item = porEscola.get(escola[0]) ?? { escolaId: escola[0], escolaNome: escola[1], esperado: 0, concluidas: 0 };
+    for (const e of l.escolas) {
+      const item = porEscola.get(e.escolaId) ?? { escolaId: e.escolaId, escolaNome: e.escolaNome, esperado: 0, concluidas: 0 };
       item.esperado += 1;
       if (l.status === 'concluida') item.concluidas += 1;
-      porEscola.set(escola[0], item);
+      porEscola.set(e.escolaId, item);
     }
   }
 
   return {
     ciclo: formatarCiclo(ciclo),
     resumo: { esperado, concluidas, emAndamento, naoIniciadas, percentualEntrega: esperado ? Math.round((concluidas / esperado) * 100) : 0 },
-    porEscola: [...porEscola.values()].sort((a, b) => a.escolaNome.localeCompare(b.escolaNome)),
+    porEscola: [...porEscola.values()].sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR')),
     linhas: todas,
+    foraDoEsperado,
   };
 }
 
@@ -519,7 +554,7 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
   const conteudos = respostas.map((r) => {
     const l = linhaDaEntrega.get(r.entregaId)!;
     return {
-      entregaId: r.entregaId, professorNome: l.professorNome, anoSerie: l.anoSerie, disciplinaNome: l.disciplinaNome,
+      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join(' · '),
       semanaNumero: r.semana.numero, semanaInicio: dataIso(r.semana.dataInicio), semanaFim: dataIso(r.semana.dataFim), texto: r.texto,
     };
   });
@@ -529,8 +564,7 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
 // ===== Secretaria: devolver para correção e aceitar (fluxo de correções, 10/11/2026) ==============
 // Mesmo desenho do PDI: orientações obrigatórias, prazo FIXO de 3 dias corridos, mensagem automática
 // na caixa do Professor dono da entrega, devoluções ilimitadas (uma aberta por vez). A entrega é a
-// do próprio Professor (professor + ano/série + disciplina), então nunca mistura professores; a
-// devolução libera só ela (nunca o ciclo, nunca outra disciplina ou outro ano/série).
+// do próprio Professor (uma folha de cargo), então nunca mistura professores; a devolução libera só ela.
 const devolverEntregaSchema = z.object({ observacao: z.string().trim().min(1, 'Escreva o que precisa ser corrigido.').max(OBSERVACAO_MAX, `Use no máximo ${OBSERVACAO_MAX} caracteres.`) });
 
 formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) => {
@@ -541,14 +575,12 @@ formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) =
 
   const { correcao, criadas } = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM entregas_um_terco WHERE id = ${entregaId} FOR UPDATE`;
-    const entrega = await tx.entregaUmTerco.findUnique({
-      where: { id: entregaId },
-      include: { professor: true, disciplina: true, ciclo: true, cobertura: { include: { turma: { include: { escola: true } } } } },
-    });
+    const entrega = await tx.entregaUmTerco.findUnique({ where: { id: entregaId }, include: { professor: true, ciclo: true, cargos: { select: { cargoId: true } } } });
     if (!entrega) throw new NotFoundError('Entrega não encontrada.');
     if (entrega.ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
     if (entrega.status !== 'CONCLUIDA') throw new ValidationError('Só é possível devolver um formulário já concluído.');
     if (entrega.professor.status !== 'ATIVO') throw new ValidationError('O professor desta entrega está inativo. Não há quem receba a correção.');
+    if (!entrega.chaveCargos) throw new ValidationError('Este preenchimento é do modelo antigo (ano/série e disciplina) e não pode ser devolvido.');
     const aberta = await tx.correcaoEntregaUmTerco.findFirst({ where: { entregaId, status: 'ABERTA' } });
     if (aberta) throw new ConflictError('Este formulário já tem uma correção aguardando o professor. Aguarde o envio para devolver de novo.');
 
@@ -556,16 +588,15 @@ formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) =
     await tx.correcaoEntregaUmTerco.updateMany({ where: { entregaId, status: 'RESOLVIDA', conferencia: null }, data: { conferencia: 'DEVOLVIDA', conferidaEm: agora, conferidaPor: String(actor.id) } });
     const nova = await tx.correcaoEntregaUmTerco.create({ data: { entregaId, observacao, criadaPor: String(actor.id), criadaEm: agora, prazoAte: new Date(agora.getTime() + PRAZO_CORRECAO_MS) } });
 
-    // Turmas e escolas que esta entrega cobre (vigentes; se nenhuma, as do histórico).
-    const cobertura = entrega.cobertura.filter((c) => !c.ate).length ? entrega.cobertura.filter((c) => !c.ate) : entrega.cobertura;
-    const porEscola = new Map<string, string[]>();
-    for (const c of cobertura) porEscola.set(c.turma.escola.nome, [...(porEscola.get(c.turma.escola.nome) ?? []), c.turma.nome]);
-    const linhasEscola = [...porEscola.entries()].map(([escola, turmas]) => `Escola: ${escola} · Turma(s): ${[...new Set(turmas)].join(', ')}`);
+    const cargoIds = entrega.cargos.map((c) => c.cargoId).sort((a, b) => a - b);
+    const rotulos = rotulosDosCargos(await tx.cargoProfessor.findMany({ where: { professorId: entrega.professorId }, select: { id: true, status: true, dataInicio: true } }));
+    const rotulo = rotuloDaFolha(cargoIds, rotulos);
+    const partes = lerFoto(entrega.composicao);
     const msgs = await criarMensagensDeCorrecao(tx, {
-      remetenteId: actor.id, destinatarioIds: [entrega.professorId], escolasPreferidas: [...new Set(cobertura.map((c) => c.escolaId))],
-      assunto: `Correção pendente · Formulário 1/3 · ${entrega.anoSerie}º ano · ${entrega.disciplina.nome}`,
-      conteudo: textoMensagemCorrecao({ formulario: `Formulário 1/3 (${entrega.ciclo.titulo})`, identificacao: [`Ano/série: ${entrega.anoSerie}º ano`, `Disciplina: ${entrega.disciplina.nome}`, ...linhasEscola], observacao, prazoAte: nova.prazoAte }),
-      link: `/formulario-um-terco/${entrega.cicloId}/${entrega.anoSerie}/${entrega.disciplinaId}`,
+      remetenteId: actor.id, destinatarioIds: [entrega.professorId], escolasPreferidas: partes.map((p) => p.escolaId),
+      assunto: `Correção pendente · Formulário 1/3 · ${rotulo}`,
+      conteudo: textoMensagemCorrecao({ formulario: `Formulário 1/3 (${entrega.ciclo.titulo})`, identificacao: [rotulo, ...partes.map(descreverParte)], observacao, prazoAte: nova.prazoAte }),
+      link: `/formulario-um-terco/${entrega.cicloId}/cargo/${cargoIds[0]}`,
     });
     return { correcao: nova, criadas: msgs };
   });
@@ -583,64 +614,48 @@ formularioUmTercoRouter.post('/entregas/:entregaId/aceitar', async (req, res) =>
   res.json(formatarCorrecao(await prisma.correcaoEntregaUmTerco.findUniqueOrThrow({ where: { id: ultima.id } })));
 });
 
-// Secretaria consulta um preenchimento específico (somente leitura, com histórico).
-formularioUmTercoRouter.get('/ciclos/:cicloId/entregas/:professorId/:anoSerie/:disciplinaId', async (req, res) => {
+// Secretaria consulta uma folha específica (somente leitura, com histórico).
+formularioUmTercoRouter.get('/ciclos/:cicloId/entregas/:professorId/cargos/:cargoId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
-  const { cicloId, anoSerie, disciplinaId } = paramsFormulario(req);
+  const { cicloId, cargoId } = paramsFormulario(req);
   const ciclo = await buscarCiclo(prisma, cicloId);
-  res.json(await montarDetalhe(prisma, ciclo, lerId(req.params.professorId, 'Professor'), anoSerie, disciplinaId, { podeEditar: false }));
+  res.json(await montarDetalhe(prisma, ciclo, lerId(req.params.professorId, 'Professor'), cargoId, { podeEditar: false }));
 });
 
 // ===== Professor ===============================================================================
 
-// Lista os formulários do Professor logado: um por ciclo + anoSerie + disciplina (nunca por turma).
+// Lista as folhas do Professor logado: uma por ciclo + cargo (cargos iguais juntos), nunca por
+// disciplina, escola ou turma. Folha de cargo encerrado com texto aparece só para consulta.
 formularioUmTercoRouter.get('/minhas', async (_req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirProfessor(actor);
-  const ciclos = await prisma.cicloUmTerco.findMany({ where: { status: 'ATIVA' }, include: cicloInclude, orderBy: [{ anoLetivo: 'desc' }, { trimestre: 'desc' }] });
+  const ciclos = await prisma.cicloUmTerco.findMany({ where: { status: 'ATIVA' }, include: cicloInclude, orderBy: [{ anoLetivo: 'desc' }, { trimestre: 'desc' }, { abreEm: 'desc' }] });
   const itens: unknown[] = [];
   for (const ciclo of ciclos) {
-    const [elegiveis, entregas] = await Promise.all([
-      vinculosElegiveis(prisma, ciclo, { professorId: actor.id }),
-      prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, professorId: actor.id }, include: { respostas: true, disciplina: true, correcoes: { where: { status: 'ABERTA' }, select: { id: true } } } }),
-    ]);
-    const ativos = apenasAtivos(elegiveis);
-    const grupos = new Map<string, { anoSerie: number; disciplinaId: number; disciplinaNome: string; turmas: ReturnType<typeof descreverVinculo>[] }>();
-    for (const v of ativos) {
-      const k = chave(actor.id, v.turma.anoSerie!, v.disciplinaId);
-      const g = grupos.get(k) ?? { anoSerie: v.turma.anoSerie!, disciplinaId: v.disciplinaId, disciplinaNome: v.disciplina.nome, turmas: [] };
-      g.turmas.push(descreverVinculo(v));
-      grupos.set(k, g);
-    }
-    for (const e of entregas) {
-      const k = chave(actor.id, e.anoSerie, e.disciplinaId);
-      if (!grupos.has(k)) grupos.set(k, { anoSerie: e.anoSerie, disciplinaId: e.disciplinaId, disciplinaNome: e.disciplina.nome, turmas: [] });
-    }
     const resumoCiclo = formatarCiclo(ciclo);
-    for (const [k, g] of grupos) {
-      const e = entregas.find((x) => chave(actor.id, x.anoSerie, x.disciplinaId) === k);
+    for (const f of await folhasDoCiclo(prisma, ciclo, { professorId: actor.id })) {
+      if (!f.esperada && !f.entrega) continue;
+      const correcaoAberta = !!f.entrega && f.entrega.correcoes.some((c) => c.status === 'ABERTA');
       itens.push({
         ciclo: { id: ciclo.id, titulo: ciclo.titulo, anoLetivo: ciclo.anoLetivo, trimestre: ciclo.trimestre, abreEm: resumoCiclo.abreEm, prazoEm: resumoCiclo.prazoEm, statusPrazo: resumoCiclo.statusPrazo, editavelAgora: resumoCiclo.editavelAgora },
-        anoSerie: g.anoSerie, disciplinaId: g.disciplinaId, disciplinaNome: g.disciplinaNome, rotulo: `${g.anoSerie}º ano — ${g.disciplinaNome}`,
-        status: e ? (e.status === 'CONCLUIDA' ? 'concluida' : 'em_andamento') : 'nao_iniciado',
-        semanasPreenchidas: e ? e.respostas.filter((r) => r.texto.trim().length > 0).length : 0,
+        ...resumoFolha(f),
+        status: statusDaEntrega(f.entrega),
+        semanasPreenchidas: semanasPreenchidas(f.entrega),
         totalSemanas: ciclo.semanas.length,
-        validoPara: g.turmas,
         // Correção solicitada pela Secretaria: indicação discreta na lista e edição liberada só aqui.
-        correcaoSolicitada: !!e && e.correcoes.length > 0,
-        editavelAgora: (resumoCiclo.editavelAgora && g.turmas.length > 0) || (!!e && e.correcoes.length > 0),
+        correcaoSolicitada: correcaoAberta,
+        editavelAgora: (resumoCiclo.editavelAgora && f.esperada) || correcaoAberta,
       });
     }
   }
   res.json(itens);
 });
 
-formularioUmTercoRouter.get('/ciclos/:cicloId/formularios/:anoSerie/:disciplinaId', async (req, res) => {
+formularioUmTercoRouter.get('/ciclos/:cicloId/cargos/:cargoId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  const { cicloId, anoSerie, disciplinaId } = paramsFormulario(req);
-  const { detalhe } = await carregarParaProfessor(actor, cicloId, anoSerie, disciplinaId);
-  res.json(detalhe);
+  const { cicloId, cargoId } = paramsFormulario(req);
+  res.json(await carregarParaProfessor(actor, cicloId, cargoId));
 });
 
 const respostasSchema = z.object({
@@ -649,50 +664,52 @@ const respostasSchema = z.object({
   respostas: z.array(z.object({ semanaId: z.number().int(), texto: z.string().max(TEXTO_SEMANA_MAX, `Cada semana aceita no máximo ${TEXTO_SEMANA_MAX} caracteres.`) })).min(1),
 });
 
-// Correção aberta da entrega (fluxo de correções, 10/11/2026): devolvida pela Secretaria e ainda não
-// enviada pelo Professor. Libera a edição SÓ desta entrega, mesmo depois do prazo do ciclo e mesmo
-// depois dos 3 dias da correção (o Professor não é bloqueado). Nunca libera outro formulário.
-async function correcaoAbertaDaEntrega(db: Db, cicloId: number, professorId: number, anoSerie: number, disciplinaId: number) {
-  return db.correcaoEntregaUmTerco.findFirst({ where: { status: 'ABERTA', entrega: { cicloId, professorId, anoSerie, disciplinaId } }, orderBy: { criadaEm: 'desc' } });
+// Correção aberta (fluxo de correções, 10/11/2026) libera a edição SÓ desta entrega, mesmo depois do
+// prazo do ciclo e mesmo com o cargo encerrado. Sem correção: prazo aberto e cargo ainda esperado.
+function exigirEditavel(ciclo: CicloCompleto, folha: Folha) {
+  if (ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
+  if (folha.entrega?.correcoes.some((c) => c.status === 'ABERTA')) return;
+  if (!cicloEditavelAgora(ciclo, janelasDe(ciclo), new Date())) throw new ValidationError('O prazo deste Formulário 1/3 terminou — ele está somente para leitura. Peça à Secretaria uma reabertura.');
+  if (!folha.esperada) throw new ForbiddenError('Este cargo foi encerrado: o formulário fica guardado só para consulta.');
 }
 
-async function exigirEditavel(tx: Db, ciclo: CicloCompleto, professorId: number, anoSerie: number, disciplinaId: number) {
-  if (ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
-  if (await correcaoAbertaDaEntrega(tx, ciclo.id, professorId, anoSerie, disciplinaId)) return;
-  if (!cicloEditavelAgora(ciclo, janelasDe(ciclo), new Date())) throw new ValidationError('O prazo deste Formulário 1/3 terminou — ele está somente para leitura. Peça à Secretaria uma reabertura.');
-  const ativos = apenasAtivos(await vinculosElegiveis(tx, ciclo, { professorId, disciplinaId, anoSerie }));
-  if (ativos.length === 0) throw new ForbiddenError('Você não tem vínculo ativo com esta disciplina neste ano/série.');
-}
+// Serializa gravações das folhas do mesmo Professor no ciclo (duas abas / duplo clique) sem depender de timing.
+const travarFolhas = (tx: Db, cicloId: number, professorId: number) => tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`um-terco-folhas:${cicloId}:${professorId}`}::text))`;
 
 const tokenIgual = (base: string | null | undefined, atual: Date | null) => (base ? new Date(base).getTime() === (atual?.getTime() ?? -1) : atual === null);
 
-formularioUmTercoRouter.put('/ciclos/:cicloId/formularios/:anoSerie/:disciplinaId/respostas', async (req, res) => {
+formularioUmTercoRouter.put('/ciclos/:cicloId/cargos/:cargoId/respostas', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirProfessor(actor);
-  const { cicloId, anoSerie, disciplinaId } = paramsFormulario(req);
+  const { cicloId, cargoId } = paramsFormulario(req);
   const dados = respostasSchema.parse(req.body);
 
-  const conflito = async () => {
-    const ciclo = await buscarCiclo(prisma, cicloId);
-    return montarDetalhe(prisma, ciclo, actor.id, anoSerie, disciplinaId, { podeEditar: true });
-  };
+  const conflito = async () => montarDetalhe(prisma, await buscarCiclo(prisma, cicloId), actor.id, cargoId, { podeEditar: true });
 
   try {
     await prisma.$transaction(async (tx) => {
+      await travarFolhas(tx, cicloId, actor.id);
       const ciclo = await buscarCiclo(tx, cicloId);
-      await exigirEditavel(tx, ciclo, actor.id, anoSerie, disciplinaId);
+      const folha = await buscarFolha(tx, ciclo, actor.id, cargoId);
+      exigirEditavel(ciclo, folha);
       const semanasValidas = new Set(ciclo.semanas.map((s) => s.id));
       if (dados.respostas.some((r) => !semanasValidas.has(r.semanaId))) throw new ValidationError('Semana não pertence a este ciclo.');
 
-      // Serializa gravações da mesma entrega (duas abas / duplo clique) sem depender de timing.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`um-terco-entrega:${cicloId}:${actor.id}:${anoSerie}:${disciplinaId}`}::text))`;
-      let entrega = await tx.entregaUmTerco.findUnique({ where: { cicloId_professorId_anoSerie_disciplinaId: { cicloId, professorId: actor.id, anoSerie, disciplinaId } } });
+      let entrega = folha.entrega;
       if (entrega) {
         if (!tokenIgual(dados.baseUpdatedAt, entrega.updatedAt)) throw new ConflitoVersaoError('Este formulário foi alterado em outra aba ou dispositivo. Suas alterações foram guardadas.', null);
       } else {
         if (dados.baseUpdatedAt) throw new ConflitoVersaoError('Este formulário foi alterado em outra aba ou dispositivo. Suas alterações foram guardadas.', null);
-        entrega = await tx.entregaUmTerco.create({ data: { cicloId, professorId: actor.id, anoSerie, disciplinaId } });
-        await registrarEvento(tx, entrega.id, 'INICIADA', actor.id);
+        // Primeira gravação: congela a parte do cargo neste ciclo (nunca recalculada depois).
+        entrega = await tx.entregaUmTerco.create({
+          data: {
+            cicloId, professorId: actor.id, chaveCargos: chaveDeCargos(folha.cargoIds),
+            composicao: folha.composicao as unknown as Prisma.InputJsonValue,
+            cargos: { create: folha.cargoIds.map((id) => ({ cargoId: id })) },
+          },
+          include: entregaInclude,
+        });
+        await registrarEvento(tx, entrega.id, 'INICIADA', actor.id, { cargos: folha.cargoIds });
       }
 
       for (const r of dados.respostas) {
@@ -702,7 +719,6 @@ formularioUmTercoRouter.put('/ciclos/:cicloId/formularios/:anoSerie/:disciplinaI
           update: { texto: r.texto },
         });
       }
-      await sincronizarCobertura(tx, entrega, ciclo, actor.id);
       await tx.entregaUmTerco.update({ where: { id: entrega.id }, data: { updatedAt: new Date() } });
 
       // Autosave gera muitas gravações: junta em um único evento "SALVA" se a anterior foi do mesmo
@@ -717,29 +733,27 @@ formularioUmTercoRouter.put('/ciclos/:cicloId/formularios/:anoSerie/:disciplinaI
     }, { timeout: 15000 });
   } catch (error) {
     if (error instanceof ConflitoVersaoError) throw new ConflitoVersaoError(error.message, await conflito());
-    // Duas abas criando a MESMA entrega ao mesmo tempo: o índice único segura; o perdedor recebe 409.
+    // Duas abas criando a MESMA folha ao mesmo tempo: o índice único segura; o perdedor recebe 409.
     if (ehConflitoUnico(error)) throw new ConflitoVersaoError('Este formulário acabou de ser iniciado em outra aba. Suas alterações foram guardadas.', await conflito());
     throw error;
   }
-  res.json((await carregarParaProfessor(actor, cicloId, anoSerie, disciplinaId)).detalhe);
+  res.json(await carregarParaProfessor(actor, cicloId, cargoId));
 });
 
 const concluirSchema = z.object({ baseUpdatedAt: z.string().nullish() });
 
-formularioUmTercoRouter.post('/ciclos/:cicloId/formularios/:anoSerie/:disciplinaId/concluir', async (req, res) => {
+formularioUmTercoRouter.post('/ciclos/:cicloId/cargos/:cargoId/concluir', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirProfessor(actor);
-  const { cicloId, anoSerie, disciplinaId } = paramsFormulario(req);
+  const { cicloId, cargoId } = paramsFormulario(req);
   const dados = concluirSchema.parse(req.body ?? {});
 
   await prisma.$transaction(async (tx) => {
+    await travarFolhas(tx, cicloId, actor.id);
     const ciclo = await buscarCiclo(tx, cicloId);
-    await exigirEditavel(tx, ciclo, actor.id, anoSerie, disciplinaId);
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`um-terco-entrega:${cicloId}:${actor.id}:${anoSerie}:${disciplinaId}`}::text))`;
-    const entrega = await tx.entregaUmTerco.findUnique({
-      where: { cicloId_professorId_anoSerie_disciplinaId: { cicloId, professorId: actor.id, anoSerie, disciplinaId } },
-      include: { respostas: true },
-    });
+    const folha = await buscarFolha(tx, ciclo, actor.id, cargoId);
+    exigirEditavel(ciclo, folha);
+    const entrega = folha.entrega;
     if (!entrega) throw new ValidationError('Preencha as semanas antes de concluir.');
     // "Enviar correção": a entrega já estava concluída quando foi devolvida; concluir de novo envia a
     // correção (ABERTA -> RESOLVIDA). updateMany com status ABERTA: duplo clique não faz nada.
@@ -756,15 +770,13 @@ formularioUmTercoRouter.post('/ciclos/:cicloId/formularios/:anoSerie/:disciplina
     if (faltando.length > 0) {
       throw new ValidationError(`Preencha todas as semanas antes de concluir. Faltam: ${faltando.map((s) => `Semana ${s.numero}`).join(', ')}.`);
     }
-    await sincronizarCobertura(tx, entrega, ciclo, actor.id);
     const { count } = await tx.entregaUmTerco.updateMany({ where: { id: entrega.id, status: 'EM_ANDAMENTO' }, data: { status: 'CONCLUIDA', concluidaEm: new Date(), updatedAt: new Date() } });
     if (count === 1) await registrarEvento(tx, entrega.id, 'CONCLUIDA', actor.id);
   }, { timeout: 15000 }).catch(async (error) => {
     if (error instanceof ConflitoVersaoError) {
-      const ciclo = await buscarCiclo(prisma, cicloId);
-      throw new ConflitoVersaoError(error.message, await montarDetalhe(prisma, ciclo, actor.id, anoSerie, disciplinaId, { podeEditar: true }));
+      throw new ConflitoVersaoError(error.message, await montarDetalhe(prisma, await buscarCiclo(prisma, cicloId), actor.id, cargoId, { podeEditar: true }));
     }
     throw error;
   });
-  res.json((await carregarParaProfessor(actor, cicloId, anoSerie, disciplinaId)).detalhe);
+  res.json(await carregarParaProfessor(actor, cicloId, cargoId));
 });

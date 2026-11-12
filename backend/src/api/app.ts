@@ -9,6 +9,7 @@ import { escolaModulosRouter } from './routes/escolaModulos.js';
 import { disciplinasRouter } from './routes/disciplinas.js';
 import { turmasRouter } from './routes/turmas.js';
 import { pessoasRouter } from './routes/pessoas.js';
+import { cargosRouter } from './routes/cargos.js';
 import { professorTurmaDisciplinaRouter } from './routes/professorTurmaDisciplina.js';
 import { auxiliarTurmaRouter } from './routes/auxiliarTurma.js';
 import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
@@ -79,6 +80,7 @@ export function createApp() {
   app.use('/api/disciplinas', disciplinasRouter);
   app.use('/api/turmas', turmasRouter);
   app.use('/api/pessoas', pessoasRouter);
+  app.use('/api/pessoas', cargosRouter); // /api/pessoas/professores/:id/cargos
   app.use('/api/professor-turma-disciplina', professorTurmaDisciplinaRouter);
   app.use('/api/auxiliar-turma', auxiliarTurmaRouter);
   app.use('/api/vinculos-escolares', vinculosEscolaresRouter);

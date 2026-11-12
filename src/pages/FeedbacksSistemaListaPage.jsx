@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, Card, DataTable, EmptyState, FormField } from '../components/Common';
 import { useData } from '../context/DataContext';
+import { useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { inputClass } from '../utils/display';
 import { CATEGORIA_OPTIONS, STATUS_LABEL, STATUS_OPTIONS, STATUS_VARIANT, categoriaLabel, listarFeedbacksSistemaReais } from '../services/feedbackSistema';
 import { MainLayout } from '../layouts/Layouts';
@@ -26,11 +27,11 @@ export const FeedbacksSistemaListaPage = () => {
   const [erro, setErro] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-  const carregar = async () => {
+  const carregar = async (f = filtros) => {
     setCarregando(true);
     setErro('');
     try {
-      setItens(await listarFeedbacksSistemaReais(filtros));
+      setItens(await listarFeedbacksSistemaReais(f));
     } catch (error) {
       setErro(error.message);
     } finally {
@@ -38,7 +39,13 @@ export const FeedbacksSistemaListaPage = () => {
     }
   };
 
-  useEffect(() => { carregar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Ao abrir e sempre que o seletor do topo mudar: o filtro de escola acompanha o topo e a lista recarrega.
+  const [escolaDoTopo] = useFiltroEscolaDoTopo('');
+  useEffect(() => {
+    const f = { ...filtros, escolaId: escolaDoTopo };
+    setFiltros(f);
+    carregar(f);
+  }, [escolaDoTopo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const aplicarFiltros = (event) => {
     event.preventDefault();

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, DataTable, EmptyState, FormField } from '../components/Common';
 import { useData } from '../context/DataContext';
+import { useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { inputClass } from '../utils/display';
 import { listarCorrecoesPdiReais } from '../services/correcoesPdi';
 import { SeloCorrecao } from '../components/Correcoes';
@@ -24,11 +25,11 @@ export const CorrecoesPdiListaPage = () => {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [soEmAndamento, setSoEmAndamento] = useState(false);
 
-  const carregar = async (emAndamento = soEmAndamento) => {
+  const carregar = async (emAndamento = soEmAndamento, f = filtros) => {
     setCarregando(true);
     setErro('');
     try {
-      const resultado = await listarCorrecoesPdiReais({ ...filtros, correcao: emAndamento ? 'em_andamento' : '' });
+      const resultado = await listarCorrecoesPdiReais({ ...f, correcao: emAndamento ? 'em_andamento' : '' });
       setItens(resultado);
     } catch (error) {
       setErro(error.message);
@@ -37,7 +38,13 @@ export const CorrecoesPdiListaPage = () => {
     }
   };
 
-  useEffect(() => { carregar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Ao abrir e sempre que o seletor do topo mudar: o filtro de escola acompanha o topo e a lista recarrega.
+  const [escolaDoTopo] = useFiltroEscolaDoTopo('');
+  useEffect(() => {
+    const f = { ...filtros, escolaId: escolaDoTopo, turmaId: filtros.escolaId === escolaDoTopo ? filtros.turmaId : '' };
+    setFiltros(f);
+    carregar(soEmAndamento, f);
+  }, [escolaDoTopo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const aplicarFiltros = (event) => {
     event.preventDefault();

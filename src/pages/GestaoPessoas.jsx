@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, LoadingBlock, Modal, PersonName } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useEscolaDoTopo } from '../context/EscolaContext';
 import { apiFetch } from '../services/api';
 import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { criarVinculoAuxiliarTurma, encerrarVinculoAuxiliarTurma, listarAuxiliaresReais, listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
@@ -11,6 +12,7 @@ import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { exportarExcel } from '../utils/exportarExcel';
 import { inputClass } from '../utils/display';
+import { CargosModal, EditorCargo, NumeroDeCargos, novoRascunhoCargo, validarRascunhoCargo } from '../components/CargosProfessor';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
 
 // Vínculos reais (ProfessorTurmaDisciplina/AuxiliarTurma) guardam `dataInicio`/`dataFim` como
@@ -59,6 +61,7 @@ const LinkInativos = ({ ver, setVer, qtd, rotulo }) => {
 // mensagem de sucesso avisa isso explicitamente pra não parecer mágica. Reativar NUNCA ressuscita
 // esses vínculos operacionais (regra explícita do pedido); se precisar, cria-se de novo à parte.
 const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
+  const escolaDoTopo = useEscolaDoTopo();
   const [vinculos, setVinculos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
@@ -87,7 +90,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
   const escolasFiltradas = escolasDisponiveis.filter(escola => escola.nome.toLowerCase().includes(buscaEscola.toLowerCase()));
 
   useEffect(() => {
-    if (!escolaId && escolasDisponiveis.length > 0) setEscolaId(escolasDisponiveis[0].id);
+    if (!escolaId && escolasDisponiveis.length > 0) setEscolaId(escolaDoTopo(escolasDisponiveis, escolasDisponiveis[0].id));
   }, [escolasDisponiveis.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Se a busca esconder a escola selecionada, troca pra primeira que ainda aparece — nunca deixa
@@ -224,7 +227,8 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
   // vínculo com mais de uma escola: turmas de nomes iguais ("6M1" etc.) existem em quase todas,
   // então uma lista única misturando tudo (sem indicar a escola) deixava fácil vincular na turma
   // errada sem perceber.
-  const escolaInicial = professor.escolas[0]?.id ?? '';
+  const escolaDoTopo = useEscolaDoTopo();
+  const escolaInicial = escolaDoTopo(professor.escolas, professor.escolas[0]?.id ?? '');
   const [novoVinculo, setNovoVinculo] = useState({
     escolaId: escolaInicial,
     turmaId: turmasDoProfessor.find(turma => turma.escolaId === escolaInicial)?.id ?? '',
@@ -547,6 +551,7 @@ const SenhaTemporariaModal = ({ pessoa, senha, mensagem, titulo = 'Professor cad
 
 const ProfessoresReaisManager = ({ user }) => {
   const { turmas, disciplinasReais } = useData();
+  const escolaDoTopo = useEscolaDoTopo();
 
   const [professores, setProfessores] = useState([]);
   const [minhasEscolas, setMinhasEscolas] = useState([]);
@@ -563,7 +568,12 @@ const ProfessoresReaisManager = ({ user }) => {
   const [mudandoStatus, setMudandoStatus] = useState(null);
   const [managingTurmas, setManagingTurmas] = useState(null);
   const [managingEscolas, setManagingEscolas] = useState(null);
+  const [managingCargos, setManagingCargos] = useState(null);
+  const [errosCargos, setErrosCargos] = useState([]);
   const [mensagem, setMensagem] = useState('');
+  // Cargos (12/11/2026): só a Secretaria cadastra; a Diretora continua escolhendo as escolas de vínculo.
+  const comCargos = isSecretaria(user);
+  const disciplinasDoCargo = [...disciplinasReais].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   const carregar = async () => {
     setCarregando(true);
@@ -584,8 +594,13 @@ const ProfessoresReaisManager = ({ user }) => {
 
   useEffect(() => { carregar(); }, []);
 
-  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [] }); setBuscaEscolaCadastro(''); };
-  const fecharCadastro = () => { setForm(null); setFormError(''); };
+  const abrirCadastro = () => {
+    setFormError(''); setErrosCargos([]);
+    setForm({ nome: '', email: '', escolaIds: [escolaDoTopo(minhasEscolas, null)].filter(id => id !== null), cargos: [novoRascunhoCargo(escolaDoTopo(minhasEscolas, ''))] });
+    setBuscaEscolaCadastro('');
+  };
+  const fecharCadastro = () => { setForm(null); setFormError(''); setErrosCargos([]); };
+  const mudarNumeroDeCargos = (n) => setForm(prev => ({ ...prev, cargos: n === 1 ? prev.cargos.slice(0, 1) : (prev.cargos.length === 2 ? prev.cargos : [...prev.cargos, novoRascunhoCargo()]) }));
 
   const toggleEscola = (escolaId) => {
     setForm(prev => ({
@@ -600,7 +615,12 @@ const ProfessoresReaisManager = ({ user }) => {
   const salvarCadastro = async (event) => {
     event.preventDefault();
     setFormError('');
-    if (form.escolaIds.length === 0) {
+    // Secretaria: cargos (as escolas deles viram os vínculos). Diretora: escolas de vínculo, como antes.
+    const validacoes = comCargos ? form.cargos.map(validarRascunhoCargo) : [];
+    setErrosCargos(validacoes.map(v => v.erros));
+    if (validacoes.some(v => !v.ok)) { setFormError('Confira os campos do cargo destacados abaixo.'); return; }
+    const escolaIds = comCargos ? [...new Set(validacoes.flatMap(v => v.dados.composicao.map(p => p.escolaId)))] : form.escolaIds;
+    if (escolaIds.length === 0) {
       setFormError('Selecione ao menos uma escola.');
       return;
     }
@@ -608,11 +628,12 @@ const ProfessoresReaisManager = ({ user }) => {
     try {
       const resultado = await apiFetch('/api/pessoas/professores', {
         method: 'POST',
-        body: { nome: form.nome || undefined, email: form.email, escolaIds: form.escolaIds },
+        body: comCargos
+          ? { nome: form.nome || undefined, email: form.email, cargos: validacoes.map(v => v.dados) }
+          : { nome: form.nome || undefined, email: form.email, escolaIds },
       });
-      // form.escolaIds nunca é vazio aqui (validado acima), então escolasSelecionadas sempre tem
-      // ao menos uma escola pro wizard percorrer.
-      const escolasSelecionadas = minhasEscolas.filter(escola => form.escolaIds.includes(escola.id));
+      // escolaIds nunca é vazio aqui (validado acima), então o wizard sempre tem ao menos uma escola.
+      const escolasSelecionadas = minhasEscolas.filter(escola => escolaIds.includes(escola.id));
       fecharCadastro();
       await carregar();
       setWizardVinculos({ professor: resultado.pessoa, escolas: escolasSelecionadas, senha: resultado });
@@ -699,9 +720,14 @@ const ProfessoresReaisManager = ({ user }) => {
         ? <span className="text-xs text-slate-400">Nenhuma nesta visão</span>
         : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
     ) },
+    // Professor sem cargo = cadastro incompleto (a Secretaria corrige em "Cargos").
+    { key: 'cargos', header: 'Cargos', render: row => (row.cargosAtivos > 0
+      ? <span className="whitespace-nowrap text-sm text-slate-700">{row.cargosAtivos} {row.cargosAtivos === 1 ? 'cargo' : 'cargos'}</span>
+      : <span className="whitespace-nowrap"><Badge variant="yellow">Sem cargo</Badge></span>) },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ATIVO' ? 'green' : 'gray'}>{row.status === 'ATIVO' ? 'Ativo' : 'Inativo'}</Badge> },
     { key: 'acoes', header: 'Ações', render: row => (
       <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={() => setManagingCargos(row)}>Cargos</Button>
         <Button size="sm" variant="outline" onClick={() => setManagingEscolas(row)}>Escolas</Button>
         <Button size="sm" variant="outline" onClick={() => setManagingTurmas(row)}>Turmas e disciplinas</Button>
         <ActionMenu items={[
@@ -754,21 +780,42 @@ const ProfessoresReaisManager = ({ user }) => {
             </FormField>
             <FormField label="Nome completo">
               <input className={inputClass} value={form.nome} onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))} />
-              <p className="mt-1 text-xs text-slate-500">Se já existir uma conta com esse e-mail, o nome informado é ignorado — o professor só será vinculado à(s) escola(s) selecionada(s).</p>
+              <p className="mt-1 text-xs text-slate-500">{comCargos ? 'Se já existir um professor com esse e-mail, o cadastro não é feito: para mudar os cargos dele, use "Cargos" na lista.' : 'Se já existir uma conta com esse e-mail, o nome informado é ignorado — o professor só será vinculado à(s) escola(s) selecionada(s).'}</p>
             </FormField>
-            <FormField label="Escolas de vínculo">
-              {minhasEscolas.length > 6 && (
-                <input className={`${inputClass} mb-2`} value={buscaEscolaCadastro} onChange={event => setBuscaEscolaCadastro(event.target.value)} placeholder="Buscar escola..." />
-              )}
-              <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
-                {minhasEscolas.filter(escola => escola.nome.toLowerCase().includes(buscaEscolaCadastro.toLowerCase())).map(escola => (
-                  <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" checked={form.escolaIds.includes(escola.id)} onChange={() => toggleEscola(escola.id)} />
-                    {escola.nome}
-                  </label>
+            {comCargos ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-sm font-semibold text-slate-700">Número de cargos</span>
+                  <NumeroDeCargos valor={form.cargos.length} onChange={mudarNumeroDeCargos} />
+                </div>
+                {form.cargos.map((cargo, i) => (
+                  <EditorCargo
+                    key={cargo.chave}
+                    rotulo={`Cargo ${i + 1}`}
+                    valor={cargo}
+                    onChange={novo => setForm(prev => ({ ...prev, cargos: prev.cargos.map(c => (c.chave === cargo.chave ? novo : c)) }))}
+                    escolas={minhasEscolas}
+                    disciplinas={disciplinasDoCargo}
+                    erros={errosCargos[i]}
+                  />
                 ))}
+                <p className="text-xs text-slate-500">As escolas dos cargos viram as escolas de vínculo do professor.</p>
               </div>
-            </FormField>
+            ) : (
+              <FormField label="Escolas de vínculo">
+                {minhasEscolas.length > 6 && (
+                  <input className={`${inputClass} mb-2`} value={buscaEscolaCadastro} onChange={event => setBuscaEscolaCadastro(event.target.value)} placeholder="Buscar escola..." />
+                )}
+                <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
+                  {minhasEscolas.filter(escola => escola.nome.toLowerCase().includes(buscaEscolaCadastro.toLowerCase())).map(escola => (
+                    <label key={escola.id} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input type="checkbox" checked={form.escolaIds.includes(escola.id)} onChange={() => toggleEscola(escola.id)} />
+                      {escola.nome}
+                    </label>
+                  ))}
+                </div>
+              </FormField>
+            )}
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
               <Button type="submit" loading={salvando}>{salvando ? 'Criando...' : 'Próximo →'}</Button>
@@ -836,6 +883,17 @@ const ProfessoresReaisManager = ({ user }) => {
           onClose={() => { setManagingEscolas(null); carregar(); }}
         />
       )}
+
+      {managingCargos && (
+        <CargosModal
+          professor={managingCargos}
+          podeEditar={comCargos}
+          escolas={minhasEscolas}
+          disciplinas={disciplinasDoCargo}
+          onAlterado={carregar}
+          onClose={() => setManagingCargos(null)}
+        />
+      )}
     </div>
   );
 };
@@ -847,6 +905,7 @@ const ProfessoresReaisManager = ({ user }) => {
 // esses dois perfis). Diretora tem uma regra própria: exatamente 1 escola, nunca várias — o
 // formulário reflete isso com um <select> único em vez de checkboxes.
 const GestoresReaisManager = () => {
+  const escolaDoTopo = useEscolaDoTopo();
   const [gestoresReais, setGestoresReais] = useState([]);
   const [minhasEscolas, setMinhasEscolas] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -881,7 +940,7 @@ const GestoresReaisManager = () => {
 
   useEffect(() => { carregar(); }, []);
 
-  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [] }); setBuscaEscolaCadastro(''); };
+  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [escolaDoTopo(minhasEscolas, null)].filter(id => id !== null) }); setBuscaEscolaCadastro(''); };
   const fecharCadastro = () => { setForm(null); setFormError(''); };
 
   const toggleEscola = (escolaId) => {
@@ -1065,6 +1124,7 @@ const GestoresReaisManager = () => {
 // rejeita qualquer outra quantidade) — por isso o formulário usa um <select> único, nunca
 // checkboxes, e envia `escolaIds: [escolaId]`.
 const DiretorasReaisManager = () => {
+  const escolaDoTopo = useEscolaDoTopo();
   const [diretorasReais, setDiretorasReais] = useState([]);
   const [minhasEscolas, setMinhasEscolas] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -1098,7 +1158,7 @@ const DiretorasReaisManager = () => {
 
   useEffect(() => { carregar(); }, []);
 
-  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaId: minhasEscolas[0]?.id ?? '' }); };
+  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaId: escolaDoTopo(minhasEscolas, minhasEscolas[0]?.id ?? '') }); };
   const fecharCadastro = () => { setForm(null); setFormError(''); };
 
   const salvarCadastro = async (event) => {
@@ -1278,7 +1338,8 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
   const [erro, setErro] = useState(null);
   // Mesmo cuidado de VinculosPedagogicosProfessorModal: escola escolhida primeiro, pra evitar
   // vincular na turma "6M1" errada quando o Auxiliar tem mais de uma escola.
-  const [escolaId, setEscolaId] = useState(auxiliar.escolas[0]?.id ?? '');
+  const escolaDoTopo = useEscolaDoTopo();
+  const [escolaId, setEscolaId] = useState(() => escolaDoTopo(auxiliar.escolas, auxiliar.escolas[0]?.id ?? ''));
   const turmasDaEscolaSelecionada = turmasPermitidas.filter(turma => turma.escolaId === Number(escolaId));
   const [turmaId, setTurmaId] = useState(turmasDaEscolaSelecionada[0]?.id ?? '');
   const [ocupanteDaTurma, setOcupanteDaTurma] = useState(null);
@@ -1433,6 +1494,7 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
 
 const AuxiliaresReaisManager = ({ user }) => {
   const { turmas } = useData();
+  const escolaDoTopo = useEscolaDoTopo();
   const [auxiliares, setAuxiliares] = useState([]);
   const [minhasEscolas, setMinhasEscolas] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -1467,7 +1529,7 @@ const AuxiliaresReaisManager = ({ user }) => {
 
   useEffect(() => { carregar(); }, []);
 
-  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [] }); setBuscaEscolaCadastro(''); };
+  const abrirCadastro = () => { setFormError(''); setForm({ nome: '', email: '', escolaIds: [escolaDoTopo(minhasEscolas, null)].filter(id => id !== null) }); setBuscaEscolaCadastro(''); };
   const fecharCadastro = () => { setForm(null); setFormError(''); };
 
   const toggleEscola = (escolaId) => {
