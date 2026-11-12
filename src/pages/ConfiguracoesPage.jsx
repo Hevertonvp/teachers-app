@@ -5,6 +5,7 @@ import { ActionMenu, Badge, Button, Card, ConfirmDialog, FormField, OrderButtons
 import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { AtuacoesPedagogicasConfig } from '../components/AtuacoesPedagogicasConfig';
 import { inputClass } from '../utils/display';
 import { formatDate } from '../utils/pdi';
 import { isSecretaria } from '../utils/roles';
@@ -185,6 +186,8 @@ export const ConfiguracoesPage = () => {
           )}
         </Card>
         </div>
+
+        {podeConfigurar && <AtuacoesPedagogicasConfig />}
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
 

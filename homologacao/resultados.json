@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:48.167Z"
+    "quando": "2026-11-12T17:44:41.884Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:48.268Z"
+    "quando": "2026-11-12T17:44:42.061Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:48.432Z"
+    "quando": "2026-11-12T17:44:42.427Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:48.566Z"
+    "quando": "2026-11-12T17:44:42.745Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:48.793Z"
+    "quando": "2026-11-12T17:44:43.014Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:52.085Z"
+    "quando": "2026-11-12T17:44:46.507Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:55.555Z"
+    "quando": "2026-11-12T17:44:50.185Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:57.038Z"
+    "quando": "2026-11-12T17:44:51.662Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:57.909Z"
+    "quando": "2026-11-12T17:44:52.526Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:48:58.261Z"
+    "quando": "2026-11-12T17:44:52.913Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:00.787Z"
+    "quando": "2026-11-12T17:44:56.770Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 12:49ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos",
+    "observado": "Não iniciadoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 14:44ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:03.105Z"
+    "quando": "2026-11-12T17:44:59.844Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:03.956Z"
+    "quando": "2026-11-12T17:45:00.714Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"escolaId\":123,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplinas\":[{\"id\":9,\"n",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":135,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:06.458Z"
+    "quando": "2026-11-12T17:45:03.254Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:06.563Z"
+    "quando": "2026-11-12T17:45:03.362Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "ConcluídoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 12:49ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos, q",
+    "observado": "ConcluídoAbertoCargos 1 e 2ZZCARGO-UI Formulário 1/3 · 3º trimestre · prazo 22/11/2026, 14:44ZZCARGO-UI Prudenciana — InglêsUm formulário para os dois cargos, q",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:08.832Z"
+    "quando": "2026-11-12T17:45:06.974Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,7 +8434,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:08.873Z"
+    "quando": "2026-11-12T17:45:07.047Z"
   },
   {
     "id": "CARGO-16",
@@ -8445,7 +8445,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:10.973Z"
+    "quando": "2026-11-12T17:45:10.828Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:10.980Z"
+    "quando": "2026-11-12T17:45:10.842Z"
   },
   {
     "id": "UT-P04-02",
@@ -9028,40 +9028,40 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.739Z"
+    "quando": "2026-11-12T17:42:10.462Z"
   },
   {
     "id": "XLS13-2",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Cabeçalhos: cargo e \"escolas e disciplinas\"; sem ano/série, sem turma, sem disciplina solta",
-    "esperado": "Entregas: Professor | Cargo | Escolas e disciplinas | Status | Semanas preenchidas | Total de semanas | Concluída em | Última alteração; Conteúdos: Professor | Cargo | Escolas e disciplinas | Semana | Início | Fim | Conteúdo",
-    "observado": "Entregas: Professor | Cargo | Escolas e disciplinas | Status | Semanas preenchidas | Total de semanas | Concluída em | Última alteração; Conteúdos: Professor | Cargo | Escolas e disciplinas | Semana | Início | Fim | Conteúdo",
+    "esperado": "Entregas: Professor | Cargo | Escolas e atuação | Status | Semanas preenchidas | Total de semanas | Concluída em | Última alteração; Conteúdos: Professor | Cargo | Escolas e atuação | Semana | Início | Fim | Conteúdo",
+    "observado": "Entregas: Professor | Cargo | Escolas e atuação | Status | Semanas preenchidas | Total de semanas | Concluída em | Última alteração; Conteúdos: Professor | Cargo | Escolas e atuação | Semana | Início | Fim | Conteúdo",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.748Z"
+    "quando": "2026-11-12T17:42:10.478Z"
   },
   {
     "id": "XLS13-3",
     "modulo": "Excel do 1/3 por cargo",
-    "cenario": "Entregas = folhas do painel (14), sem duplicar",
-    "esperado": "14 linhas únicas",
-    "observado": "14 linhas (14 únicas)",
+    "cenario": "Entregas = folhas do painel (15), sem duplicar",
+    "esperado": "15 linhas únicas",
+    "observado": "15 linhas (15 únicas)",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.754Z"
+    "quando": "2026-11-12T17:42:10.490Z"
   },
   {
     "id": "XLS13-4",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Cargo de 2 escolas (P05): 1 linha com as duas escolas associadas às disciplinas; status Concluído",
     "esperado": "Cargo 1; ZZ-HOMOLOG Escola Aurora — Educação Física; ZZ-HOMOLOG Escola Boa Vista — Educação Física; Concluído; 4/4",
-    "observado": "Cargo 1; ZZ-HOMOLOG Escola Aurora — Educação Física; ZZ-HOMOLOG Escola Boa Vista — Educação Física; Concluído; 4/4",
+    "observado": "Cargo 1; ZZ-HOMOLOG Escola Aurora — Educação Física | ZZ-HOMOLOG Escola Boa Vista — Educação Física; Concluído; 4/4",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.765Z"
+    "quando": "2026-11-12T17:42:10.509Z"
   },
   {
     "id": "XLS13-5",
@@ -9072,7 +9072,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.773Z"
+    "quando": "2026-11-12T17:42:10.515Z"
   },
   {
     "id": "XLS13-6",
@@ -9083,7 +9083,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.781Z"
+    "quando": "2026-11-12T17:42:10.524Z"
   },
   {
     "id": "XLS13-7",
@@ -9094,7 +9094,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.788Z"
+    "quando": "2026-11-12T17:42:10.541Z"
   },
   {
     "id": "XLS13-8",
@@ -9105,29 +9105,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.797Z"
+    "quando": "2026-11-12T17:42:10.550Z"
   },
   {
     "id": "XLS13-9",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Início/fim da semana iguais ao banco (sem voltar um dia); linha do conteúdo traz cargo e escolas",
     "esperado": "2026-11-02 a 2026-11-06; Cargo 1",
-    "observado": "2026-11-02 a 2026-11-06; Cargo 1; ZZ-HOMOLOG Escola Aurora — Educação Física; ZZ-HOMOLOG Escola Boa Vista — Educação Física",
+    "observado": "2026-11-02 a 2026-11-06; Cargo 1; ZZ-HOMOLOG Escola Aurora — Educação Física | ZZ-HOMOLOG Escola Boa Vista — Educação Física",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.803Z"
+    "quando": "2026-11-12T17:42:10.561Z"
   },
   {
     "id": "XLS13-10",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Cobertura por escola: folha de 2 escolas conta nas duas; o Resumo conta cada folha uma vez",
-    "esperado": "Aurora 12; Boa Vista 3; Resumo 14",
-    "observado": "Aurora 12; Boa Vista 3; Resumo 14",
+    "esperado": "Aurora 13; Boa Vista 3; Resumo 15",
+    "observado": "Aurora 13; Boa Vista 3; Resumo 15",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:46.814Z"
+    "quando": "2026-11-12T17:42:10.572Z"
   },
   {
     "id": "XLS13-11",
@@ -9138,7 +9138,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:50.274Z"
+    "quando": "2026-11-12T17:42:14.054Z"
   },
   {
     "id": "XLS13-12",
@@ -9149,7 +9149,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:50.283Z"
+    "quando": "2026-11-12T17:42:14.065Z"
   },
   {
     "id": "XLS13-13",
@@ -9160,18 +9160,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:50.289Z"
+    "quando": "2026-11-12T17:42:14.075Z"
   },
   {
     "id": "EI-1",
     "modulo": "Educação Infantil no 1/3",
-    "cenario": "Secretaria cadastra pela tela um cargo de Educação Infantil: escola sem disciplina, sem disciplina inventada",
-    "esperado": "\"Sem cargo\" antes; aviso \"Sem disciplina específica\"; composição [{Aurora, []}]",
-    "observado": "sem cargo antes: true; aviso: true; composição [{\"escolaId\":1,\"disciplinaIds\":[]}]",
+    "cenario": "Secretaria cadastra pela tela um cargo de Educação Infantil: escola sem disciplina, com a atuação Professor Regente (sem disciplina inventada)",
+    "esperado": "composição [{Aurora, sem disciplina, Professor Regente}]",
+    "observado": "sem cargo antes: true; composição [{\"escolaId\":1,\"atuacaoIds\":[1],\"disciplinaIds\":[]}]",
     "status": "APROVADO",
     "evidencia": "60-cargo-educacao-infantil.png",
     "nota": "",
-    "quando": "2026-11-12T15:49:29.688Z"
+    "quando": "2026-11-12T17:42:36.293Z"
   },
   {
     "id": "EI-2",
@@ -9182,7 +9182,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:29.706Z"
+    "quando": "2026-11-12T17:42:36.310Z"
   },
   {
     "id": "EI-3",
@@ -9193,7 +9193,7 @@
     "status": "APROVADO",
     "evidencia": "60-p14-concluido-celular.png",
     "nota": "",
-    "quando": "2026-11-12T15:49:40.747Z"
+    "quando": "2026-11-12T17:42:48.682Z"
   },
   {
     "id": "EI-4",
@@ -9204,7 +9204,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:40.969Z"
+    "quando": "2026-11-12T17:42:49.312Z"
   },
   {
     "id": "EI-5",
@@ -9215,7 +9215,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:49:41.005Z"
+    "quando": "2026-11-12T17:42:49.379Z"
   },
   {
     "id": "CORR13-01",
@@ -9623,5 +9623,71 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-12T15:50:30.221Z"
+  },
+  {
+    "id": "ATU-CAT",
+    "modulo": "Atuação pedagógica",
+    "cenario": "Configurações: Secretaria vê a lista inicial, cadastra uma atuação nova e desativa (sem migration nem código)",
+    "esperado": "lista inicial; nova cadastrada; Inativa",
+    "observado": "iniciais: true; inativa: true",
+    "status": "APROVADO",
+    "evidencia": "64-configuracoes-atuacoes.png",
+    "nota": "",
+    "quando": "2026-11-12T17:41:22.807Z"
+  },
+  {
+    "id": "ATU-5/2",
+    "modulo": "Atuação pedagógica",
+    "cenario": "Cadastro pela tela: escola vazia é recusada perto do campo; escola só com \"Professor Regente\" (sem disciplina) é aceita; atuação inativa não aparece",
+    "esperado": "erro no bloco; composição com atuação; sem a inativa na lista",
+    "observado": "erro: true; composição: [{\"escolaId\":1,\"atuacaoIds\":[1],\"disciplinaIds\":[]}]; inativa na lista: false",
+    "status": "APROVADO",
+    "evidencia": "64-cadastro-regente.png",
+    "nota": "",
+    "quando": "2026-11-12T17:41:26.929Z"
+  },
+  {
+    "id": "ATU-6/7",
+    "modulo": "Atuação pedagógica",
+    "cenario": "Folha gerada para cargo só com atuação: mostra \"Aurora — Professor Regente\" (sem turma); conclusão normal; foto guarda o nome da atuação",
+    "esperado": "card e cabeçalho com a atuação; CONCLUIDA; 4 semanas",
+    "observado": "card: true; cabeçalho: true; CONCLUIDA; 4; foto: [{\"atuacoes\":[{\"id\":1,\"nome\":\"Professor Regente\"}],\"escolaId\":1,\"escolaNome\":\"ZZ-HOMOLOG Escola Aurora\",\"disciplinas\":[]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T17:41:38.980Z"
+  },
+  {
+    "id": "ATU-8",
+    "modulo": "Atuação pedagógica",
+    "cenario": "Correção direta numa folha só com atuação: salva e a mensagem identifica \"Aurora — Professor Regente\"",
+    "esperado": "salvo; mensagem com a atuação",
+    "observado": "Regente semana 1: corrigido pela Secretaria.; A Secretaria fez uma correção no seu Formulário 1/3 (Formulário 1/3 — Nov/2026 (homolog), 3º trimestre). | Cargo 1 | ZZ-HOMOLOG Escola Auror",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T17:41:39.332Z"
+  },
+  {
+    "id": "ATU-9/10",
+    "modulo": "Atuação pedagógica",
+    "cenario": "Painel: a folha só com atuação aparece no filtro por escola e fica fora do filtro por disciplina",
+    "esperado": "escola: sim; disciplina: não",
+    "observado": "escola: true; disciplina: false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T17:41:39.380Z"
+  },
+  {
+    "id": "XLS13-6b",
+    "modulo": "Excel do 1/3 por cargo",
+    "cenario": "Atuação pedagógica na planilha: disciplina e atuações da mesma escola na mesma célula",
+    "esperado": "ZZ-HOMOLOG Escola Aurora — Inglês; Professor de Intervenção, Professor Regente",
+    "observado": "ZZ-HOMOLOG Escola Aurora — Inglês; Professor de Intervenção, Professor Regente",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T17:42:10.532Z"
   }
 ]

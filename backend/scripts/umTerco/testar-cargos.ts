@@ -50,6 +50,7 @@ async function limpar() {
   await prisma.pessoa.deleteMany({ where: { id: { in: pessoas } } });
   await prisma.escola.deleteMany({ where: { id: { in: escolas } } });
   await prisma.disciplina.deleteMany({ where: { nome: { startsWith: PREFIXO } } });
+  await prisma.atuacaoPedagogica.deleteMany({ where: { nome: { startsWith: PREFIXO } } });
 }
 
 const contar = async () => ({ pessoas: await prisma.pessoa.count(), escolas: await prisma.escola.count(), ciclos: await prisma.cicloUmTerco.count(), entregas: await prisma.entregaUmTerco.count(), cargos: await prisma.cargoProfessor.count(), vinculos: await prisma.vinculoEscolar.count() });
@@ -78,7 +79,11 @@ try {
   const prud = await esc('Prudenciana'); const tres = await esc('Tres Marias'); const cmei = await esc('CMEI Infantil');
   await prisma.vinculoEscolar.create({ data: { escolaId: prud.id, pessoaId: dir.id, status: 'ATIVO', dataInicio: new Date() } });
   const [ing, geo] = await Promise.all(['Ingles', 'Geografia'].map((n) => prisma.disciplina.create({ data: { nome: `${PREFIXO} ${n}` } })));
-  const C = (...itens: [number, number[]][]) => itens.map(([escolaId, disciplinaIds]) => ({ escolaId, disciplinaIds }));
+  const C = (...itens: ([number, number[]] | [number, number[], number[]])[]) => itens.map(([escolaId, disciplinaIds, atuacaoIds]) => ({ escolaId, disciplinaIds, atuacaoIds: atuacaoIds ?? [] }));
+  // Atuações pedagógicas (12/11/2026): as três iniciais vêm da migration.
+  const regente = await prisma.atuacaoPedagogica.findUniqueOrThrow({ where: { nome: 'Professor Regente' } });
+  const oficina = await prisma.atuacaoPedagogica.findUniqueOrThrow({ where: { nome: 'Oficina do Brincar' } });
+  const intervencao = await prisma.atuacaoPedagogica.findUniqueOrThrow({ where: { nome: 'Professor de Intervenção' } });
 
   let seq = 0;
   const novoProfessor = async (cargos: { dataInicio?: string; composicao: unknown }[]) => {
@@ -147,7 +152,7 @@ try {
     assert.deepEqual(await vinculosAtivos(p.id), [prud.id, tres.id].sort());
   });
   await caso('8. Terceiro cargo ativo bloqueado', async () => {
-    const r = await api(tSec, 'POST', `/pessoas/professores/${p2.id}/cargos`, { dataInicio: diaSp(), composicao: C([cmei.id, []]) });
+    const r = await api(tSec, 'POST', `/pessoas/professores/${p2.id}/cargos`, { dataInicio: diaSp(), composicao: C([cmei.id, [], [regente.id]]) });
     assert.equal(r.status, 409, JSON.stringify(r.json));
   });
   await caso('9. Disciplina repetida na mesma escola do cargo bloqueada', async () => {
@@ -162,8 +167,41 @@ try {
     const p = await novoProfessor([{ dataInicio: '2026-02-03', composicao: C([prud.id, [geo.id]]) }]);
     assert.equal((await cargosDe(p.id))[0].dataInicio, '2026-02-03');
   });
-  await caso('Educação Infantil: escola sem disciplina é aceita', async () => {
-    const p = await novoProfessor([{ composicao: C([cmei.id, []]) }]);
+  console.log('\n— Atuações pedagógicas —');
+  await caso('Escola sem disciplina E sem atuação é recusada (regra de 12/11/2026)', async () => {
+    const r = await api(tSec, 'POST', `/pessoas/professores/${p1.id}/cargos`, { dataInicio: diaSp(), composicao: C([cmei.id, []]) });
+    assert.equal(r.status, 400, JSON.stringify(r.json));
+    assert.match(r.json.message, /ao menos uma disciplina ou uma atuação/);
+  });
+  await caso('2/5. Cargo só com atuação: Professor Regente na Educação Infantil (sem disciplina inventada)', async () => {
+    const p = await novoProfessor([{ composicao: C([cmei.id, [], [regente.id]]) }]);
+    const [c] = await cargosDe(p.id);
+    assert.deepEqual(c.composicao.map((x) => [x.disciplinas.length, (x as unknown as { atuacoes: { nome: string }[] }).atuacoes.map((a) => a.nome)]), [[0, ['Professor Regente']]]);
+    assert.equal(await prisma.disciplina.count({ where: { nome: { contains: 'Regente' } } }), 0);
+  });
+  await caso('3/4. Disciplina + atuação na mesma escola; duas atuações na mesma escola; atuação repetida recusada', async () => {
+    const p = await novoProfessor([{ composicao: C([prud.id, [ing.id], [intervencao.id]], [cmei.id, [], [regente.id, oficina.id]]) }]);
+    const [c] = await cargosDe(p.id);
+    const porEscola = Object.fromEntries(c.composicao.map((x) => [x.escolaId, (x as unknown as { atuacoes: { id: number }[] }).atuacoes.length]));
+    assert.equal(porEscola[prud.id], 1); assert.equal(porEscola[cmei.id], 2);
+    const rep = await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos`, { dataInicio: diaSp(), composicao: C([cmei.id, [], [regente.id, regente.id]]) });
+    assert.equal(rep.status, 400, JSON.stringify(rep.json));
+  });
+  await caso('Catálogo: Secretaria cadastra, renomeia e desativa; nome repetido 409; Diretora só consulta; inativa não entra em cargo novo', async () => {
+    const nova = await api(tSec, 'POST', '/atuacoes-pedagogicas', { nome: `${PREFIXO} Apoio` });
+    assert.equal(nova.status, 201, JSON.stringify(nova.json));
+    assert.equal((await api(tSec, 'POST', '/atuacoes-pedagogicas', { nome: `${PREFIXO.toLowerCase()} apoio` })).status, 409);
+    assert.equal((await api(tDir, 'POST', '/atuacoes-pedagogicas', { nome: 'x de diretora' })).status, 403);
+    assert.equal((await api(tDir, 'GET', '/atuacoes-pedagogicas')).status, 200);
+    assert.equal((await api(tSec, 'PUT', `/atuacoes-pedagogicas/${nova.json.id}`, { status: 'inativa' })).status, 200);
+    const comInativa = await api(tSec, 'POST', `/pessoas/professores/${p1.id}/cargos`, { dataInicio: diaSp(), composicao: C([cmei.id, [], [nova.json.id]]) });
+    assert.equal(comInativa.status, 400, JSON.stringify(comInativa.json));
+  });
+  await caso('Educação Infantil (folha antiga, gravada sem atuação): composição antiga continua lida como está', async () => {
+    const p = await novoProfessor([{ composicao: C([cmei.id, [], [regente.id]]) }]);
+    const [c] = await cargosDe(p.id);
+    // Simula uma versão gravada ANTES das atuações (sem o campo atuacaoIds), direto no banco.
+    await prisma.cargoVersao.updateMany({ where: { cargoId: c.id }, data: { composicao: [{ escolaId: cmei.id, disciplinaIds: [] }] } });
     assert.equal((await cargosDe(p.id))[0].composicao[0].disciplinas.length, 0);
   });
   await caso('Diretora consulta cargos, mas não cria, altera nem encerra', async () => {
@@ -201,13 +239,15 @@ try {
   const pIguais = await novoProfessor([{ composicao: C([prud.id, [ing.id]]) }, { composicao: C([prud.id, [ing.id]]) }]);
   const pQuase = await novoProfessor([{ composicao: C([prud.id, [ing.id]]) }, { composicao: C([prud.id, [ing.id, geo.id]]) }]);
   const pMulti = await novoProfessor([{ composicao: C([prud.id, [ing.id]], [tres.id, [ing.id, geo.id]]) }]);
-  const pInfantil = await novoProfessor([{ composicao: C([cmei.id, []]) }]);
+  const pInfantil = await novoProfessor([{ composicao: C([cmei.id, [], [regente.id]]) }]);
+  const pRegentes = await novoProfessor([{ composicao: C([cmei.id, [], [regente.id]]) }, { composicao: C([cmei.id, [], [regente.id]]) }]);
+  const pRegenteOficina = await novoProfessor([{ composicao: C([cmei.id, [], [regente.id]]) }, { composicao: C([cmei.id, [], [oficina.id]]) }]);
   const pEncerra = await novoProfessor([{ composicao: C([prud.id, [geo.id]]) }]);
   const pEncerraComTexto = await novoProfessor([{ composicao: C([tres.id, [ing.id]]) }]);
   const pMuda = await novoProfessor([{ composicao: C([prud.id, [ing.id]]) }]);
   const pNovo = await novoProfessor([{ composicao: C([prud.id, [geo.id]]) }]);
   const pIguaisUmEncerra = await novoProfessor([{ composicao: C([tres.id, [geo.id]]) }, { composicao: C([tres.id, [geo.id]]) }]);
-  for (const p of [pUm, pDois, pIguais, pQuase, pMulti, pInfantil, pEncerra, pEncerraComTexto, pMuda, pNovo, pIguaisUmEncerra]) await recuar(p.id, 40);
+  for (const p of [pRegentes, pRegenteOficina, pUm, pDois, pIguais, pQuase, pMulti, pInfantil, pEncerra, pEncerraComTexto, pMuda, pNovo, pIguaisUmEncerra]) await recuar(p.id, 40);
   const ciclo = await novoCiclo();
 
   await caso('11. 1 cargo → 1 folha (sem turmas, com escola e disciplina)', async () => {
@@ -232,6 +272,29 @@ try {
     const itens = await minhas(pInfantil.token, ciclo.id);
     assert.equal(itens.length, 1);
     assert.equal(itens[0].composicao[0].escolaId, cmei.id);
+  });
+  await caso('6. Professor Regente gera folha normalmente, com "CMEI — Professor Regente"', async () => {
+    const itens = await minhas(pInfantil.token, ciclo.id);
+    assert.equal(itens.length, 1);
+    assert.deepEqual(itens[0].composicao.map((p) => [p.escolaNome, p.disciplinas.length, (p as unknown as { atuacoes: { nome: string }[] }).atuacoes.map((a) => a.nome)]), [[cmei.nome, 0, ['Professor Regente']]]);
+  });
+  await caso('11. Dois cargos com a MESMA atuação na mesma escola → 1 folha compartilhada', async () => {
+    const itens = await minhas(pRegentes.token, ciclo.id);
+    assert.equal(itens.length, 1); assert.equal(itens[0].compartilhada, true);
+  });
+  await caso('12. Atuações diferentes (Regente × Oficina do Brincar) → 2 folhas', async () => {
+    assert.equal((await minhas(pRegenteOficina.token, ciclo.id)).length, 2);
+  });
+  await caso('7/10. Conclusão da folha só com atuação; filtro por disciplina não a traz; filtro por escola traz', async () => {
+    const [item] = await minhas(pInfantil.token, ciclo.id);
+    const s1 = await api(pInfantil.token, 'PUT', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${item.cargoId}/respostas`, { baseUpdatedAt: null, respostas: ciclo.semanas.map((x, i) => ({ semanaId: x.id, texto: `Regente semana ${i + 1}` })) });
+    const fim = await api(pInfantil.token, 'POST', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${item.cargoId}/concluir`, { baseUpdatedAt: (s1.json as { updatedAt: string }).updatedAt });
+    assert.equal((fim.json as { status: string }).status, 'concluida', JSON.stringify(fim.json));
+    const entrega = await prisma.entregaUmTerco.findFirstOrThrow({ where: { cicloId: ciclo.id, professorId: pInfantil.id } });
+    assert.match(JSON.stringify(entrega.composicao), /Professor Regente/, 'a foto guarda o nome da atuação');
+    const porDisc = await painel(ciclo.id, `?disciplinaId=${ing.id}`);
+    assert.ok(!porDisc.linhas.some((l) => l.professorId === pInfantil.id));
+    assert.ok((await painel(ciclo.id, `?escolaId=${cmei.id}`)).linhas.some((l) => l.professorId === pInfantil.id));
   });
   await caso('15. Cargo novo durante o ciclo aberto → não cria folha neste ciclo', async () => {
     const r = await api(tSec, 'POST', `/pessoas/professores/${pNovo.id}/cargos`, { dataInicio: diaSp(-20), composicao: C([tres.id, [ing.id]]) });
@@ -334,7 +397,7 @@ try {
     assert.equal((await minhas(pIguais.token, ciclo.id)).length, 1);
   });
   await caso('Corte = DIA da abertura (caso do ciclo #14 da produção): ciclo aberto hoje às 00:00 e cargo cadastrado agora → entra', async () => {
-    const p = await novoProfessor([{ dataInicio: diaSp(), composicao: C([cmei.id, []]) }]);
+    const p = await novoProfessor([{ dataInicio: diaSp(), composicao: C([cmei.id, [], [regente.id]]) }]);
     const hoje = await prisma.cicloUmTerco.create({ data: { anoLetivo: 2099, trimestre: 3, titulo: `${PREFIXO} ciclo`, abreEm: new Date(`${diaSp()}T00:00:00-03:00`), prazoEm: new Date(Date.now() + 10 * DIA), todasEscolas: false, escolas: { create: [{ escolaId: cmei.id }] }, semanas: { create: [{ numero: 1, dataInicio: dataDb(diaSp(0)), dataFim: dataDb(diaSp(2)) }] } } });
     assert.equal((await painel(hoje.id, `?professorId=${p.id}`)).linhas.length, 1, 'cadastrado no dia da abertura tem que entrar');
     assert.equal((await minhas(p.token, hoje.id)).length, 1);

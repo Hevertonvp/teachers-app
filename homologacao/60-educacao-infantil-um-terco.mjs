@@ -32,12 +32,18 @@ try {
   const escolaSel = m.getByLabel('Escola 1');
   await escolaSel.selectOption(await escolaSel.evaluate((s, t) => [...s.options].find(o => o.text === t)?.value, A));
   await m.getByRole('button', { name: 'Remover disciplina' }).click();
-  const avisoSemDisciplina = await m.getByText('Sem disciplina específica (por exemplo, Educação Infantil).').isVisible();
+  // 12/11/2026: escola precisa de disciplina OU atuação; a Educação Infantil usa a atuação "Professor Regente".
+  await m.getByRole('button', { name: '+ Adicionar atuação' }).first().click();
+  const selAtu = m.getByLabel('Atuação 1').first();
+  await selAtu.selectOption(await selAtu.evaluate((s) => [...s.options].find((o) => o.text.trim() === 'Professor Regente')?.value));
+  const avisoSemDisciplina = true;
   await m.getByRole('button', { name: 'Cadastrar cargo' }).click();
   await m.getByText('Cargo cadastrado.').waitFor({ timeout: 10000 });
   await foto(S.page, '60-cargo-educacao-infantil');
   const cargoP13 = await prisma.cargoProfessor.findFirst({ where: { professorId: p13.id }, include: { versoes: true } });
-  r('1', 'Secretaria cadastra pela tela um cargo de Educação Infantil: escola sem disciplina, sem disciplina inventada', `"Sem cargo" antes; aviso "Sem disciplina específica"; composição [{Aurora, []}]`, `sem cargo antes: ${semCargo}; aviso: ${avisoSemDisciplina}; composição ${JSON.stringify(cargoP13?.versoes[0]?.composicao)}`, semCargo && avisoSemDisciplina && JSON.stringify(cargoP13?.versoes[0]?.composicao) === JSON.stringify([{ escolaId: 1, disciplinaIds: [] }]), '60-cargo-educacao-infantil.png');
+  const regenteId = (await prisma.atuacaoPedagogica.findUniqueOrThrow({ where: { nome: 'Professor Regente' } })).id;
+  const comp = cargoP13?.versoes[0]?.composicao ?? [];
+  r('1', 'Secretaria cadastra pela tela um cargo de Educação Infantil: escola sem disciplina, com a atuação Professor Regente (sem disciplina inventada)', 'composição [{Aurora, sem disciplina, Professor Regente}]', `sem cargo antes: ${semCargo}; composição ${JSON.stringify(comp)}`, semCargo && comp.length === 1 && comp[0].escolaId === 1 && comp[0].disciplinaIds.length === 0 && JSON.stringify(comp[0].atuacaoIds) === JSON.stringify([regenteId]), '60-cargo-educacao-infantil.png');
   const disciplinas = await prisma.disciplina.count();
   r('2', 'Nenhuma disciplina "Educação Infantil" foi criada', 'nenhuma', String(await prisma.disciplina.count({ where: { nome: { contains: 'Infantil' } } })), (await prisma.disciplina.count({ where: { nome: { contains: 'Infantil' } } })) === 0 && disciplinas > 0);
   await S.browser.close();

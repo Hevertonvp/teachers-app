@@ -140,7 +140,8 @@ try {
 
 // Professor: P08 (sem cargo nos cargos de teste) com dois cargos IGUAIS cadastrados antes da abertura → uma folha compartilhada.
 const p04 = await prisma.pessoa.findUnique({ where: { email: 'p08@homolog.nexo' } });
-const antes = new Date(Date.now() - 3 * H);
+// Corte = fim do DIA da abertura (12/11/2026): o ciclo de teste abre ONTEM, e os cargos do P08 são de antes.
+const antes = new Date(Date.now() - 40 * H);
 const composicao = [{ escolaId: prud.id, disciplinaIds: [ing.id] }];
 for (let i = 0; i < 2; i++) {
   await prisma.cargoProfessor.create({ data: { professorId: p04.id, dataInicio: new Date(`${antes.toISOString().slice(0, 10)}T00:00:00Z`), createdAt: antes, versoes: { create: { criadaEm: antes, composicao } } } });
@@ -149,7 +150,7 @@ const hoje = new Date(Date.now() - 3 * H).toISOString().slice(0, 10);
 const daqui = (d) => new Date(Date.now() - 3 * H + d * 24 * H).toISOString().slice(0, 10);
 const ciclo = await prisma.cicloUmTerco.create({
   data: {
-    anoLetivo: 2099, trimestre: 3, titulo: `${P} Formulário 1/3`, abreEm: new Date(Date.now() - 2 * H), prazoEm: new Date(Date.now() + 10 * 24 * H), todasEscolas: false,
+    anoLetivo: 2099, trimestre: 3, titulo: `${P} Formulário 1/3`, abreEm: new Date(Date.now() - 30 * H), prazoEm: new Date(Date.now() + 10 * 24 * H), todasEscolas: false,
     escolas: { create: [{ escolaId: prud.id }] },
     semanas: { create: [{ numero: 1, dataInicio: new Date(`${hoje}T00:00:00Z`), dataFim: new Date(`${daqui(2)}T00:00:00Z`) }, { numero: 2, dataInicio: new Date(`${daqui(3)}T00:00:00Z`), dataFim: new Date(`${daqui(5)}T00:00:00Z`) }] },
   },

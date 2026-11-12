@@ -22,19 +22,22 @@ export function lerData(valor: unknown, rotulo: string): string {
   return valor;
 }
 
-// Escolas ATIVAS e disciplinas existentes, para validar e para mostrar nomes.
-export async function nomesParaComposicao(db: Db, incluirEscolaIds: number[] = []) {
-  const [escolas, disciplinas] = await Promise.all([
+// Escolas ATIVAS, disciplinas e atuações pedagógicas ATIVAS, para validar e para mostrar nomes. Escola ou
+// atuação inativa que o cargo JÁ tem continua aceita (`incluir…`): desativar no catálogo não invalida cargos.
+export async function nomesParaComposicao(db: Db, incluirEscolaIds: number[] = [], incluirAtuacaoIds: number[] = []) {
+  const [escolas, disciplinas, atuacoes] = await Promise.all([
     db.escola.findMany({ where: { OR: [{ status: 'ATIVA' }, { id: { in: incluirEscolaIds } }] }, select: { id: true, nome: true } }),
     db.disciplina.findMany({ select: { id: true, nome: true } }),
+    db.atuacaoPedagogica.findMany({ where: { OR: [{ status: 'ATIVA' }, { id: { in: incluirAtuacaoIds } }] }, select: { id: true, nome: true } }),
   ]);
   const escola = new Map(escolas.map((e) => [e.id, e.nome]));
   const disciplina = new Map(disciplinas.map((d) => [d.id, d.nome]));
-  return { escola: (id: number) => escola.get(id), disciplina: (id: number) => disciplina.get(id) };
+  const atuacao = new Map(atuacoes.map((a) => [a.id, a.nome]));
+  return { escola: (id: number) => escola.get(id), disciplina: (id: number) => disciplina.get(id), atuacao: (id: number) => atuacao.get(id) };
 }
 
-export async function validarComposicaoNoBanco(db: Db, entrada: unknown, jaNoCargo: number[] = []): Promise<Composicao> {
-  return validarComposicao(entrada, await nomesParaComposicao(db, jaNoCargo));
+export async function validarComposicaoNoBanco(db: Db, entrada: unknown, jaNoCargo: Composicao = []): Promise<Composicao> {
+  return validarComposicao(entrada, await nomesParaComposicao(db, jaNoCargo.map((i) => i.escolaId), jaNoCargo.flatMap((i) => i.atuacaoIds)));
 }
 
 // Escola adicionada a um cargo garante VinculoEscolar ATIVO (reusa o existente; nunca duplica).
@@ -83,7 +86,7 @@ export async function alterarCargo(tx: Db, professorId: number, cargoId: number,
     data.dataInicio = dataUtc(inicio);
   }
   if (dados.composicao !== undefined) {
-    const nova = await validarComposicaoNoBanco(tx, dados.composicao, atual.map((i) => i.escolaId));
+    const nova = await validarComposicaoNoBanco(tx, dados.composicao, atual);
     if (chaveComposicao(nova) !== chaveComposicao(atual)) {
       await tx.cargoVersao.create({ data: { cargoId, criadaPor: String(autorId), composicao: nova as unknown as Prisma.InputJsonValue } });
       await garantirVinculosEscolares(tx, professorId, nova.map((i) => i.escolaId), autorId);
@@ -114,7 +117,7 @@ export async function listarCargosFormatados(db: Db, professorId: number, opcoes
   });
   const rotulos = rotulosDosCargos(cargos);
   const composicoes = cargos.map((c) => lerComposicao(c.versoes[0]?.composicao));
-  const nomes = await nomesParaComposicao(db, composicoes.flatMap((c) => c.map((i) => i.escolaId)));
+  const nomes = await nomesParaComposicao(db, composicoes.flatMap((c) => c.map((i) => i.escolaId)), composicoes.flatMap((c) => c.flatMap((i) => i.atuacaoIds)));
   return cargos
     .map((c, i) => ({
       id: c.id,
@@ -127,6 +130,7 @@ export async function listarCargosFormatados(db: Db, professorId: number, opcoes
         escolaId: item.escolaId,
         escolaNome: nomes.escola(item.escolaId) ?? '—',
         disciplinas: item.disciplinaIds.map((id) => ({ id, nome: nomes.disciplina(id) ?? '—' })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+        atuacoes: item.atuacaoIds.map((id) => ({ id, nome: nomes.atuacao(id) ?? '—' })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
       })).sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR')),
     }))
     .filter((c) => opcoes.incluirEncerrados || c.status === 'ativo');

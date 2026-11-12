@@ -149,25 +149,29 @@ async function registrarEvento(db: Db, entregaId: number, tipo: Prisma.Historico
 // --- Folhas por cargo --------------------------------------------------------------------------
 
 // Composição com nomes, no formato da tela e da foto gravada na entrega: escola → disciplinas.
-export type ParteNomeada = { escolaId: number; escolaNome: string; disciplinas: { id: number; nome: string }[] };
+// Foto de uma escola da folha: disciplinas e ATUAÇÕES pedagógicas (12/11/2026), com os nomes daquele momento.
+// Fotos antigas não têm `atuacoes` e valem como "nenhuma" — nunca são reescritas.
+export type ParteNomeada = { escolaId: number; escolaNome: string; disciplinas: { id: number; nome: string }[]; atuacoes: { id: number; nome: string }[] };
 
 async function carregarNomes(db: Db) {
-  const [escolas, disciplinas] = await Promise.all([
+  const [escolas, disciplinas, atuacoes] = await Promise.all([
     db.escola.findMany({ select: { id: true, nome: true } }),
     db.disciplina.findMany({ select: { id: true, nome: true } }),
+    db.atuacaoPedagogica.findMany({ select: { id: true, nome: true } }),
   ]);
-  return { escola: new Map(escolas.map((e) => [e.id, e.nome])), disciplina: new Map(disciplinas.map((d) => [d.id, d.nome])) };
+  return { escola: new Map(escolas.map((e) => [e.id, e.nome])), disciplina: new Map(disciplinas.map((d) => [d.id, d.nome])), atuacao: new Map(atuacoes.map((a) => [a.id, a.nome])) };
 }
 type Nomes = Awaited<ReturnType<typeof carregarNomes>>;
 
 const ordenarPartes = (partes: ParteNomeada[]) => partes
-  .map((p) => ({ ...p, disciplinas: [...p.disciplinas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }))
+  .map((p) => ({ ...p, disciplinas: [...p.disciplinas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), atuacoes: [...(p.atuacoes ?? [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }))
   .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'));
 
 const nomear = (composicao: Composicao, nomes: Nomes): ParteNomeada[] => ordenarPartes(composicao.map((i) => ({
   escolaId: i.escolaId,
   escolaNome: nomes.escola.get(i.escolaId) ?? '—',
   disciplinas: i.disciplinaIds.map((id) => ({ id, nome: nomes.disciplina.get(id) ?? '—' })),
+  atuacoes: i.atuacaoIds.map((id) => ({ id, nome: nomes.atuacao.get(id) ?? '—' })),
 })));
 
 // Foto gravada na entrega (nunca recalculada). Tolerante a formatos estranhos.
@@ -177,11 +181,16 @@ export function lerFoto(json: unknown): ParteNomeada[] {
     escolaId: Number((p as ParteNomeada)?.escolaId),
     escolaNome: String((p as ParteNomeada)?.escolaNome ?? '—'),
     disciplinas: Array.isArray((p as ParteNomeada)?.disciplinas) ? (p as ParteNomeada).disciplinas.map((d) => ({ id: Number(d.id), nome: String(d.nome) })) : [],
+    atuacoes: Array.isArray((p as ParteNomeada)?.atuacoes) ? (p as ParteNomeada).atuacoes.map((d) => ({ id: Number(d.id), nome: String(d.nome) })) : [],
   })).filter((p) => Number.isInteger(p.escolaId)));
 }
 
 // "Prudenciana — Inglês, Geografia" (escola sem disciplina: só o nome da escola).
-export const descreverParte = (p: ParteNomeada) => (p.disciplinas.length ? `${p.escolaNome} — ${p.disciplinas.map((d) => d.nome).join(', ')}` : p.escolaNome);
+// "Prudenciana — Inglês, Geografia", "CMEI — Professor Regente", "Escola X — Inglês; Professor de Intervenção".
+export const descreverParte = (p: ParteNomeada) => {
+  const itens = [p.disciplinas.map((d) => d.nome).join(', '), (p.atuacoes ?? []).map((a) => a.nome).join(', ')].filter(Boolean);
+  return itens.length ? `${p.escolaNome} — ${itens.join('; ')}` : p.escolaNome;
+};
 
 export const AVISO_FOLHA_COMPARTILHADA = 'Este formulário representa os dois cargos cadastrados, pois possuem a mesma configuração de escolas e disciplinas.';
 
@@ -556,7 +565,7 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
   const conteudos = respostas.map((r) => {
     const l = linhaDaEntrega.get(r.entregaId)!;
     return {
-      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join('; '),
+      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join(' | '),
       semanaNumero: r.semana.numero, semanaInicio: dataIso(r.semana.dataInicio), semanaFim: dataIso(r.semana.dataFim), texto: r.texto,
     };
   });

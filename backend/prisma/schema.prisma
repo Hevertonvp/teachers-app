@@ -1825,3 +1825,21 @@ model HistoricoCorrecaoSemanaUmTerco {
   @@index([entregaId, alteradoEm])
   @@map("historico_correcao_semana_um_terco")
 }
+
+// Atuação pedagógica do cargo (decisão do usuário, 12/11/2026): Professor Regente, Oficina do Brincar,
+// Professor de Intervenção… — funções docentes que NÃO são componentes curriculares. Catálogo administrativo
+// próprio (nunca dentro de `disciplinas`: não toca PDI, CRMG, mapeamentos nem ProfessorTurmaDisciplina).
+// A Secretaria cadastra e desativa em Configurações; inativa some das listas, mas continua nos cargos e
+// folhas antigos. Usada na composição do cargo (CargoVersao.composicao: atuacaoIds por escola).
+model AtuacaoPedagogica {
+  id     Int            @id @default(autoincrement())
+  nome   String         @unique @db.VarChar(100)
+  status StatusRegistro @default(ATIVA)
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+
+  @@map("atuacoes_pedagogicas")
+}

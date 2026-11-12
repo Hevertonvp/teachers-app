@@ -1,6 +1,7 @@
 import { obterExportacaoUmTerco } from '../services/exportacoes';
 import { exportarExcel } from './exportarExcel';
 import { STATUS_ENTREGA } from './umTerco';
+import { descreverParteCargo } from '../services/cargos';
 
 // Exportação do Formulário 1/3 de um ciclo: mesmos números e mesmos filtros do Painel de entregas
 // (o backend reaproveita o cálculo do painel), mais o conteúdo de cada semana.
@@ -12,8 +13,9 @@ export const exportarUmTerco = async ({ cicloId, filtros = {}, rotulos = [], usu
     { titulo: 'Professor', valor: l => l.professorNome, largura: 32 },
     { titulo: 'Cargo', valor: l => l.rotulo, largura: 14 },
   ];
-  // Escolas e disciplinas do cargo, sempre associadas (1/3 por cargo, 12/11/2026). Sem turmas e sem séries.
-  const cobertura = (l) => l.composicao.map(p => (p.disciplinas.length ? `${p.escolaNome} — ${p.disciplinas.map(d => d.nome).join(', ')}` : p.escolaNome)).join('; ');
+  // Escolas com disciplinas e atuações pedagógicas do cargo, sempre associadas (12/11/2026). Sem turmas e sem séries.
+  // Escolas separadas por " | " (dentro de uma escola, ";" separa disciplinas de atuações).
+  const cobertura = (l) => l.composicao.map(descreverParteCargo).join(' | ');
   await exportarExcel({
     arquivo: `educa-sao-joao-formulario-1-3-${ciclo.anoLetivo}-${ciclo.trimestre}tri`,
     usuario,
@@ -21,7 +23,7 @@ export const exportarUmTerco = async ({ cicloId, filtros = {}, rotulos = [], usu
     abas: [
       { nome: 'Entregas', linhas: dados.linhas, colunas: [
         ...ident,
-        { titulo: 'Escolas e disciplinas', valor: cobertura, largura: 50 },
+        { titulo: 'Escolas e atuação', valor: cobertura, largura: 50 },
         { titulo: 'Status', valor: l => STATUS_ENTREGA[l.status]?.label ?? l.status, largura: 14 },
         { titulo: 'Semanas preenchidas', valor: l => l.semanasPreenchidas, tipo: 'numero' },
         { titulo: 'Total de semanas', valor: l => l.totalSemanas, tipo: 'numero' },
@@ -30,7 +32,7 @@ export const exportarUmTerco = async ({ cicloId, filtros = {}, rotulos = [], usu
       ] },
       { nome: 'Conteúdos', linhas: dados.conteudos, colunas: [
         ...ident,
-        { titulo: 'Escolas e disciplinas', valor: c => c.cobertura, largura: 50 },
+        { titulo: 'Escolas e atuação', valor: c => c.cobertura, largura: 50 },
         { titulo: 'Semana', valor: c => c.semanaNumero, tipo: 'numero' },
         { titulo: 'Início', valor: c => c.semanaInicio, tipo: 'data' },
         { titulo: 'Fim', valor: c => c.semanaFim, tipo: 'data' },

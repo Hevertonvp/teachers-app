@@ -9,5 +9,14 @@ export const criarCargo = (professorId, dados) => apiFetch(base(professorId), { 
 export const alterarCargo = (professorId, cargoId, dados) => apiFetch(`${base(professorId)}/${cargoId}`, { method: 'PUT', body: dados });
 export const encerrarCargo = (professorId, cargoId, dataFim) => apiFetch(`${base(professorId)}/${cargoId}/encerrar`, { method: 'POST', body: { dataFim } });
 
-// "Prudenciana — Inglês, Geografia"; escola sem disciplina: só o nome da escola.
-export const descreverParteCargo = (parte) => (parte.disciplinas?.length ? `${parte.escolaNome} — ${parte.disciplinas.map(d => d.nome).join(', ')}` : parte.escolaNome);
+// "Prudenciana — Inglês, Geografia", "CMEI — Professor Regente", "Escola X — Inglês; Professor de Intervenção".
+export const descreverParteCargo = (parte) => {
+  const itens = [(parte.disciplinas ?? []).map(d => d.nome).join(', '), (parte.atuacoes ?? []).map(a => a.nome).join(', ')].filter(Boolean);
+  return itens.length ? `${parte.escolaNome} — ${itens.join('; ')}` : parte.escolaNome;
+};
+
+// Atuações pedagógicas (12/11/2026): catálogo da Secretaria (Configurações). Professor Regente, Oficina do
+// Brincar, Professor de Intervenção… Não são disciplinas.
+export const listarAtuacoes = () => apiFetch('/api/atuacoes-pedagogicas');
+export const criarAtuacao = (nome) => apiFetch('/api/atuacoes-pedagogicas', { method: 'POST', body: { nome } });
+export const alterarAtuacao = (id, dados) => apiFetch(`/api/atuacoes-pedagogicas/${id}`, { method: 'PUT', body: dados });
