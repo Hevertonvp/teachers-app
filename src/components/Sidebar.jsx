@@ -181,7 +181,8 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     : menuGestor;
   // PDI (src/config/modulos.js): oculto → somem PDI e Correções (hoje só do PDI); em desenvolvimento →
   // continuam no menu, com o selo "em desenvolvimento", e abrem o aviso.
-  const ehDoPdi = (item) => item.path === '/pdi' || item.path === '/correcoes';
+  // Correções (12/11/2026): para a Secretaria a área tem o 1/3 de verdade, então não leva o selo nem some.
+  const ehDoPdi = (item) => item.path === '/pdi' || (item.path === '/correcoes' && !isSecretaria(user));
   const menuVisivel = PDI_VISIVEL ? menu.map(item => (PDI_EM_DESENVOLVIMENTO && ehDoPdi(item) ? { ...item, emDesenvolvimento: true } : item)) : menu.filter(item => !ehDoPdi(item));
   const menuWithUnread = menuVisivel.map(item => item.path === '/mensagens' ? { ...item, badge: mensagensNaoLidas } : item);
   const bottomMenu = [{ name: 'Perfil', path: '/perfil', icon: 'perfil' }, { name: 'Configurações', path: '/configuracoes', icon: 'configuracoes' }];

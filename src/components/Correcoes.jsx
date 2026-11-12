@@ -11,6 +11,18 @@ export const SITUACAO_CORRECAO = {
   recebida: { rotulo: 'Correção recebida', variant: 'blue' },
   aceita: { rotulo: 'Correção aceita', variant: 'green' },
   devolvida: { rotulo: 'Devolvida novamente', variant: 'gray' },
+  // 1/3 (12/11/2026): a correção expira depois dos 3 dias sem reenvio (no PDI não existe esta situação).
+  expirada: { rotulo: 'Correção expirada', variant: 'gray' },
+};
+
+// Rótulos da área Correções → Formulário 1/3 (estados pedidos pelo usuário em 12/11/2026).
+export const SITUACAO_CORRECAO_UM_TERCO = {
+  nenhuma: { rotulo: 'Sem correção', variant: 'gray' },
+  solicitada: { rotulo: 'Aguardando o Professor', variant: 'yellow' },
+  recebida: { rotulo: 'Reenviada · aguardando a Secretaria', variant: 'blue' },
+  aceita: { rotulo: 'Resolvida', variant: 'green' },
+  devolvida: { rotulo: 'Devolvida novamente', variant: 'gray' },
+  expirada: { rotulo: 'Expirada', variant: 'gray' },
 };
 
 export const PRAZO_CORRECAO_DIAS = 3;
@@ -22,7 +34,7 @@ export function formatarPrazoCorrecao(iso) {
   return `${p.day}/${p.month}/${p.year}, às ${p.hour}h${p.minute}`;
 }
 
-export const SeloCorrecao = ({ situacao }) => (SITUACAO_CORRECAO[situacao] ? <Badge variant={SITUACAO_CORRECAO[situacao].variant}>{SITUACAO_CORRECAO[situacao].rotulo}</Badge> : null);
+export const SeloCorrecao = ({ situacao, mapa = SITUACAO_CORRECAO }) => (mapa[situacao] ? <Badge variant={mapa[situacao].variant}>{mapa[situacao].rotulo}</Badge> : null);
 
 // Uma correção ainda nas mãos do Professor (pode corrigir e enviar).
 export const correcaoPendente = (c) => !!c && (c.situacao === 'solicitada' || c.situacao === 'prazo_encerrado');
@@ -99,15 +111,22 @@ export const HistoricoCorrecoes = ({ correcoes, titulo = 'Histórico de correç�
 ));
 
 // Aviso para o Professor dentro do formulário: orientações, prazo e situação, sem precisar voltar
-// à caixa de mensagens. `itens`: [{ chave, titulo, correcao }].
-export const AvisoCorrecaoProfessor = ({ itens }) => {
-  const visiveis = itens.filter((i) => i.correcao && ['solicitada', 'prazo_encerrado', 'recebida'].includes(i.correcao.situacao));
+// à caixa de mensagens. `itens`: [{ chave, titulo, correcao }]. `reenvio` (1/3, 12/11/2026): textos de
+// "Reenviar correção" e a situação "expirada".
+export const AvisoCorrecaoProfessor = ({ itens, reenvio = false }) => {
+  const visiveis = itens.filter((i) => i.correcao && ['solicitada', 'prazo_encerrado', 'recebida', ...(reenvio ? ['expirada'] : [])].includes(i.correcao.situacao));
   if (!visiveis.length) return null;
   return (
     <div className="space-y-3">
       {visiveis.map(({ chave, titulo, correcao }) => (correcao.situacao === 'recebida' ? (
         <div key={chave} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-          {titulo ? `${titulo}: ` : ''}correção enviada em {formatarPrazoCorrecao(correcao.concluidaEm)}. Aguardando a conferência da Secretaria.
+          {reenvio
+            ? <><strong>Correção reenviada — aguardando revisão da Secretaria.</strong> Enviada em {formatarPrazoCorrecao(correcao.concluidaEm)}.</>
+            : <>{titulo ? `${titulo}: ` : ''}correção enviada em {formatarPrazoCorrecao(correcao.concluidaEm)}. Aguardando a conferência da Secretaria.</>}
+        </div>
+      ) : correcao.situacao === 'expirada' ? (
+        <div key={chave} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <strong>Correção expirada.</strong> O prazo de 3 dias terminou em {formatarPrazoCorrecao(correcao.prazoAte)} sem reenvio. O que você escreveu continua guardado; se precisar, a Secretaria pode abrir uma nova correção.
         </div>
       ) : (
         <div key={chave} className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-slate-800">
@@ -121,7 +140,7 @@ export const AvisoCorrecaoProfessor = ({ itens }) => {
             Prazo: <strong>{formatarPrazoCorrecao(correcao.prazoAte)}</strong>
             {correcao.situacao === 'prazo_encerrado' && ' · você ainda pode fazer os ajustes e enviar.'}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Salvar guarda o rascunho. Quando terminar, use "Enviar correção".</p>
+          <p className="mt-1 text-xs text-slate-500">{reenvio ? 'Você pode alterar qualquer semana. "Salvar progresso" guarda o rascunho; quando terminar, use "Reenviar correção".' : 'Salvar guarda o rascunho. Quando terminar, use "Enviar correção".'}</p>
         </div>
       )))}
     </div>

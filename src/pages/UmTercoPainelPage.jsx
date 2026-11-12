@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { BackButton, Badge, Button, Card, EmptyState, LoadingBlock, Modal, StatCard } from '../components/Common';
 import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
@@ -53,6 +53,7 @@ const DetalheEntregaModal = ({ cicloId, linha, onClose, onAlterado }) => {
               {detalhe.status === 'concluida' && !correcaoPendente(ultima) && <Button size="sm" variant="outline" onClick={() => setDevolvendo(true)}>Enviar para correção</Button>}
               {ultima?.situacao === 'recebida' && <Button size="sm" variant="outline" onClick={aceitar}>Aceitar correção</Button>}
               {ultima && <SeloCorrecao situacao={ultima.situacao} />}
+              {detalhe.status === 'concluida' && detalhe.entregaId && <Link to={`/correcoes/um-terco/${detalhe.entregaId}`} className="text-sm font-semibold text-teal-700 hover:underline">Abrir em Correções →</Link>}
               {ultima?.situacao === 'recebida' && ultima.enviadaForaDoPrazo && <span className="text-xs text-slate-500">enviada fora do prazo</span>}
             </div>
           )}

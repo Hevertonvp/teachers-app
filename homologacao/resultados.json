@@ -261,7 +261,7 @@
     "status": "APROVADO",
     "evidencia": "05-defeito-troca-semana-durante-espera.png",
     "nota": "",
-    "quando": "2026-11-12T15:05:04.248Z"
+    "quando": "2026-11-12T15:38:52.798Z"
   },
   {
     "id": "UT-P04-01",
@@ -272,7 +272,7 @@
     "status": "APROVADO",
     "evidencia": "04-p04-lista-1-3.png",
     "nota": "",
-    "quando": "2026-11-12T15:04:25.431Z"
+    "quando": "2026-11-12T15:38:12.015Z"
   },
   {
     "id": "UT-P04-02-6ºIng",
@@ -360,18 +360,18 @@
     "status": "APROVADO",
     "evidencia": "04-p04-salvo-parcial-semana2.png",
     "nota": "",
-    "quando": "2026-11-12T15:04:36.871Z"
+    "quando": "2026-11-12T15:38:25.553Z"
   },
   {
     "id": "UT-P04-04",
     "modulo": "Formulário 1/3",
     "cenario": "Uma folha só para o Cargo 1 (sem bloco por disciplina) e nenhuma para o Cargo 2 ainda",
     "esperado": "1 entrega ligada só ao Cargo 1, com a foto Aurora",
-    "observado": "1 entrega(s); cargos: 523; foto: [{\"escolaId\":1,\"escolaNome\":\"ZZ-HOMOLOG Escola Aurora\",\"disciplinas\":[{\"id\":3,\"nome\":\"Arte",
+    "observado": "1 entrega(s); cargos: 1063; foto: [{\"escolaId\":1,\"escolaNome\":\"ZZ-HOMOLOG Escola Aurora\",\"disciplinas\":[{\"id\":3,\"nome\":\"Arte",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:04:36.884Z"
+    "quando": "2026-11-12T15:38:25.576Z"
   },
   {
     "id": "UT-P04-05",
@@ -382,7 +382,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:04:38.850Z"
+    "quando": "2026-11-12T15:38:27.529Z"
   },
   {
     "id": "UT-P04-06",
@@ -393,7 +393,7 @@
     "status": "APROVADO",
     "evidencia": "04-p04-concluido.png",
     "nota": "",
-    "quando": "2026-11-12T15:04:41.190Z"
+    "quando": "2026-11-12T15:38:30.042Z"
   },
   {
     "id": "UT-T-S01",
@@ -668,7 +668,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.205Z"
+    "quando": "2026-11-12T15:38:53.851Z"
   },
   {
     "id": "UT-SRV-A02",
@@ -679,7 +679,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.215Z"
+    "quando": "2026-11-12T15:38:53.862Z"
   },
   {
     "id": "UT-SRV-A03",
@@ -690,7 +690,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.223Z"
+    "quando": "2026-11-12T15:38:53.870Z"
   },
   {
     "id": "UT-SRV-A04",
@@ -701,7 +701,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.233Z"
+    "quando": "2026-11-12T15:38:53.881Z"
   },
   {
     "id": "UT-SRV-A05",
@@ -712,7 +712,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.242Z"
+    "quando": "2026-11-12T15:38:53.888Z"
   },
   {
     "id": "UT-SRV-A06",
@@ -723,7 +723,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.252Z"
+    "quando": "2026-11-12T15:38:53.902Z"
   },
   {
     "id": "UT-SRV-A07",
@@ -734,7 +734,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.263Z"
+    "quando": "2026-11-12T15:38:53.913Z"
   },
   {
     "id": "UT-SRV-A08",
@@ -745,7 +745,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.273Z"
+    "quando": "2026-11-12T15:38:53.923Z"
   },
   {
     "id": "UT-SRV-A09",
@@ -756,7 +756,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.282Z"
+    "quando": "2026-11-12T15:38:53.934Z"
   },
   {
     "id": "UT-SRV-A10",
@@ -767,7 +767,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.308Z"
+    "quando": "2026-11-12T15:38:53.945Z"
   },
   {
     "id": "UT-SRV-A11",
@@ -778,7 +778,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.318Z"
+    "quando": "2026-11-12T15:38:53.956Z"
   },
   {
     "id": "UT-SRV-A12",
@@ -789,7 +789,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.332Z"
+    "quando": "2026-11-12T15:38:53.967Z"
   },
   {
     "id": "UT-SRV-A13",
@@ -800,7 +800,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.343Z"
+    "quando": "2026-11-12T15:38:53.976Z"
   },
   {
     "id": "UT-PERM-P01",
@@ -811,7 +811,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.350Z"
+    "quando": "2026-11-12T15:38:53.984Z"
   },
   {
     "id": "UT-PERM-P02",
@@ -822,7 +822,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.358Z"
+    "quando": "2026-11-12T15:38:53.993Z"
   },
   {
     "id": "UT-PERM-P03",
@@ -833,7 +833,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.366Z"
+    "quando": "2026-11-12T15:38:54.001Z"
   },
   {
     "id": "UT-PERM-P04",
@@ -844,7 +844,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.373Z"
+    "quando": "2026-11-12T15:38:54.008Z"
   },
   {
     "id": "UT-PERM-P05",
@@ -855,7 +855,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.380Z"
+    "quando": "2026-11-12T15:38:54.015Z"
   },
   {
     "id": "UT-PERM-P06",
@@ -866,7 +866,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.389Z"
+    "quando": "2026-11-12T15:38:54.024Z"
   },
   {
     "id": "UT-PERM-P07",
@@ -877,7 +877,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.395Z"
+    "quando": "2026-11-12T15:38:54.030Z"
   },
   {
     "id": "UT-PERM-P08",
@@ -888,7 +888,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.401Z"
+    "quando": "2026-11-12T15:38:54.036Z"
   },
   {
     "id": "UT-PERM-P09",
@@ -899,7 +899,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.413Z"
+    "quando": "2026-11-12T15:38:54.048Z"
   },
   {
     "id": "UT-PERM-P10",
@@ -910,7 +910,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.425Z"
+    "quando": "2026-11-12T15:38:54.061Z"
   },
   {
     "id": "UT-PERM-P11",
@@ -921,7 +921,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.439Z"
+    "quando": "2026-11-12T15:38:54.077Z"
   },
   {
     "id": "UT-PERM-P12",
@@ -932,7 +932,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.447Z"
+    "quando": "2026-11-12T15:38:54.085Z"
   },
   {
     "id": "UT-PERM-P13",
@@ -943,7 +943,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.458Z"
+    "quando": "2026-11-12T15:38:54.097Z"
   },
   {
     "id": "UT-CONC-C01",
@@ -954,7 +954,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.475Z"
+    "quando": "2026-11-12T15:38:54.117Z"
   },
   {
     "id": "UT-CONC-C02",
@@ -965,7 +965,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.490Z"
+    "quando": "2026-11-12T15:38:54.132Z"
   },
   {
     "id": "UT-CONC-C03",
@@ -976,7 +976,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.506Z"
+    "quando": "2026-11-12T15:38:54.150Z"
   },
   {
     "id": "UT-CONC-C04",
@@ -987,7 +987,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.530Z"
+    "quando": "2026-11-12T15:38:54.177Z"
   },
   {
     "id": "UT-CONC-C05",
@@ -998,7 +998,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.548Z"
+    "quando": "2026-11-12T15:38:54.196Z"
   },
   {
     "id": "UT-CONC-INV",
@@ -1009,7 +1009,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.556Z"
+    "quando": "2026-11-12T15:38:54.204Z"
   },
   {
     "id": "UT-ED-01",
@@ -1020,7 +1020,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.575Z"
+    "quando": "2026-11-12T15:38:54.228Z"
   },
   {
     "id": "UT-ED-02",
@@ -1031,7 +1031,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.595Z"
+    "quando": "2026-11-12T15:38:54.253Z"
   },
   {
     "id": "UT-ED-03",
@@ -1042,7 +1042,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.605Z"
+    "quando": "2026-11-12T15:38:54.265Z"
   },
   {
     "id": "UT-ED-04",
@@ -1053,7 +1053,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.619Z"
+    "quando": "2026-11-12T15:38:54.284Z"
   },
   {
     "id": "UT-ED-05",
@@ -1064,7 +1064,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "Pedido de homologação lista \"excluir ciclo com/sem entregas\": só existe Inativar.",
-    "quando": "2026-11-12T15:05:05.628Z"
+    "quando": "2026-11-12T15:38:54.292Z"
   },
   {
     "id": "UT-REA-01",
@@ -1075,7 +1075,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.645Z"
+    "quando": "2026-11-12T15:38:54.311Z"
   },
   {
     "id": "UT-REA-02",
@@ -1086,7 +1086,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.655Z"
+    "quando": "2026-11-12T15:38:54.320Z"
   },
   {
     "id": "UT-REA-03",
@@ -1097,7 +1097,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "ACEITA: dois formulários podem ficar editáveis ao mesmo tempo via reabertura.",
-    "quando": "2026-11-12T15:05:05.671Z"
+    "quando": "2026-11-12T15:38:54.332Z"
   },
   {
     "id": "UT-REA-04",
@@ -1108,7 +1108,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.680Z"
+    "quando": "2026-11-12T15:38:54.345Z"
   },
   {
     "id": "UT-REA-05",
@@ -1119,7 +1119,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:05.693Z"
+    "quando": "2026-11-12T15:38:54.358Z"
   },
   {
     "id": "UT-PERM-P10b",
@@ -1130,7 +1130,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:06.477Z"
+    "quando": "2026-11-12T15:38:55.088Z"
   },
   {
     "id": "UT-SW-01",
@@ -1152,7 +1152,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:11.078Z"
+    "quando": "2026-11-12T15:38:59.631Z"
   },
   {
     "id": "UT-OFF-UX-desktop",
@@ -1181,11 +1181,11 @@
     "modulo": "Offline",
     "cenario": "Salvar sem rede NÃO perde o texto: vai para a fila local; servidor ainda sem a semana 2",
     "esperado": "fila com 1 item pendente; banco com 1 resposta",
-    "observado": "fila: [{\"key\":\"p04@homolog.nexo::um-terco-resposta::1-cargo-568::respostas\",\"status\":\"pending\",\"attempts\":0,\"lastError\":null,\"resourceId\":\"1-cargo-568\"}]; banco: 1 resposta(s)",
+    "observado": "fila: [{\"key\":\"p04@homolog.nexo::um-terco-resposta::1-cargo-1079::respostas\",\"status\":\"pending\",\"attempts\":0,\"lastError\":null,\"resourceId\":\"1-cargo-1079\"}]; banco: 1 resposta(s)",
     "status": "APROVADO",
     "evidencia": "10-offline-apos-salvar.png",
     "nota": "",
-    "quando": "2026-11-12T15:05:16.297Z"
+    "quando": "2026-11-12T15:39:04.918Z"
   },
   {
     "id": "UT-OFF-03",
@@ -1196,7 +1196,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-apos-salvar.png",
     "nota": "",
-    "quando": "2026-11-12T15:05:16.303Z"
+    "quando": "2026-11-12T15:39:04.924Z"
   },
   {
     "id": "UT-OFF-04",
@@ -1207,7 +1207,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:24.694Z"
+    "quando": "2026-11-12T15:39:13.295Z"
   },
   {
     "id": "UT-OFF-05",
@@ -1218,7 +1218,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "10-offline-recarga-sem-rede.png",
     "nota": "Limitação de produto, não defeito: só é possível continuar na página já aberta. Para suporte offline real seria preciso cachear o shell (decisão de produto).",
-    "quando": "2026-11-12T15:05:24.890Z"
+    "quando": "2026-11-12T15:39:13.449Z"
   },
   {
     "id": "UT-OFF-06",
@@ -1229,7 +1229,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:26.427Z"
+    "quando": "2026-11-12T15:39:14.987Z"
   },
   {
     "id": "UT-OFF-07",
@@ -1240,7 +1240,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:26.438Z"
+    "quando": "2026-11-12T15:39:14.995Z"
   },
   {
     "id": "UT-OFF-08",
@@ -1306,7 +1306,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-conflito.png",
     "nota": "",
-    "quando": "2026-11-12T15:05:47.384Z"
+    "quando": "2026-11-12T15:39:36.004Z"
   },
   {
     "id": "UT-OFF-10",
@@ -1317,7 +1317,7 @@
     "status": "REPROVADO",
     "evidencia": "10-offline-conflito.png",
     "nota": "",
-    "quando": "2026-11-12T15:05:47.393Z"
+    "quando": "2026-11-12T15:39:36.010Z"
   },
   {
     "id": "UT-OFF-10b",
@@ -1328,7 +1328,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-conflito-reaberto.png",
     "nota": "",
-    "quando": "2026-11-12T15:05:50.889Z"
+    "quando": "2026-11-12T15:39:39.520Z"
   },
   {
     "id": "UT-VIN-00",
@@ -8467,7 +8467,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:04:25.436Z"
+    "quando": "2026-11-12T15:38:12.024Z"
   },
   {
     "id": "UT-P04-07",
@@ -8478,18 +8478,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:04:41.197Z"
+    "quando": "2026-11-12T15:38:30.057Z"
   },
   {
     "id": "UT-OFF-04b",
     "modulo": "Offline",
     "cenario": "O item da fila usa a chave nova por ciclo + cargo",
-    "esperado": "resourceId 1-cargo-568",
-    "observado": "[\"1-cargo-568\"]",
+    "esperado": "resourceId 1-cargo-1079",
+    "observado": "[\"1-cargo-1079\"]",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:05:24.689Z"
+    "quando": "2026-11-12T15:39:13.290Z"
   },
   {
     "id": "OFF-CARGO-1a",
@@ -9216,5 +9216,412 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-12T15:15:47.574Z"
+  },
+  {
+    "id": "CORR13-01",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Lista: só folhas concluídas, cada uma uma vez (folha em andamento fora)",
+    "esperado": "4 concluídas (P01, P05, P07, P15); sem P04",
+    "observado": "4 folhas; únicas 4; P04 presente: false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.662Z"
+  },
+  {
+    "id": "CORR13-02",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Busca textual (escola + disciplina, sem acento): encontra a folha do P15",
+    "esperado": "P15",
+    "observado": "Professor(a) P15 Homolog",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.679Z"
+  },
+  {
+    "id": "CORR13-03/05",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Filtro por escola: a folha de 2 escolas (P05) aparece nos dois filtros; total geral sem duplicar",
+    "esperado": "P05 em Aurora e em Boa Vista; total geral = soma única",
+    "observado": "Aurora: 3 (P05 true); Boa Vista: 2 (P05 true); geral 4",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.703Z"
+  },
+  {
+    "id": "CORR13-04",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Filtro por Professor",
+    "esperado": "só P05",
+    "observado": "Eduardo Fonseca",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.716Z"
+  },
+  {
+    "id": "CORR13-06/07",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Secretaria corrige diretamente: conteúdo alterado fica salvo",
+    "esperado": "texto novo no banco",
+    "observado": "200; \"P01 semana 2: CORRIGIDO pela Secretaria.\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.760Z"
+  },
+  {
+    "id": "CORR13-08",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Professor recebe mensagem da correção direta (Formulário 1/3, ciclo, folha, semana alterada, feita pela Secretaria)",
+    "esperado": "mensagem com ciclo, Cargo 1, Aurora — Matemática, Semana 2",
+    "observado": "A Secretaria fez uma correção no seu Formulário 1/3 (Formulário 1/3 — Nov/2026 (homolog), 3º trimestre). | Cargo 1 | ZZ-HOMOLOG Escola Aurora — Matemática | Alterado: Semana 2. | Você não precisa faze",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.768Z"
+  },
+  {
+    "id": "CORR13-26",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Correção direta NÃO abre janela nem coloca o Professor em modo de correção",
+    "esperado": "sem correção; Professor sem \"Correção solicitada\"",
+    "observado": "correções 0; situação nenhuma; correcaoSolicitada false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.796Z"
+  },
+  {
+    "id": "CORR13-23",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Histórico com valor anterior e novo, quem e origem",
+    "esperado": "antes \"texto original\"; depois \"CORRIGIDO\"; Secretaria; SECRETARIA_DIRETA",
+    "observado": "P01 semana 2: texto original. → P01 semana 2: CORRIGIDO pela Secretaria.; Secretaria Municipal de Educação; SECRETARIA_DIRETA",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.801Z"
+  },
+  {
+    "id": "CORR13-28",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Concorrência: correção com versão antiga recebe 409 com a versão atual e nada é sobrescrito",
+    "esperado": "409; CONFLITO_VERSAO; semana 1 intacta",
+    "observado": "409; CONFLITO_VERSAO; \"P01 semana 1: texto original.\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.821Z"
+  },
+  {
+    "id": "CORR13-10",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Mensagem obrigatória ao enviar para correção",
+    "esperado": "400",
+    "observado": "400",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.831Z"
+  },
+  {
+    "id": "CORR13-09/12",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Enviar para correção abre 3 dias exatos a partir da devolução",
+    "esperado": "201; prazo = criada + 72 h",
+    "observado": "201; 72 h",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.856Z"
+  },
+  {
+    "id": "CORR13-11",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Professor recebe a mensagem com as orientações e o prazo (conversa guardada na correção)",
+    "esperado": "mensagem na conversa da devolução",
+    "observado": "Você possui uma correção pendente no Formulário 1/3 (Formulário 1/3 — Nov/2026 (homolog)). | Cargo 1 | ZZ-HOMOLOG Escola Aurora — Matemática | Orientações para ",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.865Z"
+  },
+  {
+    "id": "CORR13-13/24/25",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Com o ciclo encerrado: a folha devolvida aceita alteração em TODAS as semanas; outra folha continua bloqueada; o ciclo não é reaberto",
+    "esperado": "editável; 4 semanas gravadas; outra 400; reaberturas iguais",
+    "observado": "editável true; PUT 200; outra false/400; reaberturas 1 → 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.931Z"
+  },
+  {
+    "id": "CORR13-22a",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Alterações do Professor durante a correção entram no histórico (valor anterior/novo)",
+    "esperado": "4 linhas PROFESSOR_POS_DEVOLUCAO",
+    "observado": "4",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:56.937Z"
+  },
+  {
+    "id": "CORR13-14",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Reenvio: semana em branco recusada; depois reenvia (clique duplo = 1 vez), registra e avisa quem devolveu na conversa da devolução + sininho",
+    "esperado": "400; RESOLVIDA; 1 mensagem do professor; 1 notificação",
+    "observado": "400; 200/400; RESOLVIDA; mensagens 1; sininho 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.035Z"
+  },
+  {
+    "id": "CORR13-15",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Secretaria vê a correção reenviada (detalhe e filtro por situação)",
+    "esperado": "recebida; na lista \"recebida\"; pode considerar resolvida",
+    "observado": "recebida; na lista true; podeConsiderarResolvida true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.061Z"
+  },
+  {
+    "id": "CORR13-15b",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Depois do reenvio, com o ciclo encerrado, a folha volta a ser só leitura para o Professor",
+    "esperado": "editável false",
+    "observado": "false",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.080Z"
+  },
+  {
+    "id": "CORR13-16/17/18/19",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Segunda, terceira e quarta devoluções: cada uma com 3 dias NOVOS, sem limite de rodadas; anteriores ficam \"devolvida\"",
+    "esperado": "3× 201, 72 h, prazos novos; 4 correções",
+    "observado": "201/72h/novo 201/72h/novo 201/72h/novo; 4 correções: DEVOLVIDA,DEVOLVIDA,DEVOLVIDA,RESOLVIDA",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.320Z"
+  },
+  {
+    "id": "CORR13-11b",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Secretaria considera resolvida",
+    "esperado": "200; situação aceita",
+    "observado": "200; aceita",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.355Z"
+  },
+  {
+    "id": "CORR13-20",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Expirada: folha volta a só leitura (ciclo encerrado), nada é apagado, reenvio não acontece; Secretaria vê \"expirada\"",
+    "esperado": "situação expirada; editável false; PUT 400; correção continua ABERTA (sem RESOLVIDA)",
+    "observado": "prof expirada/false; PUT 400; reenvio 400; banco ABERTA; Secretaria expirada; semanas 4",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.417Z"
+  },
+  {
+    "id": "CORR13-21",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Nova correção depois de expirada: 3 dias novos e a folha volta a ser editável",
+    "esperado": "201; 72 h; editável",
+    "observado": "201; 72 h; editável true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.459Z"
+  },
+  {
+    "id": "CORR13-27",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Folha compartilhada (2 cargos iguais): uma correção da folha, cabeçalho com o aviso dos dois cargos",
+    "esperado": "1 correção; compartilhada; aviso; 1 card com correção",
+    "observado": "201; correções 1; compartilhada true; aviso true; cards 1 (true)",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.499Z"
+  },
+  {
+    "id": "CORR13-C-ENC",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Folha de cargo encerrado: Secretaria consulta (detalhe e histórico), mas não corrige nem devolve",
+    "esperado": "detalhe 200 só consulta; 400 e 400",
+    "observado": "consulta true; corrigir 400; devolver 400",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.542Z"
+  },
+  {
+    "id": "CORR13-22",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Linha do tempo completa da folha",
+    "esperado": "Professor concluiu a folha / Secretaria corrigiu diretamente / Secretaria solicitou correção / Professor alterou durante a correção / Professor reenviou a correção / Secretaria devolveu novamente / Secretaria considerou resolvida",
+    "observado": "Secretaria considerou resolvida / Professor reenviou a correção / Professor alterou durante a correção / Secretaria solicitou correção / Secretaria devolveu novamente / Secretaria corrigiu diretamente / Professor concluiu a folha",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.561Z"
+  },
+  {
+    "id": "CORR13-PERM",
+    "modulo": "Correções do 1/3 (API)",
+    "cenario": "Professor não acessa Correções → 1/3",
+    "esperado": "403",
+    "observado": "403",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:34:57.569Z"
+  },
+  {
+    "id": "CORR13UI-1",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Menu e entrada de Correções: Secretaria vê \"Formulário 1/3\" (sem \"em desenvolvimento\") e o PDI com o selo",
+    "esperado": "Correções sem selo no menu; cartões 1/3 e PDI",
+    "observado": "menu com selo em Correções: false; 1/3: false; PDI em desenvolvimento: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:02.635Z"
+  },
+  {
+    "id": "CORR13UI-2",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Lista: busca por palavras e filtro por escola (folha de 2 escolas aparece na Boa Vista)",
+    "esperado": "3 folhas; busca acha P15; Boa Vista com P15 e P05",
+    "observado": "total 3; busca: Professor(a) P15 Homolog Cargo 1 · Formulário 1/3 — Nov/2026; Boa Vista: P15 true, P05 true, P01 false",
+    "status": "APROVADO",
+    "evidencia": "63-lista.png",
+    "nota": "",
+    "quando": "2026-11-12T15:37:08.535Z"
+  },
+  {
+    "id": "CORR13UI-3",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Abrir a folha: Professor, cargo, ciclo, escola → disciplina, semanas e conteúdos (sem turmas)",
+    "esperado": "Ana Paula Ribeiro — Cargo 1; Aurora — Matemática; 4 semanas",
+    "observado": "← Correções > Formulário 1/3 FORMULÁRIO 1/3 — NOV/2026 (HOMOLOG) · 3º TRIMESTRE DE 2026 Ana Paula Ribeiro — Cargo 1 Sem correção Concluída em 12/11/2026, às 12h36 ZZ-HOMOLOG Escola Aurora — Matemática",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:09.360Z"
+  },
+  {
+    "id": "CORR13UI-4",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Corrigir diretamente pela tela: salva, avisa que o professor recebeu mensagem, mostra antes/depois e linha do tempo",
+    "esperado": "mensagem; Antes/Depois; \"Secretaria corrigiu diretamente\"",
+    "observado": "Correção salva.",
+    "status": "APROVADO",
+    "evidencia": "63-correcao-direta.png",
+    "nota": "",
+    "quando": "2026-11-12T15:37:09.860Z"
+  },
+  {
+    "id": "CORR13UI-5",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Enviar para correção: orientação obrigatória, confirmação, selo \"Aguardando o Professor\" e prazo de 3 dias",
+    "esperado": "botão bloqueado sem texto; enviado; aguardando",
+    "observado": "bloqueado: true; Aguardando o Professor",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:10.307Z"
+  },
+  {
+    "id": "CORR13UI-6",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Professor (celular): \"Correção solicitada\", mensagem da Secretaria, prazo e botão \"Reenviar correção\"",
+    "esperado": "selo na lista; orientação; Prazo; botão",
+    "observado": "lista: true; orientação: true; prazo: true; botão: 1; sobra 0px",
+    "status": "APROVADO",
+    "evidencia": "63-professor-correcao-celular.png",
+    "nota": "",
+    "quando": "2026-11-12T15:37:14.709Z"
+  },
+  {
+    "id": "CORR13UI-7",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Offline: o texto fica guardado no aparelho e \"Reenviar correção\" exige conexão (nada é marcado como reenviado)",
+    "esperado": "\"Salvo só neste aparelho\"; aviso de conexão; correção ABERTA",
+    "observado": "Salvo só neste aparelho; aviso: 1; banco: ABERTA",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:26.623Z"
+  },
+  {
+    "id": "CORR13UI-8",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Ao reconectar, o rascunho é enviado sozinho (nenhuma resposta perdida)",
+    "esperado": "semana 2 com o texto offline no banco",
+    "observado": "\"P01 semana 2: detalhada OFFLINE pelo professor.\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:27.663Z"
+  },
+  {
+    "id": "CORR13UI-9",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Reenvio online: mensagem \"Correção reenviada — aguardando revisão da Secretaria\", selo \"Correção reenviada\", correção RESOLVIDA, semanas 2 e 4 gravadas",
+    "esperado": "tudo presente",
+    "observado": "lista: true/true; formulário: true; banco RESOLVIDA; S4 \"P01 semana 4: revisada pelo professor.\"",
+    "status": "APROVADO",
+    "evidencia": "63-professor-reenviado-celular.png",
+    "nota": "",
+    "quando": "2026-11-12T15:37:30.216Z"
+  },
+  {
+    "id": "CORR13UI-10",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Secretaria filtra \"Reenviada · aguardando a Secretaria\" e encontra a folha",
+    "esperado": "P01 com o selo",
+    "observado": "Ana Paula Ribeiro Cargo 1 · Formulário 1/3 — Nov/2026 (homolog) · 3º tri ZZ-HOMOLOG Escola Aurora — Matemática Reenviada",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:32.435Z"
+  },
+  {
+    "id": "CORR13UI-11",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Correção expirada: Professor vê o selo e o aviso; não há \"Reenviar correção\"",
+    "esperado": "selo \"Correção expirada\"; aviso; sem botão",
+    "observado": "lista true; aviso true; botão 0",
+    "status": "APROVADO",
+    "evidencia": "63-professor-expirada-celular.png",
+    "nota": "",
+    "quando": "2026-11-12T15:37:37.130Z"
+  },
+  {
+    "id": "CORR13UI-12",
+    "modulo": "Correções do 1/3 (telas)",
+    "cenario": "Sem erros no console nem respostas 5xx",
+    "esperado": "nenhum",
+    "observado": "nenhum",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-12T15:37:37.284Z"
   }
 ]

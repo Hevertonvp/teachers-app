@@ -32,6 +32,12 @@ for (const [nome, email, senha, temPdiNoMenu] of perfis) {
       if (tela === 'pc') {
         for (const rota of ['/pdi', '/pdi/meus-pdis', '/correcoes', '/correcoes/pdi']) {
           await X.page.goto(BASE + '/#' + rota); await X.page.waitForLoadState('networkidle');
+          // 12/11/2026: para a Secretaria, /correcoes é a entrada de Correções (1/3 de verdade + PDI com o selo).
+          if (nome === 'sec' && rota === '/correcoes') {
+            const hub = await X.page.locator('main').innerText().catch(() => '');
+            r(`${nome}-rota${rota}`, `${nome}: ${rota} mostra o 1/3 e o PDI "em desenvolvimento"`, 'cartão 1/3 + PDI com selo', hub.replace(/\s+/g, ' ').slice(0, 120), /Correção das folhas do 1\/3/.test(hub) && /desenvolvimento/i.test(hub));
+            continue;
+          }
           const titulo = await X.page.getByRole('heading', { name: 'PDI em desenvolvimento' }).count();
           r(`${nome}-rota${rota}`, `${nome}: ${rota} mostra "PDI em desenvolvimento"`, 'aviso', titulo, titulo === 1);
         }

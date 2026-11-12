@@ -20,6 +20,7 @@ import { pdiAplicacoesRouter } from './routes/pdiAplicacoes.js';
 import { pdiFichasRouter } from './routes/pdiFichas.js';
 import { pdiFichaAnualRouter } from './routes/pdiFichaAnual.js';
 import { correcoesPdiRouter } from './routes/correcoesPdi.js';
+import { correcoesUmTercoRouter } from './routes/correcoesUmTerco.js';
 import { anamneseModelosRouter, anamnesePerguntasRouter } from './routes/anamneseModelos.js';
 import { anamnesesRouter } from './routes/anamneses.js';
 import { mensagensRouter } from './routes/mensagens.js';
@@ -95,6 +96,7 @@ export function createApp() {
   app.use('/api/pdi-fichas', pdiFichasRouter);
   app.use('/api/pdi-ficha-anual', pdiFichaAnualRouter);
   app.use('/api/correcoes-pdi', correcoesPdiRouter);
+  app.use('/api/correcoes-um-terco', correcoesUmTercoRouter);
   app.use('/api/anamnese-modelos', anamneseModelosRouter);
   app.use('/api/anamnese-perguntas', anamnesePerguntasRouter);
   app.use('/api/anamneses', anamnesesRouter);

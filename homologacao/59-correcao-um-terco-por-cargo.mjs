@@ -102,14 +102,14 @@ try {
   await P.page.locator('#conteudos-semana').fill('Cargo 2, semana 3: conteúdo REVISADO após a correção.');
   await P.page.waitForTimeout(3500);
   await P.page.getByRole('tab', { name: 'Semana 4' }).click(); await P.page.waitForTimeout(1200);
-  const enviar = P.page.getByRole('button', { name: /Enviar correção/ }).first();
+  const enviar = P.page.getByRole('button', { name: /Reenviar correção/ }).first(); // 12/11/2026: no 1/3 o botão é "Reenviar correção"
   const temEnviar = await enviar.count();
   if (temEnviar) { await enviar.click(); await P.page.waitForTimeout(2500); const conf = P.page.getByRole('button', { name: /Enviar|Confirmar/ }).last(); if (await conf.isVisible().catch(() => false)) { await conf.click().catch(() => {}); await P.page.waitForTimeout(2000); } }
   await foto(P.page, '59-professor-correcao-celular');
   const rolagem = await P.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const corr = await prisma.correcaoEntregaUmTerco.findFirst({ where: { entregaId: e2.id }, orderBy: { criadaEm: 'desc' } });
   const s3 = (await folhaDoCargo(C2)).respostas.find(x => x.semana.numero === 3)?.texto;
-  r('10', 'Professor (celular): mensagem → "Abrir formulário" do cargo certo → corrige → "Enviar correção"; texto gravado; sem rolagem lateral', 'link do Cargo 2; texto revisado no banco; correção RESOLVIDA', `URL ${P.page.url().split('#')[1]}; botão ${temEnviar}; correção ${corr?.status}; S3 "${s3}"; sobra ${rolagem}px`, s3 === 'Cargo 2, semana 3: conteúdo REVISADO após a correção.' && corr?.status === 'RESOLVIDA' && rolagem <= 0, '59-professor-correcao-celular.png');
+  r('10', 'Professor (celular): mensagem → "Abrir formulário" do cargo certo → corrige → "Reenviar correção"; texto gravado; sem rolagem lateral', 'link do Cargo 2; texto revisado no banco; correção RESOLVIDA', `URL ${P.page.url().split('#')[1]}; botão ${temEnviar}; correção ${corr?.status}; S3 "${s3}"; sobra ${rolagem}px`, s3 === 'Cargo 2, semana 3: conteúdo REVISADO após a correção.' && corr?.status === 'RESOLVIDA' && rolagem <= 0, '59-professor-correcao-celular.png');
 
   const erros = [...S.erros, ...P.erros].filter((e) => !/favicon|40[0134]|409/.test(e));
   await S.browser.close(); await P.browser.close();

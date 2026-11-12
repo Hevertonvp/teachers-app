@@ -54,6 +54,8 @@ export const UmTercoProfessorPage = () => {
                   <Badge variant={entrega.variant}>{entrega.label}</Badge>
                   <Badge variant={prazo.variant}>{prazo.label}</Badge>
                   {item.correcaoSolicitada && <Badge variant="yellow">Correção solicitada</Badge>}
+                  {item.correcaoSituacao === 'recebida' && <Badge variant="blue">Correção reenviada</Badge>}
+                  {item.correcaoSituacao === 'expirada' && <Badge variant="gray">Correção expirada</Badge>}
                   {!item.esperada && <Badge variant="gray">Cargo encerrado · só consulta</Badge>}
                 </div>
                 <h2 className="mt-3 text-xl font-bold text-slate-950">{item.rotulo}</h2>

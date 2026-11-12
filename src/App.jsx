@@ -30,6 +30,8 @@ import { PdiAlunoPerfil } from './pages/PdiAlunoPerfil';
 import { FichaAnualPdiPage } from './pages/FichaAnualPdiPage';
 import { CorrecoesHomePage } from './pages/CorrecoesHomePage';
 import { CorrecoesPdiListaPage } from './pages/CorrecoesPdiListaPage';
+import { CorrecoesUmTercoListaPage } from './pages/CorrecoesUmTercoListaPage';
+import { CorrecoesUmTercoDetalhePage } from './pages/CorrecoesUmTercoDetalhePage';
 import { CorrecoesPdiDetalhePage } from './pages/CorrecoesPdiDetalhePage';
 import { AnamnesePage } from './pages/AnamnesePage';
 import { AnamneseModeloPage } from './pages/AnamneseModeloPage';
@@ -108,7 +110,10 @@ const AppRoutes = () => <Routes>
   <Route path="/turmas" element={<ProtectedRoute><GestaoTurmas /></ProtectedRoute>} />
   <Route path="/pessoas" element={<ProtectedRoute><GestaoPessoas /></ProtectedRoute>} />
   <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
-  <Route path="/correcoes" element={<SoComPdi><ProtectedRoute><CorrecoesHomePage /></ProtectedRoute></SoComPdi>} />
+  {/* Correções (12/11/2026): a entrada não depende mais do PDI — a Secretaria tem o 1/3 aqui; os demais perfis continuam vendo o aviso do PDI (ver CorrecoesHomePage). */}
+  <Route path="/correcoes" element={<ProtectedRoute><CorrecoesHomePage /></ProtectedRoute>} />
+  <Route path="/correcoes/um-terco" element={<ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesUmTercoListaPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
+  <Route path="/correcoes/um-terco/:entregaId" element={<ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesUmTercoDetalhePage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
   {/* Formulário 1/3: só Secretaria (administra) e Professor (preenche) — qualquer outro perfil volta ao dashboard. */}
   <Route path="/formulario-um-terco" element={<ProtectedRoute><UmTercoEntrada /></ProtectedRoute>} />
   <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><UmTercoSomenteSecretaria><UmTercoPainelPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />

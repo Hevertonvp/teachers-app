@@ -235,7 +235,7 @@ export const UmTercoPreenchimentoPage = () => {
     try {
       const eraCorrecao = correcaoPendente(dados?.correcao);
       await concluirFormularioUmTerco(cicloId, cargoId, baseRef.current);
-      navigate('/formulario-um-terco', { state: { sucesso: eraCorrecao ? 'Correção enviada à Secretaria.' : 'Formulário 1/3 concluído. Você ainda pode editar até o fim do prazo.' } });
+      navigate('/formulario-um-terco', { state: { sucesso: eraCorrecao ? 'Correção reenviada — aguardando revisão da Secretaria.' : 'Formulário 1/3 concluído. Você ainda pode editar até o fim do prazo.' } });
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') setConflito(error.dadosAtuais || null);
       else setMensagemErro(error.message);
@@ -295,7 +295,7 @@ export const UmTercoPreenchimentoPage = () => {
           </div>
         </div>
 
-        <AvisoCorrecaoProfessor itens={[{ chave: 'correcao', titulo: null, correcao: dados.correcao }]} />
+        <AvisoCorrecaoProfessor itens={[{ chave: 'correcao', titulo: null, correcao: dados.correcao }]} reenvio />
 
         <Card>
           <ComposicaoCargo composicao={dados.composicao} />
@@ -364,7 +364,7 @@ export const UmTercoPreenchimentoPage = () => {
           {editavel && <Button variant="outline" className="min-h-12 flex-1 sm:flex-none" onClick={salvarAgora} disabled={!sujo || !!conflito}>Salvar progresso</Button>}
           {ultima ? (
             editavel
-              ? <Button className="min-h-12 flex-1 sm:flex-none" onClick={concluir} loading={concluindo} disabled={!!conflito}>{emCorrecao ? (concluindo ? 'Enviando...' : 'Enviar correção') : concluindo ? 'Concluindo...' : concluida ? 'Salvar e concluir' : 'Concluir'}</Button>
+              ? <Button className="min-h-12 flex-1 sm:flex-none" onClick={concluir} loading={concluindo} disabled={!!conflito}>{emCorrecao ? (concluindo ? 'Reenviando...' : 'Reenviar correção') : concluindo ? 'Concluindo...' : concluida ? 'Salvar e concluir' : 'Concluir'}</Button>
               : <Button className="min-h-12 flex-1 sm:flex-none" onClick={sair}>Fechar</Button>
           ) : (
             <Button className="min-h-12 flex-1 sm:flex-none" onClick={() => irParaEtapa(etapa + 1)}>Próximo</Button>

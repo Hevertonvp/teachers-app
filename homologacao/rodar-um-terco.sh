@@ -9,7 +9,7 @@ TESTES="04-um-terco-p04.mjs 05-defeito-troca-semana.mjs 07-servidor-e-concorrenc
 44-modal-novo-ciclo-um-terco.mjs 45-dashboard-entregas.mjs 46-um-terco-escolas-do-ciclo.mjs 47-um-terco-inativos-separados.mjs
 48-reabrir-so-apos-prazo.mjs 50-acompanhamento-escolar.mjs 52-inativar-um-terco-com-preenchimentos.mjs
 55-pdi-em-desenvolvimento.mjs 56-escola-do-topo-nos-modais.mjs 57-filtros-seguem-o-topo.mjs 58-cargos-e-um-terco-por-cargo.mjs
-59-correcao-um-terco-por-cargo.mjs 60-educacao-infantil-um-terco.mjs 61-excel-um-terco-por-cargo.mjs 36-integridade.mjs"
+59-correcao-um-terco-por-cargo.mjs 60-educacao-infantil-um-terco.mjs 61-excel-um-terco-por-cargo.mjs 62-correcoes-um-terco-api.mjs 63-correcoes-um-terco-telas.mjs 36-integridade.mjs"
 for t in $TESTES; do
   saida=$(node "$t" cargo 2>&1)
   ok=$(echo "$saida" | grep -c '^\[APROVADO\]')
