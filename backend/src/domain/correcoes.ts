@@ -72,3 +72,41 @@ export function textoMensagemCorrecao(dados: { formulario: string; identificacao
     'Acesse o formulário para realizar os ajustes solicitados.',
   ].join('\n');
 }
+
+// ---- Formulário 1/3 (decisões do usuário, 12/11/2026) -------------------------------------------
+// No 1/3 a correção EXPIRA: passados os 3 dias sem reenvio, a folha volta a seguir as regras normais do
+// ciclo (depois do prazo do ciclo = somente leitura) e a correção aparece como "expirada". O PDI NÃO muda
+// (lá o Professor continua podendo enviar "fora do prazo"). Nada é apagado; a Secretaria pode abrir uma
+// nova correção (novos 3 dias). Estados: sem correção (nenhuma) → solicitada (aguardando o Professor) →
+// recebida (reenviada, aguardando a Secretaria) → aceita (resolvida) ou devolvida (nova correção) ou
+// expirada (3 dias sem reenvio).
+export type SituacaoCorrecaoUmTerco = 'solicitada' | 'expirada' | 'recebida' | 'aceita' | 'devolvida';
+
+export function situacaoCorrecaoUmTerco(c: { status: string; prazoAte: Date; conferencia: string | null }, agora: Date = new Date()): SituacaoCorrecaoUmTerco {
+  const s = situacaoCorrecao(c, agora);
+  return s === 'prazo_encerrado' ? 'expirada' : s;
+}
+
+// Correção que ainda libera a folha para o Professor: aberta e dentro dos 3 dias.
+export const correcaoUmTercoVigente = (c: { status: string; prazoAte: Date }, agora: Date = new Date()) =>
+  c.status === 'ABERTA' && agora.getTime() <= c.prazoAte.getTime();
+
+export function formatarCorrecaoUmTerco(c: Parameters<typeof formatarCorrecao>[0], nomes: Map<string, string> = new Map(), agora: Date = new Date()) {
+  return { ...formatarCorrecao(c, nomes, agora), situacao: situacaoCorrecaoUmTerco(c, agora) };
+}
+
+// Mensagem ao Professor depois de uma correção feita pela própria Secretaria (sem prazo, sem aceite).
+export function textoMensagemCorrecaoDireta(dados: { formulario: string; identificacao: string[]; semanas: string[] }): string {
+  return [
+    `A Secretaria fez uma correção no seu ${dados.formulario}.`,
+    '',
+    ...dados.identificacao,
+    '',
+    `Alterado: ${dados.semanas.join(', ')}.`,
+    '',
+    'Você não precisa fazer nada. A versão atual está no formulário.',
+  ].join('\n');
+}
+
+// Mensagem automática do Professor para quem devolveu, na conversa da devolução, quando ele reenvia.
+export const textoMensagemReenvio = (identificacao: string) => `Correção reenviada: ${identificacao}. Aguardando a revisão da Secretaria.`;

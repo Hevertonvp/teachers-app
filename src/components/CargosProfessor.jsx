@@ -5,9 +5,10 @@ import { alterarCargo, criarCargo, encerrarCargo, listarCargos } from '../servic
 import { inputClass } from '../utils/display';
 
 // Cargos do Professor (decisão do usuário, 12/11/2026): Professor → Cargo(s) → Escola(s) → Disciplina(s).
-// Tela simples e progressiva: "Cargo 1" aberto; cada bloco é Escola + Disciplina(s), com
-// "+ Adicionar disciplina" e "+ Adicionar escola". Sem turmas, sem séries, sem IDs. Disciplina é
-// opcional por escola (Educação Infantil). "Cargo 1/2" é só rótulo; quem guarda a identidade é o banco.
+// Tela simples e progressiva: "Cargo 1" aberto; cada bloco é Escola + Disciplina(s) e/ou Atuação(ões)
+// pedagógica(s) (12/11/2026: Professor Regente, Oficina do Brincar…), com "+ Adicionar disciplina",
+// "+ Adicionar atuação" e "+ Adicionar escola". Sem turmas, sem séries, sem IDs. Cada escola precisa de ao
+// menos uma disciplina ou uma atuação. "Cargo 1/2" é só rótulo; quem guarda a identidade é o banco.
 
 let seq = 0;
 const novaChave = () => `k${++seq}`;
@@ -16,12 +17,12 @@ const formatarData = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${i
 
 export const novoRascunhoCargo = (escolaId = '') => ({
   chave: novaChave(), dataInicio: hojeSp(),
-  partes: [{ chave: novaChave(), escolaId: escolaId ? String(escolaId) : '', disciplinaIds: [''] }],
+  partes: [{ chave: novaChave(), escolaId: escolaId ? String(escolaId) : '', disciplinaIds: [''], atuacaoIds: [] }],
 });
 
 const rascunhoDoCargo = (cargo) => ({
   chave: novaChave(), dataInicio: cargo.dataInicio,
-  partes: cargo.composicao.map(p => ({ chave: novaChave(), escolaId: String(p.escolaId), disciplinaIds: p.disciplinas.map(d => String(d.id)) })),
+  partes: cargo.composicao.map(p => ({ chave: novaChave(), escolaId: String(p.escolaId), disciplinaIds: p.disciplinas.map(d => String(d.id)), atuacaoIds: (p.atuacoes ?? []).map(a => String(a.id)) })),
 });
 
 // Validação perto do campo. Devolve { ok, erros: { inicio?, partes: { [chave]: texto } }, dados }.
@@ -32,19 +33,22 @@ export function validarRascunhoCargo(r) {
   for (const p of r.partes) {
     if (!p.escolaId) erros.partes[p.chave] = 'Escolha a escola.';
     else if (p.disciplinaIds.some(d => !d)) erros.partes[p.chave] = 'Escolha a disciplina ou remova a linha vazia.';
+    else if ((p.atuacaoIds ?? []).some(a => !a)) erros.partes[p.chave] = 'Escolha a atuação ou remova a linha vazia.';
+    else if (p.disciplinaIds.length === 0 && (p.atuacaoIds ?? []).length === 0) erros.partes[p.chave] = 'Escolha ao menos uma disciplina ou uma atuação pedagógica.';
   }
   const ok = !erros.inicio && !erros.geral && Object.keys(erros.partes).length === 0;
   return {
     ok, erros,
-    dados: { dataInicio: r.dataInicio, composicao: r.partes.map(p => ({ escolaId: Number(p.escolaId), disciplinaIds: p.disciplinaIds.map(Number) })) },
+    dados: { dataInicio: r.dataInicio, composicao: r.partes.map(p => ({ escolaId: Number(p.escolaId), disciplinaIds: p.disciplinaIds.map(Number), atuacaoIds: (p.atuacaoIds ?? []).map(Number) })) },
   };
 }
 
 const botaoTexto = 'text-sm font-semibold text-teal-700 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline';
 const botaoRemover = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg text-slate-400 hover:bg-red-50 hover:text-red-600';
 
-// Editor de UM cargo (controlado). `escolas`/`disciplinas` = [{ id, nome }].
-export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, erros = { partes: {} }, mostrarInicio = true, acoes = null }) => {
+// Editor de UM cargo (controlado). `escolas`/`disciplinas` = [{ id, nome }]; `atuacoes` = [{ id, nome, status }]
+// (oferece as ativas; uma inativa que o cargo já tem continua aparecendo).
+export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atuacoes = [], erros = { partes: {} }, mostrarInicio = true, acoes = null }) => {
   const mudarParte = (chave, mudanca) => onChange({ ...valor, partes: valor.partes.map(p => (p.chave === chave ? { ...p, ...mudanca } : p)) });
   const escolasUsadas = (exceto) => new Set(valor.partes.filter(p => p.chave !== exceto).map(p => p.escolaId));
   const todasUsadas = valor.partes.length >= escolas.length;
@@ -65,6 +69,11 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, err
       {valor.partes.map((parte, i) => {
         const usadasNaEscola = (exceto) => new Set(parte.disciplinaIds.filter((_, j) => j !== exceto));
         const linhaVazia = parte.disciplinaIds.some(d => !d);
+        const atuacoesDaParte = parte.atuacaoIds ?? [];
+        const atuacoesUsadas = (exceto) => new Set(atuacoesDaParte.filter((_, j) => j !== exceto));
+        const opcoesAtuacao = (j) => atuacoes.filter(a => (a.status !== 'inativa' || String(a.id) === atuacoesDaParte[j]) && !atuacoesUsadas(j).has(String(a.id)));
+        const atuacaoVazia = atuacoesDaParte.some(a => !a);
+        const ativas = atuacoes.filter(a => a.status !== 'inativa');
         return (
           <div key={parte.chave} className="space-y-2 rounded-lg bg-slate-50 p-3">
             <div className="flex items-end gap-2">
@@ -80,7 +89,7 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, err
               )}
             </div>
             <div className="space-y-2 sm:pl-3">
-              <p className="text-sm font-semibold text-slate-700">Disciplina</p>
+              <p className="text-sm font-semibold text-slate-700">Disciplinas</p>
               {parte.disciplinaIds.map((d, j) => (
                 <div key={j} className="flex items-center gap-2">
                   <select className={`${inputClass} min-w-0 flex-1`} value={d} aria-label={`Disciplina ${j + 1}`} onChange={e => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.map((x, k) => (k === j ? e.target.value : x)) })}>
@@ -90,15 +99,27 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, err
                   <button type="button" className={botaoRemover} aria-label="Remover disciplina" title="Remover disciplina" onClick={() => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.filter((_, k) => k !== j) })}>×</button>
                 </div>
               ))}
-              {parte.disciplinaIds.length === 0 && <p className="text-xs text-slate-500">Sem disciplina específica (por exemplo, Educação Infantil).</p>}
               <button type="button" className={botaoTexto} disabled={linhaVazia || parte.disciplinaIds.length >= disciplinas.length} onClick={() => mudarParte(parte.chave, { disciplinaIds: [...parte.disciplinaIds, ''] })}>+ Adicionar disciplina</button>
+            </div>
+            <div className="space-y-2 sm:pl-3">
+              <p className="text-sm font-semibold text-slate-700">Atuações pedagógicas</p>
+              {atuacoesDaParte.map((a, j) => (
+                <div key={j} className="flex items-center gap-2">
+                  <select className={`${inputClass} min-w-0 flex-1`} value={a} aria-label={`Atuação ${j + 1}`} onChange={e => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.map((x, k) => (k === j ? e.target.value : x)) })}>
+                    <option value="">Selecione a atuação</option>
+                    {opcoesAtuacao(j).map(x => <option key={x.id} value={x.id}>{x.nome}{x.status === 'inativa' ? ' (inativa)' : ''}</option>)}
+                  </select>
+                  <button type="button" className={botaoRemover} aria-label="Remover atuação" title="Remover atuação" onClick={() => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.filter((_, k) => k !== j) })}>×</button>
+                </div>
+              ))}
+              <button type="button" className={botaoTexto} disabled={atuacaoVazia || atuacoesDaParte.length >= ativas.length} onClick={() => mudarParte(parte.chave, { atuacaoIds: [...atuacoesDaParte, ''] })}>+ Adicionar atuação</button>
             </div>
             {erros.partes?.[parte.chave] && <p className="text-xs font-semibold text-red-700">{erros.partes[parte.chave]}</p>}
           </div>
         );
       })}
       {erros.geral && <p className="text-xs font-semibold text-red-700">{erros.geral}</p>}
-      <button type="button" className={botaoTexto} disabled={todasUsadas} onClick={() => onChange({ ...valor, partes: [...valor.partes, { chave: novaChave(), escolaId: '', disciplinaIds: [''] }] })}>+ Adicionar escola</button>
+      <button type="button" className={botaoTexto} disabled={todasUsadas} onClick={() => onChange({ ...valor, partes: [...valor.partes, { chave: novaChave(), escolaId: '', disciplinaIds: [''], atuacaoIds: [] }] })}>+ Adicionar escola</button>
     </div>
   );
 };
@@ -115,7 +136,7 @@ export const NumeroDeCargos = ({ valor, onChange, desabilitado = false }) => (
 );
 
 // Janela "Cargos" de um Professor já cadastrado. Secretaria cadastra, altera e encerra; a Diretora só vê.
-export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, onClose, onAlterado }) => {
+export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], onClose, onAlterado }) => {
   const [cargos, setCargos] = useState(null);
   const [encerrados, setEncerrados] = useState(null);
   const [verEncerrados, setVerEncerrados] = useState(false);
@@ -200,7 +221,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, onClo
 
             {cargos.map(cargo => (editando?.id === cargo.id ? (
               <div key={cargo.id} className="space-y-2">
-                <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} erros={erros} />
+                <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
                 <p className="text-xs text-slate-500">A mudança vale a partir do próximo Formulário 1/3 que abrir. O que já está aberto continua como estava.</p>
                 <div className="flex justify-end gap-2">
                   <Button variant="secondary" size="sm" onClick={() => { setEditando(null); setErros({ partes: {} }); }} disabled={salvando}>Cancelar</Button>
@@ -240,7 +261,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, onClo
 
             {editando?.id === 'novo' && (
               <div className="space-y-2">
-                <EditorCargo rotulo={`Cargo ${cargos.length + 1}`} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} erros={erros} />
+                <EditorCargo rotulo={`Cargo ${cargos.length + 1}`} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
                 <div className="flex justify-end gap-2">
                   {cargos.length > 0 && <Button variant="secondary" size="sm" onClick={() => { setEditando(null); setErros({ partes: {} }); }} disabled={salvando}>Cancelar</Button>}
                   <Button size="sm" onClick={salvar} loading={salvando}>Cadastrar cargo</Button>

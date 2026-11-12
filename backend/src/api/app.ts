@@ -10,6 +10,7 @@ import { disciplinasRouter } from './routes/disciplinas.js';
 import { turmasRouter } from './routes/turmas.js';
 import { pessoasRouter } from './routes/pessoas.js';
 import { cargosRouter } from './routes/cargos.js';
+import { atuacoesPedagogicasRouter } from './routes/atuacoesPedagogicas.js';
 import { professorTurmaDisciplinaRouter } from './routes/professorTurmaDisciplina.js';
 import { auxiliarTurmaRouter } from './routes/auxiliarTurma.js';
 import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
@@ -20,6 +21,7 @@ import { pdiAplicacoesRouter } from './routes/pdiAplicacoes.js';
 import { pdiFichasRouter } from './routes/pdiFichas.js';
 import { pdiFichaAnualRouter } from './routes/pdiFichaAnual.js';
 import { correcoesPdiRouter } from './routes/correcoesPdi.js';
+import { correcoesUmTercoRouter } from './routes/correcoesUmTerco.js';
 import { anamneseModelosRouter, anamnesePerguntasRouter } from './routes/anamneseModelos.js';
 import { anamnesesRouter } from './routes/anamneses.js';
 import { mensagensRouter } from './routes/mensagens.js';
@@ -81,6 +83,7 @@ export function createApp() {
   app.use('/api/turmas', turmasRouter);
   app.use('/api/pessoas', pessoasRouter);
   app.use('/api/pessoas', cargosRouter); // /api/pessoas/professores/:id/cargos
+  app.use('/api/atuacoes-pedagogicas', atuacoesPedagogicasRouter);
   app.use('/api/professor-turma-disciplina', professorTurmaDisciplinaRouter);
   app.use('/api/auxiliar-turma', auxiliarTurmaRouter);
   app.use('/api/vinculos-escolares', vinculosEscolaresRouter);
@@ -95,6 +98,7 @@ export function createApp() {
   app.use('/api/pdi-fichas', pdiFichasRouter);
   app.use('/api/pdi-ficha-anual', pdiFichaAnualRouter);
   app.use('/api/correcoes-pdi', correcoesPdiRouter);
+  app.use('/api/correcoes-um-terco', correcoesUmTercoRouter);
   app.use('/api/anamnese-modelos', anamneseModelosRouter);
   app.use('/api/anamnese-perguntas', anamnesePerguntasRouter);
   app.use('/api/anamneses', anamnesesRouter);

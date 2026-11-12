@@ -13,6 +13,7 @@ import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { exportarExcel } from '../utils/exportarExcel';
 import { inputClass } from '../utils/display';
 import { CargosModal, EditorCargo, NumeroDeCargos, novoRascunhoCargo, validarRascunhoCargo } from '../components/CargosProfessor';
+import { listarAtuacoes } from '../services/cargos';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
 
 // Vínculos reais (ProfessorTurmaDisciplina/AuxiliarTurma) guardam `dataInicio`/`dataFim` como
@@ -574,6 +575,9 @@ const ProfessoresReaisManager = ({ user }) => {
   // Cargos (12/11/2026): só a Secretaria cadastra; a Diretora continua escolhendo as escolas de vínculo.
   const comCargos = isSecretaria(user);
   const disciplinasDoCargo = [...disciplinasReais].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  // Atuações pedagógicas (12/11/2026): catálogo da Secretaria, oferecido no editor de cargo junto com as disciplinas.
+  const [atuacoes, setAtuacoes] = useState([]);
+  useEffect(() => { listarAtuacoes().then(setAtuacoes).catch(() => setAtuacoes([])); }, []);
 
   const carregar = async () => {
     setCarregando(true);
@@ -796,6 +800,7 @@ const ProfessoresReaisManager = ({ user }) => {
                     onChange={novo => setForm(prev => ({ ...prev, cargos: prev.cargos.map(c => (c.chave === cargo.chave ? novo : c)) }))}
                     escolas={minhasEscolas}
                     disciplinas={disciplinasDoCargo}
+                    atuacoes={atuacoes}
                     erros={errosCargos[i]}
                   />
                 ))}
@@ -890,6 +895,7 @@ const ProfessoresReaisManager = ({ user }) => {
           podeEditar={comCargos}
           escolas={minhasEscolas}
           disciplinas={disciplinasDoCargo}
+          atuacoes={atuacoes}
           onAlterado={carregar}
           onClose={() => setManagingCargos(null)}
         />

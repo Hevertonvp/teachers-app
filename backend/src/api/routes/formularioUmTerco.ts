@@ -7,9 +7,11 @@ import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
-import { calcularFolhas, chaveDeCargos, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
-import { formatarCorrecao, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecao, textoMensagemCorrecao } from '../../domain/correcoes.js';
+import { calcularFolhas, chaveDeCargos, corteDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
+import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
+import { criarNotificacao } from '../../lib/notificacoes.js';
+import { textoNovaMensagem } from '../../domain/notificacoes.js';
 
 // Formulário 1/3 — registro dos conteúdos ensinados, por semana.
 // POR CARGO (decisão do usuário, 12/11/2026; substitui ano/série + disciplina): a identidade do
@@ -147,39 +149,48 @@ async function registrarEvento(db: Db, entregaId: number, tipo: Prisma.Historico
 // --- Folhas por cargo --------------------------------------------------------------------------
 
 // Composição com nomes, no formato da tela e da foto gravada na entrega: escola → disciplinas.
-type ParteNomeada = { escolaId: number; escolaNome: string; disciplinas: { id: number; nome: string }[] };
+// Foto de uma escola da folha: disciplinas e ATUAÇÕES pedagógicas (12/11/2026), com os nomes daquele momento.
+// Fotos antigas não têm `atuacoes` e valem como "nenhuma" — nunca são reescritas.
+export type ParteNomeada = { escolaId: number; escolaNome: string; disciplinas: { id: number; nome: string }[]; atuacoes: { id: number; nome: string }[] };
 
 async function carregarNomes(db: Db) {
-  const [escolas, disciplinas] = await Promise.all([
+  const [escolas, disciplinas, atuacoes] = await Promise.all([
     db.escola.findMany({ select: { id: true, nome: true } }),
     db.disciplina.findMany({ select: { id: true, nome: true } }),
+    db.atuacaoPedagogica.findMany({ select: { id: true, nome: true } }),
   ]);
-  return { escola: new Map(escolas.map((e) => [e.id, e.nome])), disciplina: new Map(disciplinas.map((d) => [d.id, d.nome])) };
+  return { escola: new Map(escolas.map((e) => [e.id, e.nome])), disciplina: new Map(disciplinas.map((d) => [d.id, d.nome])), atuacao: new Map(atuacoes.map((a) => [a.id, a.nome])) };
 }
 type Nomes = Awaited<ReturnType<typeof carregarNomes>>;
 
 const ordenarPartes = (partes: ParteNomeada[]) => partes
-  .map((p) => ({ ...p, disciplinas: [...p.disciplinas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }))
+  .map((p) => ({ ...p, disciplinas: [...p.disciplinas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), atuacoes: [...(p.atuacoes ?? [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }))
   .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'));
 
 const nomear = (composicao: Composicao, nomes: Nomes): ParteNomeada[] => ordenarPartes(composicao.map((i) => ({
   escolaId: i.escolaId,
   escolaNome: nomes.escola.get(i.escolaId) ?? '—',
   disciplinas: i.disciplinaIds.map((id) => ({ id, nome: nomes.disciplina.get(id) ?? '—' })),
+  atuacoes: i.atuacaoIds.map((id) => ({ id, nome: nomes.atuacao.get(id) ?? '—' })),
 })));
 
 // Foto gravada na entrega (nunca recalculada). Tolerante a formatos estranhos.
-function lerFoto(json: unknown): ParteNomeada[] {
+export function lerFoto(json: unknown): ParteNomeada[] {
   if (!Array.isArray(json)) return [];
   return ordenarPartes(json.map((p) => ({
     escolaId: Number((p as ParteNomeada)?.escolaId),
     escolaNome: String((p as ParteNomeada)?.escolaNome ?? '—'),
     disciplinas: Array.isArray((p as ParteNomeada)?.disciplinas) ? (p as ParteNomeada).disciplinas.map((d) => ({ id: Number(d.id), nome: String(d.nome) })) : [],
+    atuacoes: Array.isArray((p as ParteNomeada)?.atuacoes) ? (p as ParteNomeada).atuacoes.map((d) => ({ id: Number(d.id), nome: String(d.nome) })) : [],
   })).filter((p) => Number.isInteger(p.escolaId)));
 }
 
 // "Prudenciana — Inglês, Geografia" (escola sem disciplina: só o nome da escola).
-const descreverParte = (p: ParteNomeada) => (p.disciplinas.length ? `${p.escolaNome} — ${p.disciplinas.map((d) => d.nome).join(', ')}` : p.escolaNome);
+// "Prudenciana — Inglês, Geografia", "CMEI — Professor Regente", "Escola X — Inglês; Professor de Intervenção".
+export const descreverParte = (p: ParteNomeada) => {
+  const itens = [p.disciplinas.map((d) => d.nome).join(', '), (p.atuacoes ?? []).map((a) => a.nome).join(', ')].filter(Boolean);
+  return itens.length ? `${p.escolaNome} — ${itens.join('; ')}` : p.escolaNome;
+};
 
 export const AVISO_FOLHA_COMPARTILHADA = 'Este formulário representa os dois cargos cadastrados, pois possuem a mesma configuração de escolas e disciplinas.';
 
@@ -213,8 +224,8 @@ async function folhasDoCiclo(db: Db, ciclo: CicloCompleto, filtro: { professorId
   const cicloEmCurso = ciclo.prazoEm.getTime() >= Date.now();
   const [cargos, entregas, nomes] = await Promise.all([
     db.cargoProfessor.findMany({
-      where: { createdAt: { lte: ciclo.abreEm }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
-      include: { versoes: { where: { criadaEm: { lte: ciclo.abreEm } }, orderBy: { criadaEm: 'desc' }, take: 1 }, professor: { select: { id: true, nome: true, status: true } } },
+      where: { createdAt: { lte: corteDoCiclo(ciclo.abreEm) }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
+      include: { versoes: { where: { criadaEm: { lte: corteDoCiclo(ciclo.abreEm) } }, orderBy: { criadaEm: 'desc' }, take: 1 }, professor: { select: { id: true, nome: true, status: true } } },
     }),
     db.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, chaveCargos: { not: null }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) }, include: entregaInclude }),
     carregarNomes(db),
@@ -286,7 +297,7 @@ async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, 
   // Correções desta entrega (fluxo de correções, 10/11/2026), mais recente primeiro.
   const correcoes = entrega?.correcoes ?? [];
   const nomes = await nomesDePessoas(db, idsDePessoasDasCorrecoes(correcoes));
-  const correcaoAberta = correcoes.some((c) => c.status === 'ABERTA');
+  const correcaoAberta = correcoes.some((c) => correcaoUmTercoVigente(c));
   return {
     ciclo: formatarCiclo(ciclo),
     ...resumoFolha(folha),
@@ -299,8 +310,8 @@ async function montarDetalhe(db: Db, ciclo: CicloCompleto, professorId: number, 
     // Pode editar = prazo/reabertura aberto E o cargo ainda é esperado neste ciclo, ou há uma correção
     // aberta para esta entrega (devolvida pela Secretaria).
     editavelAgora: opcoes.podeEditar && ciclo.status === 'ATIVA' && ((prazoAberto && folha.esperada) || correcaoAberta),
-    correcao: correcoes[0] ? formatarCorrecao(correcoes[0], nomes) : null,
-    correcoes: correcoes.map((c) => formatarCorrecao(c, nomes)),
+    correcao: correcoes[0] ? formatarCorrecaoUmTerco(correcoes[0], nomes) : null,
+    correcoes: correcoes.map((c) => formatarCorrecaoUmTerco(c, nomes)),
     semanas: ciclo.semanas.map((s) => ({
       id: s.id, numero: s.numero, rotulo: `Semana ${s.numero}`, dataInicio: dataIso(s.dataInicio), dataFim: dataIso(s.dataFim),
       texto: respostaPorSemana.get(s.id) ?? '',
@@ -500,7 +511,7 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
       disciplinas: [...disciplinas.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
       entregaId: f.entrega?.id ?? null, status: statusDaEntrega(f.entrega), semanasPreenchidas: semanasPreenchidas(f.entrega), totalSemanas,
       // Situação da correção mais recente (nula = nunca devolvida). Ver domain/correcoes.ts.
-      correcao: f.entrega?.correcoes[0] ? situacaoCorrecao(f.entrega.correcoes[0]) : null,
+      correcao: f.entrega?.correcoes[0] ? situacaoCorrecaoUmTerco(f.entrega.correcoes[0]) : null,
       concluidaEm: iso(f.entrega?.concluidaEm ?? null), atualizadoEm: iso(f.entrega?.updatedAt ?? null),
     };
   };
@@ -509,7 +520,7 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
     && (!filtroDisciplina || l.disciplinas.some((d) => d.id === filtroDisciplina))
     && (!filtroProfessor || l.professorId === filtroProfessor)
     && (!filtroStatus || l.status === filtroStatus)
-    && (!filtroCorrecao || ['solicitada', 'prazo_encerrado', 'recebida'].includes(l.correcao ?? ''));
+    && (!filtroCorrecao || ['solicitada', 'recebida'].includes(l.correcao ?? ''));
 
   const todas = folhas.filter((f) => f.esperada).map(linha).filter(passaFiltros);
   const foraDoEsperado = folhas.filter((f) => !f.esperada && f.entrega).map(linha).filter(passaFiltros);
@@ -554,7 +565,7 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
   const conteudos = respostas.map((r) => {
     const l = linhaDaEntrega.get(r.entregaId)!;
     return {
-      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join('; '),
+      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join(' | '),
       semanaNumero: r.semana.numero, semanaInicio: dataIso(r.semana.dataInicio), semanaFim: dataIso(r.semana.dataFim), texto: r.texto,
     };
   });
@@ -565,6 +576,8 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
 // Mesmo desenho do PDI: orientações obrigatórias, prazo FIXO de 3 dias corridos, mensagem automática
 // na caixa do Professor dono da entrega, devoluções ilimitadas (uma aberta por vez). A entrega é a
 // do próprio Professor (uma folha de cargo), então nunca mistura professores; a devolução libera só ela.
+export const MSG_CARGO_ENCERRADO = 'Esta folha é de um cargo encerrado: fica só para consulta (sem correção direta e sem devolução).';
+
 const devolverEntregaSchema = z.object({ observacao: z.string().trim().min(1, 'Escreva o que precisa ser corrigido.').max(OBSERVACAO_MAX, `Use no máximo ${OBSERVACAO_MAX} caracteres.`) });
 
 formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) => {
@@ -575,13 +588,16 @@ formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) =
 
   const { correcao, criadas } = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM entregas_um_terco WHERE id = ${entregaId} FOR UPDATE`;
-    const entrega = await tx.entregaUmTerco.findUnique({ where: { id: entregaId }, include: { professor: true, ciclo: true, cargos: { select: { cargoId: true } } } });
+    const entrega = await tx.entregaUmTerco.findUnique({ where: { id: entregaId }, include: { professor: true, ciclo: true, cargos: { select: { cargoId: true, cargo: { select: { status: true } } } } } });
     if (!entrega) throw new NotFoundError('Entrega não encontrada.');
     if (entrega.ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
     if (entrega.status !== 'CONCLUIDA') throw new ValidationError('Só é possível devolver um formulário já concluído.');
     if (entrega.professor.status !== 'ATIVO') throw new ValidationError('O professor desta entrega está inativo. Não há quem receba a correção.');
     if (!entrega.chaveCargos) throw new ValidationError('Este preenchimento é do modelo antigo (ano/série e disciplina) e não pode ser devolvido.');
-    const aberta = await tx.correcaoEntregaUmTerco.findFirst({ where: { entregaId, status: 'ABERTA' } });
+    // Decisão do usuário (12/11/2026): folha de cargo encerrado fica só para consulta em Correções.
+    if (entrega.cargos.length > 0 && entrega.cargos.every((c) => c.cargo.status === 'ENCERRADO')) throw new ValidationError(MSG_CARGO_ENCERRADO);
+    // Só uma correção VIGENTE por vez; a expirada (3 dias sem reenvio) não impede abrir uma nova.
+    const aberta = (await tx.correcaoEntregaUmTerco.findMany({ where: { entregaId, status: 'ABERTA' } })).find((c) => correcaoUmTercoVigente(c));
     if (aberta) throw new ConflictError('Este formulário já tem uma correção aguardando o professor. Aguarde o envio para devolver de novo.');
 
     const agora = new Date();
@@ -598,10 +614,11 @@ formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) =
       conteudo: textoMensagemCorrecao({ formulario: `Formulário 1/3 (${entrega.ciclo.titulo})`, identificacao: [rotulo, ...partes.map(descreverParte)], observacao, prazoAte: nova.prazoAte }),
       link: `/formulario-um-terco/${entrega.cicloId}/cargo/${cargoIds[0]}`,
     });
-    return { correcao: nova, criadas: msgs };
+    const comConversa = msgs[0] ? await tx.correcaoEntregaUmTerco.update({ where: { id: nova.id }, data: { conversaId: msgs[0].conversaId } }) : nova;
+    return { correcao: comConversa, criadas: msgs };
   });
   await notificarMensagensDeCorrecao(prisma, actor.id, criadas, `correcao-um-terco-${correcao.id}`);
-  res.status(201).json({ ...formatarCorrecao(correcao), mensagensEnviadas: criadas.length });
+  res.status(201).json({ ...formatarCorrecaoUmTerco(correcao), mensagensEnviadas: criadas.length });
 });
 
 formularioUmTercoRouter.post('/entregas/:entregaId/aceitar', async (req, res) => {
@@ -611,7 +628,7 @@ formularioUmTercoRouter.post('/entregas/:entregaId/aceitar', async (req, res) =>
   const ultima = await prisma.correcaoEntregaUmTerco.findFirst({ where: { entregaId }, orderBy: { criadaEm: 'desc' } });
   if (!ultima || ultima.status !== 'RESOLVIDA' || ultima.conferencia) throw new ConflictError('Não há correção recebida aguardando conferência neste formulário.');
   await prisma.correcaoEntregaUmTerco.updateMany({ where: { id: ultima.id, status: 'RESOLVIDA', conferencia: null }, data: { conferencia: 'ACEITA', conferidaEm: new Date(), conferidaPor: String(actor.id) } });
-  res.json(formatarCorrecao(await prisma.correcaoEntregaUmTerco.findUniqueOrThrow({ where: { id: ultima.id } })));
+  res.json(formatarCorrecaoUmTerco(await prisma.correcaoEntregaUmTerco.findUniqueOrThrow({ where: { id: ultima.id } })));
 });
 
 // Secretaria consulta uma folha específica (somente leitura, com histórico).
@@ -636,7 +653,8 @@ formularioUmTercoRouter.get('/minhas', async (_req, res) => {
     const resumoCiclo = formatarCiclo(ciclo);
     for (const f of await folhasDoCiclo(prisma, ciclo, { professorId: actor.id })) {
       if (!f.esperada && !f.entrega) continue;
-      const correcaoAberta = !!f.entrega && f.entrega.correcoes.some((c) => c.status === 'ABERTA');
+      const correcaoAberta = !!f.entrega && f.entrega.correcoes.some((c) => correcaoUmTercoVigente(c));
+      const ultimaCorrecao = f.entrega?.correcoes[0] ?? null;
       itens.push({
         ciclo: { id: ciclo.id, titulo: ciclo.titulo, anoLetivo: ciclo.anoLetivo, trimestre: ciclo.trimestre, abreEm: resumoCiclo.abreEm, prazoEm: resumoCiclo.prazoEm, statusPrazo: resumoCiclo.statusPrazo, editavelAgora: resumoCiclo.editavelAgora },
         ...resumoFolha(f),
@@ -645,6 +663,8 @@ formularioUmTercoRouter.get('/minhas', async (_req, res) => {
         totalSemanas: ciclo.semanas.length,
         // Correção solicitada pela Secretaria: indicação discreta na lista e edição liberada só aqui.
         correcaoSolicitada: correcaoAberta,
+        correcaoSituacao: ultimaCorrecao ? situacaoCorrecaoUmTerco(ultimaCorrecao) : null,
+        correcaoPrazoAte: ultimaCorrecao ? iso(ultimaCorrecao.prazoAte) : null,
         editavelAgora: (resumoCiclo.editavelAgora && f.esperada) || correcaoAberta,
       });
     }
@@ -664,17 +684,17 @@ const respostasSchema = z.object({
   respostas: z.array(z.object({ semanaId: z.number().int(), texto: z.string().max(TEXTO_SEMANA_MAX, `Cada semana aceita no máximo ${TEXTO_SEMANA_MAX} caracteres.`) })).min(1),
 });
 
-// Correção aberta (fluxo de correções, 10/11/2026) libera a edição SÓ desta entrega, mesmo depois do
-// prazo do ciclo e mesmo com o cargo encerrado. Sem correção: prazo aberto e cargo ainda esperado.
+// Correção VIGENTE (aberta e dentro dos 3 dias) libera a edição SÓ desta entrega, mesmo depois do prazo do
+// ciclo. Expirada (12/11/2026): volta às regras normais. Sem correção: prazo aberto e cargo ainda esperado.
 function exigirEditavel(ciclo: CicloCompleto, folha: Folha) {
   if (ciclo.status !== 'ATIVA') throw new ValidationError('Este Formulário 1/3 foi inativado.');
-  if (folha.entrega?.correcoes.some((c) => c.status === 'ABERTA')) return;
+  if (folha.entrega?.correcoes.some((c) => correcaoUmTercoVigente(c))) return;
   if (!cicloEditavelAgora(ciclo, janelasDe(ciclo), new Date())) throw new ValidationError('O prazo deste Formulário 1/3 terminou — ele está somente para leitura. Peça à Secretaria uma reabertura.');
   if (!folha.esperada) throw new ForbiddenError('Este cargo foi encerrado: o formulário fica guardado só para consulta.');
 }
 
 // Serializa gravações das folhas do mesmo Professor no ciclo (duas abas / duplo clique) sem depender de timing.
-const travarFolhas = (tx: Db, cicloId: number, professorId: number) => tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`um-terco-folhas:${cicloId}:${professorId}`}::text))`;
+export const travarFolhas = (tx: Db, cicloId: number, professorId: number) => tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`um-terco-folhas:${cicloId}:${professorId}`}::text))`;
 
 const tokenIgual = (base: string | null | undefined, atual: Date | null) => (base ? new Date(base).getTime() === (atual?.getTime() ?? -1) : atual === null);
 
@@ -712,12 +732,18 @@ formularioUmTercoRouter.put('/ciclos/:cicloId/cargos/:cargoId/respostas', async 
         await registrarEvento(tx, entrega.id, 'INICIADA', actor.id, { cargos: folha.cargoIds });
       }
 
+      const emCorrecao = entrega.correcoes.some((c) => correcaoUmTercoVigente(c));
+      const antes = new Map(entrega.respostas.map((r) => [r.semanaId, r.texto]));
       for (const r of dados.respostas) {
         await tx.respostaSemanaUmTerco.upsert({
           where: { entregaId_semanaId: { entregaId: entrega.id, semanaId: r.semanaId } },
           create: { entregaId: entrega.id, semanaId: r.semanaId, texto: r.texto },
           update: { texto: r.texto },
         });
+      }
+      if (emCorrecao) {
+        const mudadas = dados.respostas.filter((r) => (antes.get(r.semanaId) ?? '') !== r.texto);
+        if (mudadas.length) await tx.historicoCorrecaoSemanaUmTerco.createMany({ data: mudadas.map((r) => ({ entregaId: entrega!.id, semanaId: r.semanaId, valorAnterior: antes.get(r.semanaId) ?? null, valorNovo: r.texto, alteradoPor: String(actor.id), origem: 'PROFESSOR_POS_DEVOLUCAO' as const })) });
       }
       await tx.entregaUmTerco.update({ where: { id: entrega.id }, data: { updatedAt: new Date() } });
 
@@ -748,19 +774,27 @@ formularioUmTercoRouter.post('/ciclos/:cicloId/cargos/:cargoId/concluir', async 
   const { cicloId, cargoId } = paramsFormulario(req);
   const dados = concluirSchema.parse(req.body ?? {});
 
-  await prisma.$transaction(async (tx) => {
+  const aviso = await prisma.$transaction(async (tx) => {
     await travarFolhas(tx, cicloId, actor.id);
     const ciclo = await buscarCiclo(tx, cicloId);
     const folha = await buscarFolha(tx, ciclo, actor.id, cargoId);
     exigirEditavel(ciclo, folha);
     const entrega = folha.entrega;
     if (!entrega) throw new ValidationError('Preencha as semanas antes de concluir.');
-    // "Enviar correção": a entrega já estava concluída quando foi devolvida; concluir de novo envia a
-    // correção (ABERTA -> RESOLVIDA). updateMany com status ABERTA: duplo clique não faz nada.
-    // Enviada depois dos 3 dias continua valendo e fica marcada como fora do prazo.
+    // "Reenviar correção" (12/11/2026): a entrega já estava concluída quando foi devolvida; concluir de novo
+    // reenvia a correção VIGENTE (ABERTA e dentro dos 3 dias -> RESOLVIDA). Expirada não é reenviada.
+    // updateMany com status ABERTA: duplo clique não faz nada. Sem correção vigente: só a edição normal.
     if (entrega.status === 'CONCLUIDA') {
-      await tx.correcaoEntregaUmTerco.updateMany({ where: { entregaId: entrega.id, status: 'ABERTA' }, data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) } });
-      return;
+      const vigente = entrega.correcoes.find((c) => correcaoUmTercoVigente(c));
+      if (!vigente) return null;
+      const textosAtuais = new Map(entrega.respostas.map((r) => [r.semanaId, r.texto.trim()]));
+      const vazias = ciclo.semanas.filter((s) => !textosAtuais.get(s.id));
+      if (vazias.length > 0) throw new ValidationError(`Preencha todas as semanas antes de reenviar. Faltam: ${vazias.map((s) => `Semana ${s.numero}`).join(', ')}.`);
+      const { count } = await tx.correcaoEntregaUmTerco.updateMany({ where: { id: vigente.id, status: 'ABERTA', prazoAte: { gte: new Date() } }, data: { status: 'RESOLVIDA', concluidaEm: new Date(), concluidaPor: String(actor.id) } });
+      if (count !== 1 || !vigente.conversaId) return null;
+      // Aviso na conversa da devolução (o Professor já pode responder nela) para quem devolveu.
+      await tx.mensagem.create({ data: { conversaId: vigente.conversaId, remetenteId: actor.id, conteudo: textoMensagemReenvio(`${folha.rotulo} · ${folha.composicao.map(descreverParte).join(' · ')}`), linkFormulario: `/correcoes/um-terco/${entrega.id}` } });
+      return { correcaoId: vigente.id, conversaId: vigente.conversaId, destinatarioId: Number(vigente.criadaPor) };
     }
     if (dados.baseUpdatedAt !== undefined && dados.baseUpdatedAt !== null && !tokenIgual(dados.baseUpdatedAt, entrega.updatedAt)) {
       throw new ConflitoVersaoError('Este formulário foi alterado em outra aba ou dispositivo.', null);
@@ -772,11 +806,17 @@ formularioUmTercoRouter.post('/ciclos/:cicloId/cargos/:cargoId/concluir', async 
     }
     const { count } = await tx.entregaUmTerco.updateMany({ where: { id: entrega.id, status: 'EM_ANDAMENTO' }, data: { status: 'CONCLUIDA', concluidaEm: new Date(), updatedAt: new Date() } });
     if (count === 1) await registrarEvento(tx, entrega.id, 'CONCLUIDA', actor.id);
+    return null;
   }, { timeout: 15000 }).catch(async (error) => {
     if (error instanceof ConflitoVersaoError) {
       throw new ConflitoVersaoError(error.message, await montarDetalhe(prisma, await buscarCiclo(prisma, cicloId), actor.id, cargoId, { podeEditar: true }));
     }
     throw error;
   });
+  if (aviso && Number.isInteger(aviso.destinatarioId)) {
+    const professor = await prisma.pessoa.findUnique({ where: { id: actor.id }, select: { nome: true } });
+    const { titulo, corpo } = textoNovaMensagem(professor?.nome ?? 'o Professor');
+    await criarNotificacao(prisma, { destinatarioId: aviso.destinatarioId, tipo: 'NOVA_MENSAGEM', titulo, corpo, linkContexto: `/mensagens?conversa=${aviso.conversaId}`, metadata: { conversaId: aviso.conversaId }, chaveIdempotencia: `reenvio-um-terco-${aviso.correcaoId}` });
+  }
   res.json(await carregarParaProfessor(actor, cicloId, cargoId));
 });
