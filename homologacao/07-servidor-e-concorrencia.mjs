@@ -1,8 +1,12 @@
 // Fase 6/9 — proteções DO SERVIDOR (independentes da tela), permissões e concorrência entre administradores.
 // INTERVENÇÃO DECLARADA: usa chamadas diretas à API (não a interface), só para provar que o backend protege a regra
 // mesmo quando a tela não bloqueia. Banco: somente o local de homologação.
+// 1/3 POR CARGO (12/11/2026): permissões nas rotas por cargo (folhas do P04 pelos cargos de teste).
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { cargosDe, prepararCargosHomolog } from './cargos-homolog.mjs';
+await prepararCargosHomolog();
+const [C1P04] = await cargosDe('p04');
 
 const API = 'http://localhost:3340/api';
 const FUT = `${API}/formulario-um-terco`;
@@ -53,10 +57,10 @@ const perm = [
   ['P06', 'Secretaria tenta usar rota de preenchimento do professor (/minhas)', () => req('GET', '/formulario-um-terco/minhas', sec), [403]],
   ['P07', 'Sem token: lista de ciclos', () => req('GET', '/formulario-um-terco/ciclos', null), [401]],
   ['P08', 'Token inválido', () => req('GET', '/formulario-um-terco/minhas', 'token.invalido.x'), [401]],
-  ['P09', 'P01 (só 6º Matemática) abre formulário 7º Arte que é do P04', async () => { const d = await prisma.disciplina.findUnique({ where: { nome: 'Arte' } }); return req('GET', `/formulario-um-terco/ciclos/${A}/formularios/7/${d.id}`, p01); }, [403, 404]],
-  ['P10', 'P01 tenta gravar respostas num formulário que não é dele', async () => { const d = await prisma.disciplina.findUnique({ where: { nome: 'Arte' } }); return req('PUT', `/formulario-um-terco/ciclos/${A}/formularios/7/${d.id}/respostas`, p01, { baseUpdatedAt: null, respostas: [] }); }, [403, 404]],
-  ['P11', 'P01 tenta concluir formulário que não é dele', async () => { const d = await prisma.disciplina.findUnique({ where: { nome: 'Arte' } }); return req('POST', `/formulario-um-terco/ciclos/${A}/formularios/7/${d.id}/concluir`, p01, {}); }, [403, 404]],
-  ['P12', 'P01 tenta ler entrega do P04 pela rota administrativa', async () => { const p = await prisma.pessoa.findUnique({ where: { email: 'p04@homolog.nexo' } }); const d = await prisma.disciplina.findUnique({ where: { nome: 'Arte' } }); return req('GET', `/formulario-um-terco/ciclos/${A}/entregas/${p.id}/7/${d.id}`, p01); }, [403]],
+  ['P09', 'P01 abre a folha do Cargo 1 do P04', () => req('GET', `/formulario-um-terco/ciclos/${A}/cargos/${C1P04}`, p01), [403, 404]],
+  ['P10', 'P01 tenta gravar respostas na folha de um cargo que não é dele', () => req('PUT', `/formulario-um-terco/ciclos/${A}/cargos/${C1P04}/respostas`, p01, { baseUpdatedAt: null, respostas: [{ semanaId: 1, texto: 'x' }] }), [403, 404]],
+  ['P11', 'P01 tenta concluir a folha de um cargo que não é dele', () => req('POST', `/formulario-um-terco/ciclos/${A}/cargos/${C1P04}/concluir`, p01, {}), [403, 404]],
+  ['P12', 'P01 tenta ler a folha do P04 pela rota administrativa', async () => { const p = await prisma.pessoa.findUnique({ where: { email: 'p04@homolog.nexo' } }); return req('GET', `/formulario-um-terco/ciclos/${A}/entregas/${p.id}/cargos/${C1P04}`, p01); }, [403]],
 ];
 for (const [id, desc, fn, ok] of perm) {
   const r = await fn();
@@ -65,7 +69,7 @@ for (const [id, desc, fn, ok] of perm) {
 // vazamento: P01 não pode ver, na sua lista, formulários de outro professor
 const minhasP01 = await req('GET', '/formulario-um-terco/minhas', p01);
 const rot = JSON.stringify(minhasP01.json);
-registrar('UT-PERM-P13', 'Formulário 1/3 (permissões)', 'Lista do P01 só tem o formulário dele (6º Matemática)', '1 item, sem Arte/Inglês', `${(minhasP01.json?.itens ?? minhasP01.json ?? []).length ?? '?'} item(ns); contém "Inglês": ${/Inglês/.test(rot)}`, !/Inglês|Arte/.test(rot) ? 'APROVADO' : 'REPROVADO');
+registrar('UT-PERM-P13', 'Formulário 1/3 (permissões)', 'Lista do P01 só tem a folha do cargo dele (Aurora — Matemática)', 'sem Arte/Inglês', `${(minhasP01.json?.itens ?? minhasP01.json ?? []).length ?? '?'} item(ns); contém "Inglês": ${/Inglês/.test(rot)}`, !/Inglês|Arte/.test(rot) ? 'APROVADO' : 'REPROVADO');
 
 // ---- 3. Concorrência entre administradores (disparos simultâneos) ----
 const cenarios = [
@@ -86,32 +90,38 @@ registrar('UT-CONC-INV', 'Formulário 1/3 (concorrência)', 'Invariante após a 
 
 // ---- 4. Edição, reativação e reabertura ----
 const X = (await criar({ titulo: `ZZ-API-X-${TAG}`, abreEm: '2026-12-18T09:00', prazoEm: '2026-12-18T12:00' })).json?.id;
-const ed1 = await req('PUT', `/formulario-um-terco/ciclos/${X}`, sec, corpo({ titulo: `ZZ-API-X-${TAG}`, abreEm: '2026-11-10T08:00', prazoEm: '2026-11-12T08:00' }));
-registrar('UT-ED-01', 'Formulário 1/3 (edição)', 'Editar ciclo para uma janela que sobrepõe o ciclo A', 'HTTP 409', `HTTP ${ed1.status}`, ed1.status === 409 ? 'APROVADO' : 'REPROVADO');
+// Regras de 10/11/2026 (abertura não no passado; semanas até o prazo): sobrepõe o ciclo de C05 (16/12, ativo).
+const ed1 = await req('PUT', `/formulario-um-terco/ciclos/${X}`, sec, corpo({ titulo: `ZZ-API-X-${TAG}`, abreEm: '2026-12-16T10:00', prazoEm: '2026-12-16T11:00' }));
+registrar('UT-ED-01', 'Formulário 1/3 (edição)', 'Editar ciclo para uma janela que sobrepõe outro ciclo ativo', 'HTTP 409', `HTTP ${ed1.status}`, ed1.status === 409 ? 'APROVADO' : 'REPROVADO');
 await req('POST', `/formulario-um-terco/ciclos/${X}/inativar`, sec);
 const Y = (await criar({ titulo: `ZZ-API-Y-${TAG}`, abreEm: '2026-12-18T09:00', prazoEm: '2026-12-18T12:00' })).json?.id;
 const rea = await req('POST', `/formulario-um-terco/ciclos/${X}/reativar`, sec);
 registrar('UT-ED-02', 'Formulário 1/3 (edição)', 'Reativar ciclo inativo cuja janela agora colide com outro ciclo ativo', 'HTTP 409', `HTTP ${rea.status}`, rea.status === 409 ? 'APROVADO' : 'REPROVADO');
 const edA = await req('PUT', `/formulario-um-terco/ciclos/${A}`, sec, corpo({ titulo: 'Formulário 1/3 — Nov/2026 (homolog)', trimestre: 2 }));
 registrar('UT-ED-03', 'Formulário 1/3 (edição)', 'Mudar trimestre de ciclo que já tem entregas', 'HTTP 409 (travado)', `HTTP ${edA.status}`, edA.status === 409 ? 'APROVADO' : 'REPROVADO');
+// Regra de 10/11/2026: inativar é permitido mesmo com preenchimentos (nada é apagado). Reativa na hora.
 const ina = await req('POST', `/formulario-um-terco/ciclos/${A}/inativar`, sec);
-registrar('UT-ED-04', 'Formulário 1/3 (edição)', 'Inativar ciclo que já tem preenchimentos', 'HTTP 409', `HTTP ${ina.status}`, ina.status === 409 ? 'APROVADO' : 'REPROVADO');
+const reaA = await req('POST', `/formulario-um-terco/ciclos/${A}/reativar`, sec);
+registrar('UT-ED-04', 'Formulário 1/3 (edição)', 'Inativar ciclo que já tem preenchimentos é permitido (10/11/2026) e reativar devolve', 'HTTP 200 e 200', `HTTP ${ina.status} e ${reaA.status}`, ina.status === 200 && reaA.status === 200 ? 'APROVADO' : 'REPROVADO');
 const inexistente = await req('DELETE', `/formulario-um-terco/ciclos/${A}`, sec);
 registrar('UT-ED-05', 'Formulário 1/3 (edição)', 'Excluir ciclo (não há rota de exclusão; só inativar)', 'HTTP 404 (sem exclusão)', `HTTP ${inexistente.status}`, [404, 405].includes(inexistente.status) ? 'OBSERVAÇÃO (regra não especificada)' : 'REPROVADO', '', 'Pedido de homologação lista "excluir ciclo com/sem entregas": só existe Inativar.');
 
-// Reabertura (comportamento atual; regra oficial não definida)
-const r1 = await req('POST', `/formulario-um-terco/ciclos/${Y}/reaberturas`, sec, { inicioEm: '2026-12-19T08:00', fimEm: '2026-12-19T12:00', motivo: 'homologação' });
+// Reabertura (desde 10/11/2026 só depois do prazo): ciclo JÁ ENCERRADO criado direto no banco local (declarado).
+const E = (await prisma.cicloUmTerco.create({ data: { anoLetivo: 2026, trimestre: 3, titulo: `ZZ-API-REA-${TAG}`, status: 'INATIVA', abreEm: new Date('2026-09-01T11:00:00Z'), prazoEm: new Date('2026-09-10T21:00:00Z'), semanas: { create: [{ numero: 1, dataInicio: new Date('2026-09-01'), dataFim: new Date('2026-09-05') }] } } })).id;
+criados.push(E);
+const r1 = await req('POST', `/formulario-um-terco/ciclos/${E}/reaberturas`, sec, { inicioEm: '2026-12-19T08:00', fimEm: '2026-12-19T12:00', motivo: 'homologação' });
 registrar('UT-REA-01', 'Formulário 1/3 (reabertura)', 'Reabrir ciclo (janela fora do prazo original)', 'aceita', `HTTP ${r1.status}`, r1.status < 300 ? 'APROVADO' : 'REPROVADO');
-const r2 = await req('POST', `/formulario-um-terco/ciclos/${Y}/reaberturas`, sec, { inicioEm: '2026-12-19T10:00', fimEm: '2026-12-19T14:00' });
+const r2 = await req('POST', `/formulario-um-terco/ciclos/${E}/reaberturas`, sec, { inicioEm: '2026-12-19T10:00', fimEm: '2026-12-19T14:00' });
 registrar('UT-REA-02', 'Formulário 1/3 (reabertura)', 'Segunda reabertura com período sobreposto à primeira', 'HTTP 400', `HTTP ${r2.status}`, r2.status === 400 ? 'APROVADO' : 'REPROVADO');
-const r3 = await req('POST', `/formulario-um-terco/ciclos/${Y}/reaberturas`, sec, { inicioEm: '2026-11-05T08:00', fimEm: '2026-11-06T08:00' });
+const r3 = await req('POST', `/formulario-um-terco/ciclos/${E}/reaberturas`, sec, { inicioEm: '2026-11-05T08:00', fimEm: '2026-11-06T08:00' });
 registrar('UT-REA-03', 'Formulário 1/3 (reabertura)', 'Reabertura cuja janela cai DENTRO do período aberto do ciclo A (colide com outro ciclo)', 'regra NÃO definida (ambiguidade conhecida)', `HTTP ${r3.status}`, 'OBSERVAÇÃO (regra não especificada)', '', r3.status < 300 ? 'ACEITA: dois formulários podem ficar editáveis ao mesmo tempo via reabertura.' : 'Recusada.');
-const r4 = await req('POST', `/formulario-um-terco/ciclos/${Y}/reaberturas`, sec, { inicioEm: '2026-12-25T10:00', fimEm: '2026-12-25T09:00' });
+const r4 = await req('POST', `/formulario-um-terco/ciclos/${E}/reaberturas`, sec, { inicioEm: '2026-12-25T10:00', fimEm: '2026-12-25T09:00' });
 registrar('UT-REA-04', 'Formulário 1/3 (reabertura)', 'Reabertura com fim antes do início', 'HTTP 400', `HTTP ${r4.status}`, r4.status === 400 ? 'APROVADO' : 'REPROVADO');
-const r5 = await req('POST', `/formulario-um-terco/ciclos/${Y}/reaberturas`, sec, { inicioEm: '2027-03-01T08:00', fimEm: '2027-03-02T08:00' });
+const r5 = await req('POST', `/formulario-um-terco/ciclos/${E}/reaberturas`, sec, { inicioEm: '2027-03-01T08:00', fimEm: '2027-03-02T08:00' });
 registrar('UT-REA-05', 'Formulário 1/3 (reabertura)', 'Reabertura em data de outro ano letivo/trimestre (mar/2027)', 'regra NÃO definida', `HTTP ${r5.status}`, 'OBSERVAÇÃO (regra não especificada)');
 
 // ---- Limpeza dos ciclos de teste desta rotina (inativação via API; só os que criei) ----
 for (const id of criados) await req('POST', `/formulario-um-terco/ciclos/${id}/inativar`, sec);
+await prisma.reaberturaUmTerco.deleteMany({ where: { cicloId: E } });
 console.log('Ciclos criados e inativados nesta rotina:', criados.length);
 await prisma.$disconnect();

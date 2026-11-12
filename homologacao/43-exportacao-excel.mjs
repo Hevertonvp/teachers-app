@@ -11,7 +11,6 @@ const r = (id, cen, esp, obs, ok, evid = '') => registrar(`EXP-${id}`, 'Exporta�
 const API = 'http://localhost:3340';
 const SENHA_GD = 'Nexo!Homolog-2026';
 const FORMULA_PDI = '=1+1 História (teste de fórmula)';
-const FORMULA_13 = '=HYPERLINK("http://exemplo.invalido";"clique") Ação, reflexão e ênfase';
 
 const ORDEM = []; // por arquivo: primeira aba, última aba, aba ativa ao abrir, linhas da primeira aba
 async function baixar(page, botao, nome) {
@@ -54,12 +53,9 @@ const apiGet = async (tk, path) => { const res = await fetch(API + path, { heade
 // ---- preparação: textos com cara de fórmula (restaurados no fim) ----
 const respostaPdi = await prisma.respostaPdi.findFirst({ where: { aplicacaoPergunta: { tipoResposta: 'TEXTO' }, ficha: { status: 'CONCLUIDA' } }, include: { ficha: true } });
 const respostaPdiOriginal = respostaPdi?.valor;
-const semana13 = await prisma.respostaSemanaUmTerco.findFirst({ where: { entrega: { cicloId: 1 } }, include: { semana: true } });
-const semana13Original = semana13?.texto;
 
 try {
   if (respostaPdi) await prisma.respostaPdi.update({ where: { id: respostaPdi.id }, data: { valor: { ...(respostaPdi.valor ?? {}), resposta: FORMULA_PDI } } });
-  if (semana13) await prisma.respostaSemanaUmTerco.update({ where: { id: semana13.id }, data: { texto: FORMULA_13 } });
 
   const X = await abrir();
   await login(X.page, 'secretaria@escola.gov.br', '12345678');
@@ -110,37 +106,7 @@ try {
   const sujPdi = sujeira(wbPdi);
   r('A8', 'PDI: nenhuma célula com fórmula, "undefined", "null" ou "[object Object]"; vazios ficam vazios', 'nenhuma', sujPdi.slice(0, 5).join('; ') || 'nenhuma', sujPdi.length === 0);
 
-  // ================= B. Formulário 1/3 =================
-  const painelApi = (await apiGet(tkSec, '/api/formulario-um-terco/ciclos/1/painel')).body;
-  const entregaIds = painelApi.linhas.map(l => l.entregaId).filter(Boolean);
-  const conteudosDb = await prisma.respostaSemanaUmTerco.count({ where: { entregaId: { in: entregaIds } } });
-  await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1500);
-  await foto(X.page, '43-um-terco-lista');
-  const cartao = X.page.locator('div', { has: X.page.getByRole('heading', { name: /Formulário 1\/3 — Nov\/2026 \(homolog\)/ }) }).filter({ has: X.page.getByRole('button', { name: 'Exportar para Excel' }) }).last();
-  const { wb: wbLista } = await baixar(X.page, cartao.getByRole('button', { name: 'Exportar para Excel' }), '43-um-terco-lista');
-  const entL = aba(wbLista, 'Entregas'); const conL = aba(wbLista, 'Conteúdos');
-  // Chave inclui Escolas/Turmas: há professores DIFERENTES com o mesmo nome (contas de teste) em escolas diferentes.
-  const chavesL = new Set(entL.linhas.map(l => [entL.v(l, 'Professor'), entL.v(l, 'Ano/série'), entL.v(l, 'Disciplina'), entL.v(l, 'Escolas'), entL.v(l, 'Turmas')].join('|')));
-  r('B1', '1/3 (lista de ciclos): Entregas = linhas do painel, sem duplicar; Conteúdos = semanas preenchidas no banco', `${painelApi.linhas.length} entregas (${painelApi.linhas.length} únicas), ${conteudosDb} conteúdos`, `${entL.linhas.length} entregas (${chavesL.size} únicas), ${conL.linhas.length} conteúdos; ciclo: ${filtro(wbLista, 'Ciclo')}`, entL.linhas.length === painelApi.linhas.length && chavesL.size === entL.linhas.length && conL.linhas.length === conteudosDb, '43-um-terco-lista.xlsx');
-
-  const celF13 = conL.linhas.map(l => l['Conteúdo']).find(c => c.value === FORMULA_13);
-  const linhaF13 = conL.linhas.find(l => l['Conteúdo'].value === FORMULA_13);
-  r('B2', '1/3: conteúdo que começa com "=" (HYPERLINK) e tem acentos vira TEXTO, não fórmula', 'String, sem fórmula', celF13 ? `tipo ${celF13.type === ExcelJS.ValueType.String ? 'String' : celF13.type}, fórmula ${celF13.formula ?? 'nenhuma'}` : 'não encontrado', !!celF13 && celF13.type === ExcelJS.ValueType.String && !celF13.formula);
-  r('B3', '1/3: início/fim da semana iguais ao banco (data, sem voltar um dia)', `${diaUtc(semana13.semana.dataInicio)} a ${diaUtc(semana13.semana.dataFim)}`, linhaF13 ? `${diaUtc(linhaF13['Início'].value)} a ${diaUtc(linhaF13['Fim'].value)} (${linhaF13['Início'].numFmt})` : 'linha não encontrada', !!linhaF13 && diaUtc(linhaF13['Início'].value) === diaUtc(semana13.semana.dataInicio) && diaUtc(linhaF13['Fim'].value) === diaUtc(semana13.semana.dataFim));
-
-  // Painel com filtro de status "Concluído"
-  await X.page.goto(BASE + '/#/formulario-um-terco/ciclos/1'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1500);
-  await X.page.getByLabel('Status').selectOption('concluida'); await X.page.waitForTimeout(1500);
-  await foto(X.page, '43-um-terco-painel-filtrado');
-  const { wb: wbPainel } = await baixar(X.page, X.page.getByRole('button', { name: 'Exportar para Excel' }), '43-um-terco-painel-concluidas');
-  const entP = aba(wbPainel, 'Entregas');
-  const concluidasApi = painelApi.linhas.filter(l => l.status === 'concluida');
-  const todasConcluidas = entP.linhas.every(l => entP.v(l, 'Status') === 'Concluído');
-  const conP = aba(wbPainel, 'Conteúdos');
-  const conteudosConcl = await prisma.respostaSemanaUmTerco.count({ where: { entregaId: { in: concluidasApi.map(l => l.entregaId) } } });
-  r('B4', '1/3 (painel filtrado por "Concluído"): só entregas concluídas e só os conteúdos delas; filtro anotado na planilha', `${concluidasApi.length} entregas, todas "Concluído"; ${conteudosConcl} conteúdos; Filtros: Status = Concluído`, `${entP.linhas.length} entregas, todas concluídas: ${todasConcluidas}; ${conP.linhas.length} conteúdos; Filtros: Status = ${filtro(wbPainel, 'Status')}`, entP.linhas.length === concluidasApi.length && todasConcluidas && conP.linhas.length === conteudosConcl && filtro(wbPainel, 'Status') === 'Concluído', '43-um-terco-painel-concluidas.xlsx');
-  const suj13 = [...sujeira(wbLista), ...sujeira(wbPainel)];
-  r('B5', '1/3: nenhuma célula com fórmula ou lixo de serialização', 'nenhuma', suj13.slice(0, 5).join('; ') || 'nenhuma', suj13.length === 0);
+  // ================= B. Formulário 1/3: coberto pelo teste 61-excel-um-terco-por-cargo.mjs (1/3 por cargo, 12/11/2026). =================
 
   // ================= C. Gestão de Pessoas (professores) =================
   await X.page.goto(BASE + '/#/pessoas'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2000);
@@ -219,9 +185,7 @@ try {
   r('G1', 'Toda exportação abre na aba de dados (com linhas); a aba Filtros é a última', 'todas', ORDEM.map(o => `${o.nome}: abre em "${o.primeira}" (${o.linhas} linhas; ${o.cab}), última "${o.ultima}"`).join(' ¦ '), ruins.length === 0);
 } finally {
   if (respostaPdi) await prisma.respostaPdi.update({ where: { id: respostaPdi.id }, data: { valor: respostaPdiOriginal } });
-  if (semana13) await prisma.respostaSemanaUmTerco.update({ where: { id: semana13.id }, data: { texto: semana13Original } });
   const voltouPdi = respostaPdi ? JSON.stringify((await prisma.respostaPdi.findUnique({ where: { id: respostaPdi.id } })).valor) === JSON.stringify(respostaPdiOriginal) : true;
-  const voltou13 = semana13 ? (await prisma.respostaSemanaUmTerco.findUnique({ where: { id: semana13.id } })).texto === semana13Original : true;
-  console.log('textos de teste restaurados:', voltouPdi && voltou13);
+  console.log('textos de teste restaurados:', voltouPdi);
   await prisma.$disconnect();
 }

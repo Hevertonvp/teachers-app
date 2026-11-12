@@ -2,6 +2,8 @@
 // (pedido do usuário, 12/11/2026). Banco LOCAL. Só leitura: nada é gravado.
 import { abrir, login, foto } from './lib.mjs';
 import { registrar } from './resultados.mjs';
+import { prepararCargosHomolog } from './cargos-homolog.mjs';
+await prepararCargosHomolog(); // 1/3 por cargo: o ciclo 1 precisa de folhas (cargos de teste) para o filtro do painel
 const r = (id, cen, esp, obs, ok) => registrar(`FILTRO-${id}`, 'Filtros seguem o topo', cen, esp, String(obs).slice(0, 300), ok ? 'APROVADO' : 'REPROVADO');
 
 const ir = async (page, rota) => { await page.evaluate((h) => { location.hash = h; }, rota); await page.waitForLoadState('networkidle'); await page.waitForTimeout(800); };

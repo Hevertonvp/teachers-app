@@ -1,9 +1,13 @@
 // Verificação do BUILD DE PRODUÇÃO (vite build + vite preview), isolado: frontend em https://localhost:5181
 // (pasta de build temporária, sem tocar no dist/ versionado) e backend de homologação na porta 3341,
 // ambos apontando para o banco PostgreSQL LOCAL. Chromium real.
+// 1/3 POR CARGO (12/11/2026): o P04 tem 2 cargos de teste (2 cartões); grava na folha do Cargo 1.
 import { chromium } from 'playwright';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { cargosDe, folhaDoCargo, prepararCargosHomolog } from './cargos-homolog.mjs';
+await prepararCargosHomolog();
+const [C1, C2] = await cargosDe('p04');
 const BASE = 'https://localhost:5181';
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
 const EVID = new URL('./evidencias/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -34,7 +38,7 @@ const cartao = async (page, regex) => {
   await page.locator('h2.text-xl', { hasText: regex }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
   await page.waitForLoadState('networkidle'); await page.waitForTimeout(1200);
 };
-const s2 = async () => { const e = await prisma.entregaUmTerco.findFirst({ where: { cicloId: 1, professor: { email: 'p04@homolog.nexo' }, anoSerie: 6, disciplina: { nome: 'Arte' } }, include: { respostas: { include: { semana: true } } } }); return Object.fromEntries((e?.respostas ?? []).map(x => [x.semana.numero, x.texto])); };
+const s2 = async () => Object.fromEntries(((await folhaDoCargo(C1))?.respostas ?? []).map(x => [x.semana.numero, x.texto]));
 const livre = (loc) => loc.evaluate((el) => { const b = el.getBoundingClientRect(); const t = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!t && (t === el || el.contains(t)); });
 
 // 1) Carga, arquivos do build e Service Worker
@@ -50,13 +54,13 @@ r('02', 'Service Worker registra, fica ativo e controla a página no build de pr
 // 2) Formulário 1/3: cartões e gravação online
 await A.page.goto(BASE + '/#/formulario-um-terco'); await A.page.waitForLoadState('networkidle'); await dormir(1500);
 const cartoes = await A.page.locator('h2.text-xl').count();
-await cartao(A.page, /6º.*Arte/);
+await cartao(A.page, /^Cargo 1$/);
 const ta = A.page.locator('#conteudos-semana');
 await ta.fill(`PROD semana 1 ${TAG}`);
 await A.page.getByRole('button', { name: 'Salvar progresso' }).click(); await dormir(2500);
 const ind = (await A.page.locator('main').innerText()).match(/Sincronizado|Salvo só neste aparelho/)?.[0] ?? '(nenhum)';
 const b1 = await s2();
-r('03', 'Professor com vários vínculos vê 7 cartões e grava online (indicador "Sincronizado")', '7 cartões; S1 no banco; "Sincronizado"', `${cartoes} cartões; indicador: ${ind}; banco S1: "${(b1[1] || '').slice(0, 30)}"`, cartoes === 7 && ind === 'Sincronizado' && (b1[1] || '').includes(TAG));
+r('03', 'Professor com 2 cargos vê 2 cartões e grava online (indicador "Sincronizado")', '2 cartões; S1 no banco; "Sincronizado"', `${cartoes} cartões; indicador: ${ind}; banco S1: "${(b1[1] || '').slice(0, 30)}"`, cartoes === 2 && ind === 'Sincronizado' && (b1[1] || '').includes(TAG));
 
 // 3) Offline no build: indicador honesto, botões livres, fila enviada ao reabrir
 await A.contexto.setOffline(true);

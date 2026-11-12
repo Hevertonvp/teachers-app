@@ -1,19 +1,22 @@
-// Segurança: P01 tenta GRAVAR e CONCLUIR no formulário do P04 com corpo válido (semanaId real). API direta, declarado.
+// Segurança: P01 tenta LER, GRAVAR e CONCLUIR a folha de um cargo do P04 com corpo válido (semanaId real).
+// API direta, declarado. Reescrito em 12/11/2026 para o 1/3 por cargo. Banco LOCAL.
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { cargosDe, folhaDoCargo, SENHA } from './cargos-homolog.mjs';
 const API = 'http://localhost:3340/api';
 const req = async (m, c, t, b) => { const r = await fetch(API + c, { method: m, headers: { 'content-type': 'application/json', authorization: `Bearer ${t}` }, body: b ? JSON.stringify(b) : undefined }); let j = null; try { j = await r.json(); } catch {} return { status: r.status, json: j }; };
 const login = async (e, s) => (await (await fetch(API + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: e, senha: s }) })).json()).token;
-const p01 = await login('p01@homolog.nexo', 'Nexo!Prof01-2026');
+const p01 = await login('p01@homolog.nexo', SENHA('p01'));
 
-const ciclo = await prisma.cicloUmTerco.findFirst({ where: { titulo: { contains: 'Nov/2026 (homolog)' } }, include: { semanas: true } });
-const arte = await prisma.disciplina.findUnique({ where: { nome: 'Arte' } });
-const antes = await prisma.respostaSemanaUmTerco.findMany({ where: { entrega: { cicloId: ciclo.id, anoSerie: 7, disciplinaId: arte.id } }, orderBy: { id: 'asc' } });
-const baseUpdatedAt = (await prisma.entregaUmTerco.findFirst({ where: { cicloId: ciclo.id, anoSerie: 7, disciplinaId: arte.id } }))?.updatedAt?.toISOString() ?? null;
+const ciclo = await prisma.cicloUmTerco.findUnique({ where: { id: 1 }, include: { semanas: true } });
+const [c1] = await cargosDe('p04');
+const antes = JSON.stringify((await folhaDoCargo(c1))?.respostas.map(r => r.texto) ?? []);
 
-const put = await req('PUT', `/formulario-um-terco/ciclos/${ciclo.id}/formularios/7/${arte.id}/respostas`, p01, { baseUpdatedAt, respostas: ciclo.semanas.map(s => ({ semanaId: s.id, texto: 'INVASAO-DO-P01' })) });
-const depois = await prisma.respostaSemanaUmTerco.findMany({ where: { entrega: { cicloId: ciclo.id, anoSerie: 7, disciplinaId: arte.id } }, orderBy: { id: 'asc' } });
-const alterou = JSON.stringify(antes.map(r => r.texto)) !== JSON.stringify(depois.map(r => r.texto)) || depois.some(r => r.texto.includes('INVASAO'));
-const entregasP01 = await prisma.entregaUmTerco.count({ where: { cicloId: ciclo.id, professor: { email: 'p01@homolog.nexo' }, anoSerie: 7 } });
-registrar('UT-PERM-P10b', 'Formulário 1/3 (permissões)', 'P01 grava respostas (corpo válido) em formulário que não é dele', 'HTTP 403/404 e nenhum dado alterado', `HTTP ${put.status} (${(put.json?.message ?? '').slice(0, 80)}); dados do P04 alterados: ${alterou}; entregas criadas p/ P01 no 7º ano: ${entregasP01}`, [403, 404].includes(put.status) && !alterou && entregasP01 === 0 ? 'APROVADO' : 'REPROVADO');
+const get = await req('GET', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${c1}`, p01);
+const put = await req('PUT', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${c1}/respostas`, p01, { baseUpdatedAt: null, respostas: ciclo.semanas.map(s => ({ semanaId: s.id, texto: 'INVASAO-DO-P01' })) });
+const concluir = await req('POST', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${c1}/concluir`, p01, {});
+const depois = JSON.stringify((await folhaDoCargo(c1))?.respostas.map(r => r.texto) ?? []);
+const invasao = await prisma.respostaSemanaUmTerco.count({ where: { texto: 'INVASAO-DO-P01' } });
+const ok = [403, 404].includes(get.status) && [403, 404].includes(put.status) && [403, 404].includes(concluir.status) && antes === depois && invasao === 0;
+registrar('UT-PERM-P10b', 'Formulário 1/3 (permissões)', 'P01 lê, grava e conclui a folha de um cargo do P04', 'HTTP 403/404 nas três e nenhum dado alterado', `GET ${get.status}; PUT ${put.status}; concluir ${concluir.status}; dados do P04 alterados: ${antes !== depois}; textos INVASAO: ${invasao}`, ok ? 'APROVADO' : 'REPROVADO');
 await prisma.$disconnect();

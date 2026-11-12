@@ -1,14 +1,20 @@
 // DEF-01 (troca rápida de semana com rede lenta) e DEF-06/13 (aviso offline cobrindo botões).
 // Uso: node 35-def01-def06-ui.mjs antes|depois. Chromium real; rede lenta = atraso de 2,5 s nas
 // gravações do 1/3 (page.route); offline = setOffline. Banco LOCAL.
+// 1/3 POR CARGO (12/11/2026): DEF-01 na folha do Cargo 1 do P04; DEF-06 na folha do Cargo 2.
 import { abrir, login, foto, abrirCartao, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { readFileSync } from 'node:fs';
+const PDI_LIGADO = /MODO_PDI = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
+import { cargosDe, folhaDoCargo, prepararCargosHomolog } from './cargos-homolog.mjs';
+await prepararCargosHomolog();
+const [C1, C2] = await cargosDe('p04');
 const FASE = (process.argv[2] || 'depois').toUpperCase();
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
 const SENHA = 'Nexo!Prof04-2026';
 const r = (id, mod, cen, esp, obs, ok, evid = '') => registrar(`${id}-${FASE}`, mod, cen, esp, obs, ok ? 'APROVADO' : 'REPROVADO', evid);
-const semanas = async () => { const e = await prisma.entregaUmTerco.findFirst({ where: { cicloId: 1, professor: { email: 'p04@homolog.nexo' }, anoSerie: 7, disciplina: { nome: 'Arte' } }, include: { respostas: { include: { semana: true } } } }); return Object.fromEntries((e?.respostas ?? []).map(x => [x.semana.numero, x.texto])); };
+const semanas = async () => Object.fromEntries(((await folhaDoCargo(C1))?.respostas ?? []).map(x => [x.semana.numero, x.texto]));
 const lento = async (page) => page.route('**/api/formulario-um-terco/**/respostas', async route => { await new Promise(res => setTimeout(res, 2500)); await route.continue(); });
 // O botão está realmente acessível? (nenhum outro elemento por cima do centro dele)
 const livre = (loc) => loc.evaluate((el) => { const b = el.getBoundingClientRect(); const topo = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!topo && (topo === el || el.contains(topo)); });
@@ -17,7 +23,7 @@ const livre = (loc) => loc.evaluate((el) => { const b = el.getBoundingClientRect
 {
   const X = await abrir();
   await login(X.page, 'p04@homolog.nexo', SENHA);
-  await abrirCartao(X.page, /7º.*Arte/);
+  await abrirCartao(X.page, /^Cargo 1$/);
   const ta = X.page.locator('#conteudos-semana');
   await X.page.getByRole('tab', { name: 'Semana 1' }).click(); await X.page.waitForTimeout(800);
   await ta.fill(`SEMANA-UM ${TAG}`);
@@ -63,7 +69,7 @@ const livre = (loc) => loc.evaluate((el) => { const b = el.getBoundingClientRect
 for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular', { width: 390, height: 844 }]]) {
   const X = await abrir({ viewport: vp });
   await login(X.page, 'p04@homolog.nexo', SENHA);
-  await abrirCartao(X.page, /9º.*Inglês/);
+  await abrirCartao(X.page, /^Cargo 2$/);
   await X.contexto.setOffline(true);
   await X.page.locator('#conteudos-semana').fill(`offline ${nome} ${TAG}`);
   await X.page.waitForTimeout(6000);
@@ -74,6 +80,7 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   r(`DEF06-${nome}`, 'Offline (DEF-06)', `1/3 sem rede (${nome}): aviso visível e "Próximo"/"Salvar progresso" não ficam cobertos`, 'aviso visível; botões livres', `aviso: ${aviso > 0}; Próximo livre: ${proximoLivre}; Salvar progresso livre: ${salvarLivre}`, aviso > 0 && proximoLivre && salvarLivre, `35-${FASE}-def06-${nome}.png`);
   await X.contexto.setOffline(false); await X.page.waitForTimeout(500);
 
+  if (!PDI_LIGADO) { registrar(`DEF13-${nome}-${FASE}`, 'Offline (DEF-13)', `PDI sem rede (${nome})`, 'só com o PDI ligado', 'pulado: PDI em desenvolvimento', 'OBSERVAÇÃO (regra não especificada)'); await X.browser.close(); continue; }
   await X.page.goto(`${BASE}/#/pdi/aluno/1/4`); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2500);
   await X.contexto.setOffline(true);
   await X.page.locator('main textarea').nth(1).fill(`PDI offline ${nome} ${TAG}`);

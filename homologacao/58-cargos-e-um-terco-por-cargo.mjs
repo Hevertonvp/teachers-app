@@ -3,6 +3,9 @@
 import { abrir, login, BASE, foto } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { createRequire } from 'node:module';
+const bcrypt = createRequire(new URL('../backend/package.json', import.meta.url))('bcryptjs');
+await prisma.pessoa.update({ where: { email: 'p08@homolog.nexo' }, data: { senhaHash: await bcrypt.hash('Nexo!Prof08-2026', 10), senhaTemporaria: false, status: 'ATIVO' } });
 const r = (id, cen, esp, obs, ok) => registrar(`CARGO-${id}`, 'Cargos e 1/3 por cargo', cen, esp, String(obs).slice(0, 300), ok ? 'APROVADO' : 'REPROVADO');
 
 const P = 'ZZCARGO-UI';
@@ -14,13 +17,14 @@ const larguraOk = async (page) => (await page.evaluate(() => document.documentEl
 
 async function limpar() {
   const pessoas = (await prisma.pessoa.findMany({ where: { email: { startsWith: P.toLowerCase() } }, select: { id: true } })).map(p => p.id);
-  const p04 = await prisma.pessoa.findUnique({ where: { email: 'p04@homolog.nexo' } });
+  const p04 = await prisma.pessoa.findUnique({ where: { email: 'p08@homolog.nexo' } });
   const ids = [...pessoas, ...(p04 ? [p04.id] : [])];
   const escolas = (await prisma.escola.findMany({ where: { nome: { startsWith: P } }, select: { id: true } })).map(e => e.id);
   const ciclos = (await prisma.cicloUmTerco.findMany({ where: { titulo: { startsWith: P } }, select: { id: true } })).map(c => c.id);
   await prisma.entregaUmTerco.deleteMany({ where: { cicloId: { in: ciclos } } });
   await prisma.cicloUmTerco.deleteMany({ where: { id: { in: ciclos } } });
-  const cargos = (await prisma.cargoProfessor.findMany({ where: { professorId: { in: ids } }, select: { id: true } })).map(c => c.id);
+  // Só os cargos criados por este teste (os cargos de teste da homologação, de cargos-homolog.mjs, ficam).
+  const cargos = (await prisma.cargoProfessor.findMany({ where: { professorId: { in: ids }, OR: [{ createdBy: null }, { createdBy: { not: 'homolog-fixture' } }] }, select: { id: true } })).map(c => c.id);
   await prisma.entregaUmTercoCargo.deleteMany({ where: { cargoId: { in: cargos } } });
   await prisma.cargoVersao.deleteMany({ where: { cargoId: { in: cargos } } });
   await prisma.cargoProfessor.deleteMany({ where: { id: { in: cargos } } });
@@ -134,8 +138,8 @@ try {
   await C.browser.close();
 }
 
-// Professor: p04 com dois cargos IGUAIS cadastrados antes da abertura → uma folha compartilhada.
-const p04 = await prisma.pessoa.findUnique({ where: { email: 'p04@homolog.nexo' } });
+// Professor: P08 (sem cargo nos cargos de teste) com dois cargos IGUAIS cadastrados antes da abertura → uma folha compartilhada.
+const p04 = await prisma.pessoa.findUnique({ where: { email: 'p08@homolog.nexo' } });
 const antes = new Date(Date.now() - 3 * H);
 const composicao = [{ escolaId: prud.id, disciplinaIds: [ing.id] }];
 for (let i = 0; i < 2; i++) {
@@ -155,7 +159,7 @@ for (const [rotulo, viewport] of [['computador', { width: 1280, height: 800 }], 
   const Y = await abrir({ viewport });
   try {
     const { page, erros } = Y;
-    await login(page, 'p04@homolog.nexo', 'Nexo!Prof04-2026');
+    await login(page, 'p08@homolog.nexo', 'Nexo!Prof08-2026');
     await ir(page, '/formulario-um-terco');
     const card = page.locator('div', { has: page.getByRole('heading', { name: 'Cargos 1 e 2' }) }).filter({ hasText: ciclo.titulo }).last();
     const temCard = await card.isVisible().catch(() => false);

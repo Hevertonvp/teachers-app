@@ -3,6 +3,11 @@
 import { abrir, login, foto, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { readFileSync } from 'node:fs';
+const PDI_LIGADO = /MODO_PDI = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
+import { cargosDe, folhaDoCargo, prepararCargosHomolog } from './cargos-homolog.mjs';
+await prepararCargosHomolog();
+const [C1, C2] = await cargosDe('p04');
 const API = 'http://localhost:3340';
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
 const r = (id, cen, esp, obs, ok, evid = '') => registrar(`REG-${id}`, 'Regressão pós-correções', cen, esp, obs, ok ? 'APROVADO' : 'REPROVADO', evid);
@@ -31,10 +36,12 @@ const st = async (t, method, path, body) => (await fetch(API + path, { method, h
   const cartoes = await X.page.locator('h2.text-xl').allInnerTexts();
   const ingles6 = (await X.page.locator('main').innerText()).replace(/\s+/g, ' ');
   await foto(X.page, '33-cartoes-p04');
-  r('MULTI-1', 'P04 (vínculos em 2 escolas, várias turmas e disciplinas) vê um cartão por ano/série + disciplina', '7 cartões (6º Arte, 6º ER, 6º Inglês, 7º Arte, 7º Inglês, 8º Inglês, 9º Inglês)', `${cartoes.length}: ${cartoes.join(' | ')}`, cartoes.length === 7, '33-cartoes-p04.png');
-  r('MULTI-2', '6º Inglês é UM formulário válido para as turmas das duas escolas', 'Aurora 6M1/6M2 e Boa Vista 6M1 no mesmo cartão', `Boa Vista citada: ${/Boa Vista/.test(ingles6)}; Aurora citada: ${/Aurora/.test(ingles6)}`, /Boa Vista/.test(ingles6) && /Aurora/.test(ingles6));
+  r('MULTI-1', 'P04 (2 cargos diferentes) vê um cartão por cargo (1/3 por cargo)', '2 cartões: Cargo 1 e Cargo 2', `${cartoes.length}: ${cartoes.join(' | ')}`, cartoes.length === 2 && cartoes.includes('Cargo 1') && cartoes.includes('Cargo 2'), '33-cartoes-p04.png');
+  r('MULTI-2', 'Cada cartão mostra escola → disciplinas do seu cargo (sem turmas)', 'Aurora — Arte, Ensino Religioso, Inglês; Boa Vista — Inglês', `Aurora: ${/Aurora — Arte, Ensino Religioso, Inglês/.test(ingles6)}; Boa Vista: ${/Boa Vista — Inglês/.test(ingles6)}; turmas: ${/\dM\d/.test(ingles6)}`, /Aurora — Arte, Ensino Religioso, Inglês/.test(ingles6) && /Boa Vista — Inglês/.test(ingles6) && !/\dM\d/.test(ingles6));
 
-  // ---- Persistência do formulário PDI (bloco comum + disciplina), online ----
+  // ---- Persistência do formulário PDI (bloco comum + disciplina), online — só com o PDI ligado ----
+  if (!PDI_LIGADO) registrar('REG-PDI-1', 'Regressão', 'PDI online (persistência)', 'só com o PDI ligado', 'pulado: PDI em desenvolvimento', 'OBSERVAÇÃO (regra não especificada)');
+  else {
   await X.page.goto(`${BASE}/#/pdi/aluno/1/4`); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2500);
   const tas = X.page.locator('main textarea');
   await tas.nth(0).fill(`Larissa — comum ${TAG}`);
@@ -46,6 +53,7 @@ const st = async (t, method, path, body) => (await fetch(API + path, { method, h
   const banco = JSON.stringify(await prisma.respostaPadraoPdi.findMany({ where: { bloco: { alunoId: 4, professorId: 14 } } }));
   await foto(X.page, '33-pdi-persistencia');
   r('PDI-1', 'PDI online: Salvar confirma "Respostas salvas." e os textos persistem ao reabrir (tela e banco)', 'mensagem de sucesso; textos iguais; bloco no banco', `mensagem: ${msgSalvar}; comum ok: ${v0.includes(TAG)}; disciplina ok: ${v1.includes(TAG)}; banco: ${banco.includes(TAG)}`, msgSalvar === 'Respostas salvas.' && v0.includes(TAG) && v1.includes(TAG) && banco.includes(TAG), '33-pdi-persistencia.png');
+  }
   await X.browser.close();
 }
 
@@ -57,8 +65,8 @@ const st = async (t, method, path, body) => (await fetch(API + path, { method, h
     ['PERM-1', 'Sem token não acessa a API', null, 'GET', '/api/formulario-um-terco/minhas', [401]],
     ['PERM-2', 'Professor não lista ciclos da Secretaria', tP04, 'GET', '/api/formulario-um-terco/ciclos', [403]],
     ['PERM-3', 'Professor não abre o painel do 1/3', tP04, 'GET', '/api/formulario-um-terco/ciclos/1/painel', [403]],
-    ['PERM-4', 'P03 não lê o 1/3 de 6º Inglês (não é dele)', tP03, 'GET', '/api/formulario-um-terco/ciclos/1/formularios/6/9', [403, 404]],
-    ['PERM-5', 'P03 não grava o 1/3 de 6º Inglês (corpo válido)', tP03, 'PUT', '/api/formulario-um-terco/ciclos/1/formularios/6/9/respostas', [403, 404], { baseUpdatedAt: null, respostas: [{ semanaId: 1, texto: 'invasão' }] }],
+    ['PERM-4', 'P03 não lê a folha do Cargo 1 do P04 (não é dele)', tP03, 'GET', `/api/formulario-um-terco/ciclos/1/cargos/${C1}`, [403, 404]],
+    ['PERM-5', 'P03 não grava na folha do Cargo 1 do P04 (corpo válido)', tP03, 'PUT', `/api/formulario-um-terco/ciclos/1/cargos/${C1}/respostas`, [403, 404], { baseUpdatedAt: null, respostas: [{ semanaId: 1, texto: 'invasão' }] }],
     ['PERM-6', 'P03 não lê a ficha PDI de Inglês do Pedro', tP03, 'GET', '/api/pdi-fichas/1/3/9', [403]],
     ['PERM-7', 'Professor não cria aluno PDI', tP04, 'POST', '/api/pdi-alunos', [403], { nome: 'x', turmaId: 1, responsavelNome: 'x', responsavelParentesco: 'Mãe', responsavelTelefone: '1' }],
   ];
