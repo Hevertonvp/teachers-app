@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card } from './Common';
 import { BarraEmpilhada } from './pdi/Graficos';
 import { useVizTema } from './pdi/vizTema';
+import { hojeSpServidor } from '../utils/horaServidor';
 
 // Painel de ENTREGA reutilizado pela página do PDI e pelo Dashboard (PDI e Formulário 1/3):
 // número principal (percentual concluído), barra parte-do-todo e lista por grupo (escola ou
@@ -9,7 +10,8 @@ import { useVizTema } from './pdi/vizTema';
 // Cores: rampa ordinal de um só tom (não iniciada -> em andamento -> concluída), sempre com legenda
 // numérica ao lado (a cor nunca é a única informação). Ver components/pdi/vizTema.js.
 
-const hojeUTC = () => { const d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); };
+// Dia de hoje em São Paulo pela hora do servidor (não pelo relógio/fuso do aparelho).
+const hojeUTC = () => { const [a, m, d] = hojeSpServidor().split('-').map(Number); return Date.UTC(a, m - 1, d); };
 const diasAte = (iso) => {
   const [ano, mes, dia] = iso.slice(0, 10).split('-').map(Number);
   return Math.round((Date.UTC(ano, mes - 1, dia) - hojeUTC()) / 86400000);

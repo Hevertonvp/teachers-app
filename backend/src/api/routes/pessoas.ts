@@ -5,7 +5,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { calcularExpiracaoSenhaTemporaria, gerarSenhaTemporaria } from '../../domain/senhaTemporaria.js';
 import bcrypt from 'bcryptjs';
 import { lerComposicao, MAX_CARGOS_ATIVOS } from '../../domain/cargos.js';
-import { criarCargo, lerData, validarComposicaoNoBanco } from '../../lib/cargos.js';
+import { criarCargo, lerData, travarVinculosEscolares, validarComposicaoNoBanco, diaDeHojeSp } from '../../lib/cargos.js';
 
 export const pessoasRouter = Router();
 
@@ -155,8 +155,11 @@ pessoasRouter.post('/professores', async (req, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
+      await travarVinculosEscolares(tx, existente.id);
+      const jaAgora = new Set((await tx.vinculoEscolar.findMany({ where: { pessoaId: existente.id, status: 'ATIVO' }, select: { escolaId: true } })).map((v) => v.escolaId));
       for (const escolaId of novasEscolas) {
-        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+        if (jaAgora.has(escolaId)) continue;
+        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
         await tx.pessoaEvento.create({ data: { pessoaId: existente.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
       }
     });
@@ -180,7 +183,7 @@ pessoasRouter.post('/professores', async (req, res) => {
     });
     await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'CRIACAO', autorId: actor.id } });
     for (const escolaId of escolaIds) {
-      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
       await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
     }
     // Os vínculos acima já cobrem as escolas dos cargos; criarCargo só reusa (nunca duplica).
@@ -318,7 +321,7 @@ async function criarOuVincularPessoaComLogin(
 
     await prisma.$transaction(async (tx) => {
       for (const escolaId of novasEscolas) {
-        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
         await tx.pessoaEvento.create({ data: { pessoaId: existente.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
       }
     });
@@ -342,7 +345,7 @@ async function criarOuVincularPessoaComLogin(
     });
     await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'CRIACAO', autorId: actor.id } });
     for (const escolaId of escolaIds) {
-      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: new Date(), createdBy: String(actor.id) } });
+      await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: pessoa.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
       await tx.pessoaEvento.create({ data: { pessoaId: pessoa.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
     }
     return pessoa;

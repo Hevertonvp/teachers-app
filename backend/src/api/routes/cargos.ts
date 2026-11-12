@@ -42,7 +42,7 @@ cargosRouter.post('/professores/:id/cargos', async (req, res) => {
   const dados = novoCargoSchema.parse(req.body);
   await prisma.$transaction(async (tx) => {
     const composicao = await validarComposicaoNoBanco(tx, dados.composicao);
-    await criarCargo(tx, professor.id, { dataInicio: lerData(dados.dataInicio, 'Início do cargo'), composicao }, actor.id);
+    await criarCargo(tx, professor.id, { dataInicio: lerData(dados.dataInicio, 'Início do cargo'), composicao }, actor.id, { recusarEnvioDuplicado: true });
   });
   res.status(201).json(await listarCargosFormatados(prisma, professor.id));
 });

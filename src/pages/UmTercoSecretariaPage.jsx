@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { exportarUmTerco } from '../utils/exportarUmTerco';
 import { useData } from '../context/DataContext';
 import { useEscolaDoTopo } from '../context/EscolaContext';
+import { hojeSpServidor } from '../utils/horaServidor';
 import {
   atualizarCicloUmTerco, criarCicloUmTerco, criarReaberturaUmTerco, inativarCicloUmTerco, listarCiclosUmTerco, reativarCicloUmTerco,
 } from '../services/formularioUmTerco';
@@ -162,7 +163,8 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
   const janela = janelaPelaAbertura ?? (editando ? janelas.find(p => p.ano === ciclo.anoLetivo && p.trimestre === trimestres[ciclo.trimestre - 1]) ?? null : null);
   const trimestreNumero = janela ? trimestres.indexOf(janela.trimestre) + 1 : null;
 
-  const hoje = paraInputDataHora(new Date().toISOString()).slice(0, 10);
+  // "Hoje" pela hora do SERVIDOR: com o relógio do PC adiantado, a abertura de hoje não pode parecer "no passado".
+  const hoje = hojeSpServidor();
   const aberturaMudou = !editando || abreEm !== abreOriginal.slice(0, 10);
   const v = validarDatasCiclo({ abertura: abreEm, prazo: prazoEm, semanas, janela, hoje, aberturaMudou });
 

@@ -3,6 +3,7 @@ import { Badge, Button, LoadingBlock, Modal } from './Common';
 import { ComposicaoCargo } from './ComposicaoCargo';
 import { alterarCargo, criarCargo, encerrarCargo, listarCargos } from '../services/cargos';
 import { inputClass } from '../utils/display';
+import { hojeSpServidor } from '../utils/horaServidor';
 
 // Cargos do Professor (decisão do usuário, 12/11/2026): Professor → Cargo(s) → Escola(s) → Disciplina(s).
 // Tela simples e progressiva: "Cargo 1" aberto; cada bloco é Escola + Disciplina(s) e/ou Atuação(ões)
@@ -12,7 +13,8 @@ import { inputClass } from '../utils/display';
 
 let seq = 0;
 const novaChave = () => `k${++seq}`;
-export const hojeSp = () => new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+// Hoje em São Paulo pela hora do SERVIDOR (o relógio do computador pode estar errado).
+export const hojeSp = () => hojeSpServidor();
 const formatarData = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '');
 
 export const novoRascunhoCargo = (escolaId = '') => ({

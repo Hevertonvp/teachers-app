@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 import { CalendarioTrimestresError, ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
 import { bloquearSenhaTemporariaPendente, requireAuth } from './middleware/auth.js';
 import { authProtectedRouter, authRouter } from './routes/auth.js';
@@ -58,8 +59,12 @@ export function createApp() {
         if (process.env.NODE_ENV !== 'production' && origemLanDev.test(origin)) return callback(null, true);
         callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
       },
+      exposedHeaders: ['X-Hora-Servidor'],
     }),
   );
+  // Hora do servidor em toda resposta (bateria do 1/3, 12/11/2026): a tela usa para "hoje" (abertura de ciclo,
+  // início de cargo, prazos) em vez do relógio do computador, que pode estar errado.
+  app.use((_req, res, next) => { res.setHeader('X-Hora-Servidor', new Date().toISOString()); next(); });
   app.use(express.json());
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -127,6 +132,12 @@ export function createApp() {
     if (err instanceof NotFoundError) return res.status(404).json({ message: err.message });
     if (err instanceof ConflitoVersaoError) return res.status(409).json({ message: err.message, codigo: 'CONFLITO_VERSAO', dadosAtuais: err.dadosAtuais });
     if (err instanceof ConflictError) return res.status(409).json({ message: err.message });
+    // Registro único que outra requisição acabou de criar (clique duplo, duas abas): conflito, nunca 500
+    // (bateria do 1/3, 12/11/2026). Nada foi gravado em dobro — o índice único segurou.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const campos = ([] as string[]).concat((err.meta?.target as string[] | string | undefined) ?? []);
+      return res.status(409).json({ message: campos.includes('email') ? 'Já existe uma conta com este e-mail (o cadastro pode ter sido enviado duas vezes). Atualize a lista.' : 'Este registro acabou de ser gravado por outra ação (envio duplicado). Atualize a tela.' });
+    }
 
     console.error(err);
     return res.status(500).json({ message: 'Erro interno inesperado.' });

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge, Button, Card, FormField, Modal } from './Common';
 import { inputClass } from '../utils/display';
+import { agoraServidor } from '../utils/horaServidor';
 
 // Fluxo de correções (PDI e Formulário 1/3), decisões do usuário em 10/11/2026. Peças comuns às
 // telas da Secretaria e do Professor. Linguagem discreta, sem tom de cobrança.
@@ -53,7 +54,7 @@ export const FormEnviarParaCorrecao = ({ descricao, onConfirmar, onFechar }) => 
   const [confirmando, setConfirmando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
-  const prazoPrevisto = new Date(Date.now() + PRAZO_CORRECAO_DIAS * 86400000).toISOString();
+  const prazoPrevisto = new Date(agoraServidor().getTime() + PRAZO_CORRECAO_DIAS * 86400000).toISOString();
   const enviar = async () => {
     if (!texto.trim() || enviando) return;
     setEnviando(true); setErro('');

@@ -19,7 +19,9 @@ import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/r
 // Vínculos reais (ProfessorTurmaDisciplina/AuxiliarTurma) guardam `dataInicio`/`dataFim` como
 // DateTime ISO completo (ex.: "2026-09-28T14:30:00.000Z"), diferente do mock (`formatDate` acima,
 // que espera "AAAA-MM-DD" puro) — por isso um formatador próprio aqui, em vez de reaproveitar.
-const formatDataReal = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
+// Datas só-dia (@db.Date) chegam como "AAAA-MM-DDT00:00:00Z": formatar pelo texto, nunca pelo fuso do navegador
+// (no Brasil, toLocaleDateString mostrava o dia ANTERIOR — bateria do 1/3, 12/11/2026).
+const formatDataReal = (iso) => (iso ? `${String(iso).slice(8, 10)}/${String(iso).slice(5, 7)}/${String(iso).slice(0, 4)}` : '—');
 
 // Pessoas inativas (ex-funcionários) saem da lista principal e vão para uma visão separada, só para
 // consulta/reativação (pedido do usuário, 10/11/2026 — mesmo padrão do Formulário 1/3). Vale para

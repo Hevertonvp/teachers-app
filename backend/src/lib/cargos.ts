@@ -14,6 +14,11 @@ const dataUtc = (s: string) => new Date(`${s}T00:00:00Z`);
 const formatarDataBr = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
 // Serializa as gravações de cargo do mesmo Professor (duas abas criando o 3º cargo ao mesmo tempo).
+// Vínculos escolares de uma pessoa são criados/reativados em fila (bateria do 1/3, 12/11/2026): duas requisições
+// simultâneas (clique duplo, duas abas, cargo + janela Escolas) nunca criam dois vínculos ATIVOS na mesma escola.
+export const travarVinculosEscolares = (tx: Db, pessoaId: number) =>
+  tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`vinculos-escolares:${pessoaId}`}::text))`;
+
 export const travarCargosDoProfessor = (tx: Db, professorId: number) =>
   tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`cargos-professor:${professorId}`}::text))`;
 
@@ -43,20 +48,31 @@ export async function validarComposicaoNoBanco(db: Db, entrada: unknown, jaNoCar
 // Escola adicionada a um cargo garante VinculoEscolar ATIVO (reusa o existente; nunca duplica).
 // Remover escola de um cargo NUNCA encerra vínculo (decisão do usuário).
 export async function garantirVinculosEscolares(tx: Db, professorId: number, escolaIds: number[], autorId: number) {
+  await travarVinculosEscolares(tx, professorId);
   const ativos = await tx.vinculoEscolar.findMany({ where: { pessoaId: professorId, status: 'ATIVO', escolaId: { in: escolaIds } }, select: { escolaId: true } });
   const jaTem = new Set(ativos.map((v) => v.escolaId));
   for (const escolaId of new Set(escolaIds)) {
     if (jaTem.has(escolaId)) continue;
-    await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: professorId, status: 'ATIVO', dataInicio: new Date(), createdBy: String(autorId) } });
+    await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: professorId, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(autorId) } });
     await tx.pessoaEvento.create({ data: { pessoaId: professorId, tipo: 'VINCULO_CRIADO', autorId, detalhe: `Escola #${escolaId} (cargo)` } });
   }
 }
 
-export async function criarCargo(tx: Db, professorId: number, dados: { dataInicio: string; composicao: Composicao }, autorId: number) {
+// Janela do "envio duplicado": o mesmo autor cadastrando o MESMO cargo (mesma composição e início) no mesmo
+// Professor em poucos segundos é clique duplo/duas abas, não um segundo cargo (bateria do 1/3, 12/11/2026).
+const JANELA_ENVIO_DUPLICADO_MS = 15_000;
+
+export async function criarCargo(tx: Db, professorId: number, dados: { dataInicio: string; composicao: Composicao }, autorId: number, opcoes: { recusarEnvioDuplicado?: boolean } = {}) {
   await travarCargosDoProfessor(tx, professorId);
-  const ativos = await tx.cargoProfessor.count({ where: { professorId, status: 'ATIVO' } });
-  if (ativos >= MAX_CARGOS_ATIVOS) throw new ConflictError(`Este Professor já tem ${MAX_CARGOS_ATIVOS} cargos ativos. Encerre um deles antes de cadastrar outro.`);
+  const ativos = await tx.cargoProfessor.findMany({ where: { professorId, status: 'ATIVO' }, include: { versoes: { orderBy: { criadaEm: 'desc' }, take: 1 } } });
+  if (ativos.length >= MAX_CARGOS_ATIVOS) throw new ConflictError(`Este Professor já tem ${MAX_CARGOS_ATIVOS} cargos ativos. Encerre um deles antes de cadastrar outro.`);
   const agora = new Date();
+  if (opcoes.recusarEnvioDuplicado) {
+    const chave = chaveComposicao(dados.composicao);
+    const duplicado = ativos.find((c) => c.createdBy === String(autorId) && agora.getTime() - c.createdAt.getTime() < JANELA_ENVIO_DUPLICADO_MS
+      && c.dataInicio.toISOString().slice(0, 10) === dados.dataInicio && chaveComposicao(lerComposicao(c.versoes[0]?.composicao)) === chave);
+    if (duplicado) throw new ConflictError('Este cargo acabou de ser cadastrado (o envio chegou duas vezes). Atualize a tela. Para cadastrar um segundo cargo igual de propósito, aguarde alguns segundos e cadastre de novo.');
+  }
   const cargo = await tx.cargoProfessor.create({
     data: {
       professorId, status: 'ATIVO', dataInicio: dataUtc(dados.dataInicio), createdAt: agora, createdBy: String(autorId),
@@ -137,3 +153,7 @@ export async function listarCargosFormatados(db: Db, professorId: number, opcoes
 }
 
 export { hojeSp };
+
+// "Hoje" para colunas só-data (@db.Date), no dia de SÃO PAULO (bateria do 1/3, 12/11/2026): `new Date()` gravava o
+// dia UTC, que entre 21:00 e 23:59 de Brasília já é o dia seguinte.
+export const diaDeHojeSp = () => dataUtc(hojeSp());
