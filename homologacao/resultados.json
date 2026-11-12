@@ -9633,18 +9633,18 @@
     "status": "APROVADO",
     "evidencia": "64-configuracoes-atuacoes.png",
     "nota": "",
-    "quando": "2026-11-12T17:41:22.807Z"
+    "quando": "2026-11-12T18:02:37.553Z"
   },
   {
     "id": "ATU-5/2",
     "modulo": "Atuação pedagógica",
-    "cenario": "Cadastro pela tela: escola vazia é recusada perto do campo; escola só com \"Professor Regente\" (sem disciplina) é aceita; atuação inativa não aparece",
+    "cenario": "Cadastro pela tela: escola vazia é recusada perto do campo; escola só com \"Professor Regente\" e o select de disciplina deixado em branco é aceita (sem erro de linha vazia); atuação inativa não aparece",
     "esperado": "erro no bloco; composição com atuação; sem a inativa na lista",
     "observado": "erro: true; composição: [{\"escolaId\":1,\"atuacaoIds\":[1],\"disciplinaIds\":[]}]; inativa na lista: false",
     "status": "APROVADO",
     "evidencia": "64-cadastro-regente.png",
     "nota": "",
-    "quando": "2026-11-12T17:41:26.929Z"
+    "quando": "2026-11-12T18:02:43.123Z"
   },
   {
     "id": "ATU-6/7",
@@ -9655,7 +9655,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:41:38.980Z"
+    "quando": "2026-11-12T18:02:55.577Z"
   },
   {
     "id": "ATU-8",
@@ -9666,7 +9666,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:41:39.332Z"
+    "quando": "2026-11-12T18:02:56.245Z"
   },
   {
     "id": "ATU-9/10",
@@ -9677,7 +9677,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T17:41:39.380Z"
+    "quando": "2026-11-12T18:02:56.325Z"
   },
   {
     "id": "XLS13-6b",

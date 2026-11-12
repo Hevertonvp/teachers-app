@@ -30,16 +30,17 @@ export function validarRascunhoCargo(r) {
   const erros = { partes: {} };
   if (!r.dataInicio) erros.inicio = 'Informe a data de início.';
   if (r.partes.length === 0) erros.geral = 'Adicione ao menos uma escola.';
+  // Seleções vazias ("Selecione…") são ignoradas (decisão do usuário, 12/11/2026): escola só com atuação
+  // passa mesmo com o select de disciplina em branco. Erro só quando a escola fica sem nada.
+  const preenchidas = (ids) => (ids ?? []).filter(Boolean);
   for (const p of r.partes) {
     if (!p.escolaId) erros.partes[p.chave] = 'Escolha a escola.';
-    else if (p.disciplinaIds.some(d => !d)) erros.partes[p.chave] = 'Escolha a disciplina ou remova a linha vazia.';
-    else if ((p.atuacaoIds ?? []).some(a => !a)) erros.partes[p.chave] = 'Escolha a atuação ou remova a linha vazia.';
-    else if (p.disciplinaIds.length === 0 && (p.atuacaoIds ?? []).length === 0) erros.partes[p.chave] = 'Escolha ao menos uma disciplina ou uma atuação pedagógica.';
+    else if (preenchidas(p.disciplinaIds).length === 0 && preenchidas(p.atuacaoIds).length === 0) erros.partes[p.chave] = 'Escolha ao menos uma disciplina ou uma atuação pedagógica.';
   }
   const ok = !erros.inicio && !erros.geral && Object.keys(erros.partes).length === 0;
   return {
     ok, erros,
-    dados: { dataInicio: r.dataInicio, composicao: r.partes.map(p => ({ escolaId: Number(p.escolaId), disciplinaIds: p.disciplinaIds.map(Number), atuacaoIds: (p.atuacaoIds ?? []).map(Number) })) },
+    dados: { dataInicio: r.dataInicio, composicao: r.partes.map(p => ({ escolaId: Number(p.escolaId), disciplinaIds: preenchidas(p.disciplinaIds).map(Number), atuacaoIds: preenchidas(p.atuacaoIds).map(Number) })) },
   };
 }
 
