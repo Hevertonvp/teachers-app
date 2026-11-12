@@ -63,7 +63,7 @@ try {
   await m.locator('input[type=email]').fill(`${P.toLowerCase()}-regente@teste.invalid`);
   await m.locator('input:not([type=email]):not([type=date])').first().fill(`${P} Professora Regente`);
   await escolher(m.getByLabel('Escola 1').first(), AUR);
-  await m.getByRole('button', { name: 'Remover disciplina' }).first().click();
+  // Select de disciplina fica em "Selecione" (não remove a linha): a linha vazia é ignorada.
   await m.getByRole('button', { name: 'Próximo →' }).click();
   const erroVazio = await m.getByText('Escolha ao menos uma disciplina ou uma atuação pedagógica.').isVisible().catch(() => false);
   await m.getByRole('button', { name: '+ Adicionar atuação' }).first().click();
@@ -76,7 +76,7 @@ try {
   await S.page.waitForTimeout(500);
   await modal(S.page).getByRole('button', { name: 'Concluir' }).click().catch(() => {});
   const nova = await prisma.pessoa.findFirst({ where: { email: `${P.toLowerCase()}-regente@teste.invalid` }, include: { cargos: { include: { versoes: true } } } });
-  r('5/2', 'Cadastro pela tela: escola vazia é recusada perto do campo; escola só com "Professor Regente" (sem disciplina) é aceita; atuação inativa não aparece', 'erro no bloco; composição com atuação; sem a inativa na lista', `erro: ${erroVazio}; composição: ${JSON.stringify(nova?.cargos[0]?.versoes[0]?.composicao)}; inativa na lista: ${opcoes.some(o => o.includes(P))}`, erroVazio && (() => { const c = nova?.cargos[0]?.versoes[0]?.composicao ?? []; return c.length === 1 && c[0].escolaId === aurora.id && c[0].disciplinaIds.length === 0 && JSON.stringify(c[0].atuacaoIds) === JSON.stringify([regente.id]); })() && !opcoes.some(o => o.includes(P)), '64-cadastro-regente.png');
+  r('5/2', 'Cadastro pela tela: escola vazia é recusada perto do campo; escola só com "Professor Regente" e o select de disciplina deixado em branco é aceita (sem erro de linha vazia); atuação inativa não aparece', 'erro no bloco; composição com atuação; sem a inativa na lista', `erro: ${erroVazio}; composição: ${JSON.stringify(nova?.cargos[0]?.versoes[0]?.composicao)}; inativa na lista: ${opcoes.some(o => o.includes(P))}`, erroVazio && (() => { const c = nova?.cargos[0]?.versoes[0]?.composicao ?? []; return c.length === 1 && c[0].escolaId === aurora.id && c[0].disciplinaIds.length === 0 && JSON.stringify(c[0].atuacaoIds) === JSON.stringify([regente.id]); })() && !opcoes.some(o => o.includes(P)), '64-cadastro-regente.png');
   await S.browser.close();
 
   // ===== Folha do Professor só com atuação (P13 ganha cargo "Aurora — Professor Regente" antes da abertura) =====
