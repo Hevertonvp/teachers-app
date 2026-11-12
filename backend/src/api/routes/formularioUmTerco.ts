@@ -7,7 +7,7 @@ import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
-import { calcularFolhas, chaveDeCargos, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
+import { calcularFolhas, chaveDeCargos, corteDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
 import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 import { criarNotificacao } from '../../lib/notificacoes.js';
@@ -215,8 +215,8 @@ async function folhasDoCiclo(db: Db, ciclo: CicloCompleto, filtro: { professorId
   const cicloEmCurso = ciclo.prazoEm.getTime() >= Date.now();
   const [cargos, entregas, nomes] = await Promise.all([
     db.cargoProfessor.findMany({
-      where: { createdAt: { lte: ciclo.abreEm }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
-      include: { versoes: { where: { criadaEm: { lte: ciclo.abreEm } }, orderBy: { criadaEm: 'desc' }, take: 1 }, professor: { select: { id: true, nome: true, status: true } } },
+      where: { createdAt: { lte: corteDoCiclo(ciclo.abreEm) }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
+      include: { versoes: { where: { criadaEm: { lte: corteDoCiclo(ciclo.abreEm) } }, orderBy: { criadaEm: 'desc' }, take: 1 }, professor: { select: { id: true, nome: true, status: true } } },
     }),
     db.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, chaveCargos: { not: null }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) }, include: entregaInclude }),
     carregarNomes(db),

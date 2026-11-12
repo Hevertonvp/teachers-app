@@ -83,7 +83,7 @@ try {
   let seq = 0;
   const novoProfessor = async (cargos: { dataInicio?: string; composicao: unknown }[]) => {
     seq += 1;
-    const r = await api(tSec, 'POST', '/pessoas/professores', { nome: `${PREFIXO} Prof ${seq}`, email: EMAIL(`prof${seq}`), cargos: cargos.map((c) => ({ dataInicio: c.dataInicio ?? diaSp(), composicao: c.composicao })) });
+    const r = await api(tSec, 'POST', '/pessoas/professores', { nome: `${PREFIXO} Prof ${seq}`, email: EMAIL(`prof${seq}`), cargos: cargos.map((c) => ({ dataInicio: c.dataInicio ?? diaSp(-30), composicao: c.composicao })) });
     assert.equal(r.status, 201, `cadastro: ${r.status} ${JSON.stringify(r.json)}`);
     // Simula o primeiro acesso já feito (com senha temporária a API só deixa trocar a senha).
     const pessoa = await prisma.pessoa.update({ where: { email: EMAIL(`prof${seq}`) }, data: { senhaTemporaria: false } });
@@ -103,7 +103,8 @@ try {
   };
   // Ciclo de teste direto no banco (aberto há 2 h, prazo em 10 dias), só das escolas de teste.
   const novoCiclo = async (opcoes: { abreHa?: number; abreEmHoras?: number; escolas?: number[] } = {}) => {
-    const abreEm = new Date(Date.now() - (opcoes.abreHa ?? 2) * H + (opcoes.abreEmHoras ?? 0) * H);
+    // Corte do ciclo = fim do DIA da abertura (12/11/2026): o ciclo principal abre ONTEM (30 h atrás).
+    const abreEm = new Date(Date.now() - (opcoes.abreHa ?? 30) * H + (opcoes.abreEmHoras ?? 0) * H);
     const prazoEm = new Date(abreEm.getTime() + 10 * DIA);
     return prisma.cicloUmTerco.create({
       data: {
@@ -206,7 +207,7 @@ try {
   const pMuda = await novoProfessor([{ composicao: C([prud.id, [ing.id]]) }]);
   const pNovo = await novoProfessor([{ composicao: C([prud.id, [geo.id]]) }]);
   const pIguaisUmEncerra = await novoProfessor([{ composicao: C([tres.id, [geo.id]]) }, { composicao: C([tres.id, [geo.id]]) }]);
-  for (const p of [pUm, pDois, pIguais, pQuase, pMulti, pInfantil, pEncerra, pEncerraComTexto, pMuda, pNovo, pIguaisUmEncerra]) await recuar(p.id, 5);
+  for (const p of [pUm, pDois, pIguais, pQuase, pMulti, pInfantil, pEncerra, pEncerraComTexto, pMuda, pNovo, pIguaisUmEncerra]) await recuar(p.id, 40);
   const ciclo = await novoCiclo();
 
   await caso('11. 1 cargo → 1 folha (sem turmas, com escola e disciplina)', async () => {
@@ -331,6 +332,12 @@ try {
     const proximo2 = await novoCiclo({ abreHa: 0, abreEmHoras: 2 });
     assert.equal((await painel(proximo2.id, `?professorId=${pIguais.id}`)).linhas.length, 2);
     assert.equal((await minhas(pIguais.token, ciclo.id)).length, 1);
+  });
+  await caso('Corte = DIA da abertura (caso do ciclo #14 da produção): ciclo aberto hoje às 00:00 e cargo cadastrado agora → entra', async () => {
+    const p = await novoProfessor([{ dataInicio: diaSp(), composicao: C([cmei.id, []]) }]);
+    const hoje = await prisma.cicloUmTerco.create({ data: { anoLetivo: 2099, trimestre: 3, titulo: `${PREFIXO} ciclo`, abreEm: new Date(`${diaSp()}T00:00:00-03:00`), prazoEm: new Date(Date.now() + 10 * DIA), todasEscolas: false, escolas: { create: [{ escolaId: cmei.id }] }, semanas: { create: [{ numero: 1, dataInicio: dataDb(diaSp(0)), dataFim: dataDb(diaSp(2)) }] } } });
+    assert.equal((await painel(hoje.id, `?professorId=${p.id}`)).linhas.length, 1, 'cadastrado no dia da abertura tem que entrar');
+    assert.equal((await minhas(p.token, hoje.id)).length, 1);
   });
   await caso('Ciclo só de uma escola mostra só a parte do cargo nessa escola; partes iguais viram 1 folha', async () => {
     const p = await novoProfessor([{ composicao: C([prud.id, [ing.id]], [tres.id, [geo.id]]) }, { composicao: C([prud.id, [ing.id]]) }]);

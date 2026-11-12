@@ -75,15 +75,24 @@ export type CargoParaCiclo = {
 
 const diaDe = (dataBanco: Date) => dataBanco.toISOString().slice(0, 10);
 
-// Composição que valia na abertura do ciclo, ou null se o cargo não participa do ciclo:
-// cadastrado depois da abertura, com início depois do dia da abertura, ou encerrado até o dia da abertura.
+// Corte do ciclo (decisão do usuário, 12/11/2026, depois do ciclo #14 da produção ficar sem nenhuma folha):
+// vale o DIA da abertura, não o instante. Cargo cadastrado (e composição alterada) até o fim do dia da
+// abertura, no horário de São Paulo, entra no ciclo com a composição daquele dia; do dia seguinte em diante,
+// só no próximo ciclo. O instante devolvido é 23:59:59.999 do dia da abertura em São Paulo.
+export function corteDoCiclo(abreEm: Date): Date {
+  return new Date(new Date(`${dataLocalSp(abreEm)}T00:00:00-03:00`).getTime() + 24 * 60 * 60 * 1000 - 1);
+}
+
+// Composição que valia no corte do ciclo (fim do dia da abertura), ou null se o cargo não participa:
+// cadastrado depois do dia da abertura, com início depois do dia da abertura, ou encerrado até o dia da abertura.
 export function composicaoNaAbertura(cargo: CargoParaCiclo, abreEm: Date): Composicao | null {
-  if (cargo.createdAt.getTime() > abreEm.getTime()) return null;
+  const corte = corteDoCiclo(abreEm);
+  if (cargo.createdAt.getTime() > corte.getTime()) return null;
   const diaAbertura = dataLocalSp(abreEm);
   if (diaDe(cargo.dataInicio) > diaAbertura) return null;
   if (cargo.dataFim && diaDe(cargo.dataFim) <= diaAbertura) return null;
   const vigente = cargo.versoes
-    .filter((v) => v.criadaEm.getTime() <= abreEm.getTime())
+    .filter((v) => v.criadaEm.getTime() <= corte.getTime())
     .sort((a, b) => b.criadaEm.getTime() - a.criadaEm.getTime())[0];
   return vigente ? lerComposicao(vigente.composicao) : null;
 }
