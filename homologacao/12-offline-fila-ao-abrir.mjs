@@ -1,19 +1,23 @@
 // Cenário limpo: editar OFFLINE, fechar o navegador, voltar COM rede. A fila pendente é enviada ao abrir o app?
+// 1/3 POR CARGO (reescrito em 12/11/2026): Cargo 2 do P04, chave offline ciclo + cargo. Banco LOCAL.
 import { abrir, login, foto, abrirCartao, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { cargosDe, folhaDoCargo, resetarFolhas } from './cargos-homolog.mjs';
+const [, c2] = await cargosDe('p04');
+await resetarFolhas('p04', 1);
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const fila = (page) => page.evaluate(() => new Promise((res) => { const rq = indexedDB.open('teachers-app-offline'); rq.onerror = () => res([]); rq.onsuccess = () => { const g = rq.result.transaction('queue').objectStore('queue').getAll(); g.onsuccess = () => res(g.result.map(x => ({ status: x.status, attempts: x.attempts }))); }; }));
-const naoVazias = async () => { const e = await prisma.entregaUmTerco.findFirst({ where: { professor: { email: 'p04@homolog.nexo' }, anoSerie: 8, disciplina: { nome: 'Inglês' } }, include: { respostas: { include: { semana: true }, orderBy: { semana: { numero: 'asc' } } } } }); return (e?.respostas ?? []).filter(r => r.texto.trim()).map(r => `S${r.semana.numero}:${r.texto.slice(0, 18)}`); };
+const naoVazias = async () => ((await folhaDoCargo(c2))?.respostas ?? []).map(r => `S${r.semana.numero}:${r.texto.slice(0, 18)}`);
 
 const A = await abrir();
 await login(A.page, 'p04@homolog.nexo', 'Nexo!Prof04-2026');
-await abrirCartao(A.page, /8º.*Inglês/);
-await A.page.locator('#conteudos-semana').fill('Semana 1 ONLINE do 8º ano: fonética e pronúncia.');
+await abrirCartao(A.page, /^Cargo 2$/);
+await A.page.locator('#conteudos-semana').fill('Semana 1 ONLINE do Cargo 2: fonética e pronúncia.');
 await A.page.getByRole('button', { name: 'Salvar progresso' }).click(); await A.page.waitForTimeout(1500);
 await A.contexto.setOffline(true);
 await A.page.getByRole('tab', { name: 'Semana 2' }).click(); await A.page.waitForTimeout(1200);
-await A.page.locator('#conteudos-semana').fill('Semana 2 OFFLINE do 8º ano: profissões e entrevista simulada.');
+await A.page.locator('#conteudos-semana').fill('Semana 2 OFFLINE do Cargo 2: profissões e entrevista simulada.');
 await A.page.waitForTimeout(4500); // autosave (2 s) vai para a fila local
 const filaAntes = await fila(A.page);
 const storageState = await A.contexto.storageState({ indexedDB: true });
@@ -37,7 +41,7 @@ const clicavel = await pb.getByRole('link', { name: /Formulário 1\/3/ }).first(
 console.log('Menu clicável com o aviso de pendência:', clicavel);
 
 // Caminho de recuperação: o professor abre o mesmo formulário e salva de novo?
-await abrirCartao(pb, /8º.*Inglês/);
+await abrirCartao(pb, /^Cargo 2$/);
 const tela = await pb.locator('#conteudos-semana').inputValue();
 await pb.getByRole('tab', { name: 'Semana 2' }).click(); await pb.waitForTimeout(1500);
 const sem2 = await pb.locator('#conteudos-semana').inputValue();

@@ -34,7 +34,9 @@ export const InstallBanner = () => {
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-teal-200 bg-teal-50 px-4 py-2.5 text-sm text-teal-900 sm:px-6">
+    // relative z-35: acima da barra lateral fixa do computador (z-30), que começa logo abaixo do topo e
+    // tampava o começo da mensagem; abaixo do topo (z-40) e do menu aberto no celular (z-50).
+    <div className="relative z-35 flex flex-wrap items-center justify-between gap-3 border-b border-teal-200 bg-teal-50 px-4 py-2.5 text-sm text-teal-900 sm:px-6">
       <p className="min-w-0">Instale o aplicativo para acessar mais rápido e receber notificações neste dispositivo.</p>
       <div className="flex shrink-0 gap-2">
         <button

@@ -554,7 +554,7 @@ formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
   const conteudos = respostas.map((r) => {
     const l = linhaDaEntrega.get(r.entregaId)!;
     return {
-      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join(' · '),
+      entregaId: r.entregaId, professorNome: l.professorNome, rotulo: l.rotulo, cobertura: l.composicao.map(descreverParte).join('; '),
       semanaNumero: r.semana.numero, semanaInicio: dataIso(r.semana.dataInicio), semanaFim: dataIso(r.semana.dataFim), texto: r.texto,
     };
   });

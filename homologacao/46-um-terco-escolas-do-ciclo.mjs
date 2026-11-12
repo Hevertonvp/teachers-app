@@ -5,9 +5,13 @@
 // - sobreposição de janelas só é proibida entre ciclos com escola em comum;
 // - escola com preenchimento iniciado não pode ser retirada do ciclo.
 // Ciclos criados pelo teste são INATIVADOS no fim; nada é gravado em ciclos existentes.
+// 1/3 POR CARGO (reescrito em 12/11/2026): quem participa sai dos cargos de teste (cargos-homolog.mjs); ciclo de
+// algumas escolas mostra só a parte do cargo nessas escolas (P05 tem Aurora + Boa Vista no mesmo cargo).
 import { abrir, login, foto, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { prepararCargosHomolog, SENHA } from './cargos-homolog.mjs';
+await prepararCargosHomolog();
 const r = (id, cen, esp, obs, ok, evid = '') => registrar(`UT-ESC-${id}`, 'Formulário 1/3 — escolas do ciclo', cen, esp, String(obs).slice(0, 300), ok ? 'APROVADO' : 'REPROVADO', evid);
 const API = 'http://localhost:3340';
 const antes = new Set((await prisma.cicloUmTerco.findMany({ select: { id: true } })).map(c => c.id));
@@ -24,11 +28,8 @@ const chamar = async (tk, metodo, caminho, corpo) => {
 const SEMANAS = [{ dataInicio: '2026-11-23', dataFim: '2026-11-27' }, { dataInicio: '2026-11-30', dataFim: '2026-12-04' }, { dataInicio: '2026-12-07', dataFim: '2026-12-11' }, { dataInicio: '2026-12-14', dataFim: '2026-12-18' }];
 const base = { anoLetivo: 2026, trimestre: 3, abreEm: '2026-12-01T00:00', prazoEm: '2026-12-18T23:59', semanas: SEMANAS };
 
-// Professores de teste só de uma escola (vínculos ativos do Fundamental): um só da Aurora, um só da Boa Vista
-const professorSo = async (escolaId) => {
-  const pessoas = await prisma.pessoa.findMany({ where: { email: { startsWith: 'p', endsWith: '@homolog.nexo' }, perfil: 'PROFESSOR', status: 'ATIVO' }, include: { vinculosComoProfessor: { where: { status: 'ATIVO', turma: { etapa: 'FUNDAMENTAL', anoLetivo: 2026, status: 'ATIVA' } }, include: { turma: true } } } }).catch(() => []);
-  return pessoas.find(p => /^p\d\d@/.test(p.email) && p.vinculosComoProfessor.length > 0 && p.vinculosComoProfessor.every(v => v.turma.escolaId === escolaId));
-};
+// Professores com cargo só numa escola (cargos de teste): P01 só Aurora; P15 só Boa Vista.
+const professorSo = async (escolaId) => prisma.pessoa.findUnique({ where: { email: escolaId === aurora.id ? 'p01@homolog.nexo' : 'p15@homolog.nexo' } });
 
 try {
   const X = await abrir();
@@ -58,12 +59,14 @@ try {
 
   // painel: só turmas da Aurora
   const painelA = (await chamar(tk, 'GET', `/api/formulario-um-terco/ciclos/${cicloA.id}/painel`)).json;
-  const escolasNoPainel = [...new Set(painelA.linhas.flatMap(l => l.turmas.map(t => t.escolaNome)))];
-  r('3', 'Painel do ciclo só da Aurora: todas as entregas esperadas são de turmas da Aurora', `só "${aurora.nome}", > 0 entregas`, `${painelA.linhas.length} entregas; escolas: ${escolasNoPainel.join(', ')}`, painelA.linhas.length > 0 && escolasNoPainel.length === 1 && escolasNoPainel[0] === aurora.nome);
+  const escolasNoPainel = [...new Set(painelA.linhas.flatMap(l => l.escolas.map(t => t.escolaNome)))];
+  const p05 = await prisma.pessoa.findUnique({ where: { email: 'p05@homolog.nexo' } });
+  const linhaP05 = painelA.linhas.find(l => l.professorId === p05.id);
+  r('3', 'Painel do ciclo só da Aurora: todas as folhas esperadas são da Aurora; o cargo de 2 escolas do P05 aparece só com a parte da Aurora', `só "${aurora.nome}"; P05 só Aurora`, `${painelA.linhas.length} folhas; escolas: ${escolasNoPainel.join(', ')}; P05: ${linhaP05?.composicao.map(p => p.escolaNome).join(' + ')}`, painelA.linhas.length > 0 && escolasNoPainel.length === 1 && escolasNoPainel[0] === aurora.nome && linhaP05?.composicao.length === 1 && linhaP05.composicao[0].escolaId === aurora.id);
 
   // professores: só quem é da Aurora vê o ciclo
   const pA = await professorSo(aurora.id); const pB = await professorSo(boaVista.id);
-  const senha = (p) => `Nexo!Prof${p.email.slice(1, 3)}-2026`;
+  const senha = (p) => SENHA(p.email.slice(0, 3));
   const veA = pA ? (await chamar(await loginApi(pA.email, senha(pA)), 'GET', '/api/formulario-um-terco/minhas')).json.some(i => i.ciclo.id === cicloA.id) : null;
   const veB = pB ? (await chamar(await loginApi(pB.email, senha(pB)), 'GET', '/api/formulario-um-terco/minhas')).json.some(i => i.ciclo.id === cicloA.id) : null;
   r('4', 'Professor só da Aurora vê o ciclo em "Meus formulários"; professor só da Boa Vista NÃO vê', `${pA?.email}: vê; ${pB?.email}: não vê`, `${pA?.email}: ${veA}; ${pB?.email}: ${veB}`, veA === true && veB === false);
@@ -78,7 +81,11 @@ try {
   const vazia = await chamar(tk, 'POST', '/api/formulario-um-terco/ciclos', { ...base, abreEm: '2026-12-02T00:00', todasEscolas: false, escolaIds: [] });
   r('6', 'API recusa ciclo sem nenhuma escola (todasEscolas = false e lista vazia)', '400', `${vazia.status} ${vazia.json.message ?? ''}`, vazia.status === 400);
 
-  // escola com preenchimento iniciado não pode sair (ciclo #1, "todas", tem entregas da Aurora); nada é gravado
+  // escola com preenchimento iniciado não pode sair: o P01 (cargo na Aurora) começa a folha do ciclo #1; nada é gravado
+  const tkP01 = await loginApi('p01@homolog.nexo', SENHA('p01'));
+  const itemP01 = (await chamar(tkP01, 'GET', '/api/formulario-um-terco/minhas')).json.find(i => i.ciclo.id === 1);
+  const c1sem = await prisma.semanaUmTerco.findFirst({ where: { cicloId: 1, numero: 1 } });
+  await chamar(tkP01, 'PUT', `/api/formulario-um-terco/ciclos/1/cargos/${itemP01.cargoId}/respostas`, { baseUpdatedAt: null, respostas: [{ semanaId: c1sem.id, texto: 'Semana 1 da Aurora (P01).' }] });
   const c1 = await prisma.cicloUmTerco.findUnique({ where: { id: 1 }, include: { semanas: { orderBy: { numero: 'asc' } } } });
   const fmt = (d) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(d).replace(' ', 'T');
   const tirarAurora = await chamar(tk, 'PUT', '/api/formulario-um-terco/ciclos/1', {

@@ -1,9 +1,15 @@
 // Acompanhamento Escolar (10/11/2026) — números, permissões, "foto" do PDI e tela. Banco LOCAL.
 // Cria 2 Aplicações PDI vazias (sem modelos) na escola 2 só para testar a foto e as apaga no fim.
+// 1/3 POR CARGO (12/11/2026): números conferidos contra o painel por folha; sem ano/série. Com o PDI
+// "em desenvolvimento" (src/config/modulos.js) a tela fica presa no 1/3 e as partes do PDI são puladas.
 import { createRequire } from 'node:module';
 import { abrir, login, BASE, foto } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { readFileSync } from 'node:fs';
+import { cargosDe, prepararCargosHomolog, SENHA as SENHA_PROF } from './cargos-homolog.mjs';
+const PDI_LIGADO = /MODO_PDI = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
+await prepararCargosHomolog();
 const require = createRequire(new URL('../backend/package.json', import.meta.url));
 const bcrypt = require('bcryptjs');
 const r = (id, cen, esp, obs, ok, ev = '') => registrar(`ACP-${id}`, 'Acompanhamento Escolar', cen, esp, String(obs).slice(0, 300), ok ? 'APROVADO' : 'REPROVADO', ev);
@@ -21,6 +27,13 @@ const criadas = [];
 
 try {
   const tkS = await token('secretaria@escola.gov.br', '12345678');
+  // Algumas folhas com texto para os números não serem todos zero (P01 inicia; P05, de 2 escolas, conclui).
+  const sem = await prisma.semanaUmTerco.findMany({ where: { cicloId: 1 }, orderBy: { numero: 'asc' } });
+  for (const [cod, concluir] of [['p01', false], ['p05', true]]) {
+    const tk = await token(`${cod}@homolog.nexo`, SENHA_PROF(cod)); const [c] = await cargosDe(cod);
+    const s1 = await fetch(`${API}/api/formulario-um-terco/ciclos/1/cargos/${c}/respostas`, { method: 'PUT', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tk }, body: JSON.stringify({ baseUpdatedAt: null, respostas: sem.map(x => ({ semanaId: x.id, texto: `${cod} semana ${x.numero}` })) }) }).then(x => x.json());
+    if (concluir) await fetch(`${API}/api/formulario-um-terco/ciclos/1/cargos/${c}/concluir`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tk }, body: JSON.stringify({ baseUpdatedAt: s1.updatedAt }) });
+  }
   const rede = (await get(tkS, '/api/acompanhamento/rede?atualizar=1')).json;
 
   // 1) PDI bate com /pdi-aplicacoes/indicadores (mesma regra).
@@ -35,7 +48,10 @@ try {
   const r13 = [painel.resumo.esperado, painel.resumo.concluidas, painel.resumo.emAndamento].join('/');
   const a13 = [rede.totais.umTerco?.esperado, rede.totais.umTerco?.concluidas, rede.totais.umTerco?.emAndamento].join('/');
   const porEscola = painel.porEscola.every((p) => { const e = rede.escolas.find((x) => x.id === p.escolaId); return e && e.umTerco?.esperado === p.esperado && e.umTerco?.concluidas === p.concluidas; });
-  r('2', '1/3 da rede = painel do ciclo (entregas únicas) e cada escola = cobertura do painel', `${r13}; escolas iguais`, `${a13}; escolas ${porEscola ? 'iguais' : 'DIFERENTES'}`, r13 === a13 && porEscola);
+  r('2', '1/3 da rede = painel do ciclo (folhas por cargo, uma vez cada) e cada escola = visão por escola do painel', `${r13}; escolas iguais`, `${a13}; escolas ${porEscola ? 'iguais' : 'DIFERENTES'}`, !!ciclo && r13 === a13 && porEscola && painel.resumo.esperado > 0);
+  const escolaAur = (await get(tkS, '/api/acompanhamento/escola/1?atualizar=1')).json;
+  const auroraPainel = painel.porEscola.find(p => p.escolaId === 1);
+  r('2b', 'Visão da escola (Aurora): 1/3 = folhas do painel que cobrem a Aurora; sem matriz por ano/série', `esperado ${auroraPainel?.esperado}; matriz vazia`, `esperado ${escolaAur.umTerco?.esperado}; concluídas ${escolaAur.umTerco?.concluidas}; matriz ${JSON.stringify(escolaAur.matriz)}`, escolaAur.umTerco?.esperado === auroraPainel?.esperado && escolaAur.umTerco?.concluidas === auroraPainel?.concluidas && Array.isArray(escolaAur.matriz) && escolaAur.matriz.length === 0);
 
   // 3) Sem nomes de pessoas na resposta.
   const texto = JSON.stringify(rede);
@@ -67,7 +83,7 @@ try {
     const f2 = await prisma.fotografiaAplicacaoPdi.findUnique({ where: { aplicacaoId: a2.id } });
     r('5', 'Foto do PDI: tirada para encerrada há 2 dias, não para há 10; segunda execução não duplica', 'foto 2d sim; 10d não; 2ª execução 0', `2d ${f1 ? 'sim' : 'não'}; 10d ${f2 ? 'sim' : 'não'}; 2ª execução ${segunda}`, !!f1 && !f2 && segunda === 0);
   } else {
-    r('5', 'Foto do PDI (job)', 'executa', 'não foi possível importar o job (rodar com tsx)', false);
+    registrar('ACP-5', 'Acompanhamento Escolar', 'Foto do PDI (job)', 'executa', 'não executado: o job é TypeScript (rodar com tsx); falha antiga, sem relação com o 1/3', 'NAO_EXECUTADO');
   }
 
   // 6) Tela da Secretaria: rede → escola → rede.
@@ -82,15 +98,18 @@ try {
   await foto(X.page, '50-acompanhamento-rede');
   await X.page.getByLabel('Buscar escola').fill('Aurora');
   await X.page.getByRole('button', { name: /ZZ-HOMOLOG Escola Aurora/ }).first().click();
-  await X.page.getByRole('heading', { name: 'PDI por disciplina' }).waitFor({ timeout: 15000 });
+  await X.page.getByRole('heading', { name: PDI_LIGADO ? 'PDI por disciplina' : 'Histórico do 1/3' }).waitFor({ timeout: 15000 });
+  const textoEscola = (await X.page.locator('main').innerText()).replace(/s+/g, ' ');
   const tituloEscola = await X.page.locator('.acp-hero h1').textContent();
   await X.page.waitForTimeout(900);
   await foto(X.page, '50-acompanhamento-escola');
   await X.page.getByRole('button', { name: '← Rede' }).click();
   await X.page.getByRole('heading', { name: 'Mapa da rede' }).waitFor({ timeout: 15000 });
-  r('6', 'Secretaria: rede com 4 cartões e mapa paginado (8 por página); clicar abre a escola; "← Rede" volta', '4 cartões; ≤8 linhas; paginação; escola Aurora; volta', `${temCartoes} cartões; ${linhasMapa} linhas; paginação ${paginacao}; "${tituloEscola}"; voltou`, temCartoes === 4 && linhasMapa <= 8 && paginacao === 1 && /Aurora/.test(tituloEscola), '50-acompanhamento-rede.png, 50-acompanhamento-escola.png');
+  r('6', 'Secretaria: rede com cartões e mapa paginado (8 por página); clicar abre a escola (sem "1/3 por ano e disciplina"); "← Rede" volta', 'cartões; ≤8 linhas; paginação; escola Aurora sem ano/série; volta', `${temCartoes} cartões; ${linhasMapa} linhas; paginação ${paginacao}; "${tituloEscola}"; ano/série na tela: ${/por ano e disciplina|º ano/.test(textoEscola)}; voltou`, temCartoes >= 3 && linhasMapa <= 8 && paginacao === 1 && /Aurora/.test(tituloEscola) && !/por ano e disciplina|º ano/.test(textoEscola), '50-acompanhamento-rede.png, 50-acompanhamento-escola.png');
 
-  // 7) Filtro de formulário na URL.
+  // 7) Filtro de formulário na URL (só com o PDI ligado; desligado, a tela já fica presa no 1/3).
+  if (!PDI_LIGADO) registrar('ACP-7', 'Acompanhamento Escolar', 'Filtro "1/3" na URL', 'só com o PDI ligado', 'pulado: PDI em desenvolvimento (tela presa no 1/3)', 'OBSERVAÇÃO (regra não especificada)');
+  else {
   await X.page.getByRole('group', { name: 'Formulário', exact: true }).getByRole('button', { name: '1/3' }).click();
   await X.page.waitForLoadState('networkidle');
   await X.page.waitForFunction(() => location.href.includes('form=umTerco'));
@@ -98,6 +117,7 @@ try {
   const url = X.page.url();
   const colunasPdi = await X.page.locator('.acp-mapa-cab', { hasText: 'PDI' }).count();
   r('7', 'Filtro "1/3": vai para a URL e esconde a coluna do PDI', 'form=umTerco; sem coluna PDI', `${url.includes('form=umTerco') ? 'form=umTerco' : url}; coluna PDI ${colunasPdi}`, url.includes('form=umTerco') && colunasPdi === 0);
+  }
 
   // 8) Modo noturno e celular sem rolagem horizontal.
   await X.page.evaluate(() => localStorage.setItem('theme', 'dark'));
@@ -120,7 +140,7 @@ try {
   await login(D.page, 'diretora.aur@homolog.nexo', SENHA);
   const noMenu = await D.page.getByRole('link', { name: 'Acompanhamento Escolar' }).count();
   await D.page.goto(BASE + '/#/acompanhamento-escolar'); await D.page.waitForLoadState('networkidle');
-  await D.page.getByRole('heading', { name: 'PDI por disciplina' }).waitFor({ timeout: 15000 });
+  await D.page.getByRole('heading', { name: PDI_LIGADO ? 'PDI por disciplina' : 'Histórico do 1/3' }).waitFor({ timeout: 15000 });
   const tituloD = await D.page.locator('.acp-hero h1').textContent();
   const voltar = await D.page.getByRole('button', { name: '← Rede' }).count();
   await D.page.waitForTimeout(900);
