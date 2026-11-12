@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
-import { useEscola } from '../context/EscolaContext';
+import { useEscola, useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { isDiretora, isSecretaria } from '../utils/roles';
 import { obterAcompanhamentoEscola, obterAcompanhamentoRede } from '../services/acompanhamento';
 import { BarraSituacao, fmt, fmtData, GraficoRitmo, LegendaSituacao, LinhaTempo, Paginacao, pct, usePaginas } from '../components/acompanhamento/Graficos';
@@ -349,7 +349,6 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
     texto: d.esperado === null ? `${fmt(d.concluidas)} concluídas` : `${fmt(d.concluidas)} de ${fmt(d.esperado)}`,
     barra: d.esperado === null ? null : <BarraSituacao {...d} />,
   }));
-  const series = [...new Set(dados.matriz.map((m) => m.anoSerie))];
   const histUm = dados.historico.umTerco.map((c) => ({
     chave: c.id, rotulo: c.titulo,
     texto: c.esperado ? `${valorContagem(c, minimo)} · ${SITUACAO[c.situacao].toLowerCase()}` : 'sem entregas esperadas',
@@ -378,27 +377,6 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
             {disciplinas.length > 0 && <div style={{ marginTop: 12 }}><LegendaSituacao /></div>}
           </section>
         )}
-        {form !== 'pdi' && (
-          <section className="acp-painel">
-            <div className="acp-painel-topo"><div><h2>1/3 por ano e disciplina</h2><p className="acp-painel-desc">{umTerco ? `${umTerco.titulo} · concluídas / esperadas` : 'Fora dos ciclos do ano'}</p></div></div>
-            {series.length === 0 ? <p className="acp-vazio">Nenhuma entrega esperada nesta escola.</p> : (
-              <div className="acp-matriz">
-                {series.map((s) => (
-                  <div key={s} className="acp-matriz-linha">
-                    <span className="acp-matriz-serie">{s}º ano</span>
-                    <div className="acp-chips">
-                      {dados.matriz.filter((m) => m.anoSerie === s).map((m) => {
-                        const estado = m.concluidas === m.esperado ? 'ok' : m.concluidas + m.emAndamento > 0 ? 'and' : 'nao';
-                        return <span key={m.disciplinaId} className="acp-chip" data-s={estado} title={`${m.disciplina}: ${m.concluidas} de ${m.esperado} concluídas, ${m.emAndamento} em andamento`}>{estado === 'ok' ? '✓' : estado === 'and' ? '◐' : '○'} {m.disciplina} <span className="acp-num">{m.concluidas}/{m.esperado}</span></span>;
-                      })}
-                    </div>
-                  </div>
-                ))}
-                <div className="acp-legenda"><span>✓ todas concluídas</span><span>◐ em andamento</span><span>○ não iniciadas</span></div>
-              </div>
-            )}
-          </section>
-        )}
       </div>
       <div className="acp-dupla-igual">
         {form !== 'pdi' && (
@@ -423,7 +401,7 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
 // ---------------------------------------------------------------------------------------------
 export const AcompanhamentoEscolarPage = () => {
   const { user } = useAuth();
-  const { activeEscolaId, setActiveEscolaId, userEscolas } = useEscola();
+  const { userEscolas } = useEscola();
   const [params, setParams] = useSearchParams();
   const secretaria = isSecretaria(user);
   const diretora = isDiretora(user);
@@ -433,7 +411,11 @@ export const AcompanhamentoEscolarPage = () => {
   const form = !PDI_ATIVO ? 'umTerco' : ['pdi', 'umTerco'].includes(params.get('form')) ? params.get('form') : 'ambos';
   const trimestre = form === 'pdi' ? params.get('tri') || '' : '';
   const cicloId = form === 'umTerco' ? params.get('ciclo') || '' : '';
-  const escolaId = activeEscolaId;
+  // Escola desta tela: começa com a do seletor do topo e o acompanha; trocar aqui (select, "Abrir escola",
+  // "← Rede") NÃO muda o topo (sentido único, pedido do usuário, 12/11/2026).
+  const [escolaFiltro, setEscolaFiltro] = useFiltroEscolaDoTopo('');
+  const escolaId = escolaFiltro ? Number(escolaFiltro) : null;
+  const setEscolaDaTela = (id) => setEscolaFiltro(id == null ? '' : String(id));
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
@@ -469,7 +451,7 @@ export const AcompanhamentoEscolarPage = () => {
         <header className="acp-hero">
           <div className="acp-hero-topo">
             <div>
-              {secretaria && visao === 'escola' && <button type="button" className="acp-voltar" onClick={() => setActiveEscolaId(null)}>← Rede</button>}
+              {secretaria && visao === 'escola' && <button type="button" className="acp-voltar" onClick={() => setEscolaDaTela(null)}>← Rede</button>}
               <h1>{visao === 'escola' ? (nomeEscola || 'Escola') : 'Acompanhamento Escolar'}</h1>
               <p>
                 {visao === 'escola' ? 'Acompanhamento Escolar · visão da escola' : 'Rede municipal · visão geral'}
@@ -500,7 +482,7 @@ export const AcompanhamentoEscolarPage = () => {
               </select>
             )}
             {diretora && userEscolas.length > 1 && (
-              <select aria-label="Escola" value={escolaId ?? ''} onChange={(e) => setActiveEscolaId(e.target.value ? Number(e.target.value) : null)}>
+              <select aria-label="Escola" value={escolaId ?? ''} onChange={(e) => setEscolaDaTela(e.target.value ? Number(e.target.value) : null)}>
                 <option value="">Escolha a escola</option>
                 {userEscolas.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
               </select>
@@ -521,7 +503,7 @@ export const AcompanhamentoEscolarPage = () => {
               <div className="acp-esqueleto" style={{ height: 280 }} />
             </>
           )}
-          {pronto && visao === 'rede' && <VisaoRede dados={dados} form={form} abrirEscola={(id) => { setActiveEscolaId(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />}
+          {pronto && visao === 'rede' && <VisaoRede dados={dados} form={form} abrirEscola={(id) => { setEscolaDaTela(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />}
           {pronto && visao === 'escola' && <VisaoEscola dados={dados} form={form} secretaria={secretaria} />}
         </div>
       </div>

@@ -4,7 +4,7 @@ import { Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } 
 import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { useEscola } from '../context/EscolaContext';
+import { useEscola, useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { escolaName, inputClass, turmaName } from '../utils/display';
 import { filterByEscola } from '../utils/escolas';
 import { parentescoOptions } from '../utils/pdi';
@@ -42,7 +42,8 @@ export const PdiPage = () => {
   const turmasDaEscola = filterByEscola(turmas.filter(t => t.status === 'ativa'), activeEscolaId, user);
   const [search, setSearch] = useState('');
   // DEF-10: filtro por ESCOLA e turma (nomes de turma se repetem entre escolas, ex.: 6M1).
-  const [escolaFiltro, setEscolaFiltro] = useState('todas');
+  // Filtro de escola segue o seletor do topo (só no sentido topo → filtro).
+  const [escolaFiltro, setEscolaFiltro] = useFiltroEscolaDoTopo('todas');
   const [turma, setTurma] = useState('todos');
   const [status, setStatus] = useState('ativo');
   const [form, setForm] = useState(null);

@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal, OrderButtons } from '../components/Common';
 import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useData } from '../context/DataContext';
+import { useEscolaDoTopo } from '../context/EscolaContext';
 import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
@@ -66,6 +67,7 @@ const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR')
 export const FormularioPdiPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const escolaDoTopo = useEscolaDoTopo();
   const {
     disciplinasReais, escolas, trimestrePeriods,
     pdiModelosReais, pdiModelosReaisLoading, pdiModelosReaisError, loadPdiModelosReais,
@@ -179,7 +181,7 @@ export const FormularioPdiPage = () => {
   const aplicacoesEncerradas = [...aplicacoesAtivas.filter(item => !item.operacional)].reverse();
 
   const abrirNovoModelo = () => setNovoModeloForm({ nome: '', disciplinaId: disciplinasDisponiveis[0]?.id ?? '', carregarPerguntasPadrao: true });
-  const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm(blankAplicacao(modelosAtivos.map(modelo => modelo.id))); setBuscaEscolaAplicacao(''); };
+  const abrirNovaAplicacao = () => { setEditingAplicacao(null); setAplicacaoError(''); setAplicacaoForm({ ...blankAplicacao(modelosAtivos.map(modelo => modelo.id)), escolaIds: [escolaDoTopo(escolasAplicaveis, null)].filter(id => id !== null) }); setBuscaEscolaAplicacao(''); };
   const abrirReabertura = (aplicacao) => { setReaberturaError(''); setReaberturaForm({ aplicacaoId: aplicacao.id, ...blankReabertura(aplicacao) }); };
 
   const toggleHistoricoReaberturas = async (aplicacaoId) => {

@@ -1,3 +1,6 @@
+// OBSOLETO desde 12/11/2026: testa o modelo ANTIGO do 1/3 (ano/série + disciplina, via PTD) e usa o .env,
+// que nesta máquina aponta para a PRODUÇÃO. Não rodar. O teste atual é scripts/umTerco/testar-cargos.ts (só banco local).
+process.exit(1);
 // Teste de integração do Formulário 1/3 contra o banco configurado (.env).
 // Cria SÓ dados identificados como teste (prefixo ZZTESTE-UT, ano letivo 2099) e remove tudo no fim,
 // inclusive restos de uma execução interrompida. Imprime contagens de tabelas antes e depois.

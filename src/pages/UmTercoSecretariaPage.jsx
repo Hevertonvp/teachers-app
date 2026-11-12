@@ -6,6 +6,7 @@ import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { useAuth } from '../context/AuthContext';
 import { exportarUmTerco } from '../utils/exportarUmTerco';
 import { useData } from '../context/DataContext';
+import { useEscolaDoTopo } from '../context/EscolaContext';
 import {
   atualizarCicloUmTerco, criarCicloUmTerco, criarReaberturaUmTerco, inativarCicloUmTerco, listarCiclosUmTerco, reativarCicloUmTerco,
 } from '../services/formularioUmTerco';
@@ -139,8 +140,12 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
   const [abreEm, setAbreEm] = useState(abreOriginal.slice(0, 10));
   const [prazoEm, setPrazoEm] = useState(prazoOriginal.slice(0, 10));
   const [semanas, setSemanas] = useState(ciclo ? ciclo.semanas.map(s => ({ dataInicio: s.dataInicio, dataFim: s.dataFim })) : Array.from({ length: SEMANAS_PADRAO }, () => ({ ...SEMANA_VAZIA })));
-  const [todasEscolas, setTodasEscolas] = useState(ciclo ? ciclo.todasEscolas !== false : true);
-  const [escolaIds, setEscolaIds] = useState(ciclo?.escolas?.map(e => e.id) ?? []);
+  // Novo ciclo com uma escola no seletor do topo: já vem só essa escola marcada (pedido do usuário,
+  // 12/11/2026). Com "Todas as escolas" no topo, continua vindo "Todas as escolas". Edição não muda.
+  const escolaDoTopo = useEscolaDoTopo();
+  const escolaInicial = ciclo ? null : escolaDoTopo(escolas.filter(e => e.status === 'ativa'), null);
+  const [todasEscolas, setTodasEscolas] = useState(ciclo ? ciclo.todasEscolas !== false : escolaInicial === null);
+  const [escolaIds, setEscolaIds] = useState(ciclo ? (ciclo.escolas?.map(e => e.id) ?? []) : (escolaInicial === null ? [] : [escolaInicial]));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
   // Escolas que podem ser escolhidas: as ativas + as (inativas) que o ciclo já tem.

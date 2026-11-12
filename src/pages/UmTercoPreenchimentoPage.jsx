@@ -10,7 +10,8 @@ import { chaveFila, enfileirar, obterItemDaFila, removerDaFila } from '../offlin
 import { AvisoCorrecaoProfessor, correcaoPendente } from '../components/Correcoes';
 import { concluirFormularioUmTerco, caminhoRespostasUmTerco, obterFormularioUmTerco, salvarRespostasUmTerco } from '../services/formularioUmTerco';
 import { inputClass } from '../utils/display';
-import { agruparPorEscola, formatarDataHora, formatarPeriodo } from '../utils/umTerco';
+import { formatarDataHora, formatarPeriodo } from '../utils/umTerco';
+import { AvisoFolhaCompartilhada, ComposicaoCargo } from '../components/ComposicaoCargo';
 
 const AUTOSAVE_MS = 2000;
 const eRede = (error) => !error.codigo && /conectar ao servidor/.test(error.message || '');
@@ -22,12 +23,13 @@ const mesmosTextos = (textosLocais, detalhe) => detalhe.semanas.every(s => (text
 // para a fila offline (nada se perde); conflito (outra aba/dispositivo) nunca sobrescreve em
 // silêncio. "Próximo" nunca conclui — só o botão final "Concluir" (exige conexão e todas as semanas).
 export const UmTercoPreenchimentoPage = () => {
-  const { cicloId, anoSerie, disciplinaId } = useParams();
+  const { cicloId, cargoId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { online } = useNetworkStatus();
   const userId = user?.email?.toLowerCase();
-  const resourceId = `${cicloId}-${anoSerie}-${disciplinaId}`;
+  // Chave offline por ciclo + cargo (12/11/2026). Rascunhos do modelo antigo (ano/série-disciplina) não casam.
+  const resourceId = `${cicloId}-cargo-${cargoId}`;
   const draftKey = `${userId}::um-terco-resposta::${resourceId}`;
   const filaKey = chaveFila(userId, 'um-terco-resposta', resourceId, 'respostas');
 
@@ -62,7 +64,7 @@ export const UmTercoPreenchimentoPage = () => {
     let ativo = true;
     (async () => {
       try {
-        const detalhe = await obterFormularioUmTerco(cicloId, anoSerie, disciplinaId);
+        const detalhe = await obterFormularioUmTerco(cicloId, cargoId);
         if (!ativo) return;
         aplicarServidor(detalhe);
         baseDoRascunhoRef.current = detalhe.updatedAt;
@@ -101,7 +103,7 @@ export const UmTercoPreenchimentoPage = () => {
       }
     })();
     return () => { ativo = false; };
-  }, [cicloId, anoSerie, disciplinaId, draftKey, filaKey, userId, aplicarServidor]);
+  }, [cicloId, cargoId, draftKey, filaKey, userId, aplicarServidor]);
 
   useEffect(() => { textosRef.current = textos; sujoRef.current = sujo; }, [textos, sujo]);
 
@@ -130,10 +132,10 @@ export const UmTercoPreenchimentoPage = () => {
     setMensagemErro('');
     const respostas = dados.semanas.map(s => ({ semanaId: s.id, texto: textosRef.current[s.id] ?? '' }));
     try {
-      const novo = await salvarRespostasUmTerco(cicloId, anoSerie, disciplinaId, respostas, baseRef.current);
+      const novo = await salvarRespostasUmTerco(cicloId, cargoId, respostas, baseRef.current);
       baseRef.current = novo.updatedAt;
       baseDoRascunhoRef.current = novo.updatedAt;
-      setDados(prev => ({ ...prev, updatedAt: novo.updatedAt, status: novo.status, entregaId: novo.entregaId, validoPara: novo.validoPara, historico: novo.historico }));
+      setDados(prev => ({ ...prev, updatedAt: novo.updatedAt, status: novo.status, entregaId: novo.entregaId, historico: novo.historico }));
       // DEF-01: o professor pode ter digitado DURANTE o envio — então o que chegou ao servidor não é
       // tudo. Nesse caso continua "sujo" e o rascunho NÃO é apagado (o próximo salvamento envia o resto).
       const mudouDuranteEnvio = dados.semanas.some((s, i) => (textosRef.current[s.id] ?? '') !== respostas[i].texto);
@@ -165,7 +167,7 @@ export const UmTercoPreenchimentoPage = () => {
       if (eRede(error)) {
         await enfileirar({
           userId, resourceType: 'um-terco-resposta', resourceId, operation: 'respostas',
-          endpoint: caminhoRespostasUmTerco(cicloId, anoSerie, disciplinaId), method: 'PUT',
+          endpoint: caminhoRespostasUmTerco(cicloId, cargoId), method: 'PUT',
           payload: { respostas }, baseTokenField: 'baseUpdatedAt', baseToken: baseRef.current,
         });
         // DEF-08: guardado SÓ neste aparelho — nunca "Salvo" como se o servidor tivesse recebido.
@@ -187,7 +189,7 @@ export const UmTercoPreenchimentoPage = () => {
     } finally {
       if (envioRef.current === envio) envioRef.current = null;
     }
-  }, [dados, cicloId, anoSerie, disciplinaId, draftKey, userId, resourceId, filaKey, aplicarServidor]);
+  }, [dados, cicloId, cargoId, draftKey, userId, resourceId, filaKey, aplicarServidor]);
 
   // Debounce: depois de parar de digitar, envia sem o professor precisar fazer nada.
   useEffect(() => {
@@ -232,7 +234,7 @@ export const UmTercoPreenchimentoPage = () => {
     if (!salvo.ok) { setConcluindo(false); return; }
     try {
       const eraCorrecao = correcaoPendente(dados?.correcao);
-      await concluirFormularioUmTerco(cicloId, anoSerie, disciplinaId, baseRef.current);
+      await concluirFormularioUmTerco(cicloId, cargoId, baseRef.current);
       navigate('/formulario-um-terco', { state: { sucesso: eraCorrecao ? 'Correção enviada à Secretaria.' : 'Formulário 1/3 concluído. Você ainda pode editar até o fim do prazo.' } });
     } catch (error) {
       if (error.codigo === 'CONFLITO_VERSAO') setConflito(error.dadosAtuais || null);
@@ -276,7 +278,6 @@ export const UmTercoPreenchimentoPage = () => {
   const total = dados.semanas.length;
   const semana = dados.semanas[etapa];
   const ultima = etapa === total - 1;
-  const escolas = agruparPorEscola(dados.validoPara);
   const concluida = dados.status === 'concluida';
   // Fluxo de correções: "Salvar progresso" é rascunho; só "Enviar correção" devolve à Secretaria.
   const emCorrecao = correcaoPendente(dados.correcao);
@@ -297,15 +298,10 @@ export const UmTercoPreenchimentoPage = () => {
         <AvisoCorrecaoProfessor itens={[{ chave: 'correcao', titulo: null, correcao: dados.correcao }]} />
 
         <Card>
-          <p className="text-sm font-semibold text-slate-800">Válido para:</p>
-          {escolas.length === 0 ? (
-            <p className="mt-1 text-sm text-slate-500">Nenhuma turma ativa no momento.</p>
-          ) : (
-            <ul className="mt-1 space-y-0.5 text-sm text-slate-700">
-              {escolas.map(e => <li key={e.escolaId}><span className="font-semibold">{e.escolaNome}</span> — {e.turmas.join(', ')}</li>)}
-            </ul>
-          )}
+          <ComposicaoCargo composicao={dados.composicao} />
+          {!dados.esperada && <p className="mt-2 text-sm text-slate-500">Este cargo foi encerrado. O que foi escrito fica guardado só para consulta.</p>}
         </Card>
+        <AvisoFolhaCompartilhada texto={dados.avisoCompartilhada} />
 
         {!editavel && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">

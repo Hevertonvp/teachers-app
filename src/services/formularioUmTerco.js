@@ -2,10 +2,11 @@ import { apiFetch } from './api';
 
 // Formulário 1/3 real (backend /api/formulario-um-terco). Datas/horas de abertura, prazo e
 // reabertura viajam como "YYYY-MM-DDTHH:mm" no horário de Brasília (o mesmo valor do
-// <input type="datetime-local">); o backend devolve instantes ISO. Identidade do preenchimento:
-// ciclo + anoSerie + disciplina (o professor é o usuário logado) — nunca escola/turma.
+// <input type="datetime-local">); o backend devolve instantes ISO. Identidade do preenchimento
+// (desde 12/11/2026): ciclo + CARGO (o professor é o usuário logado) — nunca disciplina, escola ou turma.
+// `cargoId` é o id de um dos cargos da folha (cargos iguais dividem a mesma folha).
 const BASE = '/api/formulario-um-terco';
-const caminho = (cicloId, anoSerie, disciplinaId) => `${BASE}/ciclos/${cicloId}/formularios/${anoSerie}/${disciplinaId}`;
+const caminho = (cicloId, cargoId) => `${BASE}/ciclos/${cicloId}/cargos/${cargoId}`;
 
 // --- Secretaria ---
 export const listarCiclosUmTerco = () => apiFetch(`${BASE}/ciclos`);
@@ -18,18 +19,18 @@ export const obterPainelUmTerco = (id, filtros = {}) => {
   const query = new URLSearchParams(Object.fromEntries(Object.entries(filtros).filter(([, v]) => v !== '' && v != null))).toString();
   return apiFetch(`${BASE}/ciclos/${id}/painel${query ? `?${query}` : ''}`);
 };
-export const obterEntregaUmTerco = (cicloId, professorId, anoSerie, disciplinaId) => apiFetch(`${BASE}/ciclos/${cicloId}/entregas/${professorId}/${anoSerie}/${disciplinaId}`);
+export const obterEntregaUmTerco = (cicloId, professorId, cargoId) => apiFetch(`${BASE}/ciclos/${cicloId}/entregas/${professorId}/cargos/${cargoId}`);
 
 // --- Professor ---
 export const listarMeusFormulariosUmTerco = () => apiFetch(`${BASE}/minhas`);
-export const obterFormularioUmTerco = (cicloId, anoSerie, disciplinaId) => apiFetch(caminho(cicloId, anoSerie, disciplinaId));
-export const caminhoRespostasUmTerco = (cicloId, anoSerie, disciplinaId) => `${caminho(cicloId, anoSerie, disciplinaId)}/respostas`;
-export const salvarRespostasUmTerco = (cicloId, anoSerie, disciplinaId, respostas, baseUpdatedAt) => apiFetch(
-  caminhoRespostasUmTerco(cicloId, anoSerie, disciplinaId),
+export const obterFormularioUmTerco = (cicloId, cargoId) => apiFetch(caminho(cicloId, cargoId));
+export const caminhoRespostasUmTerco = (cicloId, cargoId) => `${caminho(cicloId, cargoId)}/respostas`;
+export const salvarRespostasUmTerco = (cicloId, cargoId, respostas, baseUpdatedAt) => apiFetch(
+  caminhoRespostasUmTerco(cicloId, cargoId),
   { method: 'PUT', body: { respostas, baseUpdatedAt: baseUpdatedAt ?? null } },
 );
-export const concluirFormularioUmTerco = (cicloId, anoSerie, disciplinaId, baseUpdatedAt) => apiFetch(
-  `${caminho(cicloId, anoSerie, disciplinaId)}/concluir`,
+export const concluirFormularioUmTerco = (cicloId, cargoId, baseUpdatedAt) => apiFetch(
+  `${caminho(cicloId, cargoId)}/concluir`,
   { method: 'POST', body: { baseUpdatedAt: baseUpdatedAt ?? null } },
 );
 
