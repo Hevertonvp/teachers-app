@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, LoadingBlock, Modal } from './Common';
 import { ComposicaoCargo } from './ComposicaoCargo';
-import { alterarCargo, criarCargo, encerrarCargo, listarCargos } from '../services/cargos';
+import { alterarCargo, criarCargo, encerrarCargo, listarCargos, previaSaidasCargo } from '../services/cargos';
 import { inputClass } from '../utils/display';
 import { hojeSpServidor } from '../utils/horaServidor';
 
@@ -141,7 +141,26 @@ export const NumeroDeCargos = ({ valor, onChange, desabilitado = false }) => (
 // Janela "Cargos" de um Professor já cadastrado. Secretaria cadastra, altera e encerra; a Diretora só vê.
 // `iniciar` ({ escolaId, cargoId: id | 'novo' }) vem da janela "Escolas": abre o editor já com a escola nova
 // (cargo novo ou bloco a mais no cargo escolhido). Nada é salvo sem a Secretaria confirmar.
+// Aviso de saída em cascata (decisão do usuário, 13/11/2026): a escola do professor vem do cargo, então tirar a
+// escola do cargo ou encerrar o cargo tira o professor da escola e das turmas lá. A tela diz ANTES o que sai.
+const AvisoSaidas = ({ nome, saidas }) => (
+  <div className="space-y-1 text-sm text-red-900">
+    <p className="font-semibold">{nome} também sai de:</p>
+    <ul className="list-disc space-y-1 pl-5">
+      {saidas.map(s => (
+        <li key={s.escolaId}>
+          <strong>{s.escolaNome}</strong>
+          {s.turmas.length > 0
+            ? <> e {s.turmas.length === 1 ? 'da turma' : `das ${s.turmas.length} turmas`} lá: {s.turmas.map(t => `${t.turma} (${t.disciplina})`).join(', ')}</>
+            : ' (sem turmas lá)'}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
 export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], onClose, onAlterado, iniciar = null }) => {
+  const [saidasAlterar, setSaidasAlterar] = useState(null); // { lista, dados } — aviso antes de salvar a alteração
   const [cargos, setCargos] = useState(null);
   const [encerrados, setEncerrados] = useState(null);
   const [verEncerrados, setVerEncerrados] = useState(false);
@@ -188,26 +207,41 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
     if (n === 1 && cargos?.length === 2) setMensagem('Para ficar com um cargo, encerre um deles abaixo.');
   };
 
-  const salvar = async () => {
+  const salvar = async (confirmarSaida = false) => {
     const v = validarRascunhoCargo(editando.rascunho);
     setErros(v.erros);
     if (!v.ok) return;
     setSalvando(true); setErro(''); setMensagem('');
     try {
+      if (editando.id !== 'novo' && !confirmarSaida) {
+        const lista = await previaSaidasCargo(professor.id, editando.id, { composicao: v.dados.composicao });
+        if (lista.length > 0) { setSaidasAlterar({ lista }); return; }
+      }
       const lista = editando.id === 'novo'
         ? await criarCargo(professor.id, v.dados)
-        : await alterarCargo(professor.id, editando.id, { ...v.dados, baseUpdatedAt: editando.base });
-      setCargos(lista); setEditando(null); setErros({ partes: {} });
+        : await alterarCargo(professor.id, editando.id, { ...v.dados, baseUpdatedAt: editando.base, confirmarSaida });
+      setCargos(lista); setEditando(null); setErros({ partes: {} }); setSaidasAlterar(null);
       setMensagem(editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado. A mudança vale a partir do próximo Formulário 1/3 que abrir.');
       onAlterado?.();
     } catch (e) { setErro(e.message); } finally { setSalvando(false); }
   };
 
+  const abrirEncerramento = async (cargo) => {
+    setMensagem(''); setErro('');
+    setEncerrando({ cargo, dataFim: hojeSp(), saidas: null });
+    try {
+      const saidas = await previaSaidasCargo(professor.id, cargo.id, { encerrar: true });
+      setEncerrando(prev => (prev?.cargo.id === cargo.id ? { ...prev, saidas } : prev));
+    } catch (e) { setErro(e.message); setEncerrando(null); }
+  };
+
   const confirmarEncerramento = async () => {
     setSalvando(true); setErro(''); setMensagem('');
     try {
-      setCargos(await encerrarCargo(professor.id, encerrando.cargo.id, encerrando.dataFim));
-      setMensagem('Cargo encerrado. Ele fica guardado no histórico e deixa de gerar Formulário 1/3.');
+      setCargos(await encerrarCargo(professor.id, encerrando.cargo.id, encerrando.dataFim, encerrando.saidas.length > 0));
+      setMensagem(encerrando.saidas.length > 0
+        ? `Cargo encerrado. ${professor.nome} saiu de: ${encerrando.saidas.map(s => s.escolaNome).join(', ')}.`
+        : 'Cargo encerrado. Ele fica guardado no histórico e deixa de gerar Formulário 1/3.');
       setEncerrando(null);
       if (verEncerrados) setEncerrados((await listarCargos(professor.id, { incluirEncerrados: true })).filter(c => c.status === 'encerrado'));
       onAlterado?.();
@@ -215,7 +249,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
   };
 
   return (
-    <Modal title={`Cargos — ${professor.nome}`} onClose={onClose}>
+    <Modal title={`Cargos e escolas — ${professor.nome}`} onClose={onClose}>
       <div className="space-y-4">
         {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
         {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
@@ -236,12 +270,22 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
 
             {cargos.map(cargo => (editando?.id === cargo.id ? (
               <div key={cargo.id} className="space-y-2">
-                <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
-                <p className="text-xs text-slate-500">A mudança vale a partir do próximo Formulário 1/3 que abrir. O que já está aberto continua como estava.</p>
-                <div className="flex justify-end gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => { setEditando(null); setErros({ partes: {} }); }} disabled={salvando}>Cancelar</Button>
-                  <Button size="sm" onClick={salvar} loading={salvando}>Salvar cargo</Button>
-                </div>
+                <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => { setSaidasAlterar(null); setEditando(prev => ({ ...prev, rascunho: r })); }} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
+                <p className="text-xs text-slate-500">A mudança vale a partir do próximo Formulário 1/3 que abrir. O que já está aberto continua como estava. Escola incluída no cargo: o professor entra nela na hora; escola tirada: ele sai dela.</p>
+                {saidasAlterar ? (
+                  <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3" role="alert">
+                    <AvisoSaidas nome={professor.nome} saidas={saidasAlterar.lista} />
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                      <Button variant="secondary" size="sm" onClick={() => setSaidasAlterar(null)} disabled={salvando}>Voltar</Button>
+                      <Button variant="danger" size="sm" onClick={() => salvar(true)} loading={salvando}>Salvar e tirar da escola</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => { setEditando(null); setErros({ partes: {} }); }} disabled={salvando}>Cancelar</Button>
+                    <Button size="sm" onClick={() => salvar()} loading={salvando}>Salvar cargo</Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div key={cargo.id} className="space-y-2 rounded-xl border border-slate-200 p-3 sm:p-4">
@@ -252,8 +296,8 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                   </div>
                   {podeEditar && !editando && !encerrando && (
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setErros({ partes: {} }); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo), base: cargo.updatedAt }); }}>Alterar</Button>
-                      <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setEncerrando({ cargo, dataFim: hojeSp() }); }}>Encerrar cargo</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo), base: cargo.updatedAt }); }}>Alterar</Button>
+                      <Button size="sm" variant="outline" onClick={() => abrirEncerramento(cargo)}>Encerrar cargo</Button>
                     </div>
                   )}
                 </div>
@@ -261,13 +305,19 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                 {encerrando?.cargo.id === cargo.id && (
                   <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
                     <p className="text-sm text-amber-900">Encerrar o <strong>{cargo.rotulo}</strong>? Ele não é apagado: fica no histórico e deixa de gerar Formulário 1/3. O que o professor já escreveu fica guardado.</p>
+                    {!encerrando.saidas && <LoadingBlock text="Conferindo escolas e turmas..." className="py-2" />}
+                    {encerrando.saidas?.length > 0 && (
+                      <div className="rounded-lg border-2 border-red-200 bg-red-50 p-3" role="alert">
+                        <AvisoSaidas nome={professor.nome} saidas={encerrando.saidas} />
+                      </div>
+                    )}
                     <label className="block text-sm font-semibold text-slate-700">
                       Data de encerramento
                       <input type="date" className={`${inputClass} mt-1 sm:max-w-48`} value={encerrando.dataFim} max={hojeSp()} onChange={e => setEncerrando(prev => ({ ...prev, dataFim: e.target.value }))} />
                     </label>
                     <div className="flex justify-end gap-2">
                       <Button size="sm" variant="secondary" onClick={() => setEncerrando(null)} disabled={salvando}>Cancelar</Button>
-                      <Button size="sm" variant="danger" onClick={confirmarEncerramento} loading={salvando} disabled={!encerrando.dataFim}>Encerrar cargo</Button>
+                      <Button size="sm" variant="danger" onClick={confirmarEncerramento} loading={salvando} disabled={!encerrando.dataFim || !encerrando.saidas}>{encerrando.saidas?.length > 0 ? 'Encerrar e tirar da escola' : 'Encerrar cargo'}</Button>
                     </div>
                   </div>
                 )}
@@ -279,7 +329,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                 <EditorCargo rotulo={`Cargo ${cargos.length + 1}`} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
                 <div className="flex justify-end gap-2">
                   {cargos.length > 0 && <Button variant="secondary" size="sm" onClick={() => { setEditando(null); setErros({ partes: {} }); }} disabled={salvando}>Cancelar</Button>}
-                  <Button size="sm" onClick={salvar} loading={salvando}>Cadastrar cargo</Button>
+                  <Button size="sm" onClick={() => salvar()} loading={salvando}>Cadastrar cargo</Button>
                 </div>
               </div>
             )}

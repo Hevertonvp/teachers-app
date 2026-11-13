@@ -31,6 +31,14 @@ vinculosEscolaresRouter.get('/me', async (req, res) => {
 
 const PERFIS_ESCOPO_DIRETORA = ['PROFESSOR', 'AUXILIAR'];
 
+// A escola do Professor vem do cargo (decisão do usuário, 13/11/2026): vínculo escolar de Professor só nasce,
+// volta ou sai pelos cargos (lib/cargos.ts). Esta rota fica para Auxiliar (e para a consulta).
+const exigirNaoProfessor = (pessoa: { perfil: string }) => {
+  if (pessoa.perfil === 'PROFESSOR') {
+    throw new ValidationError('A escola do Professor vem do cargo. Para incluir ou tirar uma escola, a Secretaria altera o cargo em "Cargos e escolas".');
+  }
+};
+
 // Diretora só gerencia vínculo escolar de Professor/Auxiliar, e só dentro das próprias escolas
 // (ver seção 11 do pedido). Diretora/Gestor são sempre exclusivos da Secretaria — mesmo corte já
 // usado em canManagePessoas no frontend (Supervisores(as)/Diretores(as) só pra Secretaria).
@@ -103,6 +111,7 @@ vinculosEscolaresRouter.post('/', async (req, res) => {
   if (!['PROFESSOR', 'AUXILIAR'].includes(pessoa.perfil)) {
     throw new ValidationError('Este endpoint só cria vínculo escolar para Professor ou Auxiliar.');
   }
+  exigirNaoProfessor(pessoa);
 
   await exigirEscopoParaPessoa(actor, pessoa, escolaId);
 
@@ -135,6 +144,7 @@ vinculosEscolaresRouter.post('/:id/encerrar', async (req, res) => {
   const vinculo = await prisma.vinculoEscolar.findUnique({ where: { id }, include: { escola: true, pessoa: true } });
   if (!vinculo) throw new NotFoundError('Vínculo não encontrado.');
   await exigirEscopoParaPessoa(actor, vinculo.pessoa, vinculo.escolaId);
+  exigirNaoProfessor(vinculo.pessoa);
   if (vinculo.status !== 'ATIVO') throw new ValidationError('Este vínculo já está encerrado.');
 
   const agora = new Date();
@@ -169,6 +179,7 @@ vinculosEscolaresRouter.post('/:id/reativar', async (req, res) => {
   const vinculo = await prisma.vinculoEscolar.findUnique({ where: { id }, include: { escola: true, pessoa: true } });
   if (!vinculo) throw new NotFoundError('Vínculo não encontrado.');
   await exigirEscopoParaPessoa(actor, vinculo.pessoa, vinculo.escolaId);
+  exigirNaoProfessor(vinculo.pessoa);
   if (vinculo.status !== 'ENCERRADO') throw new ValidationError('Este vínculo já está ativo.');
 
   const atualizado = await prisma.$transaction(async (tx) => {
