@@ -44,6 +44,8 @@ async function limpar() {
   const cargos = (await prisma.cargoProfessor.findMany({ where: { professorId: { in: pessoas } }, select: { id: true } })).map((c) => c.id);
   await prisma.cargoVersao.deleteMany({ where: { cargoId: { in: cargos } } });
   await prisma.cargoProfessor.deleteMany({ where: { id: { in: cargos } } });
+  await prisma.professorTurmaDisciplina.deleteMany({ where: { OR: [{ professorId: { in: pessoas } }, { turma: { escolaId: { in: escolas } } }] } });
+  await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.vinculoEscolar.deleteMany({ where: { OR: [{ pessoaId: { in: pessoas } }, { escolaId: { in: escolas } }] } });
   await prisma.pessoaEvento.deleteMany({ where: { OR: [{ pessoaId: { in: pessoas } }, { autorId: { in: pessoas } }] } });
   await prisma.notificacao.deleteMany({ where: { pessoaId: { in: pessoas } } }).catch(() => undefined);
@@ -211,12 +213,56 @@ try {
     assert.equal((await api(tDir, 'PUT', `/pessoas/professores/${p1.id}/cargos/${c.id}`, { composicao: C([prud.id, [geo.id]]) })).status, 403);
     assert.equal((await api(tDir, 'POST', `/pessoas/professores/${p1.id}/cargos/${c.id}/encerrar`, { dataFim: diaSp() })).status, 403);
   });
-  await caso('Remover escola do cargo NÃO encerra o vínculo escolar', async () => {
+  // MUDOU em 13/11/2026 (decisão do usuário): a escola do Professor vem do cargo.
+  const turmaEm = (escolaId: number, n: number) => prisma.turma.create({ data: { escolaId, anoLetivo: 2099, etapa: 'FUNDAMENTAL', anoSerie: 6, turno: 'MANHA', identificador: n, nome: `${PREFIXO} 6º ${n}`, identidadeChave: `${PREFIXO}-${escolaId}-${n}-${Date.now()}` } });
+  const turmasAtivas = (id: number) => prisma.professorTurmaDisciplina.count({ where: { professorId: id, status: 'ATIVO' } });
+  await caso('Tirar escola do cargo: prévia lista escola e turma; sem confirmar = 409 e nada muda; confirmado = sai da escola e da turma lá', async () => {
     const p = await novoProfessor([{ composicao: C([prud.id, [ing.id]], [tres.id, [geo.id]]) }]);
+    const t = await turmaEm(tres.id, 1);
+    await prisma.professorTurmaDisciplina.create({ data: { turmaId: t.id, professorId: p.id, disciplinaId: geo.id, status: 'ATIVO', dataInicio: dataDb(diaSp(-5)) } });
     const [c] = await cargosDe(p.id);
-    const r = await api(tSec, 'PUT', `/pessoas/professores/${p.id}/cargos/${c.id}`, { composicao: C([prud.id, [ing.id]]), baseUpdatedAt: c.updatedAt });
+    const previa = await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c.id}/saidas`, { composicao: C([prud.id, [ing.id]]) });
+    assert.equal(previa.status, 200, JSON.stringify(previa.json));
+    assert.deepEqual(previa.json.map((s: { escolaId: number; turmas: unknown[] }) => [s.escolaId, s.turmas.length]), [[tres.id, 1]]);
+    assert.equal((await api(tDir, 'POST', `/pessoas/professores/${p.id}/cargos/${c.id}/saidas`, { encerrar: true })).status, 403);
+    const semConfirmar = await api(tSec, 'PUT', `/pessoas/professores/${p.id}/cargos/${c.id}`, { composicao: C([prud.id, [ing.id]]), baseUpdatedAt: c.updatedAt });
+    assert.equal(semConfirmar.status, 409, JSON.stringify(semConfirmar.json));
+    assert.deepEqual(await vinculosAtivos(p.id), [prud.id, tres.id].sort());
+    assert.equal((await cargosDe(p.id))[0].composicao.length, 2);
+    const r = await api(tSec, 'PUT', `/pessoas/professores/${p.id}/cargos/${c.id}`, { composicao: C([prud.id, [ing.id]]), baseUpdatedAt: c.updatedAt, confirmarSaida: true });
+    assert.equal(r.status, 200, JSON.stringify(r.json));
+    assert.deepEqual(await vinculosAtivos(p.id), [prud.id]);
+    assert.equal(await turmasAtivas(p.id), 0);
+  });
+  await caso('Escola que continua no outro cargo NÃO sai (alterar e encerrar não pedem confirmação)', async () => {
+    const p = await novoProfessor([{ composicao: C([prud.id, [ing.id]], [tres.id, [geo.id]]) }, { composicao: C([tres.id, [ing.id]]) }]);
+    const [c1, c2] = await cargosDe(p.id);
+    const r = await api(tSec, 'PUT', `/pessoas/professores/${p.id}/cargos/${c1.id}`, { composicao: C([prud.id, [ing.id]]), baseUpdatedAt: c1.updatedAt });
     assert.equal(r.status, 200, JSON.stringify(r.json));
     assert.deepEqual(await vinculosAtivos(p.id), [prud.id, tres.id].sort());
+    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c2.id}/saidas`, { encerrar: true })).json.length, 1);
+    const enc = await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c2.id}/encerrar`, { dataFim: diaSp() });
+    assert.equal(enc.status, 409, 'Cargo 2 era o único com a Três Marias: precisa confirmar');
+  });
+  await caso('Incluir escola no cargo: o professor entra na escola na hora', async () => {
+    const p = await novoProfessor([{ composicao: C([prud.id, [ing.id]]) }]);
+    const [c] = await cargosDe(p.id);
+    const r = await api(tSec, 'PUT', `/pessoas/professores/${p.id}/cargos/${c.id}`, { composicao: C([prud.id, [ing.id]], [tres.id, [ing.id]]), baseUpdatedAt: c.updatedAt });
+    assert.equal(r.status, 200, JSON.stringify(r.json));
+    assert.deepEqual(await vinculosAtivos(p.id), [prud.id, tres.id].sort());
+  });
+  await caso('Vínculo escolar de Professor fora do cargo é recusado: Diretora não cadastra; janela "Escolas" não vincula, encerra nem reativa', async () => {
+    const p = await novoProfessor([{ composicao: C([tres.id, [ing.id]]) }]);
+    const dirCad = await api(tDir, 'POST', '/pessoas/professores', { nome: `${PREFIXO} Prof Dir`, email: EMAIL('prof-dir'), escolaIds: [prud.id] });
+    assert.equal(dirCad.status, 403, JSON.stringify(dirCad.json));
+    assert.equal(await prisma.pessoa.count({ where: { email: EMAIL('prof-dir') } }), 0);
+    assert.equal((await api(tSec, 'POST', '/pessoas/professores', { nome: 'x', email: EMAIL('prof-sem-cargo'), escolaIds: [prud.id] })).status, 400);
+    assert.equal((await api(tSec, 'POST', '/pessoas/professores', { email: EMAIL(`prof${seq}`), cargos: [{ dataInicio: diaSp(), composicao: C([prud.id, [ing.id]]) }] })).status, 409);
+    assert.equal((await api(tSec, 'POST', '/vinculos-escolares', { pessoaId: p.id, escolaId: prud.id })).status, 400);
+    assert.equal((await api(tDir, 'POST', '/vinculos-escolares', { pessoaId: p.id, escolaId: prud.id })).status, 400);
+    const v = await prisma.vinculoEscolar.findFirstOrThrow({ where: { pessoaId: p.id, status: 'ATIVO' } });
+    assert.equal((await api(tSec, 'POST', `/vinculos-escolares/${v.id}/encerrar`)).status, 400);
+    assert.deepEqual(await vinculosAtivos(p.id), [tres.id]);
   });
   await caso('Encerramento: data futura e antes do início recusadas; encerrado some da tela normal e continua no banco; renumeração 2 → 1 mantém o id', async () => {
     const p = await novoProfessor([{ dataInicio: diaSp(-30), composicao: C([prud.id, [ing.id]]) }, { dataInicio: diaSp(-10), composicao: C([tres.id, [geo.id]]) }]);
@@ -224,7 +270,15 @@ try {
     assert.equal(c2.rotulo, 'Cargo 2');
     assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp(3) })).status, 400);
     assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp(-40) })).status, 400);
-    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp() })).status, 200);
+    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp() })).status, 409, 'sem confirmar a saída da Prudenciana');
+    assert.equal((await cargosDe(p.id)).length, 2);
+    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp(-2), confirmarSaida: true })).status, 200);
+    // Encerrar o cargo tira o professor da escola DESSE cargo, na data do encerramento.
+    assert.deepEqual(await vinculosAtivos(p.id), [tres.id]);
+    const vPrud = await prisma.vinculoEscolar.findFirstOrThrow({ where: { pessoaId: p.id, escolaId: prud.id } });
+    assert.equal(vPrud.status, 'ENCERRADO');
+    // O vínculo nasceu hoje (cadastro); a data de fim nunca fica antes do início.
+    assert.equal(vPrud.dataFim?.toISOString().slice(0, 10), vPrud.dataInicio.toISOString().slice(0, 10));
     const visiveis = await cargosDe(p.id);
     assert.deepEqual(visiveis.map((c) => [c.id, c.rotulo]), [[c2.id, 'Cargo 1']]);
     const todos = await cargosDe(p.id, true);
@@ -309,7 +363,7 @@ try {
   await caso('17. Cargo encerrado durante o ciclo sem texto → deixa de ser esperado e some da lista', async () => {
     const antesP = await painel(ciclo.id);
     const [c] = await cargosDe(pEncerra.id);
-    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${pEncerra.id}/cargos/${c.id}/encerrar`, { dataFim: diaSp() })).status, 200);
+    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${pEncerra.id}/cargos/${c.id}/encerrar`, { dataFim: diaSp(), confirmarSaida: true })).status, 200);
     const depois = await painel(ciclo.id);
     assert.equal(depois.resumo.esperado, antesP.resumo.esperado - 1);
     assert.equal((await minhas(pEncerra.token, ciclo.id)).length, 0);
@@ -319,7 +373,7 @@ try {
     assert.equal((await salvar(pEncerraComTexto.token, item.cargoId, null)).status, 200);
     const [c] = await cargosDe(pEncerraComTexto.id);
     const esperadoAntes = (await painel(ciclo.id)).resumo.esperado;
-    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${pEncerraComTexto.id}/cargos/${c.id}/encerrar`, { dataFim: diaSp() })).status, 200);
+    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${pEncerraComTexto.id}/cargos/${c.id}/encerrar`, { dataFim: diaSp(), confirmarSaida: true })).status, 200);
     const p = await painel(ciclo.id);
     assert.equal(p.resumo.esperado, esperadoAntes - 1);
     assert.ok(p.foraDoEsperado.some((l) => l.professorId === pEncerraComTexto.id), 'deve aparecer em foraDoEsperado');
@@ -332,7 +386,7 @@ try {
   });
   await caso('Cargos iguais e um deles encerrado durante o ciclo → a folha continua esperada', async () => {
     const [c1] = await cargosDe(pIguaisUmEncerra.id);
-    await api(tSec, 'POST', `/pessoas/professores/${pIguaisUmEncerra.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp() });
+    await api(tSec, 'POST', `/pessoas/professores/${pIguaisUmEncerra.id}/cargos/${c1.id}/encerrar`, { dataFim: diaSp(), confirmarSaida: true });
     const itens = await minhas(pIguaisUmEncerra.token, ciclo.id);
     assert.equal(itens.length, 1); assert.equal(itens[0].esperada, true);
   });
@@ -341,7 +395,7 @@ try {
     const [c] = await cargosDe(pMuda.id);
     cargoMuda = c.id;
     assert.equal((await salvar(pMuda.token, c.id, null, ['a', ''])).status, 200);
-    const r = await api(tSec, 'PUT', `/pessoas/professores/${pMuda.id}/cargos/${c.id}`, { composicao: C([tres.id, [geo.id]]), baseUpdatedAt: c.updatedAt });
+    const r = await api(tSec, 'PUT', `/pessoas/professores/${pMuda.id}/cargos/${c.id}`, { composicao: C([tres.id, [geo.id]]), baseUpdatedAt: c.updatedAt, confirmarSaida: true });
     assert.equal(r.status, 200, JSON.stringify(r.json));
     const [item] = await minhas(pMuda.token, ciclo.id);
     assert.deepEqual(item.composicao.map((p) => p.escolaId), [prud.id], 'continua Prudenciana neste ciclo');

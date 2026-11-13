@@ -114,22 +114,22 @@ async function validarEscopoEscolas(actor: Actor, escolaIds: number[]) {
   }
 }
 
-// Cria um professor novo OU vincula um professor já existente (mesmo e-mail) a escola(s) novas —
-// nunca duas contas para o mesmo e-mail (ver seções 3/9 do pedido). Diretora só age dentro do
-// próprio escopo de escolas, verificado aqui, nunca confiando em nada vindo do frontend.
+// Cria um professor novo, sempre com cargo(s) — nunca duas contas para o mesmo e-mail.
+// MUDOU em 13/11/2026 (decisão do usuário): a escola do Professor vem do cargo, então SÓ a Secretaria
+// cadastra Professor, sempre com cargo; as escolas são as dos cargos (`escolaIds` do corpo é ignorado).
+// A Diretora não cadastra nem vincula Professor. Professor já existente: muda pelos cargos dele.
 pessoasRouter.post('/professores', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretariaOuDiretora(actor);
+  if (actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria cadastra professor (a escola do professor vem do cargo).');
   const { nome, email, cargos } = criarOuVincularProfessorSchema.parse(req.body);
   const emailNormalizado = email.toLowerCase();
-  if (cargos?.length && actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria cadastra cargos.');
 
   // Cargos validados antes de tudo; as escolas deles entram nos vínculos.
   const cargosValidos = cargos?.length
     ? await Promise.all(cargos.map(async (c) => ({ dataInicio: lerData(c.dataInicio, 'Início do cargo'), composicao: await validarComposicaoNoBanco(prisma, c.composicao) })))
     : [];
-  const escolaIds = [...new Set([...criarOuVincularProfessorSchema.parse(req.body).escolaIds, ...cargosValidos.flatMap((c) => c.composicao.map((i) => i.escolaId))])];
-  if (escolaIds.length === 0) throw new ValidationError(actor.perfil === 'SECRETARIA' ? 'Cadastre ao menos um cargo, com a escola.' : 'Selecione ao menos uma escola.');
+  const escolaIds = [...new Set(cargosValidos.flatMap((c) => c.composicao.map((i) => i.escolaId)))];
+  if (escolaIds.length === 0) throw new ValidationError('Cadastre ao menos um cargo, com a escola.');
 
   await validarEscopoEscolas(actor, escolaIds);
 
@@ -138,33 +138,8 @@ pessoasRouter.post('/professores', async (req, res) => {
   if (existente && existente.perfil !== 'PROFESSOR') {
     throw new ConflictError('Já existe uma conta com este e-mail, de outro perfil. Procure a Secretaria.');
   }
-  if (existente && cargosValidos.length) {
-    throw new ConflictError('Já existe um Professor com este e-mail. Para mudar os cargos dele, use "Cargos" na lista de professores.');
-  }
-
   if (existente) {
-    const vinculosAtivos = await prisma.vinculoEscolar.findMany({
-      where: { pessoaId: existente.id, status: 'ATIVO' },
-      select: { escolaId: true },
-    });
-    const jaVinculadas = new Set(vinculosAtivos.map((v) => v.escolaId));
-    const novasEscolas = escolaIds.filter((id) => !jaVinculadas.has(id));
-
-    if (novasEscolas.length === 0) {
-      return res.json({ pessoa: formatarPessoa(existente), senhaTemporaria: null, mensagem: 'Este professor já está vinculado a todas as escolas selecionadas.' });
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await travarVinculosEscolares(tx, existente.id);
-      const jaAgora = new Set((await tx.vinculoEscolar.findMany({ where: { pessoaId: existente.id, status: 'ATIVO' }, select: { escolaId: true } })).map((v) => v.escolaId));
-      for (const escolaId of novasEscolas) {
-        if (jaAgora.has(escolaId)) continue;
-        await tx.vinculoEscolar.create({ data: { escolaId, pessoaId: existente.id, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) } });
-        await tx.pessoaEvento.create({ data: { pessoaId: existente.id, tipo: 'VINCULO_CRIADO', autorId: actor.id, detalhe: `Escola #${escolaId}` } });
-      }
-    });
-
-    return res.status(201).json({ pessoa: formatarPessoa(existente), senhaTemporaria: null, mensagem: 'Professor já existente vinculado com sucesso.' });
+    throw new ConflictError('Já existe um Professor com este e-mail. Para mudar as escolas ou os cargos dele, use "Cargos e escolas" na lista de professores.');
   }
 
   if (!nome) throw new ValidationError('Nome é obrigatório para cadastrar um novo professor.');

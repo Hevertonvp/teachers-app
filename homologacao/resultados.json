@@ -9744,5 +9744,71 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-12T18:20:31.849Z"
+  },
+  {
+    "id": "CASC-1",
+    "modulo": "Escola vem do cargo",
+    "cenario": "Lista de professores (Secretaria): botão único \"Cargos e escolas\"; \"Escolas\" sumiu para professor",
+    "esperado": "botões incluem Cargos e escolas e não incluem Escolas",
+    "observado": "[\"Cargos e escolas\",\"Turmas e disciplinas\"]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-13T13:32:29.757Z"
+  },
+  {
+    "id": "CASC-2",
+    "modulo": "Escola vem do cargo",
+    "cenario": "Tirar escola do cargo: aviso ANTES (escola + turma); Voltar não grava; \"Salvar e tirar da escola\" encerra vínculo e turma lá",
+    "esperado": "aviso com Boa Vista e ZZCASC 9º 9; banco intacto até confirmar; depois só Aurora e turma encerrada",
+    "observado": "aviso: Aaa ZZCASC Professor alterar também sai de: ZZ-HOMOLOG Escola Boa Vista e da turma lá: ZZCASC 9º 9 (Inglês) Voltar Salvar e tirar da escola; não gravou: true; voltar: true; depois: [1]; turma: ENCERRADO",
+    "status": "APROVADO",
+    "evidencia": "66-aviso-tirar-escola-do-cargo.png",
+    "nota": "",
+    "quando": "2026-11-13T13:32:32.114Z"
+  },
+  {
+    "id": "CASC-3",
+    "modulo": "Escola vem do cargo",
+    "cenario": "Encerrar cargo: aviso ANTES com a escola que sai; confirmado, o professor sai da escola",
+    "esperado": "aviso com Aurora; vínculo ativo até confirmar; depois nenhum",
+    "observado": "aviso: Aaa ZZCASC Professor encerrar também sai de: ZZ-HOMOLOG Escola Aurora (sem turmas lá); antes: [1]; depois: []",
+    "status": "APROVADO",
+    "evidencia": "66-aviso-encerrar-cargo.png",
+    "nota": "",
+    "quando": "2026-11-13T13:32:34.430Z"
+  },
+  {
+    "id": "CASC-4",
+    "modulo": "Escola vem do cargo",
+    "cenario": "Celular 390 px: aviso de saída cabe na tela",
+    "esperado": "sem rolagem lateral",
+    "observado": "rolagem lateral: 0px; erros: 0",
+    "status": "APROVADO",
+    "evidencia": "66-aviso-celular.png",
+    "nota": "",
+    "quando": "2026-11-13T13:32:39.031Z"
+  },
+  {
+    "id": "CASC-5",
+    "modulo": "Escola vem do cargo",
+    "cenario": "Diretora: não cadastra professor nem vincula escola de professor; texto orienta pedir à Secretaria",
+    "esperado": "sem os botões; texto presente",
+    "observado": "cadastrar: 0; escolas: 0; texto: true; erros: 0",
+    "status": "APROVADO",
+    "evidencia": "66-diretora-professores.png",
+    "nota": "",
+    "quando": "2026-11-13T13:32:43.483Z"
+  },
+  {
+    "id": "CASC-6",
+    "modulo": "Escola vem do cargo",
+    "cenario": "Sem erros no console/5xx (Secretaria)",
+    "esperado": "nenhum",
+    "observado": "[]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-13T13:32:43.657Z"
   }
 ]

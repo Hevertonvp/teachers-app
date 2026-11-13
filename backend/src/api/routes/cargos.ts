@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError } from '../../domain/errors.js';
-import { alterarCargo, criarCargo, encerrarCargo, lerData, listarCargosFormatados, validarComposicaoNoBanco } from '../../lib/cargos.js';
+import { alterarCargo, criarCargo, encerrarCargo, lerData, listarCargosFormatados, saidasDoCargo, validarComposicaoNoBanco } from '../../lib/cargos.js';
+import { lerComposicao } from '../../domain/cargos.js';
 import { escolasPermitidas, exigirSecretariaOuDiretora, type Actor } from './pessoas.js';
 
 // Cargos do Professor (decisão do usuário, 12/11/2026) — parte do cadastro administrativo do Professor,
@@ -47,7 +48,23 @@ cargosRouter.post('/professores/:id/cargos', async (req, res) => {
   res.status(201).json(await listarCargosFormatados(prisma, professor.id));
 });
 
-const alterarCargoSchema = z.object({ dataInicio: z.string().optional(), composicao: z.unknown().optional(), baseUpdatedAt: z.string().nullish() });
+// Prévia do aviso (13/11/2026): de quais escolas (e turmas) o Professor sai se o cargo ficar com `composicao`
+// ou for encerrado. Só leitura. A gravação recusa (409) sem `confirmarSaida: true` quando há saída.
+const saidasSchema = z.object({ composicao: z.unknown().optional(), encerrar: z.boolean().optional() });
+
+cargosRouter.post('/professores/:id/cargos/:cargoId/saidas', async (req, res) => {
+  const actor = res.locals.pessoa as Actor;
+  exigirSecretaria(actor);
+  const professor = await buscarProfessor(actor, Number(req.params.id));
+  const cargoId = Number(req.params.cargoId);
+  const dados = saidasSchema.parse(req.body);
+  const cargo = await prisma.cargoProfessor.findFirst({ where: { id: cargoId, professorId: professor.id, status: 'ATIVO' }, include: { versoes: { orderBy: { criadaEm: 'desc' }, take: 1 } } });
+  if (!cargo) throw new NotFoundError('Cargo não encontrado.');
+  const nova = dados.encerrar ? null : await validarComposicaoNoBanco(prisma, dados.composicao, lerComposicao(cargo.versoes[0]?.composicao));
+  res.json(await saidasDoCargo(prisma, professor.id, cargoId, nova));
+});
+
+const alterarCargoSchema = z.object({ dataInicio: z.string().optional(), composicao: z.unknown().optional(), baseUpdatedAt: z.string().nullish(), confirmarSaida: z.boolean().optional() });
 
 cargosRouter.put('/professores/:id/cargos/:cargoId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
@@ -58,13 +75,13 @@ cargosRouter.put('/professores/:id/cargos/:cargoId', async (req, res) => {
   res.json(await listarCargosFormatados(prisma, professor.id));
 });
 
-const encerrarSchema = z.object({ dataFim: z.string() });
+const encerrarSchema = z.object({ dataFim: z.string(), confirmarSaida: z.boolean().optional() });
 
 cargosRouter.post('/professores/:id/cargos/:cargoId/encerrar', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   exigirSecretaria(actor);
   const professor = await buscarProfessor(actor, Number(req.params.id));
-  const { dataFim } = encerrarSchema.parse(req.body);
-  await prisma.$transaction((tx) => encerrarCargo(tx, professor.id, Number(req.params.cargoId), dataFim, actor.id));
+  const { dataFim, confirmarSaida } = encerrarSchema.parse(req.body);
+  await prisma.$transaction((tx) => encerrarCargo(tx, professor.id, Number(req.params.cargoId), dataFim, actor.id, confirmarSaida));
   res.json(await listarCargosFormatados(prisma, professor.id));
 });
