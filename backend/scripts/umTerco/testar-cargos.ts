@@ -350,15 +350,87 @@ try {
     assert.ok(!porDisc.linhas.some((l) => l.professorId === pInfantil.id));
     assert.ok((await painel(ciclo.id, `?escolaId=${cmei.id}`)).linhas.some((l) => l.professorId === pInfantil.id));
   });
-  await caso('15. Cargo novo durante o ciclo aberto → não cria folha neste ciclo', async () => {
-    const r = await api(tSec, 'POST', `/pessoas/professores/${pNovo.id}/cargos`, { dataInicio: diaSp(-20), composicao: C([tres.id, [ing.id]]) });
-    assert.equal(r.status, 201, JSON.stringify(r.json));
-    assert.equal((await minhas(pNovo.token, ciclo.id)).length, 1, 'o cargo novo não pode entrar no ciclo em andamento, mesmo com início anterior');
-  });
-
   const semanas = ciclo.semanas;
   const salvar = (token: string, cargoId: number, base: string | null, textos = ['Semana 1: verbos', 'Semana 2: mapas']) =>
     api(token, 'PUT', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${cargoId}/respostas`, { baseUpdatedAt: base, respostas: semanas.map((s, i) => ({ semanaId: s.id, texto: textos[i] ?? '' })) });
+  // Regra de 15/11/2026: cargo criado com o ciclo aberto entra no ciclo atual (antes: só no próximo).
+  const respostasAntes = await prisma.respostaSemanaUmTerco.findMany({ where: { entrega: { cicloId: ciclo.id } }, select: { id: true, texto: true, updatedAt: true }, orderBy: { id: 'asc' } });
+  const entregasAntes = await prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id }, select: { id: true, status: true, chaveCargos: true }, orderBy: { id: 'asc' } });
+  await caso('NOVA 1. Cargo existente antes da abertura entra normalmente (folha do Cargo 1)', async () => {
+    const itens = await minhas(pNovo.token, ciclo.id);
+    assert.equal(itens.length, 1); assert.equal(itens[0].esperada, true);
+  });
+  await caso('NOVA 2/6. Cargo criado com o ciclo aberto entra no ciclo atual: 2 folhas, esperado +1, filtro da escola nova, mesmo prazo', async () => {
+    const antesP = await painel(ciclo.id);
+    const r = await api(tSec, 'POST', `/pessoas/professores/${pNovo.id}/cargos`, { dataInicio: diaSp(), composicao: C([tres.id, [ing.id]]) });
+    assert.equal(r.status, 201, JSON.stringify(r.json));
+    const itens = await minhas(pNovo.token, ciclo.id);
+    assert.equal(itens.length, 2, 'Cargo 1 + Cargo 2 no ciclo atual');
+    const nova = itens.find((i) => i.composicao.some((p) => p.escolaId === tres.id))!;
+    assert.ok(nova, 'folha da escola nova');
+    assert.equal(nova.esperada, true); assert.equal(nova.editavelAgora, true);
+    const depois = await painel(ciclo.id);
+    assert.equal(depois.resumo.esperado, antesP.resumo.esperado + 1, 'esperado sobe 1');
+    assert.ok((await painel(ciclo.id, `?escolaId=${tres.id}`)).linhas.some((l) => l.professorId === pNovo.id && l.cargoId === nova.cargoId), 'aparece no filtro da escola nova');
+    assert.ok(!(await painel(ciclo.id, `?escolaId=${prud.id}`)).linhas.some((l) => l.cargoId === nova.cargoId), 'não aparece na outra escola');
+    const c = await prisma.cicloUmTerco.findUniqueOrThrow({ where: { id: ciclo.id } });
+    assert.equal(c.prazoEm.getTime(), ciclo.prazoEm.getTime(), 'prazo do ciclo não muda');
+  });
+  await caso('NOVA 3. Folha nova criada uma única vez (duas primeiras gravações ao mesmo tempo + regravação)', async () => {
+    const nova = (await minhas(pNovo.token, ciclo.id)).find((i) => i.composicao.some((p) => p.escolaId === tres.id))!;
+    const corpo = { baseUpdatedAt: null, respostas: [{ semanaId: ciclo.semanas[0].id, texto: 'Cargo novo: semana 1' }] };
+    const rs = await Promise.all([1, 2].map(() => api(pNovo.token, 'PUT', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${nova.cargoId}/respostas`, corpo)));
+    assert.deepEqual(rs.map((x) => x.status).sort(), [200, 409], 'uma grava, a outra recebe conflito');
+    const base = (rs.find((x) => x.status === 200)!.json as { updatedAt: string }).updatedAt;
+    assert.equal((await api(pNovo.token, 'PUT', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${nova.cargoId}/respostas`, { ...corpo, baseUpdatedAt: base })).status, 200);
+    assert.equal(await prisma.entregaUmTercoCargo.count({ where: { cargoId: nova.cargoId, entrega: { cicloId: ciclo.id } } }), 1, 'uma entrega só para o cargo novo');
+    assert.equal((await minhas(pNovo.token, ciclo.id)).length, 2);
+  });
+  await caso('NOVA 5. Cargo equivalente criado no meio do ciclo: folha compartilhada, mesma entrega, texto intacto, esperado igual', async () => {
+    const p = await novoProfessor([{ composicao: C([prud.id, [geo.id]]) }]);
+    await recuar(p.id, 40);
+    const [item] = await minhas(p.token, ciclo.id);
+    assert.equal((await salvar(p.token, item.cargoId, null, ['texto do Cargo 1', ''])).status, 200);
+    const entrega = await prisma.entregaUmTerco.findFirstOrThrow({ where: { cicloId: ciclo.id, professorId: p.id }, include: { respostas: true } });
+    const esperadoAntes = (await painel(ciclo.id)).resumo.esperado;
+    assert.equal((await api(tSec, 'POST', `/pessoas/professores/${p.id}/cargos`, { dataInicio: diaSp(), composicao: C([prud.id, [geo.id]]) })).status, 201);
+    const itens = await minhas(p.token, ciclo.id);
+    assert.equal(itens.length, 1, 'cargos iguais = 1 folha'); assert.equal(itens[0].compartilhada, true);
+    assert.equal((await painel(ciclo.id)).resumo.esperado, esperadoAntes, 'não cria obrigação nova');
+    const depois = await prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, professorId: p.id }, include: { respostas: true } });
+    assert.equal(depois.length, 1); assert.equal(depois[0].id, entrega.id); assert.equal(depois[0].chaveCargos, entrega.chaveCargos);
+    assert.deepEqual(depois[0].respostas.map((r) => r.texto), entrega.respostas.map((r) => r.texto));
+  });
+  await caso('NOVA 7. Folhas e respostas que já existiam no ciclo continuam iguais (id, status, chave, texto)', async () => {
+    const r = await prisma.respostaSemanaUmTerco.findMany({ where: { id: { in: respostasAntes.map((x) => x.id) } }, select: { id: true, texto: true, updatedAt: true }, orderBy: { id: 'asc' } });
+    assert.deepEqual(r, respostasAntes);
+    const e = await prisma.entregaUmTerco.findMany({ where: { id: { in: entregasAntes.map((x) => x.id) } }, select: { id: true, status: true, chaveCargos: true }, orderBy: { id: 'asc' } });
+    assert.deepEqual(e, entregasAntes);
+  });
+  await caso('NOVA 4. Cargo criado depois do encerramento não entra (prazo de hoje, já passado); ciclo antigo (prazo antes de 15/11) mantém a regra antiga', async () => {
+    const encerrado = await prisma.cicloUmTerco.create({ data: { anoLetivo: 2099, trimestre: 3, titulo: `${PREFIXO} ciclo`, abreEm: new Date(Date.now() - 3 * DIA), prazoEm: new Date(Date.now() - 60 * 1000), todasEscolas: false, escolas: { create: [{ escolaId: prud.id }] }, semanas: { create: [{ numero: 1, dataInicio: dataDb(diaSp(-3)), dataFim: dataDb(diaSp(-1)) }] } } });
+    const depoisDoPrazo = await novoProfessor([{ dataInicio: diaSp(-5), composicao: C([prud.id, [ing.id]]) }]);
+    assert.equal((await painel(encerrado.id, `?professorId=${depoisDoPrazo.id}`)).linhas.length, 0, 'criado depois do prazo não entra');
+    // Ciclo que terminou em 10/11/2026 e cargo criado no meio dele (07/11): continua fora (não muda o passado).
+    const antigo = await prisma.cicloUmTerco.create({ data: { anoLetivo: 2099, trimestre: 3, titulo: `${PREFIXO} ciclo`, abreEm: new Date('2026-11-02T03:00:00Z'), prazoEm: new Date('2026-11-11T02:59:59Z'), todasEscolas: false, escolas: { create: [{ escolaId: prud.id }] }, semanas: { create: [{ numero: 1, dataInicio: dataDb('2026-11-02'), dataFim: dataDb('2026-11-06') }] } } });
+    const meio = await novoProfessor([{ dataInicio: '2026-11-01', composicao: C([prud.id, [ing.id]]) }]);
+    const quando = new Date('2026-11-07T15:00:00Z');
+    await prisma.cargoProfessor.updateMany({ where: { professorId: meio.id }, data: { createdAt: quando } });
+    await prisma.cargoVersao.updateMany({ where: { cargo: { professorId: meio.id } }, data: { criadaEm: quando } });
+    assert.equal((await painel(antigo.id, `?professorId=${meio.id}`)).linhas.length, 0, 'ciclo antigo não ganha folha retroativa');
+  });
+  await caso('NOVA 8. Fuso: a regra usa a hora do SERVIDOR em São Paulo (fim do dia do prazo), não a data UTC', async () => {
+    const { composicaoNaAbertura } = await import('../../src/domain/cargos.js');
+    const cicloX = { abreEm: new Date('2026-11-20T03:00:00Z'), prazoEm: new Date('2026-12-01T02:59:59.999Z') }; // 20/11 a 30/11 (SP)
+    const cargo = (criado: string, versoes: [string, number][] = [[criado, prud.id]]) => ({ id: 1, professorId: 1, createdAt: new Date(criado), dataInicio: dataDb(criado.slice(0, 10)), dataFim: null, versoes: versoes.map(([q, e]) => ({ criadaEm: new Date(q), composicao: [{ escolaId: e, disciplinaIds: [ing.id] }] })) });
+    assert.ok(composicaoNaAbertura(cargo('2026-11-24T15:00:00Z'), cicloX), '24/11 entra');
+    assert.ok(composicaoNaAbertura({ ...cargo('2026-12-01T02:30:00Z'), dataInicio: dataDb('2026-11-30') }, cicloX), '30/11 23:30 em SP (01/12 em UTC) ainda entra');
+    assert.equal(composicaoNaAbertura({ ...cargo('2026-12-01T03:10:00Z'), dataInicio: dataDb('2026-12-01') }, cicloX), null, '01/12 00:10 em SP não entra');
+    // Criado no meio do ciclo e corrigido no mesmo dia: vale a composição do fim daquele dia; correção no dia seguinte, não.
+    const c = cargo('2026-11-24T13:00:00Z', [['2026-11-24T13:00:00Z', prud.id], ['2026-11-25T02:00:00Z', tres.id], ['2026-11-25T13:00:00Z', cmei.id]]);
+    assert.deepEqual(composicaoNaAbertura(c, cicloX)?.map((i) => i.escolaId), [tres.id]);
+  });
+
 
   await caso('17. Cargo encerrado durante o ciclo sem texto → deixa de ser esperado e some da lista', async () => {
     const antesP = await painel(ciclo.id);

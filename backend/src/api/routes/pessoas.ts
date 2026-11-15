@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { calcularExpiracaoSenhaTemporaria, gerarSenhaTemporaria } from '../../domain/senhaTemporaria.js';
 import bcrypt from 'bcryptjs';
@@ -210,7 +211,7 @@ async function mudarStatusProfessor(actor: Actor, id: number, status: 'ATIVO' | 
     await tx.pessoa.update({
       where: { id },
       // Inativar precisa derrubar sessões abertas na hora; reativar não precisa revogar nada.
-      data: status === 'INATIVO' ? { status, authVersion: { increment: 1 } } : { status },
+      data: status === 'INATIVO' ? { status, authVersion: { increment: 1 }, ...marcarDesativacao(false, actor.id) } : { status, ...marcarDesativacao(true, actor.id) },
     });
     await tx.pessoaEvento.create({ data: { pessoaId: id, tipo: status === 'INATIVO' ? 'INATIVACAO' : 'REATIVACAO', autorId: actor.id } });
   });
@@ -340,7 +341,7 @@ async function mudarStatusPessoa(actor: Actor, perfil: PerfilGerenciavel, id: nu
   await prisma.$transaction(async (tx) => {
     await tx.pessoa.update({
       where: { id },
-      data: status === 'INATIVO' ? { status, authVersion: { increment: 1 } } : { status },
+      data: status === 'INATIVO' ? { status, authVersion: { increment: 1 }, ...marcarDesativacao(false, actor.id) } : { status, ...marcarDesativacao(true, actor.id) },
     });
     await tx.pessoaEvento.create({ data: { pessoaId: id, tipo: status === 'INATIVO' ? 'INATIVACAO' : 'REATIVACAO', autorId: actor.id } });
   });

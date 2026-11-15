@@ -202,7 +202,8 @@ try {
   const temLinha = await linhaP04.isVisible().catch(() => false);
   const esperadas = await page.getByText('Esperadas').locator('..').textContent();
   await foto(page, '58-painel');
-  r('16', 'Painel: sem filtro de ano/série; folha compartilhada conta 1 vez', 'sem Ano/série; linha "Cargos 1 e 2"; Esperadas 1', `${semAno}; ${temLinha}; ${esperadas?.replace(/\s+/g, ' ')}`, semAno && temLinha && /Esperadas\s*1\b/.test(esperadas ?? ''));
+  // 15/11/2026: cargo criado com o ciclo aberto entra no ciclo atual → o Cargo 2 da Professora Ana (Prudenciana, criado hoje) também é esperado.
+  r('16', 'Painel: sem filtro de ano/série; folha compartilhada do P04 conta 1 vez + Cargo 2 da Ana (criado com o ciclo aberto, regra de 15/11)', 'sem Ano/série; linha "Cargos 1 e 2"; Esperadas 2', `${semAno}; ${temLinha}; ${esperadas?.replace(/\s+/g, ' ')}`, semAno && temLinha && /Esperadas\s*2\b/.test(esperadas ?? ''));
   r('17', 'Sem erros no console (painel)', '0', erros.join(' | ') || '0', erros.length === 0);
 } finally {
   await Z.browser.close();

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 
 export const pdiModelosRouter = Router();
@@ -185,7 +186,7 @@ pdiModelosRouter.post('/:id/inativar', async (req, res) => {
   const atual = await buscarModelo(id);
   if (atual.status !== 'ATIVA') throw new ValidationError('Este modelo já está inativo.');
 
-  const atualizado = await prisma.modeloPdi.update({ where: { id }, data: { status: 'INATIVA', updatedBy: String(actor.id) } });
+  const atualizado = await prisma.modeloPdi.update({ where: { id }, data: { status: 'INATIVA', ...marcarDesativacao(false, actor.id), updatedBy: String(actor.id) } });
   res.json(formatarModelo({ ...atualizado, disciplina: atual.disciplina }));
 });
 
@@ -203,7 +204,7 @@ pdiModelosRouter.post('/:id/reativar', async (req, res) => {
     throw new ConflictError(`Já existe um modelo PDI ativo para esta disciplina ("${outroAtivo.nome}"). Inative-o antes de reativar este.`);
   }
 
-  const atualizado = await prisma.modeloPdi.update({ where: { id }, data: { status: 'ATIVA', updatedBy: String(actor.id) } });
+  const atualizado = await prisma.modeloPdi.update({ where: { id }, data: { status: 'ATIVA', ...marcarDesativacao(true, actor.id), updatedBy: String(actor.id) } });
   res.json(formatarModelo({ ...atualizado, disciplina: atual.disciplina }));
 });
 
@@ -229,7 +230,7 @@ pdiModelosRouter.delete('/:id', async (req, res) => {
   }
 
   if (atual.status === 'ATIVA') {
-    await prisma.modeloPdi.update({ where: { id }, data: { status: 'INATIVA', updatedBy: String(actor.id) } });
+    await prisma.modeloPdi.update({ where: { id }, data: { status: 'INATIVA', ...marcarDesativacao(false, actor.id), updatedBy: String(actor.id) } });
   }
   res.json({ removidoFisicamente: false, arquivado: true });
 });

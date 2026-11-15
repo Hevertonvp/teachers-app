@@ -86,9 +86,11 @@ enum ModuloSistema {
 // --- Entidades ----------------------------------------------------------------------------
 
 model Escola {
-  id     Int            @id @default(autoincrement())
-  nome   String         @db.VarChar(200)
-  status StatusRegistro @default(ATIVA)
+  id            Int            @id @default(autoincrement())
+  nome          String         @db.VarChar(200)
+  status        StatusRegistro @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -159,8 +161,10 @@ model Turma {
   turno         Turno
   identificador Int
 
-  nome   String         @db.VarChar(60)
-  status StatusRegistro @default(ATIVA)
+  nome          String         @db.VarChar(60)
+  status        StatusRegistro @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
 
   // Chave técnica de unicidade (string não-nula, calculada em src/domain/turma.ts) — evita o
   // problema de NULL nunca ser igual a NULL num índice único direto sobre colunas que variam
@@ -192,12 +196,14 @@ model Turma {
 // Professor, Auxiliar), diferenciada por `perfil` — TPH em vez de 5 tabelas, ver README.md
 // para o raciocínio completo (mesmo usado na tentativa anterior em C#/EF Core).
 model Pessoa {
-  id     Int          @id @default(autoincrement())
-  nome   String       @db.VarChar(200)
-  email  String       @unique @db.VarChar(200)
-  cargo  String?      @db.VarChar(100)
-  perfil PerfilPessoa
-  status StatusPessoa @default(ATIVO)
+  id            Int          @id @default(autoincrement())
+  nome          String       @db.VarChar(200)
+  email         String       @unique @db.VarChar(200)
+  cargo         String?      @db.VarChar(100)
+  perfil        PerfilPessoa
+  status        StatusPessoa @default(ATIVO)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
 
   // Hash bcrypt da senha de login. Nulo = pessoa sem credencial (não consegue autenticar).
   // Nunca retornado por nenhuma rota — ver src/api/routes/auth.ts.
@@ -398,6 +404,10 @@ model AlunoPdi {
 
   status StatusAluno @default(ATIVO)
 
+  desativadoEm DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+
+  desativadoPor String? // id da pessoa que desativou
+
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
   updatedAt DateTime? @updatedAt
@@ -420,11 +430,13 @@ model AlunoPdi {
 // fisicamente: reativar/inativar preserva histórico. Disciplina nunca é alterada após a criação
 // (a UI atual não oferece isso — ver GestaoPdi no frontend).
 model ModeloPdi {
-  id           Int            @id @default(autoincrement())
-  nome         String         @db.VarChar(200)
-  disciplinaId Int
-  disciplina   Disciplina     @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
-  status       StatusRegistro @default(ATIVA)
+  id            Int            @id @default(autoincrement())
+  nome          String         @db.VarChar(200)
+  disciplinaId  Int
+  disciplina    Disciplina     @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  status        StatusRegistro @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -525,6 +537,8 @@ model PerguntaPdiPadrao {
   complementar  Json?
   ordem         Int
   status        StatusRegistro    @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
   trimestre     Int? // mesmo significado de PerguntaPdi.trimestre — copiado para o Modelo na criação
   // "Padrão" (entra automaticamente em todo Modelo novo) e "compartilhada" (UMA resposta no bloco
   // comum do Professor, reaproveitada entre as disciplinas) são coisas diferentes: false = nasce em
@@ -554,16 +568,18 @@ model PerguntaPdiPadrao {
 // (não entra mais em Meus PDIs, indicadores nem no job de prazo), mas o histórico de Fichas/
 // Respostas continua intacto e consultável.
 model AplicacaoPdi {
-  id         Int            @id @default(autoincrement())
-  escolaId   Int
-  escola     Escola         @relation(fields: [escolaId], references: [id], onDelete: Restrict)
-  nome       String?        @db.VarChar(200)
-  dataInicio DateTime       @db.Date
-  dataFim    DateTime       @db.Date
-  status     StatusRegistro @default(ATIVA)
+  id            Int            @id @default(autoincrement())
+  escolaId      Int
+  escola        Escola         @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  nome          String?        @db.VarChar(200)
+  dataInicio    DateTime       @db.Date
+  dataFim       DateTime       @db.Date
+  status        StatusRegistro @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
   // Trimestre do calendário (PeriodoTrimestre) que contém dataInicio, resolvido na criação —
   // null quando nenhum período configurado a contém (e nas Aplicações anteriores a este campo).
-  trimestre  Int?
+  trimestre     Int?
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -1585,17 +1601,19 @@ enum TipoEventoEntregaUmTerco {
 // Ciclo da rede (um por ano letivo + trimestre ativo). abreEm/prazoEm são instantes (timestamptz);
 // o fuso operacional é America/Sao_Paulo (ver domain/umTerco.ts). As datas das semanas são só data.
 model CicloUmTerco {
-  id           Int            @id @default(autoincrement())
-  anoLetivo    Int
-  trimestre    Int // 1, 2 ou 3 — calendário global PeriodoTrimestre
-  titulo       String         @default("Formulário 1/3") @db.VarChar(200)
-  abreEm       DateTime
-  prazoEm      DateTime
-  status       StatusRegistro @default(ATIVA)
+  id            Int            @id @default(autoincrement())
+  anoLetivo     Int
+  trimestre     Int // 1, 2 ou 3 — calendário global PeriodoTrimestre
+  titulo        String         @default("Formulário 1/3") @db.VarChar(200)
+  abreEm        DateTime
+  prazoEm       DateTime
+  status        StatusRegistro @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
   // Escolas atendidas (decisão do usuário, 10/11/2026 — substitui a regra "1/3 global" das seções 72/82):
   // true = todas as escolas, inclusive as criadas depois (comportamento antigo; padrão dos ciclos existentes);
   // false = só as escolas listadas em CicloUmTercoEscola.
-  todasEscolas Boolean        @default(true)
+  todasEscolas  Boolean        @default(true)
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)
@@ -1832,9 +1850,11 @@ model HistoricoCorrecaoSemanaUmTerco {
 // A Secretaria cadastra e desativa em Configurações; inativa some das listas, mas continua nos cargos e
 // folhas antigos. Usada na composição do cargo (CargoVersao.composicao: atuacaoIds por escola).
 model AtuacaoPedagogica {
-  id     Int            @id @default(autoincrement())
-  nome   String         @unique @db.VarChar(100)
-  status StatusRegistro @default(ATIVA)
+  id            Int            @id @default(autoincrement())
+  nome          String         @unique @db.VarChar(100)
+  status        StatusRegistro @default(ATIVA)
+  desativadoEm  DateTime? // 15/11/2026: quando foi desativado/arquivado (null = ativo); ordena a tela de desativados
+  desativadoPor String? // id da pessoa que desativou
 
   createdAt DateTime  @default(now())
   createdBy String?   @db.VarChar(200)

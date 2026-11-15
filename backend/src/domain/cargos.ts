@@ -107,14 +107,32 @@ export function corteDoCiclo(abreEm: Date): Date {
   return new Date(new Date(`${dataLocalSp(abreEm)}T00:00:00-03:00`).getTime() + 24 * 60 * 60 * 1000 - 1);
 }
 
-// Composição que valia no corte do ciclo (fim do dia da abertura), ou null se o cargo não participa:
-// cadastrado depois do dia da abertura, com início depois do dia da abertura, ou encerrado até o dia da abertura.
-export function composicaoNaAbertura(cargo: CargoParaCiclo, abreEm: Date): Composicao | null {
-  const corte = corteDoCiclo(abreEm);
-  if (cargo.createdAt.getTime() > corte.getTime()) return null;
-  const diaAbertura = dataLocalSp(abreEm);
-  if (diaDe(cargo.dataInicio) > diaAbertura) return null;
-  if (cargo.dataFim && diaDe(cargo.dataFim) <= diaAbertura) return null;
+// Cargo criado DURANTE o ciclo aberto (decisão do usuário, 15/11/2026): entra no ciclo atual, com o mesmo
+// prazo; criado depois do prazo, só no próximo. Vale para ciclos com prazo a partir de 15/11/2026; ciclos
+// que terminaram antes continuam com a regra antiga (só até o dia da abertura), para não mudar o passado.
+export const ENTRADA_DURANTE_CICLO_DESDE = '2026-11-15';
+export const aceitaCargoDuranteCiclo = (prazoEm: Date) => dataLocalSp(prazoEm) >= ENTRADA_DURANTE_CICLO_DESDE;
+
+// Até quando um cargo pode ter sido cadastrado (e ter versões) para entrar no ciclo.
+export const limiteDeCadastroDoCiclo = (ciclo: { abreEm: Date; prazoEm: Date }) =>
+  (aceitaCargoDuranteCiclo(ciclo.prazoEm) ? new Date(Math.max(ciclo.prazoEm.getTime(), corteDoCiclo(ciclo.abreEm).getTime())) : corteDoCiclo(ciclo.abreEm));
+
+// Composição que o cargo leva para o ciclo, ou null se o cargo não participa.
+// - Cargo cadastrado até o fim do dia da abertura: composição daquele dia (alterar depois só vale no próximo ciclo).
+// - Cargo cadastrado depois, ainda antes do prazo (ciclos com a regra de 15/11/2026): composição do fim do
+//   dia em que foi cadastrado (mesma lógica do dia da abertura, aplicada ao dia do cadastro).
+// - Fica de fora: cadastrado depois do prazo; início depois do limite; encerrado até o dia do corte.
+export function composicaoNaAbertura(cargo: CargoParaCiclo, ciclo: { abreEm: Date; prazoEm: Date }): Composicao | null {
+  const corteAbertura = corteDoCiclo(ciclo.abreEm);
+  const duranteCiclo = aceitaCargoDuranteCiclo(ciclo.prazoEm);
+  let corte: Date;
+  if (cargo.createdAt.getTime() <= corteAbertura.getTime()) corte = corteAbertura;
+  else if (duranteCiclo && cargo.createdAt.getTime() <= ciclo.prazoEm.getTime()) corte = corteDoCiclo(cargo.createdAt);
+  else return null;
+  const diaCorte = dataLocalSp(corte);
+  // Início: até o dia da abertura (regra antiga) ou até o dia do prazo (regra de 15/11/2026).
+  if (diaDe(cargo.dataInicio) > (duranteCiclo ? dataLocalSp(ciclo.prazoEm) : diaCorte)) return null;
+  if (cargo.dataFim && diaDe(cargo.dataFim) <= diaCorte) return null;
   const vigente = cargo.versoes
     .filter((v) => v.criadaEm.getTime() <= corte.getTime())
     .sort((a, b) => b.criadaEm.getTime() - a.criadaEm.getTime())[0];
@@ -137,7 +155,7 @@ export type FolhaCalculada = {
 export function calcularFolhas(cargos: CargoParaCiclo[], ciclo: { abreEm: Date; prazoEm: Date }, escolasDoCiclo: number[] | null): FolhaCalculada[] {
   const grupos = new Map<string, FolhaCalculada>();
   for (const cargo of [...cargos].sort((a, b) => a.id - b.id)) {
-    const naAbertura = composicaoNaAbertura(cargo, ciclo.abreEm);
+    const naAbertura = composicaoNaAbertura(cargo, ciclo);
     if (!naAbertura) continue;
     const parte = restringirAoCiclo(naAbertura, escolasDoCiclo);
     if (parte.length === 0) continue;

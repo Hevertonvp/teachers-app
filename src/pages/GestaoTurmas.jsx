@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { ActionMenu, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscolaDoTopo, useFiltroEscolaDoTopo } from '../context/EscolaContext';
@@ -10,6 +10,11 @@ import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTur
 import { exportarExcel } from '../utils/exportarExcel';
 import { escolaName, inputClass } from '../utils/display';
 import { canManageTurmas } from '../utils/roles';
+import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
+import { listarDesativados } from '../services/desativados';
+
+// Turmas desativadas em tela própria (pedido do usuário, 15/11/2026): lista paginada, mais recentes primeiro.
+const carregarDesativadas = (pagina, porPagina) => listarDesativados('turmas', { pagina, porPagina });
 import {
   ANOS_FUNDAMENTAL, ETAPAS, SEGMENTOS_INFANTIL, TURNOS,
   descricaoTurma, niveisDoSegmento, turnoLabel, vinculosDaTurma,
@@ -40,7 +45,11 @@ export const GestaoTurmas = () => {
   const [filtroEscolaId, setFiltroEscolaId] = useFiltroEscolaDoTopo('todas');
   const [filtroAnoLetivo, setFiltroAnoLetivo] = useState('todos');
   const [filtroEtapa, setFiltroEtapa] = useState('todas');
-  const [filtroStatus, setFiltroStatus] = useState('ativa');
+  // A lista principal mostra só as ativas; as desativadas têm tela própria (?ver=desativadas).
+  const filtroStatus = 'ativa';
+  const [params] = useSearchParams();
+  const verDesativadas = params.get('ver') === 'desativadas';
+  const [recarregar, setRecarregar] = useState(0);
   const [turmaForm, setTurmaForm] = useState(null);
   const [editingTurma, setEditingTurma] = useState(null);
   const [turmaError, setTurmaError] = useState('');
@@ -143,7 +152,7 @@ export const GestaoTurmas = () => {
         ['Escola', filtroEscolaId === 'todas' ? 'Todas as escolas' : nomeEscola(Number(filtroEscolaId))],
         ['Ano letivo', filtroAnoLetivo === 'todos' ? 'Todos' : filtroAnoLetivo],
         ['Etapa', filtroEtapa === 'todas' ? 'Todas' : rotulo(ETAPAS, filtroEtapa)],
-        ['Status', { ativa: 'Ativas', inativa: 'Inativas', todas: 'Todas' }[filtroStatus]],
+        ['Status', 'Ativas'],
       ],
       abas: [
         { nome: 'Turmas', linhas: ordenadas, colunas: [
@@ -172,9 +181,17 @@ export const GestaoTurmas = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {verDesativadas ? (
+          <>
+            <CabecalhoDesativados titulo="Turmas desativadas" voltarPara="/turmas" voltarTexto="← Voltar para Turmas" descricao="Turmas inativadas não aparecem nas listas nem como opção para novos vínculos. Os vínculos e o histórico continuam guardados. Reativar devolve a turma à lista." />
+            {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+            <ListaDesativados carregar={carregarDesativadas} recarregarChave={recarregar} vazio="Nenhuma turma desativada." acoes={item => <Button size="sm" variant="outline" onClick={() => setReativandoTurma({ id: item.id, nome: item.titulo })}>Reativar</Button>} />
+          </>
+        ) : (<>
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Turmas</h1>
+            <Link to="/turmas?ver=desativadas" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver turmas desativadas ({turmas.filter(t => t.status !== 'ativa').length}) →</Link>
           </div>
           <div className="flex flex-wrap items-start gap-2">
             <BotaoExportarExcel size="md" gerar={exportarTurmas} disabled={turmasLoading || turmasFiltradas.length === 0} />
@@ -192,7 +209,7 @@ export const GestaoTurmas = () => {
         )}
 
         <Card>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <FormField label="Escola">
               <select className={inputClass} value={filtroEscolaId} onChange={event => { setFiltroEscolaId(event.target.value); setPaginaTurmas(1); }}>
                 <option value="todas">Todas as escolas</option>
@@ -209,13 +226,6 @@ export const GestaoTurmas = () => {
               <select className={inputClass} value={filtroEtapa} onChange={event => { setFiltroEtapa(event.target.value); setPaginaTurmas(1); }}>
                 <option value="todas">Todas</option>
                 {ETAPAS.map(etapa => <option key={etapa.value} value={etapa.value}>{etapa.label}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Status">
-              <select className={inputClass} value={filtroStatus} onChange={event => { setFiltroStatus(event.target.value); setPaginaTurmas(1); }}>
-                <option value="ativa">Ativas</option>
-                <option value="inativa">Inativas</option>
-                <option value="todas">Todas</option>
               </select>
             </FormField>
           </div>
@@ -243,18 +253,13 @@ export const GestaoTurmas = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-slate-900">{turma.nome}</p>
-                        <Badge variant={turma.status === 'ativa' ? 'green' : 'gray'}>{turma.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge>
                       </div>
                       <p className="mt-1 text-sm text-slate-600">{descricaoTurma(turma)}</p>
                       <p className="mt-1 text-xs text-slate-500">{escolaName(escolas, turma.escolaId)} • {turma.anoLetivo}{vinculos.total > 0 ? ` • ${vinculos.total} vínculo${vinculos.total > 1 ? 's' : ''} ativo${vinculos.total > 1 ? 's' : ''}` : ''}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Button size="sm" variant="outline" onClick={() => abrirEdicao(turma)}>Editar</Button>
-                      <ActionMenu items={[
-                        turma.status === 'ativa'
-                          ? { label: 'Inativar turma', variant: 'danger', onClick: () => setInativandoTurma(turma) }
-                          : { label: 'Reativar turma', onClick: () => setReativandoTurma(turma) },
-                      ]} />
+                      <ActionMenu items={[{ label: 'Inativar turma', variant: 'danger', onClick: () => setInativandoTurma(turma) }]} />
                     </div>
                   </div>
                 );
@@ -269,6 +274,7 @@ export const GestaoTurmas = () => {
             )}
           </Card>
         )}
+        </>)}
 
         {turmaForm && (
           <Modal title={editingTurma ? `Editar turma — ${editingTurma.nome}` : 'Nova turma'} onClose={fecharModal}>
@@ -373,7 +379,8 @@ export const GestaoTurmas = () => {
               const alvo = reativandoTurma;
               setReativandoTurma(null);
               const resultado = await reativarTurma(alvo.id);
-              setMessage(resultado.ok ? `Turma "${alvo.nome}" reativada com sucesso.` : resultado.error);
+              setRecarregar(n => n + 1);
+              setMessage(resultado.ok ? `Turma "${alvo.nome}" reativada com sucesso. Ela voltou para a lista de turmas.` : resultado.error);
             }}
           />
         )}

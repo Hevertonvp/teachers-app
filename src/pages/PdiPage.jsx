@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { ProfessoresDaTurmaPreview } from '../components/ProfessoresDaTurmaPreview';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,11 @@ import { parentescoOptions } from '../utils/pdi';
 import { isAuxiliar, isDiretora, isGestor, isProfessor as isProfessorRole, isSecretaria, canManagePedagogico, canViewPdiAlunos } from '../utils/roles';
 import { isEscolaAplicavel, RECURSOS } from '../utils/aplicabilidade';
 import { MainLayout } from '../layouts/Layouts';
+import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
+import { listarDesativados } from '../services/desativados';
+
+// Arquivados em tela própria (15/11/2026, só Secretaria): lista paginada, mais recentes primeiro.
+const carregarArquivados = (pagina, porPagina) => listarDesativados('alunos-pdi', { pagina, porPagina });
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { exportarExcel } from '../utils/exportarExcel';
 
@@ -45,7 +50,11 @@ export const PdiPage = () => {
   // Filtro de escola segue o seletor do topo (só no sentido topo → filtro).
   const [escolaFiltro, setEscolaFiltro] = useFiltroEscolaDoTopo('todas');
   const [turma, setTurma] = useState('todos');
-  const [status, setStatus] = useState('ativo');
+  // 15/11/2026: a lista mostra só os ativos; os arquivados ficam em ?ver=arquivados (só Secretaria).
+  const status = 'ativo';
+  const [params] = useSearchParams();
+  const verArquivados = isSecretaria(user) && params.get('ver') === 'arquivados';
+  const [recarregarArquivados, setRecarregarArquivados] = useState(0);
   const [form, setForm] = useState(null);
   const [iniciarAnamneseAoCriar, setIniciarAnamneseAoCriar] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -166,6 +175,7 @@ export const PdiPage = () => {
     const alvo = reactivating;
     setReactivating(null);
     const resultado = await reativarPdiAluno(alvo.id);
+    setRecarregarArquivados(n => n + 1);
     setMessage(resultado.ok ? 'Aluno reativado com sucesso.' : resultado.error);
   };
 
@@ -213,6 +223,19 @@ export const PdiPage = () => {
     ) },
   ];
 
+  if (verArquivados) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <CabecalhoDesativados titulo="Alunos PDI arquivados" voltarPara="/pdi/alunos" voltarTexto="← Voltar para os alunos" descricao="Alunos arquivados saem das listas operacionais. Fichas e histórico continuam guardados. Reativar devolve o aluno à lista." />
+          {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+          <ListaDesativados carregar={carregarArquivados} recarregarChave={recarregarArquivados} rotuloData="Arquivado em" vazio="Nenhum aluno arquivado." acoes={item => <Button size="sm" variant="outline" onClick={() => setReactivating({ id: item.id, nome: item.titulo })}>Reativar</Button>} />
+          {reactivating && <ConfirmDialog title="Reativar aluno" message={`Reativar ${reactivating.nome}? Ele volta a aparecer como ativo nas listas operacionais.`} confirmLabel="Reativar" onCancel={() => setReactivating(null)} onConfirm={confirmarReativar} />}
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -226,6 +249,7 @@ export const PdiPage = () => {
             <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-teal-700">Alunos PDI</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">Alunos em acompanhamento</h1>
             <p className="mt-2 max-w-3xl text-slate-600">Cadastro dos alunos acompanhados pelo PDI: turma, escola e responsável legal.</p>
+            {isSecretaria(user) && <Link to="/pdi/alunos?ver=arquivados" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver alunos arquivados →</Link>}
           </div>
           <div className="flex flex-wrap items-start gap-2">
             <BotaoExportarExcel size="md" gerar={exportarAlunos} disabled={pdiAlunosReaisLoading || alunos.length === 0} />
@@ -255,7 +279,7 @@ export const PdiPage = () => {
         )}
 
         <Card>
-          <div className={`grid gap-3 ${activeEscolaId === null ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+          <div className={`grid gap-3 ${activeEscolaId === null ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             <FormField label="Busca por nome"><input className={inputClass} value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar aluno" /></FormField>
             {activeEscolaId === null && (
               <FormField label="Escola"><select className={inputClass} value={escolaFiltro} onChange={event => { setEscolaFiltro(event.target.value); setTurma('todos'); }}><option value="todas">Todas</option>{escolasDoFiltro.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
@@ -263,7 +287,6 @@ export const PdiPage = () => {
             <FormField label="Turma"><select className={inputClass} value={turma} onChange={event => setTurma(event.target.value)}><option value="todos">Todas</option>{escolaFiltro === 'todas' && activeEscolaId === null
               ? escolasDoFiltro.map(escola => <optgroup key={escola.id} label={escola.nome}>{turmasDoFiltro.filter(t => t.escolaId === escola.id).map(item => <option key={item.id} value={item.id}>{item.nome} — {escola.nome}</option>)}</optgroup>)
               : turmasDoFiltro.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
-            <FormField label="Ativos e arquivados"><select className={inputClass} value={status} onChange={event => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="arquivado">Arquivados</option><option value="todos">Todos</option></select></FormField>
           </div>
         </Card>
 
@@ -305,7 +328,7 @@ export const PdiPage = () => {
           </Modal>
         )}
 
-        {archiving && <ConfirmDialog title="Arquivar aluno" message={`Arquivar ${archiving.nome}? O histórico continuará disponível no filtro Arquivados.`} confirmLabel="Arquivar" onCancel={() => setArchiving(null)} onConfirm={confirmarArquivar} />}
+        {archiving && <ConfirmDialog title="Arquivar aluno" message={`Arquivar ${archiving.nome}? O histórico continua guardado; a Secretaria vê os arquivados em "Ver alunos arquivados".`} confirmLabel="Arquivar" onCancel={() => setArchiving(null)} onConfirm={confirmarArquivar} />}
         {reactivating && <ConfirmDialog title="Reativar aluno" message={`Reativar ${reactivating.nome}? Ele volta a aparecer como ativo nas listas operacionais.`} confirmLabel="Reativar" onCancel={() => setReactivating(null)} onConfirm={confirmarReativar} />}
       </div>
     </MainLayout>

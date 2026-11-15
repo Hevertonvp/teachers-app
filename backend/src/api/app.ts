@@ -6,6 +6,7 @@ import { CalendarioTrimestresError, ConflictError, ConflitoVersaoError, Forbidde
 import { bloquearSenhaTemporariaPendente, requireAuth } from './middleware/auth.js';
 import { authProtectedRouter, authRouter } from './routes/auth.js';
 import { escolasRouter } from './routes/escolas.js';
+import { desativadosRouter } from './routes/desativados.js';
 import { escolaModulosRouter } from './routes/escolaModulos.js';
 import { disciplinasRouter } from './routes/disciplinas.js';
 import { turmasRouter } from './routes/turmas.js';
@@ -82,6 +83,7 @@ export function createApp() {
   // chamada direta à API (ver seção 9 do pedido de autenticação).
   app.use('/api', bloquearSenhaTemporariaPendente);
 
+  app.use('/api/desativados', desativadosRouter); // 15/11/2026: telas de desativados (só Secretaria)
   app.use('/api/escolas', escolasRouter);
   app.use('/api/escolas', escolaModulosRouter); // /api/escolas/:escolaId/modulos/...
   app.use('/api/disciplinas', disciplinasRouter);

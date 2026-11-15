@@ -1,3 +1,5 @@
+// ATENÇÃO (15/11/2026): a parte 4 (assistente do cadastro com escolas por caixinha) está OBSOLETA desde o cadastro
+// por cargo (12–13/11/2026); as partes 1–3 continuam válidas. Reescrever a parte 4 com cargos antes de rodar de novo.
 // Ajustes de tela pedidos pelo usuário (perfil Secretaria), navegador real, banco LOCAL:
 //  1 PDI: sem "Gerenciar formulário"/"Ver alunos" no topo (ficam só nos cartões);
 //  2 Modal "Turmas e disciplinas": sem "Histórico"; aviso de substituição com o NOME do professor;

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
+import { ListaDesativados } from '../components/ListaDesativados';
 import { useAuth } from '../context/AuthContext';
 import { exportarUmTerco } from '../utils/exportarUmTerco';
 import { useData } from '../context/DataContext';
@@ -326,11 +327,25 @@ export const UmTercoSecretariaPage = () => {
 
   // Inativos ficam numa tela separada (pedido do usuário, 10/11/2026: "se cada inativo ficar ali vai
   // virar uma bagunça"). Mesma página, endereço próprio (?ver=inativos) para o Voltar do navegador funcionar.
+  // MUDOU em 15/11/2026 (decisão do usuário): a tela separada também recebe os ciclos ENCERRADOS PELO PRAZO
+  // (sem reabertura em curso), em LISTA paginada (não cartões), mais recentes primeiro, com o motivo
+  // ("Encerrado pelo prazo" × "Desativado manualmente"). Painel, Excel e Reabrir continuam na linha;
+  // reaberto volta para a lista principal enquanto a reabertura durar.
   const [params] = useSearchParams();
   const verInativos = params.get('ver') === 'inativos';
-  const ativos = (ciclos || []).filter(c => c.statusRegistro !== 'inativa');
-  const inativos = (ciclos || []).filter(c => c.statusRegistro === 'inativa');
-  const lista = verInativos ? inativos : ativos;
+  const encerradoPeloPrazo = (c) => c.statusRegistro !== 'inativa' && c.statusPrazo === 'encerrado' && !c.editavelAgora;
+  const ativos = (ciclos || []).filter(c => c.statusRegistro !== 'inativa' && !encerradoPeloPrazo(c));
+  const inativos = (ciclos || []).filter(c => c.statusRegistro === 'inativa' || encerradoPeloPrazo(c));
+  const lista = verInativos ? [] : ativos;
+  const itensDesativados = inativos.map(c => ({
+    id: c.id,
+    ciclo: c,
+    titulo: `${c.titulo} — ${c.trimestre}º trimestre de ${c.anoLetivo}`,
+    detalhe: `Abre ${dataSemHoraPadrao(c.abreEm, '00:00')} · prazo ${dataSemHoraPadrao(c.prazoEm, '23:59')} · ${c.entregasIniciadas} preenchimento(s) · ${c.todasEscolas ? 'todas as escolas' : `${c.escolas.length} escola(s)`}`,
+    motivo: c.statusRegistro === 'inativa' ? 'manual' : 'prazo',
+    data: c.statusRegistro === 'inativa' ? c.desativadoEm : c.prazoEm,
+    por: null,
+  }));
 
   const acao = async (fn, sucesso) => {
     setMensagem('');
@@ -349,15 +364,15 @@ export const UmTercoSecretariaPage = () => {
         {verInativos ? (
           <div>
             <Link to="/formulario-um-terco" className="text-sm font-semibold text-teal-700 hover:underline">← Voltar aos ciclos ativos</Link>
-            <h1 className="mt-3 text-3xl font-bold text-slate-950">Formulário 1/3 — Inativos</h1>
-            <p className="mt-2 text-slate-600">Ciclos inativados não aparecem para os Professores. Podem ser reativados.</p>
+            <h1 className="mt-3 text-3xl font-bold text-slate-950">Formulário 1/3 — Encerrados e inativos</h1>
+            <p className="mt-2 max-w-3xl text-slate-600">Encerrados pelo prazo: o painel, o Excel, as correções e a reabertura continuam aqui. Inativados manualmente: não aparecem para os Professores e podem ser reativados.</p>
           </div>
         ) : (
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <h1 className="text-3xl font-bold text-slate-950">Formulário 1/3 — Conteúdos</h1>
               <p className="mt-2 text-slate-600">Crie o ciclo do trimestre, defina as semanas e o prazo, e acompanhe as entregas.</p>
-              {ciclos && <Link to="/formulario-um-terco?ver=inativos" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver inativos ({inativos.length}) →</Link>}
+              {ciclos && <Link to="/formulario-um-terco?ver=inativos" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver encerrados e inativos ({inativos.length}) →</Link>}
             </div>
             <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
           </div>
@@ -371,9 +386,28 @@ export const UmTercoSecretariaPage = () => {
           </div>
         )}
         {ciclos === null && !erro && <LoadingBlock text="Carregando ciclos..." />}
-        {ciclos && lista.length === 0 && (verInativos
-          ? <EmptyState title="Nenhum ciclo inativo" description="Os ciclos inativados aparecem aqui." />
-          : (
+        {ciclos && verInativos && (
+          <ListaDesativados
+            itens={itensDesativados}
+            rotuloData="Data"
+            vazio="Nenhum ciclo encerrado ou inativo."
+            acoes={item => {
+              const ciclo = item.ciclo;
+              const inativo = ciclo.statusRegistro === 'inativa';
+              return (
+                <>
+                  <Button size="sm" onClick={() => navigate(`/formulario-um-terco/ciclos/${ciclo.id}`)}>Painel</Button>
+                  <BotaoExportarExcel gerar={() => exportarUmTerco({ cicloId: ciclo.id, usuario: user?.nome })} />
+                  {!inativo && <Button size="sm" variant="outline" onClick={() => setReabrindo(ciclo)}>Reabrir</Button>}
+                  {!inativo && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}
+                  {inativo && <Button size="sm" variant="outline" onClick={() => acao(() => reativarCicloUmTerco(ciclo.id), 'Ciclo reativado. Ele voltou para a lista de ciclos.')}>Reativar</Button>}
+                </>
+              );
+            }}
+          />
+        )}
+        {ciclos && !verInativos && lista.length === 0 && (
+          (
             <EmptyState title={inativos.length ? 'Nenhum ciclo ativo' : 'Nenhum ciclo criado'} description="Crie um Formulário 1/3 com a abertura, o prazo e as semanas.">
               <Button size="sm" onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
             </EmptyState>
@@ -434,7 +468,7 @@ export const UmTercoSecretariaPage = () => {
             : `Inativar "${inativando.titulo}" do ${inativando.trimestre}º trimestre? Nenhum Professor começou a preencher, então nada se perde; dá para reativar depois.`}
           confirmLabel="Inativar"
           onCancel={() => setInativando(null)}
-          onConfirm={() => { const alvo = inativando; setInativando(null); acao(() => inativarCicloUmTerco(alvo.id), 'Ciclo inativado. Ele fica em "Ver inativos".'); }}
+          onConfirm={() => { const alvo = inativando; setInativando(null); acao(() => inativarCicloUmTerco(alvo.id), 'Ciclo inativado. Ele fica em "Ver encerrados e inativos".'); }}
         />
       )}
     </MainLayout>

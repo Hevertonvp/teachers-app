@@ -135,16 +135,15 @@ try {
   const soAurora = tur.linhas.every(l => tur.v(l, 'Escola') === aurora.nome) && turV.linhas.every(l => turV.v(l, 'Escola') === aurora.nome);
   r('D1', `Turmas (filtro Escola = ${aurora.nome}, Ativas): todas as turmas do filtro (não só a página), só dessa escola; professores/disciplinas ativos delas`, `${turDb.length} turmas; ${turVDb} vínculos; Filtros: Escola = ${aurora.nome}`, `${tur.linhas.length} turmas; ${turV.linhas.length} vínculos; só Aurora: ${soAurora}; Filtros: Escola = ${filtro(wbTur, 'Escola')}`, tur.linhas.length === turDb.length && turV.linhas.length === turVDb && soAurora && filtro(wbTur, 'Escola') === aurora.nome, '43-turmas-aurora.xlsx');
 
-  // ================= E. PDI > Alunos (status "Todos") =================
+  // ================= E. PDI > Alunos (só ativos: desde 15/11/2026 os arquivados têm tela própria) =================
   await X.page.goto(BASE + '/#/pdi/alunos'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2000);
-  await X.page.locator('select').filter({ hasText: 'Arquivados' }).first().selectOption('todos'); await X.page.waitForTimeout(800);
   await foto(X.page, '43-pdi-alunos');
   const { wb: wbAl } = await baixar(X.page, X.page.getByRole('button', { name: 'Exportar para Excel' }), '43-alunos-pdi');
   const al = aba(wbAl, 'Alunos PDI');
   const topo = filtro(wbAl, 'Escola (topo)');
   const escTopo = /^Todas/.test(String(topo)) ? null : await prisma.escola.findFirst({ where: { nome: String(topo) } });
-  const alDb = await prisma.alunoPdi.count({ where: escTopo ? { turma: { escolaId: escTopo.id } } : {} });
-  r('E1', `Alunos PDI (status Todos; escola do topo: ${topo}): todos os alunos do filtro, não só a página da tabela`, String(alDb), `${al.linhas.length} linhas (${new Set(al.linhas.map(l => [al.v(l, 'Aluno'), al.v(l, 'Escola'), al.v(l, 'Turma')].join('|'))).size} únicas); Filtros: ${filtro(wbAl, 'Ativos e arquivados')}`, al.linhas.length === alDb && filtro(wbAl, 'Ativos e arquivados') === 'Todos', '43-alunos-pdi.xlsx');
+  const alDb = await prisma.alunoPdi.count({ where: { status: 'ATIVO', ...(escTopo ? { turma: { escolaId: escTopo.id } } : {}) } });
+  r('E1', `Alunos PDI (só ativos; escola do topo: ${topo}): todos os alunos do filtro, não só a página da tabela`, String(alDb), `${al.linhas.length} linhas (${new Set(al.linhas.map(l => [al.v(l, 'Aluno'), al.v(l, 'Escola'), al.v(l, 'Turma')].join('|'))).size} únicas); Filtros: ${filtro(wbAl, 'Ativos e arquivados')}`, al.linhas.length === alDb && filtro(wbAl, 'Ativos e arquivados') === 'Ativos', '43-alunos-pdi.xlsx');
   const sujResto = [...sujeira(wbProf), ...sujeira(wbTur), ...sujeira(wbAl)];
   r('E2', 'Professores/Turmas/Alunos: nenhuma célula com fórmula ou lixo de serialização', 'nenhuma', sujResto.slice(0, 5).join('; ') || 'nenhuma', sujResto.length === 0);
   console.log('erros Secretaria:', X.erros.filter(e => !/40[134]/.test(e)));

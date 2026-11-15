@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 
 export const pdiPerguntasPadraoRouter = Router();
@@ -144,7 +145,7 @@ async function mudarStatusPerguntaPadrao(actor: Actor, id: number, status: 'ATIV
   if (atual.status === status) {
     throw new ValidationError(status === 'INATIVA' ? 'Esta pergunta já está inativa.' : 'Esta pergunta já está ativa.');
   }
-  return prisma.perguntaPdiPadrao.update({ where: { id }, data: { status, updatedBy: String(actor.id) } });
+  return prisma.perguntaPdiPadrao.update({ where: { id }, data: { status, ...marcarDesativacao(status === 'ATIVA', actor.id), updatedBy: String(actor.id) } });
 }
 
 pdiPerguntasPadraoRouter.post('/:id/inativar', async (req, res) => {
