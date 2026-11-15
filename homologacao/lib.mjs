@@ -71,7 +71,7 @@ export async function abrirCartao(page, regex) {
 
 // Primeiro passo do cadastro de Professor (por CARGO, desde 12–13/11/2026): e-mail, nome e Cargo 1 com
 // uma escola e uma disciplina. Depois de "Próximo →" abre o assistente de turmas e disciplinas.
-export async function preencherCadastroProfessor(modal, { email, nome, escola, disciplina }) {
+export async function preencherCadastroProfessor(modal, { email, nome, escola, disciplina, disciplinas }) {
   const escolher = async (sel, texto) => {
     const v = await sel.evaluate((s, t) => [...s.options].find(o => o.text.trim() === t)?.value, texto);
     if (!v) throw new Error(`Opção "${texto}" não encontrada`);
@@ -80,6 +80,10 @@ export async function preencherCadastroProfessor(modal, { email, nome, escola, d
   await modal.locator('input[type=email]').fill(email);
   await modal.locator('input:not([type=email]):not([type=date])').first().fill(nome);
   await escolher(modal.getByLabel('Escola 1').first(), escola);
-  await escolher(modal.getByLabel('Disciplina 1').first(), disciplina);
+  const lista = disciplinas ?? [disciplina];
+  for (let i = 0; i < lista.length; i++) {
+    if (i > 0) await modal.getByRole('button', { name: '+ Adicionar disciplina' }).first().click();
+    await escolher(modal.getByLabel(`Disciplina ${i + 1}`).first(), lista[i]);
+  }
   await modal.getByRole('button', { name: 'Próximo →' }).click();
 }

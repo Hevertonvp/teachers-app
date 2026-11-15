@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscolaDoTopo } from '../context/EscolaContext';
 import { apiFetch } from '../services/api';
-import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { criarVinculoAuxiliarTurma, encerrarVinculoAuxiliarTurma, listarAuxiliaresReais, listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
 import { criarVinculoEscolarReal, encerrarVinculoEscolarReal, listarVinculosEscolares, reativarVinculoEscolarReal } from '../services/vinculosEscolares';
 import { MainLayout } from '../layouts/Layouts';
@@ -14,6 +14,7 @@ import { exportarExcel } from '../utils/exportarExcel';
 import { inputClass } from '../utils/display';
 import { CargosModal, EditorCargo, NumeroDeCargos, novoRascunhoCargo, validarRascunhoCargo } from '../components/CargosProfessor';
 import { listarAtuacoes } from '../services/cargos';
+import { TurmasPorDisciplina } from '../components/TurmasPorDisciplina';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
 import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
 import { listarDesativados } from '../services/desativados';
@@ -266,175 +267,16 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
 // `turmasDoProfessor` já vem restrita às escolas onde o professor tem VinculoEscolar ATIVO
 // dentro do escopo de quem está gerenciando (professor.escolas, devolvido assim pelo backend em
 // GET /api/pessoas/professores) — nunca a rede inteira.
-const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disciplinasReais, onClose }) => {
-  const [vinculos, setVinculos] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState(null);
-  // Escola escolhida primeiro, pra filtrar a lista de turmas — essencial quando o professor tem
-  // vínculo com mais de uma escola: turmas de nomes iguais ("6M1" etc.) existem em quase todas,
-  // então uma lista única misturando tudo (sem indicar a escola) deixava fácil vincular na turma
-  // errada sem perceber.
-  const escolaDoTopo = useEscolaDoTopo();
-  const escolaInicial = escolaDoTopo(professor.escolas, professor.escolas[0]?.id ?? '');
-  const [novoVinculo, setNovoVinculo] = useState({
-    escolaId: escolaInicial,
-    turmaId: turmasDoProfessor.find(turma => turma.escolaId === escolaInicial)?.id ?? '',
-    disciplinaId: disciplinasReais[0]?.id ?? '',
-  });
-  const turmasDaEscolaSelecionada = turmasDoProfessor.filter(turma => turma.escolaId === Number(novoVinculo.escolaId));
-  const [ocupantesDaTurma, setOcupantesDaTurma] = useState([]);
-  const [salvando, setSalvando] = useState(false);
-  const [mensagem, setMensagem] = useState('');
-  const [erroForm, setErroForm] = useState('');
-
-  const carregar = async () => {
-    setCarregando(true);
-    setErro(null);
-    try {
-      setVinculos(await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id }));
-    } catch (error) {
-      setErro(error.message);
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  useEffect(() => { carregar(); }, []);
-
-  // Só pra mostrar o aviso "fulano já leciona isso aqui" antes de confirmar — quem decide de
-  // verdade (e faz a troca de forma atômica) é sempre o backend.
-  useEffect(() => {
-    if (!novoVinculo.turmaId) { setOcupantesDaTurma([]); return; }
-    listarVinculosProfessorTurmaDisciplina({ turmaId: novoVinculo.turmaId }).then(setOcupantesDaTurma).catch(() => setOcupantesDaTurma([]));
-  }, [novoVinculo.turmaId]);
-
-  // O vínculo já traz `escolaId`; o nome vem de professor.escolas (escopo de quem gerencia).
-  const nomeDaEscola = (escolaId) => professor.escolas.find(escola => escola.id === escolaId)?.nome ?? '—';
-
-  const vinculosAtivos = vinculos.filter(item => item.status === 'ATIVO').sort((a, b) => a.turmaNome.localeCompare(b.turmaNome));
-  // Histórico de vínculos encerrados saiu deste modal (pedido do usuário: irá para outro lugar no futuro).
-  // Escolas do professor + qualquer escola com vínculo ativo fora dessa lista (não deve acontecer, mas não some).
-  const idsEscolas = [...new Set([...professor.escolas.map(escola => escola.id), ...vinculosAtivos.map(item => item.escolaId)])];
-  const gruposPorEscola = idsEscolas.map(escolaId => ({ escolaId, nome: nomeDaEscola(escolaId), vinculos: vinculosAtivos.filter(item => item.escolaId === escolaId) }));
-  const ocupanteAtual = ocupantesDaTurma.find(item => item.status === 'ATIVO' && item.disciplinaId === Number(novoVinculo.disciplinaId));
-  const conflitoComOutro = ocupanteAtual && ocupanteAtual.professorId !== professor.id ? ocupanteAtual : null;
-
-  const vincular = async (event) => {
-    event.preventDefault();
-    setErroForm('');
-    setSalvando(true);
-    try {
-      await criarVinculoProfessorTurmaDisciplina({ turmaId: Number(novoVinculo.turmaId), professorId: professor.id, disciplinaId: Number(novoVinculo.disciplinaId) });
-      setMensagem('Vínculo criado com sucesso.');
-      await carregar();
-    } catch (error) {
-      setErroForm(error.message);
-    } finally {
-      setSalvando(false);
-    }
-  };
-
-  const encerrar = async (vinculo) => {
-    try {
-      await encerrarVinculoProfessorTurmaDisciplina(vinculo.id);
-      setMensagem('Vínculo encerrado com sucesso.');
-      await carregar();
-    } catch (error) {
-      setMensagem(error.message);
-    }
-  };
-
-  return (
-    <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onClose}>
-      <div className="space-y-5">
-        {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
-        {erro && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
-            <span>Não foi possível carregar os vínculos: {erro}</span>
-            <Button size="sm" variant="outline" onClick={carregar}>Tentar novamente</Button>
-          </div>
-        )}
-
-        <div>
-          <p className="mb-2 text-sm font-semibold text-slate-700">Vínculos ativos</p>
-          {carregando ? (
-            <LoadingBlock text="Carregando..." className="py-3" />
-          ) : (
-            // Agrupado por escola: mostra TODAS as escolas do professor, inclusive as que ainda não
-            // têm nenhuma turma vinculada (antes ficavam invisíveis aqui).
-            <div className="space-y-4">
-              {gruposPorEscola.map(grupo => (
-                <div key={grupo.escolaId}>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-700">{grupo.nome}</p>
-                  {grupo.vinculos.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">Nenhuma turma vinculada nesta escola.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {grupo.vinculos.map(vinculo => (
-                        <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                          <div>
-                            <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
-                            <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
-                          </div>
-                          <Button size="sm" variant="outline" className="text-red-700" onClick={() => encerrar(vinculo)}>Encerrar</Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {turmasDoProfessor.length === 0 ? (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Este professor não tem turmas disponíveis nas escolas onde você o administra. Verifique se há turmas ativas cadastradas.
-          </p>
-        ) : (
-          <form onSubmit={vincular} className="space-y-3 border-t border-slate-200 pt-4">
-            <p className="text-sm font-semibold text-slate-700">Vincular a uma turma/disciplina</p>
-            {erroForm && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erroForm}</div>}
-            <div className="grid gap-3 sm:grid-cols-3">
-              <FormField label="Escola">
-                <select
-                  className={inputClass}
-                  value={novoVinculo.escolaId}
-                  onChange={event => {
-                    const escolaId = Number(event.target.value);
-                    const primeiraTurma = turmasDoProfessor.find(turma => turma.escolaId === escolaId);
-                    setNovoVinculo(prev => ({ ...prev, escolaId, turmaId: primeiraTurma?.id ?? '' }));
-                  }}
-                >
-                  {professor.escolas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Turma">
-                <select className={inputClass} value={novoVinculo.turmaId} onChange={event => setNovoVinculo(prev => ({ ...prev, turmaId: event.target.value }))}>
-                  <option value="" disabled>{turmasDaEscolaSelecionada.length === 0 ? 'Nenhuma turma nesta escola' : 'Selecione'}</option>
-                  {turmasDaEscolaSelecionada.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Disciplina">
-                <select className={inputClass} value={novoVinculo.disciplinaId} onChange={event => setNovoVinculo(prev => ({ ...prev, disciplinaId: event.target.value }))}>
-                  {disciplinasReais.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
-                </select>
-              </FormField>
-            </div>
-            {conflitoComOutro && (
-              <p className="text-xs font-semibold text-amber-700">
-                Atualmente, {conflitoComOutro.professorNome ? <strong>{conflitoComOutro.professorNome}</strong> : 'outro professor'} leciona esta disciplina nesta turma — vincular aqui substitui esse professor (o vínculo dele é encerrado automaticamente).
-              </p>
-            )}
-            <div className="flex justify-end"><Button type="submit" size="sm" loading={salvando} disabled={!novoVinculo.turmaId}>{salvando ? 'Salvando...' : 'Vincular'}</Button></div>
-          </form>
-        )}
-
-        <div className="flex justify-end"><Button variant="secondary" onClick={onClose}>Fechar</Button></div>
-      </div>
-    </Modal>
-  );
-};
+// 15/11/2026 (decisão do usuário): as turmas são marcadas por DISCIPLINA DO CARGO — a disciplina não é escolhida
+// de novo (ver components/TurmasPorDisciplina.jsx).
+const VinculosPedagogicosProfessorModal = ({ professor, turmas, onClose }) => (
+  <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onClose}>
+    <div className="space-y-5">
+      <TurmasPorDisciplina professor={professor} escolas={professor.escolas} turmas={turmas} />
+      <div className="flex justify-end"><Button variant="secondary" onClick={onClose}>Fechar</Button></div>
+    </div>
+  </Modal>
+);
 
 // Passo 2 do cadastro de professor: em vez de deixar turma/disciplina como ação solta e opcional
 // (causa raiz do cadastro "incompleto" — Pessoa + VinculoEscolar criados, zero
@@ -444,60 +286,12 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
 // atual. "Concluir depois" fecha sem forçar nada: o professor e os VinculoEscolar já foram
 // criados antes de abrir este wizard, então fechar cedo só adia o resto pro botão "Turmas e
 // disciplinas" de sempre, nunca perde o que já foi cadastrado.
-const VinculosWizardCriacaoProfessor = ({ professor, escolas, disciplinasReais, turmas, onFinish }) => {
+// 15/11/2026 (decisão do usuário): uma escola por vez, marcando as turmas de cada disciplina do cargo (a
+// disciplina já vem do cargo — não se escolhe de novo).
+const VinculosWizardCriacaoProfessor = ({ professor, escolas, turmas, onFinish }) => {
   const [indice, setIndice] = useState(0);
-  const [vinculosAdicionados, setVinculosAdicionados] = useState([]);
-  const [novoVinculo, setNovoVinculo] = useState({ turmaId: '', disciplinaId: disciplinasReais[0]?.id ?? '' });
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState('');
-
   const escolaAtual = escolas[indice];
-  const turmasDaEscola = turmas.filter(turma => turma.status === 'ativa' && turma.escolaId === escolaAtual.id);
-  // Disciplina já adicionada PARA A TURMA escolhida some do seletor de disciplinas (pedido do
-  // usuário: "coloquei 6M1 com História → História some"). A turma continua na lista (o professor
-  // pode ter outras disciplinas nela) e a disciplina continua disponível para as outras turmas.
-  const jaAdicionado = (turmaId, disciplinaId) => vinculosAdicionados.some(vinculo => vinculo.turmaId === Number(turmaId) && vinculo.disciplinaId === Number(disciplinaId));
-  const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !jaAdicionado(novoVinculo.turmaId, disciplina.id));
-
-  useEffect(() => {
-    setNovoVinculo({ turmaId: turmasDaEscola[0]?.id ?? '', disciplinaId: disciplinasReais[0]?.id ?? '' });
-    setVinculosAdicionados([]);
-    setErro('');
-  }, [indice]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Se a disciplina selecionada acabou de ser adicionada para esta turma (ou a turma mudou e ela já
-  // está lá), pula para a próxima disciplina disponível.
-  useEffect(() => {
-    if (disciplinasDisponiveis.some(disciplina => disciplina.id === Number(novoVinculo.disciplinaId))) return;
-    setNovoVinculo(prev => ({ ...prev, disciplinaId: disciplinasDisponiveis[0]?.id ?? '' }));
-  }, [vinculosAdicionados, novoVinculo.turmaId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const adicionar = async (event) => {
-    event.preventDefault();
-    if (!novoVinculo.turmaId) return;
-    setSalvando(true);
-    setErro('');
-    try {
-      const criado = await criarVinculoProfessorTurmaDisciplina({ turmaId: Number(novoVinculo.turmaId), professorId: professor.id, disciplinaId: Number(novoVinculo.disciplinaId) });
-      setVinculosAdicionados(prev => [...prev, criado]);
-    } catch (error) {
-      setErro(error.message);
-    } finally {
-      setSalvando(false);
-    }
-  };
-
-  const remover = async (vinculo) => {
-    try {
-      await encerrarVinculoProfessorTurmaDisciplina(vinculo.id);
-      setVinculosAdicionados(prev => prev.filter(item => item.id !== vinculo.id));
-    } catch (error) {
-      setErro(error.message);
-    }
-  };
-
   const ultimaEscola = indice === escolas.length - 1;
-
   return (
     <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onFinish}>
       <div className="space-y-4">
@@ -505,40 +299,8 @@ const VinculosWizardCriacaoProfessor = ({ professor, escolas, disciplinasReais, 
           <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Escola {indice + 1} de {escolas.length}</p>
           <p className="text-sm font-bold text-slate-900">{escolaAtual.nome}</p>
         </div>
-
-        {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
-
-        {vinculosAdicionados.length > 0 && (
-          // Rolagem própria: a lista cresce a cada vínculo adicionado, mas o modal não.
-          <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-            {vinculosAdicionados.map(vinculo => (
-              <div key={vinculo.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
-                <Button size="sm" variant="outline" onClick={() => remover(vinculo)}>Remover</Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {turmasDaEscola.length === 0 ? (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Esta escola não tem turmas ativas cadastradas — pule e cadastre a turma antes de voltar aqui.</p>
-        ) : (
-          <form onSubmit={adicionar} className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-end">
-            <div className="flex-1"><FormField label="Turma">
-              <select className={inputClass} value={novoVinculo.turmaId} onChange={event => setNovoVinculo(prev => ({ ...prev, turmaId: event.target.value }))}>
-                {turmasDaEscola.map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
-              </select>
-            </FormField></div>
-            <div className="flex-1"><FormField label="Disciplina">
-              <select className={inputClass} value={novoVinculo.disciplinaId} onChange={event => setNovoVinculo(prev => ({ ...prev, disciplinaId: event.target.value }))}>
-                {disciplinasDisponiveis.length === 0 && <option value="" disabled>Todas as disciplinas já adicionadas nesta turma</option>}
-                {disciplinasDisponiveis.map(disciplina => <option key={disciplina.id} value={disciplina.id}>{disciplina.nome}</option>)}
-              </select>
-            </FormField></div>
-            <Button type="submit" size="sm" disabled={salvando || !novoVinculo.turmaId || !novoVinculo.disciplinaId}>{salvando ? 'Adicionando...' : '+ Adicionar'}</Button>
-          </form>
-        )}
-
+        <p className="text-sm text-slate-600">Marque as turmas de cada disciplina.</p>
+        <TurmasPorDisciplina key={escolaAtual.id} professor={professor} escolas={[escolaAtual]} turmas={turmas} />
         <div className="flex justify-between gap-3 border-t border-slate-200 pt-4">
           <Button type="button" variant="secondary" onClick={onFinish}>Concluir depois</Button>
           <Button type="button" onClick={() => (ultimaEscola ? onFinish() : setIndice(prev => prev + 1))}>
@@ -888,7 +650,6 @@ const ProfessoresReaisManager = ({ user }) => {
         <VinculosWizardCriacaoProfessor
           professor={wizardVinculos.professor}
           escolas={wizardVinculos.escolas}
-          disciplinasReais={disciplinasReais}
           turmas={turmas}
           onFinish={finalizarWizardVinculos}
         />
@@ -928,10 +689,7 @@ const ProfessoresReaisManager = ({ user }) => {
       {managingTurmas && (
         <VinculosPedagogicosProfessorModal
           professor={managingTurmas}
-          turmasDoProfessor={turmas.filter(turma => (
-            turma.status === 'ativa' && managingTurmas.escolas.some(escola => escola.id === turma.escolaId)
-          ))}
-          disciplinasReais={disciplinasReais}
+          turmas={turmas}
           onClose={() => setManagingTurmas(null)}
         />
       )}
