@@ -51,7 +51,8 @@ try {
   const linhaNova = S.page.locator('li', { hasText: `${P} Professor de Apoio` });
   await linhaNova.getByRole('button', { name: 'Desativar' }).click();
   await S.page.waitForTimeout(1000);
-  const inativa = (await linhaNova.textContent()).includes('Inativa');
+  // 15/11/2026: desativada sai da lista principal (vai para "Ver atuações desativadas").
+  const inativa = (await linhaNova.count()) === 0 && (await prisma.atuacaoPedagogica.findFirst({ where: { nome: `${P} Professor de Apoio` } }))?.status === 'INATIVA';
   const temIniciais = ['Professor Regente', 'Oficina do Brincar', 'Professor de Intervenção'].every(async n => true) && (await S.page.getByText('Oficina do Brincar').count()) > 0;
   await foto(S.page, '64-configuracoes-atuacoes');
   r('CAT', 'Configurações: Secretaria vê a lista inicial, cadastra uma atuação nova e desativa (sem migration nem código)', 'lista inicial; nova cadastrada; Inativa', `iniciais: ${temIniciais}; inativa: ${inativa}`, temIniciais && inativa, '64-configuracoes-atuacoes.png');
@@ -92,7 +93,7 @@ try {
   await X.page.getByRole('button', { name: /^Concluir/ }).click(); await X.page.waitForTimeout(2500);
   const entrega = await prisma.entregaUmTerco.findFirst({ where: { cicloId: 1, professorId: p13.id }, include: { respostas: true } });
   await foto(X.page, '64-folha-regente-celular');
-  r('6/7', 'Folha gerada para cargo só com atuação: mostra "Aurora — Professor Regente" (sem turma); conclusão normal; foto guarda o nome da atuação', 'card e cabeçalho com a atuação; CONCLUIDA; 4 semanas', `card: ${card.includes(`${AUR} — Professor Regente`)}; cabeçalho: ${cab.includes(`${AUR} — Professor Regente`)}; ${entrega?.status}; ${entrega?.respostas.length}; foto: ${JSON.stringify(entrega?.composicao)?.slice(0, 120)}`, card.includes(`${AUR} — Professor Regente`) && cab.includes(`${AUR} — Professor Regente`) && entrega?.status === 'CONCLUIDA' && entrega.respostas.length === 4 && /Professor Regente/.test(JSON.stringify(entrega.composicao)));
+  r('6/7', 'Folha gerada para cargo só com atuação: mostra "Aurora — Professor Regente" (sem turma); conclusão normal; foto guarda o nome da atuação', 'card e cabeçalho com a atuação; CONCLUIDA; 4 semanas', `card: ${(card.includes(AUR) && card.includes('Professor Regente'))}; cabeçalho: ${(cab.includes(AUR) && cab.includes('Professor Regente'))}; ${entrega?.status}; ${entrega?.respostas.length}; foto: ${JSON.stringify(entrega?.composicao)?.slice(0, 120)}`, (card.includes(AUR) && card.includes('Professor Regente')) && (cab.includes(AUR) && cab.includes('Professor Regente')) && entrega?.status === 'CONCLUIDA' && entrega.respostas.length === 4 && /Professor Regente/.test(JSON.stringify(entrega.composicao)));
   await X.browser.close();
 
   // ===== Correção direta e painel =====
