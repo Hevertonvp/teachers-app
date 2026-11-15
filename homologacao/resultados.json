@@ -4914,7 +4914,7 @@
     "status": "APROVADO",
     "evidencia": "40-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-15T20:48:51.924Z"
+    "quando": "2026-11-15T23:43:13.072Z"
   },
   {
     "id": "UI-SEC-2a",
@@ -4925,7 +4925,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-15T20:48:57.854Z"
+    "quando": "2026-11-15T23:43:19.011Z"
   },
   {
     "id": "UI-SEC-2b",
@@ -4936,7 +4936,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-15T20:48:57.868Z"
+    "quando": "2026-11-15T23:43:19.027Z"
   },
   {
     "id": "UI-SEC-3",
@@ -4947,7 +4947,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:00.069Z"
+    "quando": "2026-11-15T23:43:21.289Z"
   },
   {
     "id": "UI-SEC-3b",
@@ -4958,18 +4958,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:00.084Z"
+    "quando": "2026-11-15T23:43:21.307Z"
   },
   {
     "id": "UI-SEC-4c-desktop",
     "modulo": "Ajustes de tela (Secretaria)",
-    "cenario": "Assistente (desktop): com vários vínculos, o modal não passa da altura da tela",
+    "cenario": "Cadastro (desktop): com seis turmas marcadas, o modal não passa da altura da tela",
     "esperado": "altura ≤ 800",
-    "observado": "topo 32, altura 344, base 376",
+    "observado": "topo 32, altura 736, base 768",
     "status": "APROVADO",
     "evidencia": "40-wizard-desktop.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:12.963Z"
+    "quando": "2026-11-15T23:43:24.685Z"
   },
   {
     "id": "UI-SEC-4d-desktop",
@@ -4980,18 +4980,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:12.982Z"
+    "quando": "2026-11-15T23:43:25.144Z"
   },
   {
     "id": "UI-SEC-4c-celular",
     "modulo": "Ajustes de tela (Secretaria)",
-    "cenario": "Assistente (celular): com vários vínculos, o modal não passa da altura da tela",
+    "cenario": "Cadastro (celular): com seis turmas marcadas, o modal não passa da altura da tela",
     "esperado": "altura ≤ 844",
-    "observado": "topo 32, altura 456, base 488",
+    "observado": "topo 32, altura 780, base 812",
     "status": "APROVADO",
     "evidencia": "40-wizard-celular.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:27.880Z"
+    "quando": "2026-11-15T23:43:30.686Z"
   },
   {
     "id": "UI-SEC-4d-celular",
@@ -5002,95 +5002,95 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:27.895Z"
+    "quando": "2026-11-15T23:43:31.208Z"
   },
   {
     "id": "ASSIST-1-desktop",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "desktop: depois do cadastro, uma linha por disciplina do CARGO (Geografia, Redação) e nenhum campo para escolher disciplina",
-    "esperado": "Geografia, Redação; 0 selects",
-    "observado": "Geografia, Redação; 0 selects",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "desktop: cada disciplina escolhida no cargo mostra as turmas da escola logo abaixo",
+    "esperado": "Redação, Geografia, Matemática",
+    "observado": "Redação, Geografia, Matemática",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:34.389Z"
+    "quando": "2026-11-15T23:42:45.018Z"
   },
   {
     "id": "ASSIST-2-desktop",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "desktop: marcar 6M1 em Redação e em Geografia cria os 2 vínculos (sem duplicar)",
-    "esperado": "2 marcadas; 6M1-Redação e 6M1-Geografia",
-    "observado": "2 marcadas; 6M1-Redação, 6M1-Geografia",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "desktop: marcar turma em que outro professor dá a disciplina avisa a substituição com o nome dele",
+    "esperado": "Substitui Ana Paula Ribeiro na 6M1.",
+    "observado": "Substitui Ana Paula Ribeiro na 6M1.",
     "status": "APROVADO",
-    "evidencia": "42-assistente-desktop.png",
+    "evidencia": "42-cadastro-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:37.694Z"
+    "quando": "2026-11-15T23:42:45.404Z"
   },
   {
     "id": "ASSIST-3-desktop",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "desktop: desmarcar \"Geografia — 6M1\" encerra só esse vínculo",
-    "esperado": "fica só 6M1-Redação",
-    "observado": "Redação",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "desktop: desmarcar tira o aviso; sem rolagem lateral",
+    "esperado": "aviso some; sem rolagem",
+    "observado": "aviso some: true; sem rolagem: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:39.240Z"
+    "quando": "2026-11-15T23:42:45.683Z"
   },
   {
     "id": "ASSIST-4-desktop",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "desktop: disciplina fora do cargo não aparece (sem linha de Matemática) e sem rolagem lateral",
-    "esperado": "sem Matemática; sem rolagem",
-    "observado": "Matemática: 0; sem rolagem: true",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "desktop: \"Cadastrar\" grava as turmas marcadas e vai direto para a senha (sem janela de turmas depois); Matemática da 6M1 continua com o professor dela",
+    "esperado": "6M1-Geografia, 6M1-Redação; sem janela; Matemática intacta",
+    "observado": "6M1-Geografia, 6M1-Redação; janela de turmas: 0; Matemática com #11",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:39.264Z"
+    "quando": "2026-11-15T23:42:46.156Z"
   },
   {
     "id": "ASSIST-1-celular",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "celular: depois do cadastro, uma linha por disciplina do CARGO (Geografia, Redação) e nenhum campo para escolher disciplina",
-    "esperado": "Geografia, Redação; 0 selects",
-    "observado": "Geografia, Redação; 0 selects",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "celular: cada disciplina escolhida no cargo mostra as turmas da escola logo abaixo",
+    "esperado": "Redação, Geografia, Matemática",
+    "observado": "Redação, Geografia, Matemática",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:44.249Z"
+    "quando": "2026-11-15T23:42:52.163Z"
   },
   {
     "id": "ASSIST-2-celular",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "celular: marcar 6M1 em Redação e em Geografia cria os 2 vínculos (sem duplicar)",
-    "esperado": "2 marcadas; 6M1-Redação e 6M1-Geografia",
-    "observado": "2 marcadas; 6M1-Redação, 6M1-Geografia",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "celular: marcar turma em que outro professor dá a disciplina avisa a substituição com o nome dele",
+    "esperado": "Substitui Ana Paula Ribeiro na 6M1.",
+    "observado": "Substitui Ana Paula Ribeiro na 6M1.",
     "status": "APROVADO",
-    "evidencia": "42-assistente-celular.png",
+    "evidencia": "42-cadastro-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:47.496Z"
+    "quando": "2026-11-15T23:42:52.446Z"
   },
   {
     "id": "ASSIST-3-celular",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "celular: desmarcar \"Geografia — 6M1\" encerra só esse vínculo",
-    "esperado": "fica só 6M1-Redação",
-    "observado": "Redação",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "celular: desmarcar tira o aviso; sem rolagem lateral",
+    "esperado": "aviso some; sem rolagem",
+    "observado": "aviso some: true; sem rolagem: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:49.038Z"
+    "quando": "2026-11-15T23:42:52.675Z"
   },
   {
     "id": "ASSIST-4-celular",
-    "modulo": "Assistente de turmas (disciplina do cargo)",
-    "cenario": "celular: disciplina fora do cargo não aparece (sem linha de Matemática) e sem rolagem lateral",
-    "esperado": "sem Matemática; sem rolagem",
-    "observado": "Matemática: 0; sem rolagem: true",
+    "modulo": "Turmas no cadastro do professor",
+    "cenario": "celular: \"Cadastrar\" grava as turmas marcadas e vai direto para a senha (sem janela de turmas depois); Matemática da 6M1 continua com o professor dela",
+    "esperado": "6M1-Geografia, 6M1-Redação; sem janela; Matemática intacta",
+    "observado": "6M1-Geografia, 6M1-Redação; janela de turmas: 0; Matemática com #11",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:49.058Z"
+    "quando": "2026-11-15T23:42:53.073Z"
   },
   {
     "id": "EXP-A1",
@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:06.299Z"
+    "quando": "2026-11-15T23:43:35.509Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:06.482Z"
+    "quando": "2026-11-15T23:43:35.683Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:06.879Z"
+    "quando": "2026-11-15T23:43:36.074Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:07.064Z"
+    "quando": "2026-11-15T23:43:36.211Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:07.383Z"
+    "quando": "2026-11-15T23:43:36.544Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:10.844Z"
+    "quando": "2026-11-15T23:43:39.483Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:14.255Z"
+    "quando": "2026-11-15T23:43:43.023Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:15.720Z"
+    "quando": "2026-11-15T23:43:44.545Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:16.574Z"
+    "quando": "2026-11-15T23:43:45.417Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:16.925Z"
+    "quando": "2026-11-15T23:43:45.745Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:20.141Z"
+    "quando": "2026-11-15T23:43:49.212Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 17:50InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
+    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 20:43InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:22.794Z"
+    "quando": "2026-11-15T23:43:51.893Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:23.655Z"
+    "quando": "2026-11-15T23:43:52.765Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":374,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":376,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:26.183Z"
+    "quando": "2026-11-15T23:43:55.326Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:26.299Z"
+    "quando": "2026-11-15T23:43:55.423Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 17:50InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
+    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 20:43InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:29.049Z"
+    "quando": "2026-11-15T23:43:58.124Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,7 +8434,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:29.124Z"
+    "quando": "2026-11-15T23:43:58.188Z"
   },
   {
     "id": "CARGO-16",
@@ -8445,7 +8445,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:32.106Z"
+    "quando": "2026-11-15T23:44:01.359Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:32.117Z"
+    "quando": "2026-11-15T23:44:01.368Z"
   },
   {
     "id": "UT-P04-02",
@@ -9633,7 +9633,7 @@
     "status": "APROVADO",
     "evidencia": "64-configuracoes-atuacoes.png",
     "nota": "",
-    "quando": "2026-11-15T20:32:11.817Z"
+    "quando": "2026-11-15T23:44:07.099Z"
   },
   {
     "id": "ATU-5/2",
@@ -9644,7 +9644,7 @@
     "status": "APROVADO",
     "evidencia": "64-cadastro-regente.png",
     "nota": "",
-    "quando": "2026-11-15T20:32:15.559Z"
+    "quando": "2026-11-15T23:44:10.397Z"
   },
   {
     "id": "ATU-6/7",
@@ -9655,7 +9655,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:27.037Z"
+    "quando": "2026-11-15T23:44:21.945Z"
   },
   {
     "id": "ATU-8",
@@ -9666,7 +9666,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:27.350Z"
+    "quando": "2026-11-15T23:44:22.267Z"
   },
   {
     "id": "ATU-9/10",
@@ -9677,7 +9677,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:27.396Z"
+    "quando": "2026-11-15T23:44:22.316Z"
   },
   {
     "id": "XLS13-6b",
