@@ -1,3 +1,4 @@
+// OBSOLETO desde 13/11/2026: a pergunta "Em qual cargo essa escola entra?" saiu (escola do Professor vem do cargo). Substituído pelo 66. Não rodar.
 // Escola nova pela janela "Escolas" → "Em qual cargo essa escola entra?" (decisão do usuário, 12/11/2026).
 // Secretaria: opções conforme os cargos ativos (nunca Cargo 3, sem "Agora não"); o editor de cargo abre com a
 // escola preenchida e nada é salvo sem confirmar. Diretora: não cria cargo; fica "Escola fora dos cargos".

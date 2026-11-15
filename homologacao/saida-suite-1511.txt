@@ -1,0 +1,69 @@
+04-um-terco-p04.mjs: 7 aprovados, 0 reprovados, 0 outros
+05-defeito-troca-semana.mjs: 1 aprovados, 0 reprovados, 0 outros
+07-servidor-e-concorrencia.mjs: 39 aprovados, 0 reprovados, 3 outros
+08-invasao-gravacao.mjs: 1 aprovados, 0 reprovados, 0 outros
+10-offline.mjs: 9 aprovados, 1 reprovados, 1 outros | ERRO: [APROVADO] UT-OFF-02 — Salvar sem rede NÃO perde o texto: vai para a fila local; servidor ainda sem a semana 2 → fi
+    [REPROVADO] UT-OFF-10 — Conflito: a tela mostra opções ao professor (usar versão salva / manter o meu) → SEM aviso de conflito na tela
+12-offline-fila-ao-abrir.mjs: 4 aprovados, 0 reprovados, 0 outros
+13-vinculos-historicos.mjs: 14 aprovados, 0 reprovados, 0 outros
+14-estados-administrativos.mjs: 5 aprovados, 1 reprovados, 0 outros | ERRO:   name: 'TimeoutError'
+    [REPROVADO] UT-EST-06 — Cargo encerrado durante o ciclo (com texto): sai do esperado e aparece em "Fora do esperado" no painel → HTTP 409; esperadas 14; fora 0
+15-prazo-e-reabertura.mjs: 9 aprovados, 0 reprovados, 0 outros
+24-cartoes-p01-p06.mjs: 5 aprovados, 0 reprovados, 0 outros
+32-def07-def08-offline.mjs: 14 aprovados, 0 reprovados, 0 outros
+33-regressao.mjs: 13 aprovados, 0 reprovados, 0 outros
+35-def01-def06-ui.mjs: 7 aprovados, 0 reprovados, 0 outros
+44-modal-novo-ciclo-um-terco.mjs: 21 aprovados, 0 reprovados, 0 outros
+45-dashboard-entregas.mjs: 8 aprovados, 0 reprovados, 0 outros
+46-um-terco-escolas-do-ciclo.mjs: 8 aprovados, 0 reprovados, 0 outros
+47-um-terco-inativos-separados.mjs: 8 aprovados, 0 reprovados, 0 outros
+48-reabrir-so-apos-prazo.mjs: 3 aprovados, 0 reprovados, 0 outros
+50-acompanhamento-escolar.mjs: 10 aprovados, 0 reprovados, 1 outros
+52-inativar-um-terco-com-preenchimentos.mjs: 3 aprovados, 0 reprovados, 0 outros
+55-pdi-em-desenvolvimento.mjs: 9 aprovados, 35 reprovados, 0 outros
+    [REPROVADO] PDI-DESENV-prof-pc-menu — prof (pc): PDI no menu com selo "em desenvolvimento" → Dashboard | Formulário 1/3 | PDI | Correções | Eventos | Notícias | Mensagens | Feedback | Perfil |
+    [REPROVADO] PDI-DESENV-prof-pc-dash — prof (pc): Dashboard mostra PDI "Em desenvolvimento" → Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.
+    [REPROVADO] PDI-DESENV-prof-rota/pdi — prof: /pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-prof-rota/pdi/meus-pdis — prof: /pdi/meus-pdis mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-prof-rota/correcoes — prof: /correcoes mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-prof-rota/correcoes/pdi — prof: /correcoes/pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-prof-pc-console — prof (pc): sem erros no console → Failed to load resource: the server responded with a status of 403 (Forbidden) / Failed to load resource: the server resp
+    [REPROVADO] PDI-DESENV-prof-cel-menu — prof (cel): PDI no menu com selo "em desenvolvimento" → Dashboard | Formulário 1/3 | PDI | Correções | Eventos | Notícias | Mensagens | Feedback | Perfil
+    [REPROVADO] PDI-DESENV-prof-cel-dash — prof (cel): Dashboard mostra PDI "Em desenvolvimento" → Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.
+    [REPROVADO] PDI-DESENV-sec-pc-menu — sec (pc): PDI no menu com selo "em desenvolvimento" → Dashboard | Gestão de Pessoas | Escolas | Turmas | Acompanhamento Escolar | Formulário 1/3 | PDI | Corr
+    [REPROVADO] PDI-DESENV-sec-pc-dash — sec (pc): Dashboard mostra PDI "Em desenvolvimento" → Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.
+    [REPROVADO] PDI-DESENV-sec-rota/pdi — sec: /pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-sec-rota/pdi/meus-pdis — sec: /pdi/meus-pdis mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-sec-rota/correcoes — sec: /correcoes mostra o 1/3 e o PDI "em desenvolvimento" → Correções FORMULÁRIO 1/3 Correção das folhas do 1/3 Corrigir diretamente ou enviar para
+    [REPROVADO] PDI-DESENV-sec-rota/correcoes/pdi — sec: /correcoes/pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-sec-pc-acomp — sec (pc): Acompanhamento com PDI em desenvolvimento e 1/3 normal → desenv: false; botão desab: null; 1/3: true; largura: true
+    [REPROVADO] PDI-DESENV-sec-cel-menu — sec (cel): PDI no menu com selo "em desenvolvimento" → Dashboard | Gestão de Pessoas | Escolas | Turmas | Acompanhamento Escolar | Formulário 1/3 | PDI | Co
+    [REPROVADO] PDI-DESENV-sec-cel-dash — sec (cel): Dashboard mostra PDI "Em desenvolvimento" → Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.
+    [REPROVADO] PDI-DESENV-sec-cel-acomp — sec (cel): Acompanhamento com PDI em desenvolvimento e 1/3 normal → desenv: false; botão desab: null; 1/3: true; largura: true
+    [REPROVADO] PDI-DESENV-gestor-pc-menu — gestor (pc): PDI no menu com selo "em desenvolvimento" → Dashboard | PDI | Correções | Gestão de Professores(as) | Eventos | Notícias | Mensagens | Feed
+    [REPROVADO] PDI-DESENV-gestor-pc-dash — gestor (pc): Dashboard mostra PDI "Em desenvolvimento" → Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.
+    [REPROVADO] PDI-DESENV-gestor-rota/pdi — gestor: /pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-gestor-rota/pdi/meus-pdis — gestor: /pdi/meus-pdis mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-gestor-rota/correcoes — gestor: /correcoes mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-gestor-rota/correcoes/pdi — gestor: /correcoes/pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-gestor-pc-console — gestor (pc): sem erros no console → Failed to load resource: the server responded with a status of 403 (Forbidden) / Failed to load resource: the server 
+    [REPROVADO] PDI-DESENV-gestor-cel-menu — gestor (cel): PDI no menu com selo "em desenvolvimento" → Dashboard | PDI | Correções | Gestão de Professores(as) | Eventos | Notícias | Mensagens | Fe
+    [REPROVADO] PDI-DESENV-gestor-cel-dash — gestor (cel): Dashboard mostra PDI "Em desenvolvimento" → Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.
+    [REPROVADO] PDI-DESENV-diretora-rota/pdi — diretora: /pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-diretora-rota/pdi/meus-pdis — diretora: /pdi/meus-pdis mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-diretora-rota/correcoes — diretora: /correcoes mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-diretora-rota/correcoes/pdi — diretora: /correcoes/pdi mostra "PDI em desenvolvimento" → 0
+    [REPROVADO] PDI-DESENV-diretora-pc-acomp — diretora (pc): Acompanhamento com PDI em desenvolvimento e 1/3 normal → desenv: false; botão desab: null; 1/3: true; largura: true
+    [REPROVADO] PDI-DESENV-diretora-pc-console — diretora (pc): sem erros no console → Failed to load resource: the server responded with a status of 403 (Forbidden) / Failed to load resource: the ser
+    [REPROVADO] PDI-DESENV-diretora-cel-acomp — diretora (cel): Acompanhamento com PDI em desenvolvimento e 1/3 normal → desenv: false; botão desab: null; 1/3: true; largura: true
+56-escola-do-topo-nos-modais.mjs: 12 aprovados, 1 reprovados, 0 outros
+    [REPROVADO] TOPO-12 — Professor com 2+ escolas: Nova mensagem → p04 tem 0 escola(s): não testado
+57-filtros-seguem-o-topo.mjs: 11 aprovados, 0 reprovados, 0 outros
+58-cargos-e-um-terco-por-cargo.mjs: 7 aprovados, 0 reprovados, 0 outros | ERRO:   name: 'TimeoutError'
+59-correcao-um-terco-por-cargo.mjs: 11 aprovados, 0 reprovados, 0 outros
+60-educacao-infantil-um-terco.mjs: 5 aprovados, 0 reprovados, 0 outros
+61-excel-um-terco-por-cargo.mjs: 14 aprovados, 0 reprovados, 0 outros
+62-correcoes-um-terco-api.mjs: 24 aprovados, 1 reprovados, 0 outros
+    [REPROVADO] CORR13-C-ENC — Folha de cargo encerrado: Secretaria consulta (detalhe e histórico), mas não corrige nem devolve → consulta false; corrigir 200; devolver 201
+63-correcoes-um-terco-telas.mjs: 12 aprovados, 0 reprovados, 0 outros
+36-integridade.mjs: 14 aprovados, 0 reprovados, 0 outros

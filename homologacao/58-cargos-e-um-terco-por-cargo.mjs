@@ -102,13 +102,13 @@ try {
   const coluna = (await linha.textContent()) ?? '';
   r('7', 'Lista mostra a quantidade de cargos ativos', '"2 cargos"', coluna.includes('2 cargos') ? '2 cargos' : coluna.slice(0, 80), coluna.includes('2 cargos'));
 
-  await linha.getByRole('button', { name: 'Cargos' }).click();
+  await linha.getByRole('button', { name: 'Cargos e escolas' }).click(); // 13/11/2026: botão renomeado
   const mc = modal(page);
   await mc.getByText('Cargo 2').first().waitFor();
   const cartao1 = mc.locator('div.rounded-xl').filter({ has: page.getByRole('heading', { name: 'Cargo 1' }) }).first();
   await cartao1.getByRole('button', { name: 'Encerrar cargo' }).click();
   const confirmacao = await mc.getByText(/Ele não é apagado/).isVisible();
-  await mc.getByRole('button', { name: 'Encerrar cargo' }).last().click();
+  await mc.getByRole('button', { name: /^Encerrar (cargo|e tirar da escola)$/ }).last().click(); // 13/11: com saída de escola o botão muda
   await page.waitForTimeout(1200);
   const titulos = await mc.locator('h3').allTextContents();
   r('8', 'Encerrar pede confirmação; o cargo que sobra vira "Cargo 1"', 'confirmação; só "Cargo 1"', `${confirmacao}; ${JSON.stringify(titulos)}`, confirmacao && JSON.stringify(titulos) === JSON.stringify(['Cargo 1']));
