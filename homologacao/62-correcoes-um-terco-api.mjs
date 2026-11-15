@@ -140,7 +140,7 @@ try {
 
   // ===== Cargo encerrado: só consulta =====
   const [c05] = await cargosDe('p05');
-  await req(tkS, 'POST', `/pessoas/professores/${pid.p05}/cargos/${c05}/encerrar`, { dataFim: new Date(Date.now() - 3 * H).toISOString().slice(0, 10) });
+  await req(tkS, 'POST', `/pessoas/professores/${pid.p05}/cargos/${c05}/encerrar`, { dataFim: new Date(Date.now() - 3 * H).toISOString().slice(0, 10), confirmarSaida: true }); // 13/11/2026: saída da escola exige confirmação
   const d05 = await det(e05);
   const corr05 = await req(tkS, 'PUT', `/correcoes-um-terco/${e05}/respostas`, { baseUpdatedAt: d05.updatedAt, respostas: [{ semanaId: sem[0].id, texto: 'x' }] });
   const dev05 = await req(tkS, 'POST', `/formulario-um-terco/entregas/${e05}/devolver`, { observacao: 'x' });

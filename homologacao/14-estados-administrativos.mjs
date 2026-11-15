@@ -63,7 +63,7 @@ try {
   const sem1 = await prisma.semanaUmTerco.findFirst({ where: { cicloId: 1, numero: 1 } });
   await fetch(`${API}/formulario-um-terco/ciclos/1/cargos/${c15}/respostas`, { method: 'PUT', headers: { 'content-type': 'application/json', authorization: `Bearer ${tk15}` }, body: JSON.stringify({ baseUpdatedAt: null, respostas: [{ semanaId: sem1.id, texto: 'P15 semana 1: frações (antes do encerramento).' }] }) });
   const p15 = await prisma.pessoa.findUnique({ where: { email: 'p15@homolog.nexo' } });
-  const enc = await post(`/pessoas/professores/${p15.id}/cargos/${c15}/encerrar`, { dataFim: hoje });
+  const enc = await post(`/pessoas/professores/${p15.id}/cargos/${c15}/encerrar`, { dataFim: hoje, confirmarSaida: true }); // 13/11/2026: encerrar que tira da escola exige confirmar a saída
   const comEncerrado = await painel('p15-encerrado');
   registrar('UT-EST-06', 'Estados administrativos', 'Cargo encerrado durante o ciclo (com texto): sai do esperado e aparece em "Fora do esperado" no painel', `esperadas ${FOLHAS_ESPERADAS_CICLO1 - 1}; fora 1`, `HTTP ${enc}; esperadas ${comEncerrado.esperadas}; fora ${comEncerrado.fora}`, enc === 200 && comEncerrado.esperadas === FOLHAS_ESPERADAS_CICLO1 - 1 && comEncerrado.fora === 1 ? 'APROVADO' : 'REPROVADO', '14-painel-p15-encerrado.png');
 
