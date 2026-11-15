@@ -1,0 +1,33 @@
+// Novo ciclo do 1/3: semanas SUGERIDAS pela abertura/prazo (pedido do usuário, 15/11/2026). Navegador real,
+// banco LOCAL. Só abre o modal e cancela: nada é gravado.
+import { abrir, login, BASE } from './lib.mjs';
+import { registrar } from './resultados.mjs';
+const r = (id, cen, esp, obs, ok) => registrar(`SEMSUG-${id}`, 'Semanas sugeridas (novo ciclo)', cen, esp, String(obs).slice(0, 300), ok ? 'APROVADO' : 'REPROVADO');
+const X = await abrir();
+await login(X.page, 'secretaria@escola.gov.br', '12345678');
+await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(1000);
+await X.page.getByRole('button', { name: '+ Novo ciclo' }).first().click();
+const m = X.page.locator('div.fixed.inset-0');
+const semanas = async () => { const n = Number(await m.getByLabel('Quantidade de semanas').inputValue()); const out = []; for (let i = 1; i <= n; i++) out.push(`${await m.getByLabel(`Semana ${i}: início`).inputValue()}..${await m.getByLabel(`Semana ${i}: fim`).inputValue()}`); return out; };
+await m.getByLabel('Abertura', { exact: true }).fill('2026-11-23');
+await m.getByLabel('Prazo de entrega', { exact: true }).fill('2026-12-06');
+const s1 = await semanas();
+r('1', 'Abertura 23/11 e prazo 06/12 (14 dias), 4 semanas: divide em partes iguais (4,4,3,3)', '23..26 | 27..30 | 01..03 | 04..06', s1.join(' | '), JSON.stringify(s1) === JSON.stringify(['2026-11-23..2026-11-26', '2026-11-27..2026-11-30', '2026-12-01..2026-12-03', '2026-12-04..2026-12-06']));
+await m.getByLabel('Quantidade de semanas').fill('2');
+const s2 = await semanas();
+r('2', 'Mudar a quantidade para 2 refaz a divisão (7 + 7 dias)', '23..29 | 30..06', s2.join(' | '), JSON.stringify(s2) === JSON.stringify(['2026-11-23..2026-11-29', '2026-11-30..2026-12-06']));
+await m.getByLabel('Semana 1: fim').fill('2026-11-27');
+const s3 = await semanas();
+r('3', 'Editar uma semana à mão não mexe na outra', 'semana 1 = 23..27; semana 2 igual', s3.join(' | '), s3[0] === '2026-11-23..2026-11-27' && s3[1] === '2026-11-30..2026-12-06');
+await m.getByLabel('Prazo de entrega', { exact: true }).fill('2026-12-04');
+const s4 = await semanas();
+r('4', 'Depois de editar à mão, mudar o prazo não refaz as semanas', 'iguais às do passo 3', s4.join(' | '), JSON.stringify(s4) === JSON.stringify(s3));
+await m.getByLabel('Quantidade de semanas').fill('3');
+const s5 = await semanas();
+r('5', 'Mudar a quantidade refaz a divisão mesmo depois de editar à mão (23/11 a 04/12 = 12 dias, 3 semanas)', '23..26 | 27..30 | 01..04', s5.join(' | '), JSON.stringify(s5) === JSON.stringify(['2026-11-23..2026-11-26', '2026-11-27..2026-11-30', '2026-12-01..2026-12-04']));
+const botoes = await X.page.getByRole('button', { name: '+ Novo ciclo' }).count();
+await m.getByRole('button', { name: 'Cancelar' }).click();
+const botoesNovo = await X.page.getByRole('button', { name: '+ Novo ciclo' }).count();
+r('6', 'Tela do 1/3: um único "+ Novo ciclo"', '1', String(botoesNovo), botoesNovo === 1);
+void botoes;
+await X.browser.close();
