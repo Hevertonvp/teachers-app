@@ -11,7 +11,7 @@ import { AvisoCorrecaoProfessor, correcaoPendente } from '../components/Correcoe
 import { concluirFormularioUmTerco, caminhoRespostasUmTerco, obterFormularioUmTerco, salvarRespostasUmTerco } from '../services/formularioUmTerco';
 import { inputClass } from '../utils/display';
 import { formatarDataHora, formatarPeriodo } from '../utils/umTerco';
-import { AvisoFolhaCompartilhada, ComposicaoCargo } from '../components/ComposicaoCargo';
+import { AvisoFolhaCompartilhada, tituloDaFolha, DetalheDaFolha } from '../components/ComposicaoCargo';
 
 const AUTOSAVE_MS = 2000;
 const eRede = (error) => !error.codigo && /conectar ao servidor/.test(error.message || '');
@@ -329,8 +329,8 @@ export const UmTercoPreenchimentoPage = () => {
       <div className="mx-auto max-w-3xl space-y-5 pb-24">
         <BackButton />
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{dados.ciclo.titulo} · {dados.ciclo.trimestre}º trimestre</p>
-          <h1 className="mt-1 text-3xl font-bold text-slate-950">{dados.rotulo}</h1>
+          <p className="text-sm font-semibold text-teal-700"><span data-rotulo>{dados.rotulo}</span> · {dados.ciclo.trimestre}º trimestre</p>
+          <h1 className="mt-1 text-3xl font-bold text-slate-950">{tituloDaFolha(dados.composicao)}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
             <Badge variant={concluida ? 'green' : 'blue'}>{concluida ? 'Concluído' : 'Em preenchimento'}</Badge>
             <span>Prazo: {formatarDataHora(dados.ciclo.prazoEm)}</span>
@@ -340,8 +340,8 @@ export const UmTercoPreenchimentoPage = () => {
         <AvisoCorrecaoProfessor itens={[{ chave: 'correcao', titulo: null, correcao: dados.correcao }]} reenvio />
 
         <Card>
-          <ComposicaoCargo composicao={dados.composicao} />
-          {!dados.esperada && <p className="mt-2 text-sm text-slate-500">Este cargo foi encerrado. O que foi escrito fica guardado só para consulta.</p>}
+          <DetalheDaFolha composicao={dados.composicao} />
+          {!dados.esperada && <p className="mt-2 text-sm text-slate-500">Só para consulta.</p>}
         </Card>
         <AvisoFolhaCompartilhada texto={dados.avisoCompartilhada} />
 
@@ -402,8 +402,8 @@ export const UmTercoPreenchimentoPage = () => {
 
       <div data-barra-acoes-fixa className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
-          <Button variant="secondary" className="min-h-12 flex-1 sm:flex-none" onClick={() => (etapa === 0 ? sair() : irParaEtapa(etapa - 1))}>{etapa === 0 ? 'Sair' : 'Voltar'}</Button>
-          {editavel && <Button variant="outline" className="min-h-12 flex-1 sm:flex-none" onClick={salvarAgora} disabled={!sujo || !!conflito}>Salvar progresso</Button>}
+          <Button variant="secondary" className="min-h-12 flex-1 sm:flex-none" onClick={() => (etapa === 0 ? sair() : irParaEtapa(etapa - 1))}>Voltar</Button>
+          {/* 15/11/2026: só aparece quando há algo a salvar (desativado parecia quebrado). */}{editavel && sujo && !conflito && <Button variant="outline" className="min-h-12 flex-1 sm:flex-none" onClick={salvarAgora}>Salvar progresso</Button>}
           {ultima ? (
             editavel
               ? <Button className="min-h-12 flex-1 sm:flex-none" onClick={concluir} loading={concluindo} disabled={!!conflito}>{emCorrecao ? (concluindo ? 'Reenviando...' : 'Reenviar correção') : concluindo ? 'Concluindo...' : concluida ? 'Salvar e concluir' : 'Concluir'}</Button>

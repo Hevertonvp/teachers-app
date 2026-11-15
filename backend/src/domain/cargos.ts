@@ -85,8 +85,15 @@ export function lerComposicao(json: unknown): Composicao {
 }
 
 // Parte do cargo que entra num ciclo: só as escolas do ciclo (`null` = todas as escolas).
-export const restringirAoCiclo = (composicao: Composicao, escolasDoCiclo: number[] | null): Composicao =>
-  (escolasDoCiclo ? composicao.filter((i) => escolasDoCiclo.includes(i.escolaId)) : composicao);
+// Disciplinas que NÃO entram no Formulário 1/3 "por enquanto" (decisão do usuário, 15/11/2026): somem da folha;
+// escola que fica sem disciplina e sem atuação sai da folha; cargo que fica vazio não gera folha. Lista fixa no
+// código (sem migration): para a disciplina passar a preencher, basta tirar daqui.
+export const DISCIPLINAS_FORA_DO_UM_TERCO = ['Informática'];
+
+export const restringirAoCiclo = (composicao: Composicao, escolasDoCiclo: number[] | null, disciplinasFora: number[] = []): Composicao =>
+  (escolasDoCiclo ? composicao.filter((i) => escolasDoCiclo.includes(i.escolaId)) : composicao)
+    .map((i) => (disciplinasFora.length ? { ...i, disciplinaIds: i.disciplinaIds.filter((d) => !disciplinasFora.includes(d)) } : i))
+    .filter((i) => i.disciplinaIds.length > 0 || (i.atuacaoIds ?? []).length > 0);
 
 export type CargoParaCiclo = {
   id: number;
@@ -152,12 +159,12 @@ export type FolhaCalculada = {
 
 // Folhas de um ciclo: uma por cargo participante; cargos do MESMO Professor com a mesma parte no ciclo
 // dividem uma folha. Cargo cuja parte no ciclo é vazia (nenhuma escola do ciclo) não gera folha.
-export function calcularFolhas(cargos: CargoParaCiclo[], ciclo: { abreEm: Date; prazoEm: Date }, escolasDoCiclo: number[] | null): FolhaCalculada[] {
+export function calcularFolhas(cargos: CargoParaCiclo[], ciclo: { abreEm: Date; prazoEm: Date }, escolasDoCiclo: number[] | null, disciplinasFora: number[] = []): FolhaCalculada[] {
   const grupos = new Map<string, FolhaCalculada>();
   for (const cargo of [...cargos].sort((a, b) => a.id - b.id)) {
     const naAbertura = composicaoNaAbertura(cargo, ciclo);
     if (!naAbertura) continue;
-    const parte = restringirAoCiclo(naAbertura, escolasDoCiclo);
+    const parte = restringirAoCiclo(naAbertura, escolasDoCiclo, disciplinasFora);
     if (parte.length === 0) continue;
     const chave = `${cargo.professorId}|${chaveComposicao(parte)}`;
     const folha = grupos.get(chave) ?? { professorId: cargo.professorId, cargoIds: [], composicao: parte, esperada: false };

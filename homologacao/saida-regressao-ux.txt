@@ -1,0 +1,37 @@
+04-um-terco-p04.mjs: 7 ok, 0 rep 
+05-defeito-troca-semana.mjs: 1 ok, 0 rep 
+10-offline.mjs: 10 ok, 0 rep [APROVADO] UT-OFF-02 — Salvar sem rede NÃO perde o texto: vai para a fila local; servid
+12-offline-fila-ao-abrir.mjs: 4 ok, 0 rep 
+13-vinculos-historicos.mjs: 14 ok, 0 rep 
+14-estados-administrativos.mjs: 7 ok, 0 rep 
+15-prazo-e-reabertura.mjs: 9 ok, 0 rep 
+24-cartoes-p01-p06.mjs: 5 ok, 0 rep 
+32-def07-def08-offline.mjs: 14 ok, 0 rep 
+33-regressao.mjs: 13 ok, 0 rep 
+35-def01-def06-ui.mjs: 2 ok, 0 rep   name: 'TimeoutError'
+    ~ [2m  - waiting for locator('div.fixed.inset-x-0.bottom-0.z-30').getByRole('button', { name: 'Sair' })[22m
+    ~     "  - waiting for locator('div.fixed.inset-x-0.bottom-0.z-30').getByRole('button', { name: 'Sair' })"
+40-ajustes-telas-secretaria.mjs: 9 ok, 0 rep 
+42-assistente-disciplinas-por-turma.mjs: 8 ok, 0 rep 
+44-modal-novo-ciclo-um-terco.mjs: 21 ok, 0 rep 
+46-um-terco-escolas-do-ciclo.mjs: 8 ok, 0 rep 
+51-correcoes-professor.mjs: 19 ok, 0 rep 
+52-inativar-um-terco-com-preenchimentos.mjs: 3 ok, 0 rep 
+58-cargos-e-um-terco-por-cargo.mjs: 11 ok, 1 rep   name: 'TimeoutError'
+    [REPROVADO] CARGO-12-computador — Professor (computador): dois cargos iguais → um card "Cargos 1 e 2" com "Escola — disciplina", sem turmas → 
+    ~ [2m  - waiting for locator('div').filter({ has: locator('[data-rotulo]').filter({ hasText: 'Cargos 1 e 2' }) }).filter({ hasText: 'ZZCARGO-UI Formulário 1/3' }).last().getByRole('button', { name: /P
+    ~     "  - waiting for locator('div').filter({ has: locator('[data-rotulo]').filter({ hasText: 'Cargos 1 e 2' }) }).filter({ hasText: 'ZZCARGO-UI Formulário 1/3' }).last().getByRole('button', { name: /
+59-correcao-um-terco-por-cargo.mjs: 11 ok, 0 rep 
+60-educacao-infantil-um-terco.mjs: 4 ok, 1 rep 
+    [REPROVADO] EI-5 — Cargo de Educação Infantil cadastrado hoje: não entra no ciclo já aberto; entra no próximo ciclo, só com a escola → no ciclo 1: true; próximo: 1 folha(s) ZZ-HOMOLOG Escola Aurora [0]
+63-correcoes-um-terco-telas.mjs: 12 ok, 0 rep 
+64-atuacao-pedagogica.mjs: 0 ok, 0 rep   name: 'TimeoutError'
+    ~ [2m  - waiting for locator('li').filter({ hasText: 'ZZATU Professor de Apoio' })[22m
+    ~     "  - waiting for locator('li').filter({ hasText: 'ZZATU Professor de Apoio' })"
+66-escola-vem-do-cargo.mjs: 6 ok, 0 rep 
+67-um-terco-navegador-lacunas.mjs: 13 ok, 1 rep 
+    [REPROVADO] UT-NAV-12 — Celular 390 px (Professor): lista do 1/3 e folha → lista sem rolagem: true; folha sem rolagem: true; Salvar visível: false
+68-desativados-por-area.mjs: 16 ok, 0 rep 
+70-fila-envia-sem-conflito-falso.mjs: 2 ok, 0 rep 
+71-semanas-sugeridas.mjs: 6 ok, 0 rep 
+72-menu-acoes-nao-cortado.mjs: 2 ok, 0 rep 

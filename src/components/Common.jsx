@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { ProfessorName } from './ProfessorName';
@@ -230,11 +230,18 @@ export const ActionMenu = ({ items, label = 'Mais ações' }) => {
   // razão do Modal (ver comentário ali): DataTable envolve as linhas com `overflow-hidden` (pra
   // não vazar o conteúdo com o cantos arredondados da tabela), e isso cortava o menu sempre que
   // ele abria perto do fim da tabela. `position: fixed` com coordenadas absolutas escapa disso.
+  // 15/11/2026: abre para CIMA quando não cabe embaixo do botão (último item da lista, perto do fim da
+  // tela: o menu fixo passava da borda inferior e ficava cortado, sem como rolar até ele).
   const atualizarPosicao = () => {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPosition({ top: rect.bottom + 4, left: Math.max(8, rect.right - MENU_WIDTH) });
+    const altura = menuRef.current?.offsetHeight ?? items.length * 40 + 12;
+    const cabeEmbaixo = rect.bottom + 4 + altura <= window.innerHeight - 8;
+    const top = cabeEmbaixo ? rect.bottom + 4 : Math.max(8, rect.top - 4 - altura);
+    setPosition({ top, left: Math.max(8, Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8)) });
   };
+  // Depois de desenhado, mede a altura real do menu e corrige a posição antes de aparecer na tela.
+  useLayoutEffect(() => { if (open) atualizarPosicao(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = () => {
     if (!open) atualizarPosicao();

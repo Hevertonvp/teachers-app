@@ -83,7 +83,7 @@ export const EntregaUmTercoGestao = ({ activeEscolaId, compacto = false, link = 
       compacto={compacto}
       link={link}
       vazio="Nenhuma entrega esperada neste ciclo."
-      rodape={grupos.length > 1 ? 'Cada entrega é um formulário por cargo do professor; quando o cargo tem duas escolas, ela aparece nas duas.' : null}
+      rodape={null}
     />
   );
 };

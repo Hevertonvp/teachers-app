@@ -167,9 +167,9 @@ for (const [id, quando, desc] of [['10', '2027-03-10T12:00:00-03:00', 'adiantado
   const lista = await semRolagemLateral(M.page);
   await ir(M.page, ROTA);
   const folhaOk = await semRolagemLateral(M.page);
-  const botaoVisivel = await M.page.getByRole('button', { name: 'Salvar progresso' }).isVisible().catch(() => false);
+  const botaoVisivel = (await M.page.getByRole('button', { name: 'Voltar' }).last().isVisible().catch(() => false)) && (await M.page.getByRole('button', { name: 'Próximo' }).isVisible().catch(() => false));
   await foto(M.page, '67-folha-celular');
-  r('12', 'Celular 390 px (Professor): lista do 1/3 e folha', 'sem rolagem lateral; botões visíveis', `lista sem rolagem: ${lista}; folha sem rolagem: ${folhaOk}; Salvar visível: ${botaoVisivel}`, lista && folhaOk && botaoVisivel);
+  r('12', 'Celular 390 px (Professor): lista do 1/3 e folha', 'sem rolagem lateral; botões visíveis', `lista sem rolagem: ${lista}; folha sem rolagem: ${folhaOk}; Voltar e Próximo visíveis: ${botaoVisivel}`, lista && folhaOk && botaoVisivel);
   errosTodos.push(...M.erros);
   await M.browser.close();
   const MS = await abrir({ viewport: { width: 390, height: 844 } });

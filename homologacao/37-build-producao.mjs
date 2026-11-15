@@ -35,7 +35,7 @@ async function login(page, email, senha) {
 const foto = (page, nome) => page.screenshot({ path: EVID + nome + '.png', fullPage: true });
 const cartao = async (page, regex) => {
   await page.goto(BASE + '/#/formulario-um-terco'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(1500);
-  await page.locator('h2.text-xl', { hasText: regex }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
+  await page.locator('[data-rotulo]', { hasText: regex }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
   await page.waitForLoadState('networkidle'); await page.waitForTimeout(1200);
 };
 const s2 = async () => Object.fromEntries(((await folhaDoCargo(C1))?.respostas ?? []).map(x => [x.semana.numero, x.texto]));
@@ -53,7 +53,7 @@ r('02', 'Service Worker registra, fica ativo e controla a página no build de pr
 
 // 2) Formulário 1/3: cartões e gravação online
 await A.page.goto(BASE + '/#/formulario-um-terco'); await A.page.waitForLoadState('networkidle'); await dormir(1500);
-const cartoes = await A.page.locator('h2.text-xl').count();
+const cartoes = await A.page.locator('[data-rotulo]').count();
 await cartao(A.page, /^Cargo 1$/);
 const ta = A.page.locator('#conteudos-semana');
 await ta.fill(`PROD semana 1 ${TAG}`);

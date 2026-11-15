@@ -57,7 +57,7 @@ const livre = (loc) => loc.evaluate((el) => { const b = el.getBoundingClientRect
   await X.page.getByRole('tab', { name: 'Semana 4' }).click(); await X.page.waitForTimeout(600);
   await ta.fill(`QUARTA ${TAG}`);
   await X.page.getByRole('tab', { name: 'Semana 1' }).click(); // dispara envio em segundo plano
-  await X.page.locator('div.fixed.inset-x-0.bottom-0.z-30').getByRole('button', { name: 'Sair' }).click(); // o Sair da barra do formulário (não o do cabeçalho)
+  await X.page.locator('div.fixed.inset-x-0.bottom-0.z-30').getByRole('button', { name: 'Voltar' }).click(); // 15/11/2026: o "Sair" da barra do formulário virou "Voltar" (não o do cabeçalho)
   await X.page.waitForURL(/formulario-um-terco$/, { timeout: 20000 }).catch(() => {});
   await X.page.unroute('**/api/formulario-um-terco/**/respostas');
   const d = await semanas();

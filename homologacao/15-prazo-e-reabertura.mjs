@@ -15,6 +15,8 @@ const corpoA = (prazo) => ({ anoLetivo: A.anoLetivo, trimestre: A.trimestre, tit
 // Desde 10/11/2026 nenhuma semana pode terminar depois do prazo, e o ciclo local tem semanas até 27/11: o prazo é
 // mudado DIRETO NO BANCO LOCAL (intervenção declarada) em vez da API de edição do ciclo.
 const put = async (prazo) => { await prisma.cicloUmTerco.update({ where: { id: A.id }, data: { prazoEm: new Date(prazo + ':00-03:00') } }); return { status: 200 }; };
+process.on('uncaughtException', async (e) => { console.error(e); await prisma.cicloUmTerco.update({ where: { id: A.id }, data: { prazoEm: new Date('2026-11-20T18:00:00-03:00') } }).catch(() => {}); process.exit(1); });
+process.on('unhandledRejection', async (e) => { console.error(e); await prisma.cicloUmTerco.update({ where: { id: A.id }, data: { prazoEm: new Date('2026-11-20T18:00:00-03:00') } }).catch(() => {}); process.exit(1); });
 
 // antecipa o prazo para 04/11 09:00 (já passou: agora é após 12h de Brasília)
 const r0 = await put('2026-11-04T09:00');
@@ -55,8 +57,11 @@ registrar('UT-PRZ-05', 'Prazo', 'Prazo vence com a tela aberta: salvar depois do
 // Reabertura pela interface da Secretaria
 const s = await abrir();
 await login(s.page, 'secretaria@escola.gov.br', '12345678');
-await s.page.goto(BASE + '/#/formulario-um-terco'); await s.page.waitForLoadState('networkidle');
-const card = s.page.locator('h2.text-xl', { hasText: 'Nov/2026 (homolog)' }).first().locator('xpath=ancestor::div[contains(@class,"rounded")][1]');
+// 15/11/2026: ciclo vencido sai da lista principal e fica em "Encerrados e inativos" (linha da tabela).
+await s.page.goto(BASE + '/#/formulario-um-terco?ver=inativos'); await s.page.waitForLoadState('networkidle'); await s.page.waitForTimeout(1000);
+let card = s.page.locator('tbody tr', { hasText: 'Nov/2026 (homolog)' }).first();
+// A lista tem muitos ciclos de teste: procura a linha página a página.
+for (let i = 0; i < 15 && !(await card.count()); i++) { await s.page.getByRole('button', { name: 'Próxima' }).click().catch(() => {}); await s.page.waitForTimeout(400); }
 await card.getByRole('button', { name: 'Reabrir' }).click();
 const m = s.page.locator('div.fixed.inset-0');
 // Reabertura cobrindo HOJE (o teste foi escrito quando hoje era 04/11).

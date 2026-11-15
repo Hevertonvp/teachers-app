@@ -61,6 +61,9 @@ const dataSemHoraPadrao = (iso, horaPadrao) => {
   return local.slice(11, 16) === horaPadrao ? dataFmt(local.slice(0, 10)) : formatarDataHora(iso);
 };
 const SEMANAS_PADRAO = 4;
+// 15/11/2026: "1 preenchimento" / "2 preenchimentos" (sem "(s)"); título do ciclo sem repetir "Formulário 1/3".
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const tituloDoCiclo = (c) => (c.titulo === TITULO_PADRAO ? `${c.trimestre}º trimestre de ${c.anoLetivo}` : `${c.titulo} — ${c.trimestre}º trimestre de ${c.anoLetivo}`);
 
 const diaSeguinte = (iso) => {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -129,7 +132,7 @@ const EscolhaEscolas = ({ escolas, todas, selecionadas, onTodas, onAlternar, err
           Todas as escolas ({escolas.filter(e => e.status === 'ativa').length})
         </label>
         {todas
-          ? <p className="text-xs text-slate-500">Vale para todas as escolas, inclusive as que forem criadas depois.</p>
+          ? null
           : (
             <div className="border-t border-slate-100 pt-2">
               {escolas.length > 6 && <input className={`${inputClass} mb-2`} value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar escola..." aria-label="Buscar escola" />}
@@ -230,7 +233,7 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
     <Modal title={editando ? 'Editar Formulário 1/3' : 'Novo Formulário 1/3'} onClose={onClose}>
       <form onSubmit={salvar} className="space-y-4" noValidate>
         {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
-        {travado && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Já há Professores preenchendo: o trimestre e a quantidade de semanas não podem mudar. Datas e prazo continuam editáveis.</p>}
+        {travado && <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Já há professores preenchendo: a quantidade de semanas não pode mudar.</p>}
 
         <EscolhaEscolas escolas={escolasEscolhiveis} todas={todasEscolas} selecionadas={escolaIds} onTodas={setTodasEscolas} onAlternar={alternarEscola} erro={erroEscolas} />
 
@@ -246,18 +249,19 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
         </div>
 
         {janela
-          ? <p className="text-xs font-semibold text-slate-600">{janela.trimestre} de {janela.ano} ({dataFmt(janela.startDate)} a {dataFmt(janela.endDate)}), identificado pela abertura. Todas as datas precisam estar dentro dele.</p>
+          ? <p className="text-xs font-semibold text-slate-600">{janela.trimestre} de {janela.ano} ({dataFmt(janela.startDate)} a {dataFmt(janela.endDate)})</p>
           : abreEm
             ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">A abertura ({dataFmt(abreEm)}) não está dentro de nenhum trimestre do calendário. Configure em Configurações › Trimestres.</p>
-            : <p className="text-xs text-slate-500">Escolha a abertura e o prazo de entrega: o trimestre é identificado pela abertura.</p>}
+            : null}
 
         <div>
           <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
-            <p className="max-w-sm text-sm font-semibold text-slate-700">Semanas <span className="font-normal text-slate-500">(período do conteúdo: em ordem, sem se sobrepor e terminando até o prazo)</span></p>
+            <p className="text-sm font-semibold text-slate-700">Semanas</p>
             <FormField label="Quantidade de semanas"><input type="number" min={1} max={30} className={`${inputClass} w-24`} value={semanas.length} onChange={e => mudarQuantidade(e.target.value)} disabled={travado} /></FormField>
           </div>
           <LinhaDoTempo janela={janela} semanas={semanas} />
           <div className="mt-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500 sm:grid-cols-[5.5rem_1fr_1fr]"><span className="hidden sm:block" /><span>Início</span><span>Fim</span></div>
             {semanas.map((semana, indice) => {
               const e = v.semanas[indice];
               const fimAnterior = semanas[indice - 1]?.dataFim;
@@ -367,8 +371,8 @@ export const UmTercoSecretariaPage = () => {
   const itensDesativados = inativos.map(c => ({
     id: c.id,
     ciclo: c,
-    titulo: `${c.titulo} — ${c.trimestre}º trimestre de ${c.anoLetivo}`,
-    detalhe: `Abre ${dataSemHoraPadrao(c.abreEm, '00:00')} · prazo ${dataSemHoraPadrao(c.prazoEm, '23:59')} · ${c.entregasIniciadas} preenchimento(s) · ${c.todasEscolas ? 'todas as escolas' : `${c.escolas.length} escola(s)`}`,
+    titulo: tituloDoCiclo(c),
+    detalhe: `Abre ${dataSemHoraPadrao(c.abreEm, '00:00')} · prazo ${dataSemHoraPadrao(c.prazoEm, '23:59')} · ${plural(c.entregasIniciadas, 'preenchimento', 'preenchimentos')} · ${c.todasEscolas ? 'todas as escolas' : plural(c.escolas.length, 'escola', 'escolas')}`,
     motivo: c.statusRegistro === 'inativa' ? 'manual' : 'prazo',
     data: c.statusRegistro === 'inativa' ? c.desativadoEm : c.prazoEm,
     por: null,
@@ -427,7 +431,7 @@ export const UmTercoSecretariaPage = () => {
                   <Button size="sm" onClick={() => navigate(`/formulario-um-terco/ciclos/${ciclo.id}`)}>Painel</Button>
                   <BotaoExportarExcel gerar={() => exportarUmTerco({ cicloId: ciclo.id, usuario: user?.nome })} />
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setReabrindo(ciclo)}>Reabrir</Button>}
-                  {!inativo && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}
+                  {!inativo && <Button size="sm" variant="outline" className="text-red-700" onClick={() => setInativando(ciclo)}>Inativar</Button>}
                   {inativo && <Button size="sm" variant="outline" onClick={() => acao(() => reativarCicloUmTerco(ciclo.id), 'Ciclo reativado. Ele voltou para a lista de ciclos.')}>Reativar</Button>}
                 </>
               );
@@ -452,7 +456,7 @@ export const UmTercoSecretariaPage = () => {
                   {inativo && <Badge variant="gray">Inativo</Badge>}
                   {ciclo.editavelAgora && ciclo.statusPrazo === 'encerrado' && <Badge variant="blue">Reaberto</Badge>}
                 </div>
-                <h2 className="mt-3 text-xl font-bold text-slate-950">{ciclo.titulo} — {ciclo.trimestre}º trimestre de {ciclo.anoLetivo}</h2>
+                <h2 className="mt-3 text-xl font-bold text-slate-950">{tituloDoCiclo(ciclo)}</h2>
                 <p className="mt-1 text-sm text-slate-600">Abre {dataSemHoraPadrao(ciclo.abreEm, '00:00')} · prazo {dataSemHoraPadrao(ciclo.prazoEm, '23:59')}</p>
                 <p className="mt-1 text-sm text-slate-600" title={ciclo.todasEscolas ? undefined : ciclo.escolas.map(e => e.nome).join(', ')}>
                   {ciclo.todasEscolas
@@ -462,13 +466,13 @@ export const UmTercoSecretariaPage = () => {
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {ciclo.semanas.map(s => <span key={s.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{s.rotulo}: {formatarDiaMes(s.dataInicio)}–{formatarDiaMes(s.dataFim)}</span>)}
                 </div>
-                <p className="mt-3 text-xs text-slate-500">{ciclo.entregasIniciadas} preenchimento(s) iniciado(s) · {ciclo.reaberturas.length} reabertura(s)</p>
+                <p className="mt-3 text-xs text-slate-500">{plural(ciclo.entregasIniciadas, 'preenchimento iniciado', 'preenchimentos iniciados')} · {plural(ciclo.reaberturas.length, 'reabertura', 'reaberturas')}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => navigate(`/formulario-um-terco/ciclos/${ciclo.id}`)}>Painel de entregas</Button>
                   <BotaoExportarExcel gerar={() => exportarUmTerco({ cicloId: ciclo.id, usuario: user?.nome })} />
                   {!inativo && <Button size="sm" variant="outline" onClick={() => setFormAberto(ciclo)}>Editar</Button>}
                   {/* Reabrir só depois do prazo; antes, estende-se pelo Editar. */}{!inativo && ciclo.statusPrazo === 'encerrado' && <Button size="sm" variant="outline" onClick={() => setReabrindo(ciclo)}>Reabrir</Button>}
-                  {!inativo && <Button size="sm" variant="danger" onClick={() => setInativando(ciclo)}>Inativar</Button>}
+                  {!inativo && <Button size="sm" variant="outline" className="text-red-700" onClick={() => setInativando(ciclo)}>Inativar</Button>}
                   {inativo && <Button size="sm" variant="outline" onClick={() => acao(() => reativarCicloUmTerco(ciclo.id), 'Ciclo reativado. Ele voltou para a lista de ciclos ativos.')}>Reativar</Button>}
                 </div>
               </Card>

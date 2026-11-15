@@ -141,7 +141,6 @@ export const UmTercoPainelPage = () => {
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Painel de entregas</h1>
           {painel && <p className="mt-2 text-slate-600">{painel.ciclo.titulo} — {painel.ciclo.trimestre}º trimestre de {painel.ciclo.anoLetivo} · prazo {formatarDataHora(painel.ciclo.prazoEm)}</p>}
-          <p className="mt-1 text-xs text-slate-500">Cada entrega é um formulário por cargo do Professor, mesmo que o cargo tenha várias escolas e disciplinas.</p>
         </div>
         <BotaoExportarExcel gerar={exportar} disabled={!painel} />
         </div>
@@ -166,33 +165,32 @@ export const UmTercoPainelPage = () => {
 
         <Card>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <select aria-label="Escola" className={inputClass} value={filtros.escolaId} onChange={definir('escolaId')}>
+            <label className="block text-xs font-semibold text-slate-600">Escola<select aria-label="Escola" className={`${inputClass} mt-1`} value={filtros.escolaId} onChange={definir('escolaId')}>
               <option value="">Todas as escolas</option>
               {selects.escolas.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
-            </select>
-            <select aria-label="Disciplina" className={inputClass} value={filtros.disciplinaId} onChange={definir('disciplinaId')}>
+            </select></label>
+            <label className="block text-xs font-semibold text-slate-600">Disciplina<select aria-label="Disciplina" className={`${inputClass} mt-1`} value={filtros.disciplinaId} onChange={definir('disciplinaId')}>
               <option value="">Todas as disciplinas</option>
               {selects.disciplinas.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
-            </select>
-            <select aria-label="Professor" className={inputClass} value={filtros.professorId} onChange={definir('professorId')}>
+            </select></label>
+            <label className="block text-xs font-semibold text-slate-600">Professor<select aria-label="Professor" className={`${inputClass} mt-1`} value={filtros.professorId} onChange={definir('professorId')}>
               <option value="">Todos os professores</option>
               {selects.professores.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
-            </select>
-            <select aria-label="Status" className={inputClass} value={filtros.status} onChange={definir('status')}>
+            </select></label>
+            <label className="block text-xs font-semibold text-slate-600">Status<select aria-label="Status" className={`${inputClass} mt-1`} value={filtros.status} onChange={definir('status')}>
               <option value="">Todos os status</option>
               {Object.entries(STATUS_ENTREGA).map(([valor, { label }]) => <option key={valor} value={valor}>{label}</option>)}
-            </select>
-            <select aria-label="Correção" className={inputClass} value={filtros.correcao} onChange={definir('correcao')}>
-              <option value="">Todas (correção)</option>
+            </select></label>
+            <label className="block text-xs font-semibold text-slate-600">Correção<select aria-label="Correção" className={`${inputClass} mt-1`} value={filtros.correcao} onChange={definir('correcao')}>
+              <option value="">Todas</option>
               <option value="em_andamento">Com correção em andamento</option>
-            </select>
+            </select></label>
           </div>
         </Card>
 
         {painel && painel.porEscola.length > 0 && (
           <Card>
             <p className="text-sm font-semibold text-slate-800">Cobertura por escola</p>
-            <p className="text-xs text-slate-500">Um formulário que cobre duas escolas aparece nas duas; no total acima ele conta uma vez só.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {painel.porEscola.map(e => (
                 <span key={e.escolaId} className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{e.escolaNome}: {e.concluidas}/{e.esperado}</span>
