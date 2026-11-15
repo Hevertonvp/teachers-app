@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { escolasPermitidas, type Actor } from './pessoas.js';
 
@@ -233,7 +234,7 @@ async function mudarStatusAluno(actor: Actor, id: number, status: 'ATIVO' | 'ARQ
   }
   const atualizado = await prisma.alunoPdi.update({
     where: { id },
-    data: { status, updatedBy: String(actor.id) },
+    data: { status, ...marcarDesativacao(status === 'ATIVO', actor.id), updatedBy: String(actor.id) },
   });
   return { ...atualizado, turma: atual.turma };
 }

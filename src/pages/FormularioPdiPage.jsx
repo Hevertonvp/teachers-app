@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal, OrderButtons } from '../components/Common';
 import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useData } from '../context/DataContext';
@@ -9,6 +9,12 @@ import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
 import { formatFullDate, formStatusClasses, formStatusLabel } from '../utils/formAvailability';
 import { canViewAplicacoesPdi, isSecretaria } from '../utils/roles';
+import { ListaDesativados } from '../components/ListaDesativados';
+import { listarDesativados } from '../services/desativados';
+
+// Configuração do PDI › desativados (15/11/2026, só Secretaria): aplicações encerradas pelo prazo e removidas,
+// e modelos desativados, em lista paginada (mais recentes primeiro), fora da tela principal.
+const carregarModelosDesativados = (pagina, porPagina) => listarDesativados('modelos-pdi', { pagina, porPagina });
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
 import { getTrimestreAtual, trimestres } from '../utils/trimestres';
 
@@ -62,7 +68,6 @@ const GRUPOS_APLICACAO_OPERACIONAIS = [
 // no backend) — mostram o atalho pra Configurações > Trimestres.
 const CODIGOS_CALENDARIO = ['CALENDARIO_TRIMESTRES_INCOMPLETO', 'CALENDARIO_TRIMESTRES_INVALIDO', 'DATA_FORA_DO_CALENDARIO'];
 
-const formatDateTime = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
 export const FormularioPdiPage = () => {
   const { user } = useAuth();
@@ -92,6 +97,10 @@ export const FormularioPdiPage = () => {
   // exclusivo da Secretaria, que nem vê a aba. O backend recusa (403) qualquer tentativa de
   // gerenciar Modelo/Aplicação/Reabertura fora do permitido, então isso não é só cosmético.
   const [tab, setTab] = useState(souSecretaria ? 'modelos' : 'aplicacoes');
+  const [params, setParams] = useSearchParams();
+  const verDesativados = souSecretaria && params.get('ver') === 'desativados';
+  const tipoDesativado = params.get('tipo') === 'modelos' ? 'modelos' : 'aplicacoes';
+  const [recarregarModelos, setRecarregarModelos] = useState(0);
   // null = grade de modelos; com valor = editor ("construtor de formulário") do modelo aberto.
   const [modeloEditandoId, setModeloEditandoId] = useState(null);
   const [novoModeloForm, setNovoModeloForm] = useState(null);
@@ -108,9 +117,6 @@ export const FormularioPdiPage = () => {
   const [desvinculandoPergunta, setDesvinculandoPergunta] = useState(null);
   const [mudandoStatusModelo, setMudandoStatusModelo] = useState(null);
   const [excluindoModelo, setExcluindoModelo] = useState(null);
-  const [mostrarHistoricoModelos, setMostrarHistoricoModelos] = useState(false);
-  const [mostrarAplicacoesEncerradas, setMostrarAplicacoesEncerradas] = useState(false);
-  const [mostrarAplicacoesRemovidas, setMostrarAplicacoesRemovidas] = useState(false);
   const [aplicacaoForm, setAplicacaoForm] = useState(null);
   const [editingAplicacao, setEditingAplicacao] = useState(null);
   const [removendoAplicacao, setRemovendoAplicacao] = useState(null);
@@ -427,6 +433,84 @@ export const FormularioPdiPage = () => {
 
         {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
 
+        {verDesativados && (
+          <div className="space-y-4">
+            <div>
+              <Link to="/pdi/formulario" className="text-sm font-semibold text-teal-700 hover:underline">← Voltar para a Configuração do PDI</Link>
+              <h2 className="mt-3 text-2xl font-bold text-slate-950">Encerrados e desativados</h2>
+              <p className="mt-1 max-w-3xl text-sm text-slate-600">{tipoDesativado === 'modelos'
+                ? 'Modelos desativados não entram em novas aplicações. Aplicações já criadas guardam a própria cópia dos itens.'
+                : 'Encerradas pelo prazo: Reabrir e Editar vigência continuam aqui. Removidas manualmente: as respostas continuam guardadas, mas os professores não as veem.'}</p>
+            </div>
+            <Card>
+              <FormField label="O que ver">
+                <select className={inputClass} value={tipoDesativado} onChange={e => setParams({ ver: 'desativados', tipo: e.target.value })}>
+                  <option value="aplicacoes">Aplicações encerradas e removidas</option>
+                  <option value="modelos">Modelos desativados</option>
+                </select>
+              </FormField>
+            </Card>
+            {tipoDesativado === 'modelos' ? (
+              <ListaDesativados
+                carregar={carregarModelosDesativados}
+                recarregarChave={recarregarModelos}
+                vazio="Nenhum modelo desativado."
+                acoes={item => (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => { setParams({}); setTab('modelos'); setModeloEditandoId(item.id); }}>Ver</Button>
+                    <Button size="sm" variant="outline" onClick={() => setMudandoStatusModelo({ modelo: { id: item.id, nome: item.titulo }, ativar: true })}>Reativar</Button>
+                  </>
+                )}
+              />
+            ) : (
+              <ListaDesativados
+                itens={[
+                  ...aplicacoesEncerradas.map(({ aplicacao, status }) => ({ id: aplicacao.id, aplicacao, status, motivo: 'prazo', data: aplicacao.dataFim })),
+                  ...aplicacoesRemovidas.map(({ aplicacao, status }) => ({ id: aplicacao.id, aplicacao, status, motivo: 'excluido', data: aplicacao.desativadoEm })),
+                ].map(item => ({
+                  ...item,
+                  titulo: item.aplicacao.escolaNome || escolas.find(e => e.id === item.aplicacao.escolaId)?.nome || 'Escola não encontrada',
+                  detalhe: `${formatFullDate(item.aplicacao.dataInicio)} a ${formatFullDate(item.aplicacao.dataFim)}${item.aplicacao.modelos.length ? ` · ${item.aplicacao.modelos.map(m => m.nome).join(', ')}` : ''}`,
+                  por: null,
+                }))}
+                rotuloData="Data"
+                vazio="Nenhuma aplicação encerrada ou removida."
+                acoes={item => (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => toggleHistoricoReaberturas(item.aplicacao.id)}>Reaberturas</Button>
+                    {item.motivo === 'prazo' && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => { setEditingAplicacao(item.aplicacao); setAplicacaoError(''); setAplicacaoForm({ dataInicio: item.aplicacao.dataInicio, dataFim: item.aplicacao.dataFim }); }}>Editar vigência</Button>
+                        {item.status === 'expired' && <Button size="sm" onClick={() => abrirReabertura(item.aplicacao)}>Reabrir</Button>}
+                        <Button size="sm" variant="danger" onClick={() => setRemovendoAplicacao(item.aplicacao)}>Remover</Button>
+                      </>
+                    )}
+                  </>
+                )}
+              />
+            )}
+            {aplicacaoExpandida && (
+              <Modal title="Histórico de reaberturas" onClose={() => setAplicacaoExpandida(null)}>
+                {carregandoHistorico && !historicoReaberturas[aplicacaoExpandida] ? (
+                  <LoadingBlock text="Carregando histórico..." className="py-3" />
+                ) : (historicoReaberturas[aplicacaoExpandida] || []).length === 0 ? (
+                  <p className="text-sm text-slate-500">Nenhuma reabertura registrada para esta aplicação.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {historicoReaberturas[aplicacaoExpandida].map(reabertura => (
+                      <li key={reabertura.id} className="text-sm text-slate-700">
+                        <span className="font-semibold">{formatFullDate(reabertura.dataInicio)} a {formatFullDate(reabertura.dataFim)}</span>
+                        {reabertura.motivo && <span className="text-slate-500"> · {reabertura.motivo}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Modal>
+            )}
+          </div>
+        )}
+
+        {!verDesativados && (<>
         <div className="flex gap-2">
           {souSecretaria && <button type="button" onClick={() => setTab('modelos')} className={tabButtonClass(tab === 'modelos')}>Modelos</button>}
           <button type="button" onClick={() => setTab('aplicacoes')} className={tabButtonClass(tab === 'aplicacoes')}>Aplicações</button>
@@ -539,11 +623,7 @@ export const FormularioPdiPage = () => {
                     <h2 className="mt-1 text-xl font-bold text-slate-950">Formulários por disciplina</h2>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
-                    {modelosInativos.length > 0 && (
-                      <Button size="sm" variant="outline" onClick={() => setMostrarHistoricoModelos(prev => !prev)}>
-                        {mostrarHistoricoModelos ? 'Ocultar histórico' : 'Ver histórico de modelos'}
-                      </Button>
-                    )}
+                    <Link to="/pdi/formulario?ver=desativados&tipo=modelos" className="self-center text-sm font-semibold text-teal-700 hover:underline">Ver modelos desativados ({modelosInativos.length}) →</Link>
                     {pdiModelosReais.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
                   </div>
                 </div>
@@ -584,27 +664,6 @@ export const FormularioPdiPage = () => {
                   </div>
                 )}
 
-                {mostrarHistoricoModelos && modelosInativos.length > 0 && (
-                  <div className="mt-6 border-t border-slate-200 pt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Histórico de modelos</p>
-                    <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200">
-                      {modelosInativos.map(modelo => (
-                        <div key={modelo.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-900">{modelo.disciplinaNome || 'Disciplina não encontrada'} — {modelo.nome}</p>
-                            <p className="mt-1 text-xs text-slate-500">
-                              Criado em {formatDateTime(modelo.createdAt)} · Última atualização: {formatDateTime(modelo.updatedAt)} · {modelo.usadoEmAplicacao ? 'Já usado em alguma Aplicação' : 'Nunca usado em nenhuma Aplicação'}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 gap-2">
-                            <Button size="sm" variant="outline" onClick={() => setModeloEditandoId(modelo.id)}>Ver</Button>
-                            <Button size="sm" onClick={() => setMudandoStatusModelo({ modelo, ativar: true })}>Reativar</Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </Card>
@@ -619,16 +678,7 @@ export const FormularioPdiPage = () => {
                 <h2 className="mt-1 text-xl font-bold text-slate-950">Vigência por escola</h2>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
-                {aplicacoesEncerradas.length > 0 && (
-                  <Button size="sm" variant="outline" onClick={() => setMostrarAplicacoesEncerradas(prev => !prev)}>
-                    {mostrarAplicacoesEncerradas ? 'Ocultar encerradas' : 'Ver aplicações encerradas'}
-                  </Button>
-                )}
-                {aplicacoesRemovidas.length > 0 && (
-                  <Button size="sm" variant="outline" onClick={() => setMostrarAplicacoesRemovidas(prev => !prev)}>
-                    {mostrarAplicacoesRemovidas ? 'Ocultar removidas' : 'Ver aplicações removidas'}
-                  </Button>
-                )}
+                {souSecretaria && <Link to="/pdi/formulario?ver=desativados&tipo=aplicacoes" className="self-center text-sm font-semibold text-teal-700 hover:underline">Ver encerradas e removidas ({aplicacoesEncerradas.length + aplicacoesRemovidas.length}) →</Link>}
                 {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
               </div>
             </div>
@@ -656,7 +706,7 @@ export const FormularioPdiPage = () => {
                   description={[
                     aplicacoesEncerradas.length > 0 ? `${aplicacoesEncerradas.length} encerrada(s)` : null,
                     aplicacoesRemovidas.length > 0 ? `${aplicacoesRemovidas.length} removida(s)` : null,
-                  ].filter(Boolean).join(' e ') + ' — use os botões acima para consultá-las.'}
+                  ].filter(Boolean).join(' e ') + (souSecretaria ? ' — veja em "Ver encerradas e removidas".' : '.')}
                 >
                   {souSecretaria && <Button size="sm" onClick={abrirNovaAplicacao} disabled={escolasAplicaveis.length === 0 || modelosAtivos.length === 0}>+ Nova aplicação</Button>}
                 </EmptyState>
@@ -678,25 +728,9 @@ export const FormularioPdiPage = () => {
               </div>
             )}
 
-            {mostrarAplicacoesEncerradas && aplicacoesEncerradas.length > 0 && (
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Histórico de aplicações encerradas</p>
-                <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 opacity-75">
-                  {aplicacoesEncerradas.map(renderAplicacaoItem)}
-                </div>
-              </div>
-            )}
-
-            {mostrarAplicacoesRemovidas && aplicacoesRemovidas.length > 0 && (
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Aplicações removidas</p>
-                <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 opacity-75">
-                  {aplicacoesRemovidas.map(renderAplicacaoItem)}
-                </div>
-              </div>
-            )}
           </Card>
         )}
+        </>)}
 
         {novoModeloForm && (
           <Modal title="Novo modelo PDI" onClose={() => setNovoModeloForm(null)}>
@@ -938,6 +972,7 @@ export const FormularioPdiPage = () => {
               const { modelo, ativar } = mudandoStatusModelo;
               setMudandoStatusModelo(null);
               const resultado = ativar ? await reativarPdiModeloReal(modelo.id) : await inativarPdiModelo(modelo.id);
+              setRecarregarModelos(n => n + 1);
               setMessage(resultado.ok ? `Modelo PDI ${ativar ? 'reativado' : 'inativado'} com sucesso.` : resultado.error);
             }}
           />

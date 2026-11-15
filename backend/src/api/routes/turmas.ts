@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { validarECalcularTurma, type DadosTurma } from '../../domain/turma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 
 export const turmasRouter = Router();
 
@@ -160,7 +161,7 @@ turmasRouter.post('/:id/inativar', async (req, res) => {
 
   const turma = await prisma.turma.update({
     where: { id },
-    data: { status: 'INATIVA', updatedAt: new Date(), version: { increment: 1 } },
+    data: { status: 'INATIVA', ...marcarDesativacao(false, (res.locals.pessoa as Actor).id), updatedAt: new Date(), version: { increment: 1 } },
   });
   res.json(turma);
 });
@@ -181,7 +182,7 @@ turmasRouter.post('/:id/reativar', async (req, res) => {
 
   const turma = await prisma.turma.update({
     where: { id },
-    data: { status: 'ATIVA', updatedAt: new Date(), version: { increment: 1 } },
+    data: { status: 'ATIVA', ...marcarDesativacao(true, (res.locals.pessoa as Actor).id), updatedAt: new Date(), version: { increment: 1 } },
   });
   res.json(turma);
 });

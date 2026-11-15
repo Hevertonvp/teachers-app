@@ -2,12 +2,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
-import { calcularFolhas, chaveDeCargos, corteDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
+import { calcularFolhas, chaveDeCargos, corteDoCiclo, limiteDeCadastroDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
 import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 import { criarNotificacao } from '../../lib/notificacoes.js';
@@ -69,6 +70,7 @@ function formatarCiclo(ciclo: CicloCompleto, extra: Record<string, unknown> = {}
     abreEm: iso(ciclo.abreEm),
     prazoEm: iso(ciclo.prazoEm),
     statusRegistro: ciclo.status === 'ATIVA' ? 'ativa' : 'inativa',
+    desativadoEm: ciclo.desativadoEm?.toISOString() ?? null, // 15/11/2026: tela de desativados
     statusPrazo: statusDoCiclo(ciclo, agora),
     editavelAgora: ciclo.status === 'ATIVA' && cicloEditavelAgora(ciclo, janelasDe(ciclo), agora),
     todasEscolas: ciclo.todasEscolas,
@@ -224,8 +226,10 @@ async function folhasDoCiclo(db: Db, ciclo: CicloCompleto, filtro: { professorId
   const cicloEmCurso = ciclo.prazoEm.getTime() >= Date.now();
   const [cargos, entregas, nomes] = await Promise.all([
     db.cargoProfessor.findMany({
-      where: { createdAt: { lte: corteDoCiclo(ciclo.abreEm) }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
-      include: { versoes: { where: { criadaEm: { lte: corteDoCiclo(ciclo.abreEm) } }, orderBy: { criadaEm: 'desc' }, take: 1 }, professor: { select: { id: true, nome: true, status: true } } },
+      // Cargos cadastrados até o limite do ciclo (dia da abertura, ou o prazo pela regra de 15/11/2026);
+      // a versão certa de cada cargo é escolhida em domain/cargos.ts (composicaoNaAbertura).
+      where: { createdAt: { lte: limiteDeCadastroDoCiclo(ciclo) }, professor: { perfil: 'PROFESSOR' }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) },
+      include: { versoes: { where: { criadaEm: { lte: corteDoCiclo(limiteDeCadastroDoCiclo(ciclo)) } }, orderBy: { criadaEm: 'desc' } }, professor: { select: { id: true, nome: true, status: true } } },
     }),
     db.entregaUmTerco.findMany({ where: { cicloId: ciclo.id, chaveCargos: { not: null }, ...(filtro.professorId ? { professorId: filtro.professorId } : {}) }, include: entregaInclude }),
     carregarNomes(db),
@@ -438,7 +442,7 @@ formularioUmTercoRouter.post('/ciclos/:id/inativar', async (req, res) => {
   // MUDOU (decisão do usuário, 10/11/2026): pode inativar mesmo com preenchimentos. Nada é apagado:
   // o ciclo só sai das listas (o professor deixa de vê-lo) e volta inteiro ao reativar. A tela avisa
   // quantos professores já preencheram antes de confirmar.
-  await prisma.cicloUmTerco.update({ where: { id: ciclo.id }, data: { status: 'INATIVA', updatedBy: String(actor.id) } });
+  await prisma.cicloUmTerco.update({ where: { id: ciclo.id }, data: { status: 'INATIVA', ...marcarDesativacao(false, actor.id), updatedBy: String(actor.id) } });
   res.json(formatarCiclo(await buscarCiclo(prisma, id)));
 });
 
@@ -450,7 +454,7 @@ formularioUmTercoRouter.post('/ciclos/:id/reativar', async (req, res) => {
     const ciclo = await buscarCiclo(tx, id);
     await travarJanelasDeCiclo(tx);
     await exigirJanelaLivre(tx, ciclo, id);
-    await tx.cicloUmTerco.update({ where: { id }, data: { status: 'ATIVA', updatedBy: String(actor.id) } });
+    await tx.cicloUmTerco.update({ where: { id }, data: { status: 'ATIVA', ...marcarDesativacao(true, actor.id), updatedBy: String(actor.id) } });
   });
   res.json(formatarCiclo(await buscarCiclo(prisma, id)));
 });

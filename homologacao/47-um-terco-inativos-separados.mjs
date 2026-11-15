@@ -1,3 +1,5 @@
+// SUBSTITUÍDO em 15/11/2026 pelo 68 (desativados em LISTA paginada, com encerrados pelo prazo e o link
+// "Ver encerrados e inativos"). Este roteiro testava os CARTÕES de inativos e o link "Ver inativos". Não rodar.
 // Formulário 1/3: ciclos INATIVOS em tela separada (pedido do usuário, 10/11/2026), navegador real, banco LOCAL.
 // Cria 1 ciclo de teste pela API, inativa e reativa pela tela e, no fim, deixa-o INATIVO.
 import { abrir, login, foto, BASE } from './lib.mjs';

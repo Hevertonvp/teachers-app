@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 
 export const escolasRouter = Router();
@@ -57,15 +58,15 @@ escolasRouter.put('/:id', async (req, res) => {
 
 escolasRouter.post('/:id/inativar', async (req, res) => {
   exigirSecretaria(res.locals.pessoa as Actor);
-  res.json(await mudarStatus(req.params.id, 'INATIVA'));
+  res.json(await mudarStatus(req.params.id, 'INATIVA', (res.locals.pessoa as Actor).id));
 });
 
 escolasRouter.post('/:id/reativar', async (req, res) => {
   exigirSecretaria(res.locals.pessoa as Actor);
-  res.json(await mudarStatus(req.params.id, 'ATIVA'));
+  res.json(await mudarStatus(req.params.id, 'ATIVA', (res.locals.pessoa as Actor).id));
 });
 
-async function mudarStatus(idParam: string, status: 'ATIVA' | 'INATIVA') {
+async function mudarStatus(idParam: string, status: 'ATIVA' | 'INATIVA', autorId: number) {
   const id = Number(idParam);
   const existente = await prisma.escola.findUnique({ where: { id } });
   if (!existente) throw new NotFoundError('Escola não encontrada.');
@@ -73,6 +74,6 @@ async function mudarStatus(idParam: string, status: 'ATIVA' | 'INATIVA') {
 
   return prisma.escola.update({
     where: { id },
-    data: { status, updatedAt: new Date(), version: { increment: 1 } },
+    data: { status, ...marcarDesativacao(status === 'ATIVA', autorId), updatedAt: new Date(), version: { increment: 1 } },
   });
 }

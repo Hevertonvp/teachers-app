@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, LoadingBlock, Modal, PersonName } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -15,6 +15,8 @@ import { inputClass } from '../utils/display';
 import { CargosModal, EditorCargo, NumeroDeCargos, novoRascunhoCargo, validarRascunhoCargo } from '../components/CargosProfessor';
 import { listarAtuacoes } from '../services/cargos';
 import { canManagePessoas, canManageProfessores, isSecretaria } from '../utils/roles';
+import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
+import { listarDesativados } from '../services/desativados';
 
 // Vínculos reais (ProfessorTurmaDisciplina/AuxiliarTurma) guardam `dataInicio`/`dataFim` como
 // DateTime ISO completo (ex.: "2026-09-28T14:30:00.000Z"), diferente do mock (`formatDate` acima,
@@ -31,31 +33,69 @@ const separarInativos = (lista, ver) => {
   return { inativos, visiveis: ver ? inativos : lista.filter(p => p.status === 'ATIVO') };
 };
 
-// Envolve a DataTable: guarda o estado "ver inativos" e mostra só ativos ou só inativos.
-const ListaPessoas = ({ rows, columns, rotulo }) => {
-  const [ver, setVer] = useState(false);
-  const { inativos, visiveis } = separarInativos(rows, ver);
-  return (
-    <div className="space-y-3">
-      <LinkInativos ver={ver} setVer={setVer} qtd={inativos.length} rotulo={rotulo} />
-      {visiveis.length === 0
-        ? <Card className="py-10 text-center"><p className="font-semibold text-slate-800">{ver ? 'Nenhum registro inativo' : 'Nenhum registro ativo'}</p>{!ver && inativos.length > 0 && <p className="mt-1 text-sm text-slate-500">Os inativos estão em "Ver inativos".</p>}</Card>
-        : <DataTable columns={columns} rows={visiveis} />}
-    </div>
-  );
+// MUDOU em 15/11/2026 (decisão do usuário): a lista mostra SÓ os ativos; os inativos (e os cargos e vínculos
+// encerrados) ficam na tela própria "Desativados e encerrados" (só Secretaria), lista paginada, mais recentes primeiro.
+const ListaPessoas = ({ rows, columns }) => {
+  const { visiveis } = separarInativos(rows, false);
+  return visiveis.length === 0
+    ? <Card className="py-10 text-center"><p className="font-semibold text-slate-800">Nenhum registro ativo</p></Card>
+    : <DataTable columns={columns} rows={visiveis} />;
 };
 
-const LinkInativos = ({ ver, setVer, qtd, rotulo }) => {
-  if (ver) {
-    return (
-      <div className="space-y-1">
-        <button type="button" onClick={() => setVer(false)} className="text-sm font-semibold text-teal-700 hover:underline">← Voltar aos ativos</button>
-        <p className="text-sm text-slate-600">{rotulo} inativos(as) não aparecem na lista principal nem têm acesso ao sistema. Podem ser reativados(as).</p>
-      </div>
-    );
-  }
-  if (qtd === 0) return null;
-  return <button type="button" onClick={() => setVer(true)} className="text-sm font-semibold text-teal-700 hover:underline">Ver inativos ({qtd}) →</button>;
+// Tela "Desativados e encerrados" da Gestão de Pessoas (só Secretaria, 15/11/2026).
+const TIPOS_PESSOAS = [
+  { tipo: 'pessoas', rotulo: 'Pessoas inativas', descricao: 'Pessoas inativadas não têm acesso ao sistema. Reativar devolve o acesso e a pessoa volta à lista.' },
+  { tipo: 'cargos', rotulo: 'Cargos encerrados', descricao: 'Cargos de professores encerrados. Ficam no histórico; o que o professor escreveu no 1/3 continua guardado.' },
+  { tipo: 'vinculos-escolares', rotulo: 'Saídas de escola', descricao: 'Vínculos com escola encerrados (a pessoa saiu da escola).' },
+  { tipo: 'turmas-professor', rotulo: 'Turmas encerradas (professores)', descricao: 'Professor que deixou uma turma/disciplina.' },
+  { tipo: 'turmas-auxiliar', rotulo: 'Turmas encerradas (auxiliares)', descricao: 'Auxiliar que deixou uma turma.' },
+];
+const PERFIS_FILTRO = [['', 'Todos os perfis'], ['PROFESSOR', 'Professores(as)'], ['AUXILIAR', 'Auxiliares'], ['GESTOR', 'Supervisores(as)'], ['DIRETORA', 'Diretores(as)']];
+const CAMINHO_PERFIL = { PROFESSOR: 'professores', GESTOR: 'gestores', DIRETORA: 'diretoras', AUXILIAR: 'auxiliares' };
+
+const DesativadosPessoas = () => {
+  const [tipo, setTipo] = useState('pessoas');
+  const [perfil, setPerfil] = useState('');
+  const [reativando, setReativando] = useState(null);
+  const [mensagem, setMensagem] = useState('');
+  const [recarregar, setRecarregar] = useState(0);
+  const atual = TIPOS_PESSOAS.find(t => t.tipo === tipo);
+  const carregar = useCallback((pagina, porPagina) => listarDesativados(tipo, { pagina, porPagina, perfil: tipo === 'pessoas' ? perfil : '' }), [tipo, perfil]);
+  const confirmarReativar = async () => {
+    const alvo = reativando;
+    setReativando(null);
+    try {
+      await apiFetch(`/api/pessoas/${CAMINHO_PERFIL[alvo.perfil]}/${alvo.id}/reativar`, { method: 'POST' });
+      setMensagem(`${alvo.nome} foi reativado(a) e voltou para a lista.`);
+    } catch (e) { setMensagem(e.message); }
+    setRecarregar(n => n + 1);
+  };
+  return (
+    <div className="space-y-6">
+      <CabecalhoDesativados titulo="Pessoas — desativados e encerrados" voltarPara="/pessoas" voltarTexto="← Voltar para Gestão de Pessoas" descricao={atual.descricao} />
+      {mensagem && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{mensagem}</div>}
+      <Card>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField label="O que ver">
+            <select className={inputClass} value={tipo} onChange={e => setTipo(e.target.value)}>{TIPOS_PESSOAS.map(t => <option key={t.tipo} value={t.tipo}>{t.rotulo}</option>)}</select>
+          </FormField>
+          {tipo === 'pessoas' && (
+            <FormField label="Perfil">
+              <select className={inputClass} value={perfil} onChange={e => setPerfil(e.target.value)}>{PERFIS_FILTRO.map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
+            </FormField>
+          )}
+        </div>
+      </Card>
+      <ListaDesativados
+        carregar={carregar}
+        recarregarChave={recarregar}
+        rotuloData={tipo === 'pessoas' ? 'Desativado em' : 'Encerrado em'}
+        vazio="Nada por aqui."
+        acoes={tipo === 'pessoas' ? (item => (CAMINHO_PERFIL[item.ref?.perfil] ? <Button size="sm" variant="outline" onClick={() => setReativando({ id: item.id, nome: item.titulo, perfil: item.ref.perfil })}>Reativar</Button> : null)) : undefined}
+      />
+      {reativando && <ConfirmDialog title="Reativar pessoa" message={`Reativar ${reativando.nome}? A pessoa volta a ter acesso ao sistema.`} confirmLabel="Reativar" onCancel={() => setReativando(null)} onConfirm={confirmarReativar} />}
+    </div>
+  );
 };
 
 // VinculoEscolar real — reutilizado por Professor e Auxiliar (ambos têm a mesma estrutura de
@@ -1741,6 +1781,8 @@ const AuxiliaresReaisManager = ({ user }) => {
 export const GestaoPessoas = () => {
   const { user } = useAuth();
   const [tab, setTab] = useState('professores');
+  const [params] = useSearchParams();
+  const verDesativados = params.get('ver') === 'desativados' && isSecretaria(user);
 
   if (!canManageProfessores(user)) return <Navigate to="/dashboard" replace />;
   // Supervisores(as)/Diretores(as) continuam exclusivos da Secretaria — a Diretora só enxerga a
@@ -1759,12 +1801,15 @@ export const GestaoPessoas = () => {
       { key: 'auxiliares', label: 'Auxiliares' },
     ];
 
+  if (verDesativados) return <MainLayout><DesativadosPessoas /></MainLayout>;
+
   return (
     <MainLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Gestão de Pessoas</h1>
           <p className="mt-2 max-w-3xl text-slate-600">Cadastre, edite e gerencie os vínculos de professores(as), supervisores(as) e diretores(as) com as escolas da rede.</p>
+          {isSecretaria(user) && <Link to="/pessoas?ver=desativados" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver desativados e encerrados →</Link>}
         </div>
 
         <div className="flex flex-wrap gap-2">

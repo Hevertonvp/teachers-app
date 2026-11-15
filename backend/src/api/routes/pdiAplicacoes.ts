@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
 import { perguntaValeParaTrimestre, resolverTrimestreObrigatorio, travarCalendarioDoAno } from '../../domain/trimestres.js';
@@ -37,6 +38,7 @@ function exigirLeituraAplicacoes(actor: Actor) {
 const formatarAplicacao = (aplicacao: {
   id: number; escolaId: number; nome: string | null; dataInicio: Date; dataFim: Date; status: string;
   trimestre?: number | null;
+  desativadoEm?: Date | null;
   escola?: { nome: string };
   modelos?: { modeloIdOriginal: number; nome: string; disciplinaId: number; disciplinaNome: string }[];
   reaberturas?: { dataInicio: Date; dataFim: Date }[];
@@ -54,6 +56,7 @@ const formatarAplicacao = (aplicacao: {
   // ainda assim 'inativa' por ter sido removida administrativamente (DELETE /:id).
   status: statusVigencia(aplicacao),
   statusRegistro: aplicacao.status === 'INATIVA' ? 'inativa' : 'ativa',
+  desativadoEm: aplicacao.desativadoEm ?? null, // 15/11/2026: quando foi excluída/inativada (tela de desativados)
   // Versão leve (sem perguntas) do snapshot — só o suficiente para a UI mostrar quais
   // disciplinas esta Aplicação cobre (badges). O snapshot completo com perguntas mora em
   // GET /:id/snapshot, carregado à parte quando realmente precisar (seção 34 do pedido).
@@ -548,7 +551,7 @@ pdiAplicacoesRouter.delete('/:id', async (req, res) => {
   if (algumaResposta || algumaRespostaPadrao) {
     const inativada = await prisma.aplicacaoPdi.update({
       where: { id },
-      data: { status: 'INATIVA', updatedBy: String(actor.id) },
+      data: { status: 'INATIVA', ...marcarDesativacao(false, actor.id), updatedBy: String(actor.id) },
       include: { escola: true },
     });
     return res.json({ removida: true, modo: 'inativada', aplicacao: formatarAplicacao(inativada) });

@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, FormField, OrderButtons } from '../components/Common';
 import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLabel } from '../components/PerguntaPdiFormModal';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { AtuacoesPedagogicasConfig } from '../components/AtuacoesPedagogicasConfig';
+import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
+import { listarDesativados } from '../services/desativados';
+import { alterarAtuacao } from '../services/cargos';
+
+// Configurações › desativados (15/11/2026): atuações pedagógicas e perguntas padrão do PDI, lista paginada.
+const TIPOS_CONFIG = [
+  { tipo: 'atuacoes', rotulo: 'Atuações pedagógicas', descricao: 'Atuações desativadas não aparecem para escolha nos cargos. Cargos e folhas que já usam a atuação não mudam.' },
+  { tipo: 'perguntas-padrao', rotulo: 'Perguntas padrão do PDI', descricao: 'Perguntas padrão inativas não entram em novos modelos. Modelos já criados não mudam.' },
+];
+const carregadores = Object.fromEntries(TIPOS_CONFIG.map(t => [t.tipo, (pagina, porPagina) => listarDesativados(t.tipo, { pagina, porPagina })]));
 import { inputClass } from '../utils/display';
 import { formatDate } from '../utils/pdi';
 import { isSecretaria } from '../utils/roles';
@@ -39,6 +49,14 @@ export const ConfiguracoesPage = () => {
   } = useData();
   const [message, setMessage] = useState('');
   const podeConfigurar = isSecretaria(user);
+  const [params, setParams] = useSearchParams();
+  const verDesativados = podeConfigurar && params.get('ver') === 'desativados';
+  const tipoDesativado = TIPOS_CONFIG.some(t => t.tipo === params.get('tipo')) ? params.get('tipo') : 'atuacoes';
+  const [recarregarDesativados, setRecarregarDesativados] = useState(0);
+  const reativarAtuacao = async (item) => {
+    try { await alterarAtuacao(item.id, { status: 'ativa' }); setMessage(`"${item.titulo}" reativada.`); } catch (e) { setMessage(e.message); }
+    setRecarregarDesativados(n => n + 1);
+  };
 
   const [perguntaPadraoForm, setPerguntaPadraoForm] = useState(null);
   const [salvandoPerguntaPadrao, setSalvandoPerguntaPadrao] = useState(false);
@@ -119,6 +137,28 @@ export const ConfiguracoesPage = () => {
 
   return (
     <MainLayout>
+      {verDesativados ? (
+        <div className="space-y-6">
+          <CabecalhoDesativados titulo="Configurações — desativados" voltarPara="/configuracoes" voltarTexto="← Voltar para Configurações" descricao={TIPOS_CONFIG.find(t => t.tipo === tipoDesativado).descricao} />
+          {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+          <Card>
+            <FormField label="O que ver">
+              <select className={inputClass} value={tipoDesativado} onChange={e => setParams({ ver: 'desativados', tipo: e.target.value })}>{TIPOS_CONFIG.map(t => <option key={t.tipo} value={t.tipo}>{t.rotulo}</option>)}</select>
+            </FormField>
+          </Card>
+          <ListaDesativados
+            carregar={carregadores[tipoDesativado]}
+            recarregarChave={recarregarDesativados}
+            vazio="Nada desativado por aqui."
+            acoes={item => tipoDesativado === 'atuacoes'
+              ? <Button size="sm" variant="outline" onClick={() => reativarAtuacao(item)}>Reativar</Button>
+              : <>
+                <Button size="sm" variant="outline" onClick={() => setMudandoStatusPerguntaPadrao({ pergunta: { id: item.id }, ativar: true })}>Reativar</Button>
+                <Button size="sm" variant="danger" onClick={() => setExcluindoPerguntaPadrao({ id: item.id, pergunta: item.titulo })}>Excluir</Button>
+              </>}
+          />
+        </div>
+      ) : (
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Configurações</h1>
@@ -244,28 +284,11 @@ export const ConfiguracoesPage = () => {
               </div>
             )}
 
-            {perguntasPadraoInativas.length > 0 && (
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Inativas (não entram em novos modelos)</p>
-                <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 opacity-75">
-                  {perguntasPadraoInativas.map(pergunta => (
-                    <div key={pergunta.id} className="flex items-center gap-3 p-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900">{pergunta.pergunta}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500">{tipoRespostaLabel(pergunta.tipoResposta)}{pergunta.secao && ` · ${pergunta.secao}`}</p>
-                      </div>
-                      <ActionMenu items={[
-                        { label: 'Reativar', onClick: () => setMudandoStatusPerguntaPadrao({ pergunta, ativar: true }) },
-                        { label: 'Excluir', variant: 'danger', onClick: () => setExcluindoPerguntaPadrao(pergunta) },
-                      ]} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Link to="/configuracoes?ver=desativados&tipo=perguntas-padrao" className="mt-4 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver perguntas padrão inativas ({perguntasPadraoInativas.length}) →</Link>
           </Card>
         )}
       </div>
+      )}
 
       {perguntaPadraoForm && (
         <PerguntaPdiFormModal
@@ -291,6 +314,7 @@ export const ConfiguracoesPage = () => {
             const { pergunta, ativar } = mudandoStatusPerguntaPadrao;
             setMudandoStatusPerguntaPadrao(null);
             const resultado = ativar ? await reativarPdiPerguntaPadrao(pergunta.id) : await inativarPdiPerguntaPadrao(pergunta.id);
+            setRecarregarDesativados(n => n + 1);
             setMessage(resultado.ok ? `Pergunta padrão ${ativar ? 'reativada' : 'inativada'} com sucesso.` : resultado.error);
           }}
         />
@@ -306,6 +330,7 @@ export const ConfiguracoesPage = () => {
             const pergunta = excluindoPerguntaPadrao;
             setExcluindoPerguntaPadrao(null);
             const resultado = await excluirPdiPerguntaPadrao(pergunta.id);
+            setRecarregarDesativados(n => n + 1);
             setMessage(resultado.ok ? 'Pergunta padrão excluída definitivamente.' : resultado.error);
           }}
         />

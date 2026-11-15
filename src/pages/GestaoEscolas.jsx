@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { ActionMenu, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { MainLayout } from '../layouts/Layouts';
 import { inputClass } from '../utils/display';
 import { canManageEscolas } from '../utils/roles';
+import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
+import { listarDesativados } from '../services/desativados';
+
+// Desativadas em tela própria (pedido do usuário, 15/11/2026): lista paginada, mais recentes primeiro.
+const carregarDesativadas = (pagina, porPagina) => listarDesativados('escolas', { pagina, porPagina });
 
 const VinculosModal = ({ escola, professores, gestores, vinculosEscolares, createVinculoEscolar, desvincularEscola, onClose }) => {
   const isVinculado = (usuarioTipo, usuarioId) => vinculosEscolares.some(vinculo => vinculo.escolaId === escola.id && vinculo.usuarioTipo === usuarioTipo && vinculo.usuarioId === usuarioId && vinculo.status === 'ativo');
@@ -67,6 +72,9 @@ export const GestaoEscolas = () => {
   const [reativandoEscola, setReativandoEscola] = useState(null);
   const [message, setMessage] = useState('');
   const [busca, setBusca] = useState('');
+  const [params] = useSearchParams();
+  const verDesativadas = params.get('ver') === 'desativadas';
+  const [recarregar, setRecarregar] = useState(0);
 
   if (!canManageEscolas(user)) return <Navigate to="/dashboard" replace />;
 
@@ -101,34 +109,38 @@ export const GestaoEscolas = () => {
     const alvo = reativandoEscola;
     const resultado = await reativarEscola(alvo.id);
     setReativandoEscola(null);
-    setMessage(resultado.ok ? `Escola "${alvo.nome}" reativada com sucesso.` : resultado.error);
+    setRecarregar(n => n + 1);
+    setMessage(resultado.ok ? `Escola "${alvo.nome}" reativada com sucesso. Ela voltou para a lista de escolas.` : resultado.error);
   };
 
   const columns = [
     { key: 'nome', header: 'Escola' },
-    { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ativa' ? 'green' : 'gray'}>{row.status === 'ativa' ? 'Ativa' : 'Inativa'}</Badge> },
     { key: 'vinculos', header: 'Vínculos', render: row => (
       <Button size="sm" variant="outline" onClick={() => setManagingEscola(row)}>Gerenciar vínculos</Button>
     ) },
     { key: 'acoes', header: 'Ações', render: row => (
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={() => abrirEdicao(row)}>Editar</Button>
-        <ActionMenu items={[
-          row.status === 'ativa'
-            ? { label: 'Inativar escola', variant: 'danger', onClick: () => setInativandoEscola(row) }
-            : { label: 'Reativar escola', onClick: () => setReativandoEscola(row) },
-        ]} />
+        <ActionMenu items={[{ label: 'Inativar escola', variant: 'danger', onClick: () => setInativandoEscola(row) }]} />
       </div>
     ) },
   ];
 
   return (
     <MainLayout>
+      {verDesativadas ? (
+      <div className="space-y-6">
+        <CabecalhoDesativados titulo="Escolas desativadas" voltarPara="/escolas" voltarTexto="← Voltar para Escolas" descricao="Escolas inativadas não aparecem nas listas nem como opção para novos vínculos. O histórico continua guardado. Reativar devolve a escola à lista." />
+        {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{message}</div>}
+        <ListaDesativados carregar={carregarDesativadas} recarregarChave={recarregar} vazio="Nenhuma escola desativada." acoes={item => <Button size="sm" variant="outline" onClick={() => setReativandoEscola({ id: item.id, nome: item.titulo })}>Reativar</Button>} />
+      </div>
+      ) : (
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Escolas</h1>
             <p className="mt-2 max-w-2xl text-slate-600">Cadastre, edite e desative escolas da rede. Desativar bloqueia o acesso operacional, mas preserva o histórico. Vínculos de professores e supervisores são gerenciados por escola.</p>
+            <Link to="/escolas?ver=desativadas" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver escolas desativadas ({escolas.filter(e => e.status !== 'ativa').length}) →</Link>
           </div>
           <Button onClick={abrirNovaEscola} disabled={escolasLoading}>+ Nova escola</Button>
         </div>
@@ -153,10 +165,11 @@ export const GestaoEscolas = () => {
         ) : (
           <>
             <Card><FormField label="Buscar escola"><input className={inputClass} value={busca} onChange={event => setBusca(event.target.value)} placeholder="Digite o nome da escola" /></FormField></Card>
-            <DataTable columns={columns} rows={escolas.filter(escola => escola.nome.toLowerCase().includes(busca.toLowerCase()))} emptyMessage="Nenhuma escola encontrada com esse nome" />
+            <DataTable columns={columns} rows={escolas.filter(escola => escola.status === 'ativa' && escola.nome.toLowerCase().includes(busca.toLowerCase()))} emptyMessage="Nenhuma escola encontrada com esse nome" />
           </>
         )}
       </div>
+      )}
 
       {escolaForm && (
         <Modal title={editingEscola ? `Editar escola — ${editingEscola.nome}` : 'Nova escola'} onClose={fecharModal}>

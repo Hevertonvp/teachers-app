@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
+import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../domain/errors.js';
 
 // Catálogo de ATUAÇÕES PEDAGÓGICAS do cargo (decisão do usuário, 12/11/2026): Professor Regente, Oficina do
@@ -55,7 +56,7 @@ atuacoesPedagogicasRouter.put('/:id', async (req, res) => {
   if (dados.nome) await exigirNomeLivre(dados.nome, id);
   const salva = await prisma.atuacaoPedagogica.update({
     where: { id },
-    data: { ...(dados.nome ? { nome: dados.nome } : {}), ...(dados.status ? { status: dados.status === 'ativa' ? 'ATIVA' : 'INATIVA' } : {}), updatedBy: String(actor.id) },
+    data: { ...(dados.nome ? { nome: dados.nome } : {}), ...(dados.status && (dados.status === 'ativa') !== (atual.status === 'ATIVA') ? { status: dados.status === 'ativa' ? 'ATIVA' : 'INATIVA', ...marcarDesativacao(dados.status === 'ativa', actor.id) } : {}), updatedBy: String(actor.id) },
   });
   res.json(formatar(salva));
 });

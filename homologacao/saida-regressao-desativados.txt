@@ -1,0 +1,16 @@
+14-estados-administrativos.mjs: 7 ok, 0 rep 
+40-ajustes-telas-secretaria.mjs: 5 ok, 0 rep   name: 'TimeoutError'
+43-exportacao-excel.mjs: 15 ok, 1 rep 
+    [REPROVADO] EXP-C2 — Professores: professor com vários vínculos aparece em várias linhas de Vínculos e com a contagem certa → 12 linhas; coluna "Vínculos ativos" = 2
+44-modal-novo-ciclo-um-terco.mjs: 21 ok, 0 rep 
+46-um-terco-escolas-do-ciclo.mjs: 8 ok, 0 rep 
+52-inativar-um-terco-com-preenchimentos.mjs: 3 ok, 0 rep 
+56-escola-do-topo-nos-modais.mjs: 12 ok, 1 rep 
+    [REPROVADO] TOPO-12 — Professor com 2+ escolas: Nova mensagem → p04 tem 0 escola(s): não testado
+57-filtros-seguem-o-topo.mjs: 11 ok, 0 rep 
+58-cargos-e-um-terco-por-cargo.mjs: 18 ok, 1 rep 
+    [REPROVADO] CARGO-16 — Painel: sem filtro de ano/série; folha compartilhada conta 1 vez → true; true; Esperadas2
+59-correcao-um-terco-por-cargo.mjs: 11 ok, 0 rep 
+63-correcoes-um-terco-telas.mjs: 12 ok, 0 rep 
+66-escola-vem-do-cargo.mjs: 6 ok, 0 rep 
+67-um-terco-navegador-lacunas.mjs: 14 ok, 0 rep 

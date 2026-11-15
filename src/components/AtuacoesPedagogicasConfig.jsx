@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card } from './Common';
+import { Link } from 'react-router-dom';
+import { Button, Card } from './Common';
 import { alterarAtuacao, criarAtuacao, listarAtuacoes } from '../services/cargos';
 import { inputClass } from '../utils/display';
 
@@ -42,7 +43,8 @@ export const AtuacoesPedagogicasConfig = () => {
         <Button type="submit" disabled={!nova.trim() || salvando}>Adicionar</Button>
       </form>
       <ul className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200">
-        {(lista ?? []).map((a) => (
+        {/* 15/11/2026: desativadas ficam na tela própria (Configurações › desativados). */}
+        {(lista ?? []).filter((a) => a.status === 'ativa').map((a) => (
           <li key={a.id} className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             {editando?.id === a.id ? (
               <div className="flex flex-1 flex-col gap-2 sm:flex-row">
@@ -54,20 +56,18 @@ export const AtuacoesPedagogicasConfig = () => {
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-sm font-semibold ${a.status === 'ativa' ? 'text-slate-900' : 'text-slate-500'}`}>{a.nome}</span>
-                  {a.status !== 'ativa' && <Badge variant="gray">Inativa</Badge>}
-                </div>
+                <span className="text-sm font-semibold text-slate-900">{a.nome}</span>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setEditando({ id: a.id, nome: a.nome }); }}>Renomear</Button>
-                  <Button size="sm" variant="outline" disabled={salvando} onClick={() => executar(() => alterarAtuacao(a.id, { status: a.status === 'ativa' ? 'inativa' : 'ativa' }), a.status === 'ativa' ? `"${a.nome}" desativada.` : `"${a.nome}" reativada.`)}>{a.status === 'ativa' ? 'Desativar' : 'Reativar'}</Button>
+                  <Button size="sm" variant="outline" disabled={salvando} onClick={() => executar(() => alterarAtuacao(a.id, { status: 'inativa' }), `"${a.nome}" desativada. Ela fica em "Ver atuações desativadas".`)}>Desativar</Button>
                 </div>
               </>
             )}
           </li>
         ))}
-        {lista && lista.length === 0 && <li className="px-3 py-2 text-sm text-slate-500">Nenhuma atuação cadastrada.</li>}
+        {lista && !lista.some((a) => a.status === 'ativa') && <li className="px-3 py-2 text-sm text-slate-500">Nenhuma atuação ativa.</li>}
       </ul>
+      <Link to="/configuracoes?ver=desativados&tipo=atuacoes" className="mt-3 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver atuações desativadas ({(lista ?? []).filter((a) => a.status !== 'ativa').length}) →</Link>
     </Card>
   );
 };
