@@ -11,8 +11,8 @@ const { browser, page, erros } = await abrir();
 
 await login(page, 'p04@homolog.nexo', SENHA('p04'));
 await page.goto(BASE + '/#/formulario-um-terco'); await page.waitForLoadState('networkidle');
-await page.locator('h2.text-xl').first().waitFor({ timeout: 15000 });
-const cards = await page.locator('h2.text-xl').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col') || h.parentElement; return { rotulo: h.innerText.trim(), texto: c.innerText.replace(/\s+/g, ' ') }; }));
+await page.locator('[data-rotulo]').first().waitFor({ timeout: 15000 });
+const cards = await page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col') || h.parentElement; return { rotulo: h.innerText.trim(), texto: c.innerText.replace(/\s+/g, ' ') }; }));
 await foto(page, '04-p04-lista-1-3');
 const doCiclo1 = cards.filter(c => c.texto.includes('Nov/2026 (homolog)'));
 registrar('UT-P04-01', 'Formulário 1/3', 'P04 (2 cargos diferentes) vê exatamente 2 formulários no ciclo, um por cargo', '2 cartões: Cargo 1 e Cargo 2', doCiclo1.map(c => c.rotulo).join(' + '), doCiclo1.length === 2 && doCiclo1.some(c => c.rotulo === 'Cargo 1') && doCiclo1.some(c => c.rotulo === 'Cargo 2') ? 'APROVADO' : 'REPROVADO', '04-p04-lista-1-3.png');

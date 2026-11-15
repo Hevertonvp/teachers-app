@@ -162,7 +162,7 @@ for (const [rotulo, viewport] of [['computador', { width: 1280, height: 800 }], 
     const { page, erros } = Y;
     await login(page, 'p08@homolog.nexo', 'Nexo!Prof08-2026');
     await ir(page, '/formulario-um-terco');
-    const card = page.locator('div', { has: page.getByRole('heading', { name: 'Cargos 1 e 2' }) }).filter({ hasText: ciclo.titulo }).last();
+    const card = page.locator('div', { has: page.locator('[data-rotulo]', { hasText: 'Cargos 1 e 2' }) }).filter({ hasText: ciclo.titulo }).last();
     const temCard = await card.isVisible().catch(() => false);
     const textoCard = temCard ? await card.textContent() : '';
     r(`12-${rotulo}`, `Professor (${rotulo}): dois cargos iguais → um card "Cargos 1 e 2" com "Escola — disciplina", sem turmas`, 'card único com Prudenciana — Inglês', textoCard.slice(0, 160), temCard && textoCard.includes(`${prud.nome} — ${ing.nome}`) && !/Válido para|Turma/.test(textoCard));

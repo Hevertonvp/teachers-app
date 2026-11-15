@@ -220,7 +220,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
                     </p>
                   </div>
                   {vinculo.status === 'ATIVO' ? (
-                    <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+                    <Button size="sm" variant="outline" className="text-red-700" onClick={() => encerrar(vinculo)}>Encerrar</Button>
                   ) : (
                     <Button size="sm" variant="outline" onClick={() => reativar(vinculo)}>Reativar</Button>
                   )}
@@ -376,7 +376,7 @@ const VinculosPedagogicosProfessorModal = ({ professor, turmasDoProfessor, disci
                             <p className="font-semibold text-slate-900">{vinculo.turmaNome} — {vinculo.disciplinaNome}</p>
                             <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
                           </div>
-                          <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+                          <Button size="sm" variant="outline" className="text-red-700" onClick={() => encerrar(vinculo)}>Encerrar</Button>
                         </div>
                       ))}
                     </div>
@@ -766,7 +766,7 @@ const ProfessoresReaisManager = ({ user }) => {
     { key: 'email', header: 'E-mail' },
     { key: 'escolas', header: 'Escolas', render: row => (
       row.escolas.length === 0
-        ? <span className="text-xs text-slate-400">Nenhuma nesta visão</span>
+        ? <span className="text-xs text-slate-400">Sem escola</span>
         : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
     ) },
     // Professor sem cargo = cadastro incompleto (a Secretaria corrige em "Cargos").
@@ -805,9 +805,7 @@ const ProfessoresReaisManager = ({ user }) => {
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <p className="max-w-2xl text-sm text-slate-600">
-          {isSecretaria(user)
-            ? 'Cadastro de contas reais de Professor(a), com login e senha próprios.'
-            : 'Professores(as) vinculados às escolas que você administra. Para incluir ou tirar um professor da sua escola, peça à Secretaria: a escola do professor vem do cargo dele.'}
+          {isSecretaria(user) ? null : 'Professores(as) das escolas que você administra.'}
         </p>
         <div className="flex flex-wrap items-start gap-2">
           <BotaoExportarExcel size="md" gerar={exportarProfessores} disabled={carregando || professores.length === 0} />
@@ -842,7 +840,6 @@ const ProfessoresReaisManager = ({ user }) => {
             </FormField>
             <FormField label="Nome completo">
               <input className={inputClass} value={form.nome} onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))} />
-              <p className="mt-1 text-xs text-slate-500">{comCargos ? 'Se já existir um professor com esse e-mail, o cadastro não é feito: para mudar as escolas ou os cargos dele, use "Cargos e escolas" na lista.' : 'Se já existir uma conta com esse e-mail, o nome informado é ignorado — o professor só será vinculado à(s) escola(s) selecionada(s).'}</p>
             </FormField>
             {comCargos ? (
               <div className="space-y-3">
@@ -1061,7 +1058,7 @@ const GestoresReaisManager = () => {
     { key: 'email', header: 'E-mail' },
     { key: 'escolas', header: 'Escolas', render: row => (
       row.escolas.length === 0
-        ? <span className="text-xs text-slate-400">Nenhuma nesta visão</span>
+        ? <span className="text-xs text-slate-400">Sem escola</span>
         : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
     ) },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ATIVO' ? 'green' : 'gray'}>{row.status === 'ATIVO' ? 'Ativo' : 'Inativo'}</Badge> },
@@ -1081,7 +1078,7 @@ const GestoresReaisManager = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <p className="max-w-2xl text-sm text-slate-600">Cadastro de contas reais de Supervisor(a), com login e senha próprios.</p>
+        <span />
         <Button onClick={abrirCadastro} disabled={carregando}>+ Cadastrar supervisor(a)</Button>
       </div>
 
@@ -1272,7 +1269,7 @@ const DiretorasReaisManager = () => {
     { key: 'email', header: 'E-mail' },
     { key: 'escolas', header: 'Escola', render: row => (
       row.escolas.length === 0
-        ? <span className="text-xs text-slate-400">Nenhuma nesta visão</span>
+        ? <span className="text-xs text-slate-400">Sem escola</span>
         : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
     ) },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ATIVO' ? 'green' : 'gray'}>{row.status === 'ATIVO' ? 'Ativo' : 'Inativo'}</Badge> },
@@ -1292,7 +1289,7 @@ const DiretorasReaisManager = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <p className="max-w-2xl text-sm text-slate-600">Cadastro de contas reais de Diretora, com login e senha próprios. Cada diretora administra exatamente uma escola.</p>
+        <span />
         <Button onClick={abrirCadastro} disabled={carregando}>+ Cadastrar diretora</Button>
       </div>
 
@@ -1478,7 +1475,7 @@ const VinculosTurmaAuxiliarModal = ({ auxiliar, turmasPermitidas, onClose }) => 
                     <p className="font-semibold text-slate-900">{vinculo.turmaNome}</p>
                     <p className="text-xs text-slate-500">desde {formatDataReal(vinculo.dataInicio)}</p>
                   </div>
-                  <Button size="sm" variant="danger" onClick={() => encerrar(vinculo)}>Encerrar</Button>
+                  <Button size="sm" variant="outline" className="text-red-700" onClick={() => encerrar(vinculo)}>Encerrar</Button>
                 </div>
               ))}
             </div>
@@ -1650,7 +1647,7 @@ const AuxiliaresReaisManager = ({ user }) => {
     { key: 'email', header: 'E-mail' },
     { key: 'escolas', header: 'Escolas', render: row => (
       row.escolas.length === 0
-        ? <span className="text-xs text-slate-400">Nenhuma nesta visão</span>
+        ? <span className="text-xs text-slate-400">Sem escola</span>
         : <div className="flex flex-wrap gap-1">{row.escolas.map(escola => <Badge key={escola.id} variant="blue">{escola.nome}</Badge>)}</div>
     ) },
     { key: 'status', header: 'Status', render: row => <Badge variant={row.status === 'ATIVO' ? 'green' : 'gray'}>{row.status === 'ATIVO' ? 'Ativo' : 'Inativo'}</Badge> },

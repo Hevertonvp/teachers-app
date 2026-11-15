@@ -33,7 +33,7 @@ const st = async (t, method, path, body) => (await fetch(API + path, { method, h
 
   // ---- Professor com vários vínculos: cartões do 1/3 ----
   await X.page.goto(BASE + '/#/formulario-um-terco'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2000);
-  const cartoes = await X.page.locator('h2.text-xl').allInnerTexts();
+  const cartoes = await X.page.locator('[data-rotulo]').allInnerTexts();
   const ingles6 = (await X.page.locator('main').innerText()).replace(/\s+/g, ' ');
   await foto(X.page, '33-cartoes-p04');
   r('MULTI-1', 'P04 (2 cargos diferentes) vê um cartão por cargo (1/3 por cargo)', '2 cartões: Cargo 1 e Cargo 2', `${cartoes.length}: ${cartoes.join(' | ')}`, cartoes.length === 2 && cartoes.includes('Cargo 1') && cartoes.includes('Cargo 2'), '33-cartoes-p04.png');

@@ -64,7 +64,7 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
       </div>
       {mostrarInicio && (
         <label className="block text-sm font-semibold text-slate-700">
-          Início do cargo
+          Data de início
           <input type="date" className={`${inputClass} mt-1 sm:max-w-48`} value={valor.dataInicio} onChange={e => onChange({ ...valor, dataInicio: e.target.value })} />
           {erros.inicio && <span className="mt-1 block text-xs font-semibold text-red-700">{erros.inicio}</span>}
         </label>
@@ -102,7 +102,8 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
                   <button type="button" className={botaoRemover} aria-label="Remover disciplina" title="Remover disciplina" onClick={() => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.filter((_, k) => k !== j) })}>×</button>
                 </div>
               ))}
-              <button type="button" className={botaoTexto} disabled={linhaVazia || parte.disciplinaIds.length >= disciplinas.length} onClick={() => mudarParte(parte.chave, { disciplinaIds: [...parte.disciplinaIds, ''] })}>+ Adicionar disciplina</button>
+              {/* 15/11/2026: com uma linha vazia o botão some (antes ficava cinza e parecia quebrado). */}
+              {!linhaVazia && parte.disciplinaIds.length < disciplinas.length && <button type="button" className={botaoTexto} onClick={() => mudarParte(parte.chave, { disciplinaIds: [...parte.disciplinaIds, ''] })}>+ Adicionar disciplina</button>}
             </div>
             <div className="space-y-2 sm:pl-3">
               <p className="text-sm font-semibold text-slate-700">Atuações pedagógicas</p>
@@ -115,7 +116,7 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
                   <button type="button" className={botaoRemover} aria-label="Remover atuação" title="Remover atuação" onClick={() => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.filter((_, k) => k !== j) })}>×</button>
                 </div>
               ))}
-              <button type="button" className={botaoTexto} disabled={atuacaoVazia || atuacoesDaParte.length >= ativas.length} onClick={() => mudarParte(parte.chave, { atuacaoIds: [...atuacoesDaParte, ''] })}>+ Adicionar atuação</button>
+              {!atuacaoVazia && atuacoesDaParte.length < ativas.length && <button type="button" className={botaoTexto} onClick={() => mudarParte(parte.chave, { atuacaoIds: [...atuacoesDaParte, ''] })}>+ Adicionar atuação</button>}
             </div>
             {erros.partes?.[parte.chave] && <p className="text-xs font-semibold text-red-700">{erros.partes[parte.chave]}</p>}
           </div>

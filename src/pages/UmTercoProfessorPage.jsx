@@ -4,7 +4,7 @@ import { Badge, Button, Card, EmptyState, LoadingBlock } from '../components/Com
 import { MainLayout } from '../layouts/Layouts';
 import { listarMeusFormulariosUmTerco } from '../services/formularioUmTerco';
 import { formatarDataHora, STATUS_ENTREGA, STATUS_PRAZO } from '../utils/umTerco';
-import { ComposicaoCargo } from '../components/ComposicaoCargo';
+import { tituloDaFolha, DetalheDaFolha } from '../components/ComposicaoCargo';
 
 // Lista do Professor: UM card por ciclo + CARGO (12/11/2026) — nunca por disciplina, escola ou turma.
 // O card mostra as escolas e disciplinas do cargo naquele ciclo (sem turmas).
@@ -25,7 +25,7 @@ export const UmTercoProfessorPage = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Formulário 1/3 — Conteúdos</h1>
-          <p className="mt-2 text-slate-600">Registre, semana a semana, os conteúdos que você ensinou. Você preenche um formulário por cargo, e ele vale para todas as escolas e disciplinas desse cargo.</p>
+          <p className="mt-2 text-slate-600">Registre, semana a semana, os conteúdos que você ensinou.</p>
         </div>
 
         {location.state?.sucesso && (
@@ -52,17 +52,19 @@ export const UmTercoProfessorPage = () => {
               <Card key={`${item.ciclo.id}-${item.cargoId}`} className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={entrega.variant}>{entrega.label}</Badge>
-                  <Badge variant={prazo.variant}>{prazo.label}</Badge>
+                  {item.ciclo.statusPrazo !== 'aberto' && <Badge variant={prazo.variant}>{prazo.label}</Badge>}
                   {item.correcaoSolicitada && <Badge variant="yellow">Correção solicitada</Badge>}
                   {item.correcaoSituacao === 'recebida' && <Badge variant="blue">Correção reenviada</Badge>}
                   {item.correcaoSituacao === 'expirada' && <Badge variant="gray">Correção expirada</Badge>}
                   {!item.esperada && <Badge variant="gray">Cargo encerrado · só consulta</Badge>}
                 </div>
-                <h2 className="mt-3 text-xl font-bold text-slate-950">{item.rotulo}</h2>
-                <p className="mt-1 text-sm text-slate-600">{item.ciclo.titulo} · {item.ciclo.trimestre}º trimestre · prazo {formatarDataHora(item.ciclo.prazoEm)}</p>
+                {/* 15/11/2026: o título é a escola (e as disciplinas); "Cargo 1" fica só como rótulo pequeno. */}
+                <p data-rotulo className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{item.rotulo}</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-950">{tituloDaFolha(item.composicao)}</h2>
+                <p className="mt-1 text-sm text-slate-600">{item.ciclo.trimestre}º trimestre · prazo {formatarDataHora(item.ciclo.prazoEm)}</p>
 
                 <div className="mt-3 flex-1">
-                  <ComposicaoCargo composicao={item.composicao} />
+                  <DetalheDaFolha composicao={item.composicao} />
                   {item.compartilhada && <p className="mt-2 text-xs text-slate-500">Um formulário para os dois cargos, que têm as mesmas escolas e disciplinas.</p>}
                 </div>
 

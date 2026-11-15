@@ -65,7 +65,7 @@ export async function sair(page) {
 // Abre o cartão de um formulário na lista do professor (ex.: /6º.*Inglês/).
 export async function abrirCartao(page, regex) {
   await page.goto(BASE + '/#/formulario-um-terco'); await page.waitForLoadState('networkidle');
-  await page.locator('h2.text-xl', { hasText: regex }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
+  await page.locator('[data-rotulo]', { hasText: regex }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
   await page.waitForLoadState('networkidle'); await page.waitForTimeout(800);
 }
 

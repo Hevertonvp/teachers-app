@@ -30,7 +30,7 @@ for (const [cod, esp] of Object.entries(esperadoCards)) {
   const x = await abrir();
   await login(x.page, `${cod.toLowerCase()}@homolog.nexo`, SENHA(cod.toLowerCase()));
   await x.page.goto(BASE + '/#/formulario-um-terco'); await x.page.waitForLoadState('networkidle'); await x.page.waitForTimeout(1500);
-  const cards = await x.page.locator('h2.text-xl').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col'); return { r: h.innerText.trim(), t: c ? c.innerText.replace(/\s+/g, ' ') : '' }; }).filter(c => c.t.includes('Nov/2026 (homolog)')));
+  const cards = await x.page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col'); return { r: h.innerText.trim(), t: c ? c.innerText.replace(/\s+/g, ' ') : '' }; }).filter(c => c.t.includes('Nov/2026 (homolog)')));
   totalCards += cards.length;
   await foto(x.page, `13-${cod}-lista`);
   const ok = cards.length === esp.length && esp.every(([rot, trecho]) => cards.some(c => c.r === rot && c.t.includes(trecho))) && cards.every(c => !/\dM\d|º ano/.test(c.t));
@@ -44,7 +44,7 @@ for (const [cod, esp] of Object.entries(esperadoCards)) {
   const x = await abrir();
   await login(x.page, 'p07@homolog.nexo', SENHA('p07'));
   await x.page.goto(BASE + '/#/formulario-um-terco'); await x.page.waitForLoadState('networkidle');
-  await x.page.locator('h2.text-xl', { hasText: 'Cargos 1 e 2' }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
+  await x.page.locator('[data-rotulo]', { hasText: 'Cargos 1 e 2' }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
   await x.page.waitForLoadState('networkidle'); await x.page.waitForTimeout(800);
   const aviso = await x.page.getByText('Este formulário representa os dois cargos cadastrados').isVisible().catch(() => false);
   registrar('UT-VIN-P07b', 'Cargos', 'P07: a folha compartilhada mostra o aviso dos dois cargos', 'aviso visível', String(aviso), aviso ? 'APROVADO' : 'REPROVADO');
