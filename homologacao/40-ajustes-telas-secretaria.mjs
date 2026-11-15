@@ -61,22 +61,19 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   await Y.page.goto(BASE + '/#/pessoas'); await Y.page.waitForLoadState('networkidle'); await Y.page.waitForTimeout(1500);
   await Y.page.getByRole('button', { name: '+ Cadastrar professor' }).click(); await Y.page.waitForTimeout(800);
   const c = modal(Y.page);
-  // 15/11/2026: cadastro por cargo (escola + disciplina no Cargo 1), no lugar da caixinha de escola.
-  await preencherCadastroProfessor(c, { email: `ui-${nome}-${TAG}@homolog.nexo`, nome: `Professor UI ${nome} ${TAG}`, escola: 'ZZ-HOMOLOG Escola Aurora', disciplina: 'Redação' }); await Y.page.waitForTimeout(2500);
+  // 15/11/2026: turmas marcadas no PRÓPRIO cadastro (seis de Redação), sem assistente depois; o modal não passa da tela.
+  await preencherCadastroProfessor(c, { email: `ui-${nome}-${TAG}@homolog.nexo`, nome: `Professor UI ${nome} ${TAG}`, escola: 'ZZ-HOMOLOG Escola Aurora', disciplina: 'Redação', enviar: false });
   const w = modal(Y.page);
-  // 15/11/2026: a disciplina vem do cargo (Redação); só se marcam as turmas (seis, sem professor de Redação).
   await w.locator('[data-disciplina="Redação"]').waitFor({ timeout: 10000 });
   const chips = w.locator('[data-disciplina="Redação"] button[aria-pressed]');
   const adicionadas = [];
-  for (let i = 0; i < 6; i++) {
-    const chip = chips.nth(i);
-    adicionadas.push(await chip.innerText());
-    await chip.click(); await Y.page.waitForTimeout(1200);
-  }
+  for (let i = 0; i < 6; i++) { const chip = chips.nth(i); adicionadas.push(await chip.innerText()); await chip.click(); }
   const cartao = await w.locator('> div').first().boundingBox();
   const alturaTela = vp.height;
   await foto(Y.page, `40-wizard-${nome}`);
-  r(`4c-${nome}`, `Assistente (${nome}): com vários vínculos, o modal não passa da altura da tela`, `altura ≤ ${alturaTela}`, `topo ${Math.round(cartao.y)}, altura ${Math.round(cartao.height)}, base ${Math.round(cartao.y + cartao.height)}`, cartao.y >= 0 && cartao.y + cartao.height <= alturaTela + 1, `40-wizard-${nome}.png`);
+  r(`4c-${nome}`, `Cadastro (${nome}): com seis turmas marcadas, o modal não passa da altura da tela`, `altura ≤ ${alturaTela}`, `topo ${Math.round(cartao.y)}, altura ${Math.round(cartao.height)}, base ${Math.round(cartao.y + cartao.height)}`, cartao.y >= 0 && cartao.y + cartao.height <= alturaTela + 1, `40-wizard-${nome}.png`);
+  await w.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+  await Y.page.getByText('Senha temporária').waitFor({ timeout: 15000 });
   const criados = await prisma.professorTurmaDisciplina.count({ where: { professor: { email: `ui-${nome}-${TAG}@homolog.nexo` }, status: 'ATIVO' } });
   r(`4d-${nome}`, `Assistente (${nome}): vínculos criados no banco = os adicionados (sem duplicar)`, String(adicionadas.length), String(criados), criados === adicionadas.length);
   if (nome === 'celular') await Y.browser.close();

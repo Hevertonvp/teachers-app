@@ -8,7 +8,7 @@ import { hojeSpServidor } from '../utils/horaServidor';
 // Cargos do Professor (decisão do usuário, 12/11/2026): Professor → Cargo(s) → Escola(s) → Disciplina(s).
 // Tela simples e progressiva: "Cargo 1" aberto; cada bloco é Escola + Disciplina(s) e/ou Atuação(ões)
 // pedagógica(s) (12/11/2026: Professor Regente, Oficina do Brincar…), com "+ Adicionar disciplina",
-// "+ Adicionar atuação" e "+ Adicionar escola". Sem turmas, sem séries, sem IDs. Cada escola precisa de ao
+// "+ Adicionar atuação" e "+ Adicionar escola". Turmas só no cadastro (15/11/2026); sem séries, sem IDs. Cada escola precisa de ao
 // menos uma disciplina ou uma atuação. "Cargo 1/2" é só rótulo; quem guarda a identidade é o banco.
 
 let seq = 0;
@@ -40,8 +40,10 @@ export function validarRascunhoCargo(r) {
     else if (preenchidas(p.disciplinaIds).length === 0 && preenchidas(p.atuacaoIds).length === 0) erros.partes[p.chave] = 'Escolha ao menos uma disciplina ou uma atuação pedagógica.';
   }
   const ok = !erros.inicio && !erros.geral && Object.keys(erros.partes).length === 0;
+  // Turmas marcadas no cadastro (15/11/2026): pares turma+disciplina, só das disciplinas que ficaram no cargo.
+  const vinculos = r.partes.flatMap(p => preenchidas(p.disciplinaIds).flatMap(d => ((p.turmas ?? {})[d] ?? []).map(t => ({ turmaId: Number(t), disciplinaId: Number(d) }))));
   return {
-    ok, erros,
+    ok, erros, vinculos,
     dados: { dataInicio: r.dataInicio, composicao: r.partes.map(p => ({ escolaId: Number(p.escolaId), disciplinaIds: preenchidas(p.disciplinaIds).map(Number), atuacaoIds: preenchidas(p.atuacaoIds).map(Number) })) },
   };
 }
@@ -51,7 +53,9 @@ const botaoRemover = 'flex h-10 w-10 shrink-0 items-center justify-center rounde
 
 // Editor de UM cargo (controlado). `escolas`/`disciplinas` = [{ id, nome }]; `atuacoes` = [{ id, nome, status }]
 // (oferece as ativas; uma inativa que o cargo já tem continua aparecendo).
-export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atuacoes = [], erros = { partes: {} }, mostrarInicio = true, acoes = null }) => {
+// `turmas` (15/11/2026, só no cadastro do professor): com ela, cada disciplina escolhida mostra as turmas da escola
+// para marcar ali mesmo; `ocupantes` = Map("turmaId-disciplinaId" → nome do professor atual) avisa a substituição.
+export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atuacoes = [], erros = { partes: {} }, mostrarInicio = true, acoes = null, turmas = null, ocupantes = null }) => {
   const mudarParte = (chave, mudanca) => onChange({ ...valor, partes: valor.partes.map(p => (p.chave === chave ? { ...p, ...mudanca } : p)) });
   const escolasUsadas = (exceto) => new Set(valor.partes.filter(p => p.chave !== exceto).map(p => p.escolaId));
   const todasUsadas = valor.partes.length >= escolas.length;
@@ -82,7 +86,7 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
             <div className="flex items-end gap-2">
               <label className="min-w-0 flex-1 text-sm font-semibold text-slate-700">
                 Escola
-                <select className={`${inputClass} mt-1`} value={parte.escolaId} onChange={e => mudarParte(parte.chave, { escolaId: e.target.value })} aria-label={`Escola ${i + 1}`}>
+                <select className={`${inputClass} mt-1`} value={parte.escolaId} onChange={e => mudarParte(parte.chave, { escolaId: e.target.value, turmas: {} })} aria-label={`Escola ${i + 1}`}>
                   <option value="">Selecione a escola</option>
                   {escolas.filter(e => !escolasUsadas(parte.chave).has(String(e.id))).map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
                 </select>
@@ -94,12 +98,23 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
             <div className="space-y-2 sm:pl-3">
               <p className="text-sm font-semibold text-slate-700">Disciplinas</p>
               {parte.disciplinaIds.map((d, j) => (
-                <div key={j} className="flex items-center gap-2">
-                  <select className={`${inputClass} min-w-0 flex-1`} value={d} aria-label={`Disciplina ${j + 1}`} onChange={e => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.map((x, k) => (k === j ? e.target.value : x)) })}>
-                    <option value="">Selecione a disciplina</option>
-                    {disciplinas.filter(x => !usadasNaEscola(j).has(String(x.id))).map(x => <option key={x.id} value={x.id}>{x.nome}</option>)}
-                  </select>
-                  <button type="button" className={botaoRemover} aria-label="Remover disciplina" title="Remover disciplina" onClick={() => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.filter((_, k) => k !== j) })}>×</button>
+                <div key={j} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <select className={`${inputClass} min-w-0 flex-1`} value={d} aria-label={`Disciplina ${j + 1}`} onChange={e => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.map((x, k) => (k === j ? e.target.value : x)) })}>
+                      <option value="">Selecione a disciplina</option>
+                      {disciplinas.filter(x => !usadasNaEscola(j).has(String(x.id))).map(x => <option key={x.id} value={x.id}>{x.nome}</option>)}
+                    </select>
+                    <button type="button" className={botaoRemover} aria-label="Remover disciplina" title="Remover disciplina" onClick={() => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.filter((_, k) => k !== j) })}>×</button>
+                  </div>
+                  {turmas && parte.escolaId && d && (
+                    <TurmasDaDisciplina
+                      disciplina={disciplinas.find(x => String(x.id) === d)}
+                      turmas={turmas.filter(t => t.status === 'ativa' && String(t.escolaId) === parte.escolaId)}
+                      marcadas={(parte.turmas ?? {})[d] ?? []}
+                      ocupantes={ocupantes}
+                      onChange={lista => mudarParte(parte.chave, { turmas: { ...(parte.turmas ?? {}), [d]: lista } })}
+                    />
+                  )}
                 </div>
               ))}
               {/* 15/11/2026: com uma linha vazia o botão some (antes ficava cinza e parecia quebrado). */}
@@ -124,6 +139,33 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
       })}
       {erros.geral && <p className="text-xs font-semibold text-red-700">{erros.geral}</p>}
       <button type="button" className={botaoTexto} disabled={todasUsadas} onClick={() => onChange({ ...valor, partes: [...valor.partes, { chave: novaChave(), escolaId: '', disciplinaIds: [''], atuacaoIds: [] }] })}>+ Adicionar escola</button>
+    </div>
+  );
+};
+
+// Turmas de uma disciplina no cadastro: botões para marcar (nada é salvo antes de "Cadastrar").
+const TurmasDaDisciplina = ({ disciplina, turmas, marcadas, ocupantes, onChange }) => {
+  if (!disciplina) return null;
+  const ordenadas = [...turmas].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { numeric: true }));
+  if (ordenadas.length === 0) return <p className="pl-1 text-xs text-slate-500">Nenhuma turma nesta escola.</p>;
+  const ocupante = (t) => ocupantes?.get(`${t.id}-${disciplina.id}`);
+  const substituidas = ordenadas.filter(t => marcadas.includes(String(t.id)) && ocupante(t));
+  return (
+    <div className="space-y-1 pl-1" data-disciplina={disciplina.nome}>
+      <p className="text-xs font-semibold text-slate-500">Turmas de {disciplina.nome}</p>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas de ${disciplina.nome}`}>
+        {ordenadas.map(t => {
+          const marcada = marcadas.includes(String(t.id));
+          return (
+            <button key={t.id} type="button" aria-pressed={marcada} aria-label={`${disciplina.nome} — ${t.nome}`}
+              onClick={() => onChange(marcada ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)])}
+              className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
+              {marcada ? `✓ ${t.nome}` : t.nome}
+            </button>
+          );
+        })}
+      </div>
+      {substituidas.map(t => <p key={t.id} className="text-xs text-amber-800">Substitui {ocupante(t)} na {t.nome}.</p>)}
     </div>
   );
 };

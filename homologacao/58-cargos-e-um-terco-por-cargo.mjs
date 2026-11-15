@@ -56,7 +56,7 @@ try {
 
   // Validação perto do campo: escola vazia.
   await m.locator('input[type=email]').fill(`${P.toLowerCase()}-1@teste.invalid`);
-  await m.getByRole('button', { name: 'Próximo →' }).click();
+  await m.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   const erroEscola = await m.getByText('Escolha a escola.').first().isVisible().catch(() => false);
   r('2', 'Validação próxima do campo (escola não escolhida)', '"Escolha a escola." no bloco', erroEscola, erroEscola);
 
@@ -84,11 +84,9 @@ try {
   r('5', 'Escolher 2 abre o Cargo 2 com o mesmo padrão', 'Cargo 2 visível', cargo2, cargo2);
   await foto(page, '58-cadastro-dois-cargos');
 
-  await m.getByRole('button', { name: 'Próximo →' }).click();
+  await m.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   await page.waitForTimeout(1500);
   const wizard = modal(page);
-  await wizard.getByRole('button', { name: 'Concluir depois' }).click().catch(() => {});
-  await page.waitForTimeout(500);
   await modal(page).getByRole('button', { name: 'Concluir' }).click().catch(() => {});
   await page.waitForTimeout(800);
   const ana = await prisma.pessoa.findFirst({ where: { email: `${P.toLowerCase()}-1@teste.invalid` }, include: { cargos: true, vinculosEscolares: { where: { status: 'ATIVO' } } } });
