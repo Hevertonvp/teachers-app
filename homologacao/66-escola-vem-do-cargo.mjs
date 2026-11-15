@@ -49,12 +49,12 @@ try {
   await login(S.page, 'secretaria@escola.gov.br', '12345678');
   await ir(S.page, '/pessoas');
 
-  // 1. Lista: "Cargos e escolas" e "Turmas e disciplinas"; sem "Escolas" para professor.
+  // 1. Lista: "Cargos e escolas" e "Turmas" (renomeado em 15/11/2026); sem "Escolas" para professor.
   {
     const linha = S.page.locator('tr', { hasText: pA.email });
     const botoes = (await linha.getByRole('button').allInnerTexts()).map(b => b.trim()).filter(Boolean);
     r('1', 'Lista de professores (Secretaria): botão único "Cargos e escolas"; "Escolas" sumiu para professor', 'botões incluem Cargos e escolas e não incluem Escolas',
-      JSON.stringify(botoes), botoes.includes('Cargos e escolas') && !botoes.includes('Escolas') && botoes.includes('Turmas e disciplinas'));
+      JSON.stringify(botoes), botoes.includes('Cargos e escolas') && !botoes.includes('Escolas') && botoes.includes('Turmas'));
   }
 
   // 2. Tirar Boa Vista do cargo: aviso com escola e turma; Voltar não grava; confirmar tira da escola e da turma.

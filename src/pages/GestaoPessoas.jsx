@@ -270,7 +270,7 @@ const VinculosEscolaModal = ({ pessoa, minhasEscolas, onClose }) => {
 // 15/11/2026 (decisão do usuário): as turmas são marcadas por DISCIPLINA DO CARGO — a disciplina não é escolhida
 // de novo (ver components/TurmasPorDisciplina.jsx).
 const VinculosPedagogicosProfessorModal = ({ professor, turmas, onClose }) => (
-  <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onClose}>
+  <Modal title={`Turmas — ${professor.nome}`} onClose={onClose}>
     <div className="space-y-5">
       <TurmasPorDisciplina professor={professor} escolas={professor.escolas} turmas={turmas} />
       <div className="flex justify-end"><Button variant="secondary" onClick={onClose}>Fechar</Button></div>
@@ -293,7 +293,7 @@ const VinculosWizardCriacaoProfessor = ({ professor, escolas, turmas, onFinish }
   const escolaAtual = escolas[indice];
   const ultimaEscola = indice === escolas.length - 1;
   return (
-    <Modal title={`Turmas e disciplinas — ${professor.nome}`} onClose={onFinish}>
+    <Modal title={`Turmas — ${professor.nome}`} onClose={onFinish}>
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Escola {indice + 1} de {escolas.length}</p>
@@ -552,7 +552,7 @@ const ProfessoresReaisManager = ({ user }) => {
       <div className="flex flex-wrap gap-2">
         {/* 13/11/2026: a escola do professor vem do cargo — sem botão "Escolas" separado para professor. */}
         <Button size="sm" variant="outline" onClick={() => setManagingCargos(row)}>Cargos e escolas</Button>
-        <Button size="sm" variant="outline" onClick={() => setManagingTurmas(row)}>Turmas e disciplinas</Button>
+        <Button size="sm" variant="outline" onClick={() => setManagingTurmas(row)}>Turmas</Button>
         <ActionMenu items={[
           { label: 'Gerar nova senha temporária', onClick: () => setResetando(row) },
           row.status === 'ATIVO'

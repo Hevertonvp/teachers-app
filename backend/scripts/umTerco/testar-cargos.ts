@@ -353,6 +353,29 @@ try {
   const semanas = ciclo.semanas;
   const salvar = (token: string, cargoId: number, base: string | null, textos = ['Semana 1: verbos', 'Semana 2: mapas']) =>
     api(token, 'PUT', `/formulario-um-terco/ciclos/${ciclo.id}/cargos/${cargoId}/respostas`, { baseUpdatedAt: base, respostas: semanas.map((s, i) => ({ semanaId: s.id, texto: textos[i] ?? '' })) });
+  // Informática fora do 1/3 "por enquanto" (decisão do usuário, 15/11/2026): só a Informática some da folha.
+  {
+    const info = await prisma.disciplina.upsert({ where: { nome: 'Informática' }, update: {}, create: { nome: 'Informática' } });
+    const pSoInfo = await novoProfessor([{ composicao: C([prud.id, [info.id]]) }]);
+    const pInfoMais = await novoProfessor([{ composicao: C([prud.id, [ing.id, info.id]]) }]);
+    const pDuasEscolas = await novoProfessor([{ composicao: C([prud.id, [ing.id]], [tres.id, [info.id]]) }]);
+    for (const p of [pSoInfo, pInfoMais, pDuasEscolas]) await recuar(p.id, 40);
+    await caso('INFO 1. Professor SÓ de Informática não recebe folha nem conta no esperado', async () => {
+      assert.equal((await minhas(pSoInfo.token, ciclo.id)).length, 0);
+      assert.equal((await painel(ciclo.id, `?professorId=${pSoInfo.id}`)).linhas.length, 0);
+    });
+    await caso('INFO 2. Informática + Inglês na mesma escola: folha normal só com Inglês', async () => {
+      const itens = await minhas(pInfoMais.token, ciclo.id);
+      assert.equal(itens.length, 1);
+      assert.deepEqual(itens[0].composicao.map((p) => p.disciplinas.map((d) => d.nome)), [[ing.nome]]);
+    });
+    await caso('INFO 3. Cargo com duas escolas, uma só com Informática: a folha fica só com a outra escola', async () => {
+      const itens = await minhas(pDuasEscolas.token, ciclo.id);
+      assert.equal(itens.length, 1);
+      assert.deepEqual(itens[0].composicao.map((p) => p.escolaId), [prud.id]);
+    });
+  }
+
   // Regra de 15/11/2026: cargo criado com o ciclo aberto entra no ciclo atual (antes: só no próximo).
   const respostasAntes = await prisma.respostaSemanaUmTerco.findMany({ where: { entrega: { cicloId: ciclo.id } }, select: { id: true, texto: true, updatedAt: true }, orderBy: { id: 'asc' } });
   const entregasAntes = await prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id }, select: { id: true, status: true, chaveCargos: true }, orderBy: { id: 'asc' } });

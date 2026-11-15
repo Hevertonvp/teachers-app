@@ -25,7 +25,7 @@ r('1', 'Tela PDI: "Gerenciar formulário" e "Ver alunos" aparecem uma vez só (n
 // ---- 2/3. Modal Turmas e disciplinas (P04) ----
 await X.page.goto(BASE + '/#/pessoas'); await X.page.waitForLoadState('networkidle'); await X.page.waitForTimeout(2000);
 const linhaP04 = X.page.locator('tr', { hasText: 'p04@homolog.nexo' }).first();
-await linhaP04.getByRole('button', { name: 'Turmas e disciplinas' }).click(); await X.page.waitForTimeout(2000);
+await linhaP04.getByRole('button', { name: 'Turmas', exact: true }).click(); await X.page.waitForTimeout(2000);
 const m = modal(X.page);
 const temHistorico = /Histórico/.test(await m.innerText());
 // 15/11/2026: turmas marcadas por disciplina do cargo. P04 marca "Arte — 6M3" (Arte da 6M3 é do P10) → pergunta
@@ -37,7 +37,7 @@ const mat = await prisma.disciplina.findFirst({ where: { nome: 'Arte' } });
 await m.getByRole('button', { name: 'Arte — 6M3' }).click(); await X.page.waitForTimeout(1500);
 const aviso = ((await X.page.locator('div.fixed.inset-0').last().innerText()).match(/[^\n]*já dá Arte na 6M3[^\n]*/) || [''])[0];
 await foto(X.page, '40-modal-substituicao');
-r('2a', 'Modal "Turmas e disciplinas" sem a seção "Histórico"', 'sem "Histórico"', `tem Histórico: ${temHistorico}`, !temHistorico, '40-modal-substituicao.png');
+r('2a', 'Modal "Turmas" (antes "Turmas e disciplinas") sem a seção "Histórico"', 'sem "Histórico"', `tem Histórico: ${temHistorico}`, !temHistorico, '40-modal-substituicao.png');
 r('2b', 'Marcar turma que já tem outro professor na disciplina pergunta antes, com o NOME dele (não o id)', `contém "${p01.nome}" e não "#${p01.id}"`, aviso.slice(0, 140), aviso.includes(p01.nome) && !aviso.includes(`#${p01.id}`), '40-modal-substituicao.png');
 await X.page.getByRole('button', { name: 'Cancelar' }).last().click(); await X.page.waitForTimeout(500);
 // 3. clique fora e Esc não fecham; × fecha

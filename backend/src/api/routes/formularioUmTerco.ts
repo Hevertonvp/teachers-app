@@ -8,7 +8,7 @@ import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
-import { calcularFolhas, chaveDeCargos, corteDoCiclo, limiteDeCadastroDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
+import { calcularFolhas, chaveDeCargos, corteDoCiclo, DISCIPLINAS_FORA_DO_UM_TERCO, limiteDeCadastroDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
 import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 import { criarNotificacao } from '../../lib/notificacoes.js';
@@ -235,7 +235,9 @@ async function folhasDoCiclo(db: Db, ciclo: CicloCompleto, filtro: { professorId
     carregarNomes(db),
   ]);
   const professores = new Map(cargos.map((c) => [c.professorId, c.professor]));
-  const calculadas = calcularFolhas(cargos, ciclo, escolasDoCiclo(ciclo));
+  // Disciplinas fora do 1/3 (Informática, decisão de 15/11/2026) somem da folha; cargo que fica vazio não gera folha.
+  const disciplinasFora = (await db.disciplina.findMany({ where: { nome: { in: DISCIPLINAS_FORA_DO_UM_TERCO } }, select: { id: true } })).map((d) => d.id);
+  const calculadas = calcularFolhas(cargos, ciclo, escolasDoCiclo(ciclo), disciplinasFora);
 
   // Rótulos "Cargo 1/2" pelos cargos de HOJE do Professor (só visual).
   const ids = [...new Set([...calculadas.map((f) => f.professorId), ...entregas.map((e) => e.professorId)])];

@@ -256,6 +256,7 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Testes:** UT-PRZ-07, testar-integracao (edição após concluir).
 
 **UT-09 · Quem é "esperado"**
+- **15/11/2026:** disciplina **Informática** fica FORA do 1/3 e do PDI por enquanto (some da folha; professor só de Informática não é esperado). Ver CLAUDE_CONTEXT.md.
 - **MUDOU em 15/11/2026 (1/3 por cargo):** cargo criado até o prazo entra no ciclo atual; ver CLAUDE_CONTEXT.md, Registro (15/11/2026).
 - **Regra (antiga, modelo por vínculo):** conta como esperado quem teve vínculo elegível em algum momento **dentro da janela** do ciclo. Vínculo que começou depois do prazo não entra.
 - **Origem:** usuário (§68, "regra definitiva"). **Status:** Implementada.
