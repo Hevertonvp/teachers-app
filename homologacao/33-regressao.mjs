@@ -37,7 +37,7 @@ const st = async (t, method, path, body) => (await fetch(API + path, { method, h
   const ingles6 = (await X.page.locator('main').innerText()).replace(/\s+/g, ' ');
   await foto(X.page, '33-cartoes-p04');
   r('MULTI-1', 'P04 (2 cargos diferentes) vê um cartão por cargo (1/3 por cargo)', '2 cartões: Cargo 1 e Cargo 2', `${cartoes.length}: ${cartoes.join(' | ')}`, cartoes.length === 2 && cartoes.includes('Cargo 1') && cartoes.includes('Cargo 2'), '33-cartoes-p04.png');
-  r('MULTI-2', 'Cada cartão mostra escola → disciplinas do seu cargo (sem turmas)', 'Aurora — Arte, Ensino Religioso, Inglês; Boa Vista — Inglês', `Aurora: ${/Aurora — Arte, Ensino Religioso, Inglês/.test(ingles6)}; Boa Vista: ${/Boa Vista — Inglês/.test(ingles6)}; turmas: ${/\dM\d/.test(ingles6)}`, /Aurora — Arte, Ensino Religioso, Inglês/.test(ingles6) && /Boa Vista — Inglês/.test(ingles6) && !/\dM\d/.test(ingles6));
+  r('MULTI-2', 'Cada cartão mostra escola → disciplinas do seu cargo (sem turmas)', 'Aurora — Arte, Ensino Religioso, Inglês; Boa Vista — Inglês', `Aurora: ${/Aurora .*Arte, Ensino Religioso, Inglês/.test(ingles6)}; Boa Vista: ${/Boa Vista .*Inglês/.test(ingles6)}; turmas: ${/\dM\d/.test(ingles6)}`, /Aurora .*Arte, Ensino Religioso, Inglês/.test(ingles6) && /Boa Vista .*Inglês/.test(ingles6) && !/\dM\d/.test(ingles6));
 
   // ---- Persistência do formulário PDI (bloco comum + disciplina), online — só com o PDI ligado ----
   if (!PDI_LIGADO) registrar('REG-PDI-1', 'Regressão', 'PDI online (persistência)', 'só com o PDI ligado', 'pulado: PDI em desenvolvimento', 'OBSERVAÇÃO (regra não especificada)');

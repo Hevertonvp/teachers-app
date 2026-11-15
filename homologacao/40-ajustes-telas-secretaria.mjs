@@ -7,6 +7,7 @@
 import { abrir, login, foto, preencherCadastroProfessor, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { limparProfessoresDeTeste } from './limpar-professores-teste.mjs';
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
 const r = (id, cen, esp, obs, ok, evid = '') => registrar(`UI-SEC-${id}`, 'Ajustes de tela (Secretaria)', cen, esp, obs, ok ? 'APROVADO' : 'REPROVADO', evid);
 const modal = (page) => page.locator('div.fixed.inset-0.z-50');
@@ -84,4 +85,6 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   if (nome === 'celular') await Y.browser.close();
 }
 console.log('erros:', X.erros.filter(e => !/40[134]/.test(e)));
-await X.browser.close(); await prisma.$disconnect();
+await X.browser.close();
+await limparProfessoresDeTeste(['ui-']); // 15/11/2026: apaga os professores criados aqui
+await prisma.$disconnect();

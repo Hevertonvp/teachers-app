@@ -59,7 +59,7 @@ export const UmTercoProfessorPage = () => {
                   {!item.esperada && <Badge variant="gray">Cargo encerrado · só consulta</Badge>}
                 </div>
                 {/* 15/11/2026: o título é a escola (e as disciplinas); "Cargo 1" fica só como rótulo pequeno. */}
-                <p data-rotulo className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{item.rotulo}</p>
+                <p data-rotulo className="mt-3 text-xs font-semibold text-slate-500">{item.rotulo}</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">{tituloDaFolha(item.composicao)}</h2>
                 <p className="mt-1 text-sm text-slate-600">{item.ciclo.trimestre}º trimestre · prazo {formatarDataHora(item.ciclo.prazoEm)}</p>
 

@@ -14,11 +14,11 @@ await page.goto(BASE + '/#/formulario-um-terco'); await page.waitForLoadState('n
 await page.locator('[data-rotulo]').first().waitFor({ timeout: 15000 });
 const cards = await page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col') || h.parentElement; return { rotulo: h.innerText.trim(), texto: c.innerText.replace(/\s+/g, ' ') }; }));
 await foto(page, '04-p04-lista-1-3');
-const doCiclo1 = cards.filter(c => c.texto.includes('Nov/2026 (homolog)'));
+const doCiclo1 = cards.filter(c => c.texto.includes('20/11/2026'));
 registrar('UT-P04-01', 'Formulário 1/3', 'P04 (2 cargos diferentes) vê exatamente 2 formulários no ciclo, um por cargo', '2 cartões: Cargo 1 e Cargo 2', doCiclo1.map(c => c.rotulo).join(' + '), doCiclo1.length === 2 && doCiclo1.some(c => c.rotulo === 'Cargo 1') && doCiclo1.some(c => c.rotulo === 'Cargo 2') ? 'APROVADO' : 'REPROVADO', '04-p04-lista-1-3.png');
 const card1 = doCiclo1.find(c => c.rotulo === 'Cargo 1')?.texto ?? '';
 const card2 = doCiclo1.find(c => c.rotulo === 'Cargo 2')?.texto ?? '';
-registrar('UT-P04-02', 'Formulário 1/3', 'Cartões mostram escola → disciplinas do cargo, sem turmas nem ano/série', 'Cargo 1: Aurora — Arte, Ensino Religioso, Inglês; Cargo 2: Boa Vista — Inglês', `${card1.slice(0, 120)} | ${card2.slice(0, 100)}`, /Aurora — Arte, Ensino Religioso, Inglês/.test(card1) && /Boa Vista — Inglês/.test(card2) && !/\dM\d|º ano|Válido para/.test(card1 + card2) ? 'APROVADO' : 'REPROVADO');
+registrar('UT-P04-02', 'Formulário 1/3', 'Cartões mostram escola → disciplinas do cargo, sem turmas nem ano/série', 'Cargo 1: Aurora — Arte, Ensino Religioso, Inglês; Cargo 2: Boa Vista — Inglês', `${card1.slice(0, 120)} | ${card2.slice(0, 100)}`, /Aurora .*Arte, Ensino Religioso, Inglês/.test(card1) && /Boa Vista .*Inglês/.test(card2) && !/\dM\d|º ano|Válido para/.test(card1 + card2) ? 'APROVADO' : 'REPROVADO');
 
 // ---- Preenchimento do Cargo 1 (um texto por semana para as três disciplinas) ----
 await abrirCartao(page, /^Cargo 1$/);

@@ -5,6 +5,7 @@
 import { abrir, login, foto, preencherCadastroProfessor, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
+import { limparProfessoresDeTeste } from './limpar-professores-teste.mjs';
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
 const r = (id, cen, esp, obs, ok, evid = '') => registrar(`ASSIST-${id}`, 'Assistente de vínculos (disciplinas por turma)', cen, esp, obs, ok ? 'APROVADO' : 'REPROVADO', evid);
 const aurora = await prisma.escola.findFirst({ where: { nome: { contains: 'Aurora' } } });
@@ -51,4 +52,5 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   r(`4-${nome}`, `${nome}: banco tem exatamente 6M1-Redação e 6M1-Geografia para o professor novo (sem duplicar)`, '2 vínculos', banco.map(v => `${v.turma.nome}-${v.disciplina.nome}`).join(', '), banco.length === 2 && banco.every(v => v.turmaId === t6m1.id) && new Set(banco.map(v => v.disciplinaId)).size === 2);
   await X.browser.close();
 }
+await limparProfessoresDeTeste(['assist-']); // 15/11/2026: apaga os professores criados aqui
 await prisma.$disconnect();

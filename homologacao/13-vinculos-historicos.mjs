@@ -30,10 +30,10 @@ for (const [cod, esp] of Object.entries(esperadoCards)) {
   const x = await abrir();
   await login(x.page, `${cod.toLowerCase()}@homolog.nexo`, SENHA(cod.toLowerCase()));
   await x.page.goto(BASE + '/#/formulario-um-terco'); await x.page.waitForLoadState('networkidle'); await x.page.waitForTimeout(1500);
-  const cards = await x.page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col'); return { r: h.innerText.trim(), t: c ? c.innerText.replace(/\s+/g, ' ') : '' }; }).filter(c => c.t.includes('Nov/2026 (homolog)')));
+  const cards = await x.page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => { const c = h.closest('div.flex-col'); return { r: h.innerText.trim(), t: c ? c.innerText.replace(/\s+/g, ' ') : '' }; }).filter(c => c.t.includes('20/11/2026')));
   totalCards += cards.length;
   await foto(x.page, `13-${cod}-lista`);
-  const ok = cards.length === esp.length && esp.every(([rot, trecho]) => cards.some(c => c.r === rot && c.t.includes(trecho))) && cards.every(c => !/\dM\d|º ano/.test(c.t));
+  const ok = cards.length === esp.length && esp.every(([rot, trecho]) => cards.some(c => c.r === rot && trecho.split(' — ').every(p => c.t.includes(p)))) && cards.every(c => !/\dM\d|º ano/.test(c.t));
   const vazio = cards.length === 0 ? (await x.page.locator('main').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 130) : '';
   registrar(`UT-VIN-${cod}`, 'Cargos', `${cod}: formulários visíveis conforme os cargos`, esp.map(([r, t]) => `${r} (${t})`).join(' + ') || '(nenhum)', (cards.map(c => `${c.r} (${c.t.slice(c.t.indexOf('ZZ-'), c.t.indexOf('ZZ-') + 60)})`).join(' + ') || '(nenhum)') + (vazio ? ` — tela: "${vazio}"` : ''), ok ? 'APROVADO' : 'REPROVADO', `13-${cod}-lista.png`);
   await x.browser.close();

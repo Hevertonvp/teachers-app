@@ -329,7 +329,7 @@ export const UmTercoPreenchimentoPage = () => {
       <div className="mx-auto max-w-3xl space-y-5 pb-24">
         <BackButton />
         <div>
-          <p data-rotulo className="text-sm font-semibold uppercase tracking-wide text-teal-700">{dados.rotulo} · {dados.ciclo.trimestre}º trimestre</p>
+          <p className="text-sm font-semibold text-teal-700"><span data-rotulo>{dados.rotulo}</span> · {dados.ciclo.trimestre}º trimestre</p>
           <h1 className="mt-1 text-3xl font-bold text-slate-950">{tituloDaFolha(dados.composicao)}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
             <Badge variant={concluida ? 'green' : 'blue'}>{concluida ? 'Concluído' : 'Em preenchimento'}</Badge>

@@ -21,9 +21,9 @@ for (const [cod, linhas] of Object.entries(esperado)) {
   await login(x.page, `${cod}@homolog.nexo`, SENHA(cod));
   await x.page.goto(BASE + '/#/formulario-um-terco'); await x.page.waitForLoadState('networkidle');
   await x.page.locator('[data-rotulo]').first().waitFor({ timeout: 15000 }).catch(() => {});
-  const cards = await x.page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => ({ r: h.innerText.trim(), t: h.closest('div.flex-col')?.innerText.replace(/\s+/g, ' ') ?? '' })).filter(c => c.t.includes('Nov/2026 (homolog)')));
+  const cards = await x.page.locator('[data-rotulo]').evaluateAll(hs => hs.map(h => ({ r: h.innerText.trim(), t: h.closest('div.flex-col')?.innerText.replace(/\s+/g, ' ') ?? '' })).filter(c => c.t.includes('20/11/2026')));
   await foto(x.page, `24-${cod}-lista`);
-  const ok = cards.length === 1 && cards[0].r === 'Cargo 1' && linhas.every(l => cards[0].t.includes(l)) && !/\dM\d|º ano|Válido para/.test(cards[0].t);
+  const ok = cards.length === 1 && cards[0].r === 'Cargo 1' && linhas.every(l => l.split(' — ').every(p => cards[0].t.includes(p))) && !/\dM\d|º ano|Válido para/.test(cards[0].t);
   registrar(`UT-CARD-${cod.toUpperCase()}`, 'Cargos', `${cod.toUpperCase()}: um formulário (Cargo 1) com escola → disciplinas, sem turmas`, `Cargo 1: ${linhas.join(' + ')}`, cards.map(c => `${c.r}: ${c.t.slice(c.t.indexOf('ZZ-'), c.t.indexOf('ZZ-') + 110)}`).join(' | ') || '(nenhum)', ok ? 'APROVADO' : 'REPROVADO', `24-${cod}-lista.png`);
   await x.browser.close();
 }

@@ -805,7 +805,7 @@ const ProfessoresReaisManager = ({ user }) => {
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <p className="max-w-2xl text-sm text-slate-600">
-          {isSecretaria(user) ? null : 'Professores(as) das escolas que você administra.'}
+          {isSecretaria(user) ? null : 'Para incluir ou tirar um professor da sua escola, peça à Secretaria.'}
         </p>
         <div className="flex flex-wrap items-start gap-2">
           <BotaoExportarExcel size="md" gerar={exportarProfessores} disabled={carregando || professores.length === 0} />
