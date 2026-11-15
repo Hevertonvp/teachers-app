@@ -216,6 +216,7 @@ Os testes citam a matriz da homologação (`homologacao/resultados.json` e `MATR
 - **Testes:** UT-T-S01 a S09, testar-integracao (concorrência), homologação (5 cenários, 0 pares sobrepostos).
 
 **UT-05 · Período de referência × janela de disponibilidade**
+- **MUDOU em 15/11/2026 (pedido do usuário):** ao criar ciclo, as semanas vêm SUGERIDAS dividindo abertura→prazo em partes de dias iguais (sempre editáveis). Semanas e janela continuam independentes na validação. Ver CLAUDE_CONTEXT.md (15/11/2026).
 - **Regra:** as **semanas** do ciclo são o período pedagógico de referência. A **abertura e o prazo** são a janela em que o professor pode preencher. As semanas podem ser anteriores à abertura, sempre dentro do mesmo trimestre (CAL-05). São de 1 a 30 semanas, rotuladas pelo sistema ("Semana N").
 - **Exemplo:** ciclo aberto de 10/11 a 20/11 sobre as semanas de 03/11 a 14/11.
 - **Origem:** usuário (§60–61; distinção confirmada em 09/11/2026 e de novo em 10/11/2026: "uma coisa não tem nada a ver com a outra"). **Status:** Implementada. Nenhum campo novo é necessário.

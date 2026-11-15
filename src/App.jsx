@@ -118,8 +118,9 @@ const AppRoutes = () => <Routes>
   <Route path="/formulario-um-terco" element={<ProtectedRoute><UmTercoEntrada /></ProtectedRoute>} />
   <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><UmTercoSomenteSecretaria><UmTercoPainelPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
   <Route path="/formulario-um-terco/:cicloId/cargo/:cargoId" element={<ProtectedRoute><UmTercoSomenteProfessor><UmTercoPreenchimentoPage /></UmTercoSomenteProfessor></ProtectedRoute>} />
-  <Route path="/correcoes/pdi" element={<SoComPdi><ProtectedRoute><CorrecoesPdiListaPage /></ProtectedRoute></SoComPdi>} />
-  <Route path="/correcoes/pdi/:fichaId" element={<SoComPdi><ProtectedRoute><CorrecoesPdiDetalhePage /></ProtectedRoute></SoComPdi>} />
+  {/* Correções do PDI: só a Secretaria (a API recusa os demais; 15/11/2026 — antes o endereço direto abria a tela e dava 403). */}
+  <Route path="/correcoes/pdi" element={<SoComPdi><ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesPdiListaPage /></UmTercoSomenteSecretaria></ProtectedRoute></SoComPdi>} />
+  <Route path="/correcoes/pdi/:fichaId" element={<SoComPdi><ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesPdiDetalhePage /></UmTercoSomenteSecretaria></ProtectedRoute></SoComPdi>} />
 
   {/* Fora do escopo desta entrega (só PDI) — "em construção" para todos os perfis. */}
   <Route path="/pdi/acompanhamento" element={<SoComPdi><ProtectedRoute><EmConstrucaoPage /></ProtectedRoute></SoComPdi>} />

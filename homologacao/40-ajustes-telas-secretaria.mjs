@@ -1,12 +1,10 @@
-// ATENÇÃO (15/11/2026): a parte 4 (assistente do cadastro com escolas por caixinha) está OBSOLETA desde o cadastro
-// por cargo (12–13/11/2026); as partes 1–3 continuam válidas. Reescrever a parte 4 com cargos antes de rodar de novo.
 // Ajustes de tela pedidos pelo usuário (perfil Secretaria), navegador real, banco LOCAL:
 //  1 PDI: sem "Gerenciar formulário"/"Ver alunos" no topo (ficam só nos cartões);
 //  2 Modal "Turmas e disciplinas": sem "Histórico"; aviso de substituição com o NOME do professor;
 //  3 Modais não fecham por clique fora nem Esc (só "×"/Fechar);
 //  4 Assistente de vínculos do cadastro: turma já adicionada some (para aquela disciplina); modal com rolagem
 //    interna, sem crescer para fora da tela (desktop e celular).
-import { abrir, login, foto, BASE } from './lib.mjs';
+import { abrir, login, foto, preencherCadastroProfessor, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
@@ -62,10 +60,8 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   await Y.page.goto(BASE + '/#/pessoas'); await Y.page.waitForLoadState('networkidle'); await Y.page.waitForTimeout(1500);
   await Y.page.getByRole('button', { name: '+ Cadastrar professor' }).click(); await Y.page.waitForTimeout(800);
   const c = modal(Y.page);
-  await c.locator('form input[type=email]').fill(`ui-${nome}-${TAG}@homolog.nexo`);
-  await c.locator('form input').nth(1).fill(`Professor UI ${nome} ${TAG}`);
-  await c.getByRole('checkbox', { name: 'ZZ-HOMOLOG Escola Aurora', exact: true }).check();
-  await c.getByRole('button', { name: /Próximo/ }).click(); await Y.page.waitForTimeout(2500);
+  // 15/11/2026: cadastro por cargo (escola + disciplina no Cargo 1), no lugar da caixinha de escola.
+  await preencherCadastroProfessor(c, { email: `ui-${nome}-${TAG}@homolog.nexo`, nome: `Professor UI ${nome} ${TAG}`, escola: 'ZZ-HOMOLOG Escola Aurora', disciplina: 'Redação' }); await Y.page.waitForTimeout(2500);
   const w = modal(Y.page);
   const redacao = await prisma.disciplina.findFirst({ where: { nome: 'Redação' } });
   const selW = w.locator('form select');

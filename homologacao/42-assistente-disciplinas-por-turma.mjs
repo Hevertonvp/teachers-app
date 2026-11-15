@@ -2,7 +2,7 @@
 // de disciplinas; a turma continua na lista; a disciplina continua disponível nas outras turmas.
 // Navegador real (desktop e celular), banco LOCAL. Usa Redação e Geografia (sem professor na 6M1/6M2 da
 // Aurora), para não substituir nenhum professor existente.
-import { abrir, login, foto, BASE } from './lib.mjs';
+import { abrir, login, foto, preencherCadastroProfessor, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
@@ -20,10 +20,8 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   await X.page.getByRole('button', { name: '+ Cadastrar professor' }).click(); await X.page.waitForTimeout(800);
   const c = X.page.locator('div.fixed.inset-0.z-50');
   const email = `assist-${nome}-${TAG}@homolog.nexo`;
-  await c.locator('form input[type=email]').fill(email);
-  await c.locator('form input').nth(1).fill(`Professor Assistente ${nome} ${TAG}`);
-  await c.getByRole('checkbox', { name: 'ZZ-HOMOLOG Escola Aurora', exact: true }).check();
-  await c.getByRole('button', { name: /Próximo/ }).click(); await X.page.waitForTimeout(2500);
+  // 15/11/2026: cadastro por cargo (escola + disciplina no Cargo 1), no lugar da caixinha de escola.
+  await preencherCadastroProfessor(c, { email, nome: `Professor Assistente ${nome} ${TAG}`, escola: 'ZZ-HOMOLOG Escola Aurora', disciplina: 'Redação' }); await X.page.waitForTimeout(2500);
   const w = X.page.locator('div.fixed.inset-0.z-50');
   const [selTurma, selDisc] = [w.locator('form select').nth(0), w.locator('form select').nth(1)];
   const disciplinas = async () => (await selDisc.locator('option').allInnerTexts()).filter(t => !/já adicionadas/.test(t));

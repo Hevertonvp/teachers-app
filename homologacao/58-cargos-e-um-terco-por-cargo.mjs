@@ -107,7 +107,7 @@ try {
   await mc.getByText('Cargo 2').first().waitFor();
   const cartao1 = mc.locator('div.rounded-xl').filter({ has: page.getByRole('heading', { name: 'Cargo 1' }) }).first();
   await cartao1.getByRole('button', { name: 'Encerrar cargo' }).click();
-  const confirmacao = await mc.getByText(/Ele não é apagado/).isVisible();
+  const confirmacao = await mc.getByText(/^Encerrar o Cargo 1\?$/).isVisible(); // 15/11/2026: texto curto, sem regras
   await mc.getByRole('button', { name: /^Encerrar (cargo|e tirar da escola)$/ }).last().click(); // 13/11: com saída de escola o botão muda
   await page.waitForTimeout(1200);
   const titulos = await mc.locator('h3').allTextContents();

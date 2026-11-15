@@ -6,7 +6,7 @@ import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { apagarDraft, lerDraft, salvarDraft } from '../offline/db';
-import { chaveFila, enfileirar, obterItemDaFila, removerDaFila } from '../offline/syncQueue';
+import { chaveFila, enfileirar, obterItemDaFila, removerDaFila, subscribeFila } from '../offline/syncQueue';
 import { AvisoCorrecaoProfessor, correcaoPendente } from '../components/Correcoes';
 import { concluirFormularioUmTerco, caminhoRespostasUmTerco, obterFormularioUmTerco, salvarRespostasUmTerco } from '../services/formularioUmTerco';
 import { inputClass } from '../utils/display';
@@ -106,6 +106,48 @@ export const UmTercoPreenchimentoPage = () => {
   }, [cicloId, cargoId, draftKey, filaKey, userId, aplicarServidor]);
 
   useEffect(() => { textosRef.current = textos; sujoRef.current = sujo; }, [textos, sujo]);
+
+  // DEF-08 (corrigido em 15/11/2026): a fila offline envia sozinha quando a internet volta. Antes a tela
+  // ABERTA não ficava sabendo do resultado — o aviso de conflito só aparecia ao reabrir o formulário, e um
+  // envio bem-sucedido deixava a versão de referência antiga (o próximo salvamento podia acusar conflito
+  // falso). Agora a tela escuta a fila: conflito → mostra as opções na hora; enviado → adota a versão nova.
+  const estadoRef = useRef(estado);
+  useEffect(() => { estadoRef.current = estado; }, [estado]);
+  useEffect(() => {
+    if (!userId || !dados?.editavelAgora) return undefined;
+    let ativo = true;
+    const verificar = async () => {
+      const item = await obterItemDaFila(filaKey);
+      if (!ativo) return;
+      if (item?.status === 'conflict' && !conflitoRef.current) {
+        const atual = item.dadosAtuais ?? await obterFormularioUmTerco(cicloId, cargoId).catch(() => null);
+        if (!ativo || !atual) return;
+        if (mesmosTextos(textosRef.current, atual)) { // falso conflito: o servidor já tem este texto
+          baseRef.current = atual.updatedAt;
+          baseDoRascunhoRef.current = atual.updatedAt;
+          removerDaFila(filaKey);
+          setEstado('saved');
+          return;
+        }
+        setConflito(atual);
+        setAviso('Enquanto você estava sem internet, este formulário foi alterado em outro lugar. Nada foi sobrescrito: escolha qual versão manter.');
+        return;
+      }
+      if (item?.status === 'error') { setMensagemErro(`Uma alteração guardada neste aparelho foi recusada pelo servidor: ${item.lastError}`); return; }
+      if (!item && estadoRef.current === 'queued') {
+        // A fila enviou com sucesso: a versão no servidor agora é a nossa — adota a nova referência.
+        const atual = await obterFormularioUmTerco(cicloId, cargoId).catch(() => null);
+        if (!ativo || !atual) return;
+        baseRef.current = atual.updatedAt;
+        baseDoRascunhoRef.current = atual.updatedAt;
+        setDados(prev => (prev ? { ...prev, updatedAt: atual.updatedAt, status: atual.status } : prev));
+        if (mesmosTextos(textosRef.current, atual)) { setSujo(false); apagarDraft(draftKey); }
+        setEstado('saved');
+      }
+    };
+    const cancelar = subscribeFila(verificar);
+    return () => { ativo = false; cancelar(); };
+  }, [userId, filaKey, cicloId, cargoId, draftKey, dados?.editavelAgora]);
 
   // Rascunho local protegido a cada alteração (sobrevive a reload/fechamento do navegador), com a
   // versão do servidor sobre a qual foi escrito (DEF-08).

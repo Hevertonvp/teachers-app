@@ -68,6 +68,25 @@ const diaSeguinte = (iso) => {
   return d.toISOString().slice(0, 10);
 };
 const maior = (...datas) => datas.filter(Boolean).sort().at(-1);
+
+// Sugestão de semanas (pedido do usuário, 15/11/2026 — volta da divisão automática, agora como SUGESTÃO):
+// divide da abertura até o prazo em N partes de dias iguais (as primeiras ganham o dia que sobrar).
+// Devolve null quando não dá para dividir (datas faltando, prazo antes da abertura, menos dias que semanas).
+const somarDias = (iso, n) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const dividirSemanas = (abertura, prazo, n) => {
+  if (!abertura || !prazo || prazo < abertura || n < 1) return null;
+  const total = Math.round((new Date(`${prazo}T00:00:00Z`) - new Date(`${abertura}T00:00:00Z`)) / 86400000) + 1;
+  if (total < n) return null;
+  const base = Math.floor(total / n);
+  const resto = total % n;
+  let inicio = abertura;
+  return Array.from({ length: n }, (_, i) => {
+    const fim = somarDias(inicio, base + (i < resto ? 1 : 0) - 1);
+    const semana = { dataInicio: inicio, dataFim: fim };
+    inicio = somarDias(fim, 1);
+    return semana;
+  });
+};
 const menor = (...datas) => datas.filter(Boolean).sort()[0];
 const comErro = (erro) => (erro ? `${inputClass} min-w-0 border-red-400 bg-red-50` : `${inputClass} min-w-0`);
 const MsgErro = ({ children }) => (children ? <p role="alert" className="text-xs font-semibold text-red-700">{children}</p> : null);
@@ -142,6 +161,13 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
   const [abreEm, setAbreEm] = useState(abreOriginal.slice(0, 10));
   const [prazoEm, setPrazoEm] = useState(prazoOriginal.slice(0, 10));
   const [semanas, setSemanas] = useState(ciclo ? ciclo.semanas.map(s => ({ dataInicio: s.dataInicio, dataFim: s.dataFim })) : Array.from({ length: SEMANAS_PADRAO }, () => ({ ...SEMANA_VAZIA })));
+  // Novo ciclo: as semanas são sugeridas pela abertura/prazo. Editou uma semana à mão → mudar abertura ou
+  // prazo não mexe mais nas outras; mudar a QUANTIDADE de semanas refaz a divisão. Editar ciclo existente
+  // nunca recalcula sozinho (os professores podem já estar preenchendo).
+  const [semanasAMao, setSemanasAMao] = useState(false);
+  const sugerir = (abertura, prazo, n) => { if (editando) return false; const s = dividirSemanas(abertura, prazo, n); if (s) setSemanas(s); return !!s; };
+  const mudarAbertura = (valor) => { setAbreEm(valor); if (!semanasAMao) sugerir(valor, prazoEm, semanas.length); };
+  const mudarPrazo = (valor) => { setPrazoEm(valor); if (!semanasAMao) sugerir(abreEm, valor, semanas.length); };
   // Novo ciclo com uma escola no seletor do topo: já vem só essa escola marcada (pedido do usuário,
   // 12/11/2026). Com "Todas as escolas" no topo, continua vindo "Todas as escolas". Edição não muda.
   const escolaDoTopo = useEscolaDoTopo();
@@ -171,9 +197,10 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
 
   const mudarQuantidade = (valor) => {
     const n = Math.max(1, Math.min(30, Number(valor) || 1));
+    if (sugerir(abreEm, prazoEm, n)) { setSemanasAMao(false); return; }
     setSemanas(prev => Array.from({ length: n }, (_, i) => prev[i] ?? { ...SEMANA_VAZIA }));
   };
-  const mudarSemana = (indice, campo, valor) => setSemanas(prev => prev.map((s, i) => (i === indice ? { ...s, [campo]: valor } : s)));
+  const mudarSemana = (indice, campo, valor) => { setSemanasAMao(true); setSemanas(prev => prev.map((s, i) => (i === indice ? { ...s, [campo]: valor } : s))); };
 
   const salvar = async (event) => {
     event.preventDefault();
@@ -209,11 +236,11 @@ const CicloFormModal = ({ ciclo, janelas, escolas, onClose, onSalvo }) => {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <FormField label="Abertura"><input type="date" className={comErro(v.abertura)} value={abreEm} min={aberturaMudou ? hoje : undefined} onChange={e => setAbreEm(e.target.value)} required /></FormField>
+            <FormField label="Abertura"><input type="date" className={comErro(v.abertura)} value={abreEm} min={aberturaMudou ? hoje : undefined} onChange={e => mudarAbertura(e.target.value)} required /></FormField>
             <MsgErro>{v.abertura}</MsgErro>
           </div>
           <div className="space-y-1">
-            <FormField label="Prazo de entrega"><input type="date" className={comErro(v.prazo)} value={prazoEm} min={maior(abreEm, janela?.startDate)} max={janela?.endDate} onChange={e => setPrazoEm(e.target.value)} required /></FormField>
+            <FormField label="Prazo de entrega"><input type="date" className={comErro(v.prazo)} value={prazoEm} min={maior(abreEm, janela?.startDate)} max={janela?.endDate} onChange={e => mudarPrazo(e.target.value)} required /></FormField>
             <MsgErro>{v.prazo}</MsgErro>
           </div>
         </div>
@@ -374,7 +401,8 @@ export const UmTercoSecretariaPage = () => {
               <p className="mt-2 text-slate-600">Crie o ciclo do trimestre, defina as semanas e o prazo, e acompanhe as entregas.</p>
               {ciclos && <Link to="/formulario-um-terco?ver=inativos" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver encerrados e inativos ({inativos.length}) →</Link>}
             </div>
-            <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
+            {/* 15/11/2026: sem ciclo na lista, o botão fica só no aviso abaixo (nunca dois "+ Novo ciclo"). */}
+            {lista.length > 0 && <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>}
           </div>
         )}
 

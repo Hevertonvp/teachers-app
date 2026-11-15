@@ -45,7 +45,9 @@ try {
     await preencher(m, { abre: '2026-12-01', prazo: '2026-12-18' });
     const semanasVazias = [];
     for (let i = 1; i <= 4; i++) semanasVazias.push(await m.getByLabel(`Semana ${i}: início`).inputValue(), await m.getByLabel(`Semana ${i}: fim`).inputValue());
-    r(`1-${nome}`, `${nome}: sem Ano/Trimestre/Título; abertura e prazo só data; 4 semanas EM BRANCO mesmo depois de escolher abertura e prazo (sem divisão automática)`, 'ano/tri/título/redividir 0; date,date; 8 campos vazios', `${JSON.stringify(campos)}; ${tipos}; vazios ${semanasVazias.filter(x => !x).length}`, Object.values(campos).every(n => n === 0) && tipos.every(t => t === 'date') && semanasVazias.every(x => !x));
+    // MUDOU em 15/11/2026 (pedido do usuário): as semanas vêm SUGERIDAS dividindo abertura→prazo (01–18/12 = 18 dias → 5,5,4,4).
+    const sugeridas = ['2026-12-01', '2026-12-05', '2026-12-06', '2026-12-10', '2026-12-11', '2026-12-14', '2026-12-15', '2026-12-18'];
+    r(`1-${nome}`, `${nome}: sem Ano/Trimestre/Título; abertura e prazo só data; 4 semanas SUGERIDAS dividindo abertura→prazo (editáveis)`, `ano/tri/título/redividir 0; date,date; ${sugeridas.join(',')}`, `${JSON.stringify(campos)}; ${tipos}; ${semanasVazias.join(',')}`, Object.values(campos).every(n => n === 0) && tipos.every(t => t === 'date') && JSON.stringify(semanasVazias) === JSON.stringify(sugeridas));
 
     // abertura no passado
     await preencher(m, { abre: ontemSp, prazo: '2026-12-18' });

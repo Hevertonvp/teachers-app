@@ -117,7 +117,10 @@ try {
   const vincDb = await prisma.professorTurmaDisciplina.findMany({ where: { status: 'ATIVO', professorId: { in: profApi.map(p => p.id) } }, include: { professor: true } });
   const chavesV = new Set(vinc.linhas.map(l => [vinc.v(l, 'Professor'), vinc.v(l, 'Escola'), vinc.v(l, 'Turma'), vinc.v(l, 'Disciplina')].join('|')));
   r('C1', 'Professores: 1 linha por professor; Vínculos = vínculos ATIVOS do banco, sem duplicar', `${profApi.length} professores; ${vincDb.length} vínculos`, `${prof.linhas.length} professores (${new Set(prof.linhas.map(l => prof.v(l, 'E-mail'))).size} e-mails únicos); ${vinc.linhas.length} vínculos (${chavesV.size} únicos)`, prof.linhas.length === profApi.length && vinc.linhas.length === vincDb.length && chavesV.size === vincDb.length, '43-professores.xlsx');
-  const porProf = contar(vincDb, v => v.professor.nome);
+  // 15/11/2026: escolhe o professor por id e só entre nomes ÚNICOS (o banco local tem vários "Professor Teste
+  // Único" com o mesmo nome; a planilha identifica por nome, então nome repetido somava linhas de pessoas diferentes).
+  const nomesRepetidos = new Set(Object.entries(contar(profApi, p => p.nome)).filter(([, n]) => n > 1).map(([nome]) => nome));
+  const porProf = contar(vincDb.filter(v => !nomesRepetidos.has(v.professor.nome)), v => v.professor.nome);
   const multi = Object.entries(porProf).sort((a, b) => b[1] - a[1])[0];
   const multiXl = vinc.linhas.filter(l => vinc.v(l, 'Professor') === multi?.[0]).length;
   const multiCol = prof.linhas.find(l => prof.v(l, 'Nome') === multi?.[0]);
