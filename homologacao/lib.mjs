@@ -68,3 +68,18 @@ export async function abrirCartao(page, regex) {
   await page.locator('h2.text-xl', { hasText: regex }).first().locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByRole('button').click();
   await page.waitForLoadState('networkidle'); await page.waitForTimeout(800);
 }
+
+// Primeiro passo do cadastro de Professor (por CARGO, desde 12–13/11/2026): e-mail, nome e Cargo 1 com
+// uma escola e uma disciplina. Depois de "Próximo →" abre o assistente de turmas e disciplinas.
+export async function preencherCadastroProfessor(modal, { email, nome, escola, disciplina }) {
+  const escolher = async (sel, texto) => {
+    const v = await sel.evaluate((s, t) => [...s.options].find(o => o.text.trim() === t)?.value, texto);
+    if (!v) throw new Error(`Opção "${texto}" não encontrada`);
+    await sel.selectOption(v);
+  };
+  await modal.locator('input[type=email]').fill(email);
+  await modal.locator('input:not([type=email]):not([type=date])').first().fill(nome);
+  await escolher(modal.getByLabel('Escola 1').first(), escola);
+  await escolher(modal.getByLabel('Disciplina 1').first(), disciplina);
+  await modal.getByRole('button', { name: 'Próximo →' }).click();
+}
