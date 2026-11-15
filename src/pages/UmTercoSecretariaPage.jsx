@@ -374,7 +374,8 @@ export const UmTercoSecretariaPage = () => {
               <p className="mt-2 text-slate-600">Crie o ciclo do trimestre, defina as semanas e o prazo, e acompanhe as entregas.</p>
               {ciclos && <Link to="/formulario-um-terco?ver=inativos" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver encerrados e inativos ({inativos.length}) →</Link>}
             </div>
-            <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>
+            {/* 15/11/2026: sem ciclo na lista, o botão fica só no aviso abaixo (nunca dois "+ Novo ciclo"). */}
+            {lista.length > 0 && <Button onClick={() => setFormAberto('novo')}>+ Novo ciclo</Button>}
           </div>
         )}
 

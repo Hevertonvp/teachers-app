@@ -221,7 +221,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
         ? await criarCargo(professor.id, v.dados)
         : await alterarCargo(professor.id, editando.id, { ...v.dados, baseUpdatedAt: editando.base, confirmarSaida });
       setCargos(lista); setEditando(null); setErros({ partes: {} }); setSaidasAlterar(null);
-      setMensagem(editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado. A mudança vale a partir do próximo Formulário 1/3 que abrir.');
+      setMensagem(editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado.');
       onAlterado?.();
     } catch (e) { setErro(e.message); } finally { setSalvando(false); }
   };
@@ -239,9 +239,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
     setSalvando(true); setErro(''); setMensagem('');
     try {
       setCargos(await encerrarCargo(professor.id, encerrando.cargo.id, encerrando.dataFim, encerrando.saidas.length > 0));
-      setMensagem(encerrando.saidas.length > 0
-        ? `Cargo encerrado. ${professor.nome} saiu de: ${encerrando.saidas.map(s => s.escolaNome).join(', ')}.`
-        : 'Cargo encerrado. Ele fica guardado no histórico e deixa de gerar Formulário 1/3.');
+      setMensagem('Cargo encerrado.');
       setEncerrando(null);
       if (verEncerrados) setEncerrados((await listarCargos(professor.id, { incluirEncerrados: true })).filter(c => c.status === 'encerrado'));
       onAlterado?.();
@@ -271,7 +269,6 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
             {cargos.map(cargo => (editando?.id === cargo.id ? (
               <div key={cargo.id} className="space-y-2">
                 <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => { setSaidasAlterar(null); setEditando(prev => ({ ...prev, rascunho: r })); }} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
-                <p className="text-xs text-slate-500">A mudança vale a partir do próximo Formulário 1/3 que abrir. O que já está aberto continua como estava. Escola incluída no cargo: o professor entra nela na hora; escola tirada: ele sai dela.</p>
                 {saidasAlterar ? (
                   <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3" role="alert">
                     <AvisoSaidas nome={professor.nome} saidas={saidasAlterar.lista} />
@@ -304,7 +301,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                 <ComposicaoCargo composicao={cargo.composicao} />
                 {encerrando?.cargo.id === cargo.id && (
                   <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                    <p className="text-sm text-amber-900">Encerrar o <strong>{cargo.rotulo}</strong>? Ele não é apagado: fica no histórico e deixa de gerar Formulário 1/3. O que o professor já escreveu fica guardado.</p>
+                    <p className="text-sm text-amber-900">Encerrar o <strong>{cargo.rotulo}</strong>?</p>
                     {!encerrando.saidas && <LoadingBlock text="Conferindo escolas e turmas..." className="py-2" />}
                     {encerrando.saidas?.length > 0 && (
                       <div className="rounded-lg border-2 border-red-200 bg-red-50 p-3" role="alert">
