@@ -100,7 +100,9 @@ export const NotificacoesBell = () => {
 
       <div
         role="menu"
-        className={`absolute right-0 z-50 mt-1 w-80 max-w-[90vw] origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg transition duration-150 ease-out ${
+        /* 16/11/2026: no celular o sino fica no meio da barra e a caixa (presa à direita dele) saía pela esquerda
+           da tela; abaixo de sm ela ocupa a largura da tela com margem. */
+        className={`fixed inset-x-4 top-16 z-50 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-1 sm:w-80 origin-top-right rounded-xl border border-slate-200 bg-white shadow-lg transition duration-150 ease-out ${
           open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
         }`}
       >

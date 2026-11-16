@@ -40,6 +40,8 @@ export const UmTercoPreenchimentoPage = () => {
   const [etapa, setEtapa] = useState(0);
   const [estado, setEstado] = useState('idle');
   const [mensagemErro, setMensagemErro] = useState('');
+  // 16/11/2026: semanas vazias ao concluir viram atalhos ("Falta preencher: Semana 1") — some ao preencher.
+  const [faltam, setFaltam] = useState([]);
   const [aviso, setAviso] = useState('');
   const [conflito, setConflito] = useState(null); // detalhe atual do servidor
   const [concluindo, setConcluindo] = useState(false);
@@ -271,6 +273,9 @@ export const UmTercoPreenchimentoPage = () => {
       setMensagemErro('Conecte-se à internet para concluir. O que você escreveu foi guardado.');
       return;
     }
+    const vazias = dados.semanas.map((s, i) => ({ s, i })).filter(({ s }) => !(textosRef.current[s.id] || '').trim());
+    if (vazias.length) { setFaltam(vazias.map(({ i }) => i)); return; }
+    setFaltam([]);
     setConcluindo(true);
     const salvo = sujoRef.current ? await salvarAgora() : { ok: true };
     if (!salvo.ok) { setConcluindo(false); return; }
@@ -323,6 +328,7 @@ export const UmTercoPreenchimentoPage = () => {
   const concluida = dados.status === 'concluida';
   // Fluxo de correções: "Salvar progresso" é rascunho; só "Enviar correção" devolve à Secretaria.
   const emCorrecao = correcaoPendente(dados.correcao);
+  const faltamAgora = faltam.filter(i => dados.semanas[i] && !(textos[dados.semanas[i].id] || '').trim());
 
   return (
     <MainLayout>
@@ -332,8 +338,10 @@ export const UmTercoPreenchimentoPage = () => {
           <p className="text-sm font-semibold text-teal-700"><span data-rotulo>{dados.rotulo}</span> · {dados.ciclo.trimestre}º trimestre</p>
           <h1 className="mt-1 text-3xl font-bold text-slate-950">{tituloDaFolha(dados.composicao)}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-            <Badge variant={concluida ? 'green' : 'blue'}>{concluida ? 'Concluído' : 'Em preenchimento'}</Badge>
-            <span>Prazo: {formatarDataHora(dados.ciclo.prazoEm)}</span>
+            {/* 16/11/2026: em correção, um selo só e o prazo da correção fica no quadro abaixo (antes: "Concluído" + prazo do ciclo). */}
+            {emCorrecao
+              ? <Badge variant="yellow">Correção solicitada</Badge>
+              : <><Badge variant={concluida ? 'green' : 'blue'}>{concluida ? 'Concluído' : 'Em preenchimento'}</Badge><span>Prazo: {formatarDataHora(dados.ciclo.prazoEm)}</span></>}
           </div>
         </div>
 
@@ -352,6 +360,14 @@ export const UmTercoPreenchimentoPage = () => {
         )}
         {aviso && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">{aviso}</div>}
         {mensagemErro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{mensagemErro}</div>}
+        {faltamAgora.length > 0 && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+            <p className="font-semibold">Falta preencher:</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {faltamAgora.map(i => <Button key={i} size="sm" variant="outline" onClick={() => irParaEtapa(i)}>{dados.semanas[i].rotulo}</Button>)}
+            </div>
+          </div>
+        )}
         {conflito && (
           <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <p className="font-semibold">Este formulário foi alterado em outra aba ou dispositivo. O que você digitou foi guardado e nada foi sobrescrito.</p>
@@ -367,7 +383,7 @@ export const UmTercoPreenchimentoPage = () => {
             <span>Etapa {etapa + 1} de {total}</span>
             <SavingIndicator estado={estado} />
           </div>
-          <div className="mt-2 flex gap-1.5" role="tablist" aria-label="Etapas">
+          <div className="mt-2 flex gap-1.5" role="tablist" aria-label="Semanas">
             {dados.semanas.map((s, i) => (
               <button
                 key={s.id}
@@ -376,8 +392,8 @@ export const UmTercoPreenchimentoPage = () => {
                 aria-selected={i === etapa}
                 aria-label={s.rotulo}
                 onClick={() => irParaEtapa(i)}
-                className={`h-2.5 flex-1 rounded-full transition ${i === etapa ? 'bg-teal-600' : (textos[s.id] || '').trim() ? 'bg-teal-300' : 'bg-slate-200'}`}
-              />
+                className={`h-9 flex-1 rounded-lg text-sm font-bold transition ${i === etapa ? 'bg-teal-600 text-white' : (textos[s.id] || '').trim() ? 'bg-teal-100 text-teal-800 hover:bg-teal-200' : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-100'}`}
+              >{i + 1}</button>
             ))}
           </div>
         </div>

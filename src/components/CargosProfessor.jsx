@@ -155,21 +155,30 @@ const TurmasDaDisciplina = ({ disciplina, turmas, marcadas, ocupantes, onChange 
   if (ordenadas.length === 0) return <p className="pl-1 text-xs text-slate-500">Nenhuma turma nesta escola.</p>;
   const ocupante = (t) => ocupantes?.get(`${t.id}-${disciplina.id}`);
   const substituidas = ordenadas.filter(t => marcadas.includes(String(t.id)) && ocupante(t));
+  // 16/11/2026: turmas da Educação Infantil numa linha própria (antes vinham misturadas, ex.: "Berçário I" junto
+  // de 6M1 em Literatura, fácil de marcar por engano). Continuam disponíveis: disciplina na Infantil é opcional.
+  const infantil = ordenadas.filter(t => t.etapa === 'educacao_infantil');
+  const fundamental = ordenadas.filter(t => t.etapa !== 'educacao_infantil');
+  const chips = (lista) => lista.map(t => {
+    const marcada = marcadas.includes(String(t.id));
+    return (
+      <button key={t.id} type="button" aria-pressed={marcada} aria-label={`${disciplina.nome} — ${t.nome}`}
+        onClick={() => onChange(marcada ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)])}
+        className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
+        {marcada ? `✓ ${t.nome}` : t.nome}
+      </button>
+    );
+  });
   return (
     <div className="space-y-1 pl-1" data-disciplina={disciplina.nome}>
       <p className="text-xs font-semibold text-slate-500">Turmas de {disciplina.nome}</p>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas de ${disciplina.nome}`}>
-        {ordenadas.map(t => {
-          const marcada = marcadas.includes(String(t.id));
-          return (
-            <button key={t.id} type="button" aria-pressed={marcada} aria-label={`${disciplina.nome} — ${t.nome}`}
-              onClick={() => onChange(marcada ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)])}
-              className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
-              {marcada ? `✓ ${t.nome}` : t.nome}
-            </button>
-          );
-        })}
-      </div>
+      {fundamental.length > 0 && <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas de ${disciplina.nome}`}>{chips(fundamental)}</div>}
+      {infantil.length > 0 && (
+        <>
+          <p className="pt-1 text-xs font-semibold text-slate-500">Educação Infantil</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas da Educação Infantil de ${disciplina.nome}`}>{chips(infantil)}</div>
+        </>
+      )}
       {substituidas.map(t => <p key={t.id} className="text-xs text-amber-800">Substitui {ocupante(t)} na {t.nome}.</p>)}
     </div>
   );

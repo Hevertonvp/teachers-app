@@ -37,10 +37,12 @@ export async function criarMensagensDeCorrecao(tx: Tx, dados: {
   return criadas;
 }
 
-export async function notificarMensagensDeCorrecao(prisma: PrismaClient, remetenteId: number, criadas: { conversaId: number; destinatarioId: number }[], chave: string) {
+// `texto` (16/11/2026): título/corpo próprios do sininho (ex.: "Correção pendente no Formulário 1/3"); sem ele,
+// continua o genérico "Nova mensagem".
+export async function notificarMensagensDeCorrecao(prisma: PrismaClient, remetenteId: number, criadas: { conversaId: number; destinatarioId: number }[], chave: string, texto?: { titulo: string; corpo: string }) {
   if (criadas.length === 0) return;
-  const remetente = await prisma.pessoa.findUnique({ where: { id: remetenteId }, select: { nome: true } });
-  const { titulo, corpo } = textoNovaMensagem(remetente?.nome ?? 'a Secretaria');
+  const remetente = texto ? null : await prisma.pessoa.findUnique({ where: { id: remetenteId }, select: { nome: true } });
+  const { titulo, corpo } = texto ?? textoNovaMensagem(remetente?.nome ?? 'a Secretaria');
   await Promise.all(criadas.map((c) => criarNotificacao(prisma, {
     destinatarioId: c.destinatarioId,
     tipo: 'NOVA_MENSAGEM',

@@ -133,7 +133,8 @@ export const AvisoCorrecaoProfessor = ({ itens, reenvio = false }) => {
         <div key={chave} className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-slate-800">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">{titulo ? `Correção solicitada · ${titulo}` : 'Correção solicitada'}</p>
-            <SeloCorrecao situacao={correcao.situacao} />
+            {/* 16/11/2026 (1/3): o selo repetia o título "Correção solicitada"; fica só quando diz algo a mais. */}
+            {!(reenvio && correcao.situacao === 'solicitada') && <SeloCorrecao situacao={correcao.situacao} />}
           </div>
           <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Orientações</p>
           <p className="mt-1 whitespace-pre-line">{correcao.observacao}</p>
@@ -141,7 +142,7 @@ export const AvisoCorrecaoProfessor = ({ itens, reenvio = false }) => {
             Prazo: <strong>{formatarPrazoCorrecao(correcao.prazoAte)}</strong>
             {correcao.situacao === 'prazo_encerrado' && ' · você ainda pode fazer os ajustes e enviar.'}
           </p>
-          <p className="mt-1 text-xs text-slate-500">{reenvio ? 'Você pode alterar qualquer semana. "Salvar progresso" guarda o rascunho; quando terminar, use "Reenviar correção".' : 'Salvar guarda o rascunho. Quando terminar, use "Enviar correção".'}</p>
+          <p className="mt-1 text-xs text-slate-500">{reenvio ? 'Ao terminar, toque em "Reenviar correção" na última semana.' : 'Salvar guarda o rascunho. Quando terminar, use "Enviar correção".'}</p>
         </div>
       )))}
     </div>

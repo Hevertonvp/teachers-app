@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, LoadingBlock } from '../components/Common';
 import { MainLayout } from '../layouts/Layouts';
 import { listarMeusFormulariosUmTerco } from '../services/formularioUmTerco';
-import { formatarDataHora, STATUS_ENTREGA, STATUS_PRAZO } from '../utils/umTerco';
+import { resumoFolhaProfessor, STATUS_PRAZO } from '../utils/umTerco';
 import { tituloDaFolha, DetalheDaFolha } from '../components/ComposicaoCargo';
 
 // Lista do Professor: UM card por ciclo + CARGO (12/11/2026) — nunca por disciplina, escola ou turma.
@@ -46,14 +46,13 @@ export const UmTercoProfessorPage = () => {
 
         <div className="grid gap-4 md:grid-cols-2">
           {(itens || []).map(item => {
-            const entrega = STATUS_ENTREGA[item.status];
+            const resumo = resumoFolhaProfessor(item);
             const prazo = STATUS_PRAZO[item.ciclo.statusPrazo];
             return (
               <Card key={`${item.ciclo.id}-${item.cargoId}`} className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={entrega.variant}>{entrega.label}</Badge>
-                  {item.ciclo.statusPrazo !== 'aberto' && <Badge variant={prazo.variant}>{prazo.label}</Badge>}
-                  {item.correcaoSolicitada && <Badge variant="yellow">Correção solicitada</Badge>}
+                  <Badge variant={resumo.selo.variant}>{resumo.selo.label}</Badge>
+                  {item.ciclo.statusPrazo !== 'aberto' && !resumo.corrigindo && <Badge variant={prazo.variant}>{prazo.label}</Badge>}
                   {item.correcaoSituacao === 'recebida' && <Badge variant="blue">Correção reenviada</Badge>}
                   {item.correcaoSituacao === 'expirada' && <Badge variant="gray">Correção expirada</Badge>}
                   {!item.esperada && <Badge variant="gray">Cargo encerrado · só consulta</Badge>}
@@ -61,7 +60,7 @@ export const UmTercoProfessorPage = () => {
                 {/* 15/11/2026: o título é a escola (e as disciplinas); "Cargo 1" fica só como rótulo pequeno. */}
                 <p data-rotulo className="mt-3 text-xs font-semibold text-slate-500">{item.rotulo}</p>
                 <h2 className="mt-1 text-xl font-bold text-slate-950">{tituloDaFolha(item.composicao)}</h2>
-                <p className="mt-1 text-sm text-slate-600">{item.ciclo.trimestre}º trimestre · prazo {formatarDataHora(item.ciclo.prazoEm)}</p>
+                <p className="mt-1 text-sm text-slate-600">{item.ciclo.trimestre}º trimestre · {resumo.prazo}</p>
 
                 <div className="mt-3 flex-1">
                   <DetalheDaFolha composicao={item.composicao} />
@@ -71,7 +70,7 @@ export const UmTercoProfessorPage = () => {
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold text-slate-600">{item.semanasPreenchidas}/{item.totalSemanas} semanas</span>
                   <Button onClick={() => navigate(`/formulario-um-terco/${item.ciclo.id}/cargo/${item.cargoId}`)}>
-                    {item.correcaoSolicitada ? 'Corrigir' : item.editavelAgora ? (item.status === 'nao_iniciado' ? 'Preencher' : item.status === 'concluida' ? 'Editar' : 'Continuar') : 'Ver'}
+                    {resumo.acao}
                   </Button>
                 </div>
               </Card>

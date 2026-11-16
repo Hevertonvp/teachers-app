@@ -36,11 +36,20 @@ const separarInativos = (lista, ver) => {
 
 // MUDOU em 15/11/2026 (decisão do usuário): a lista mostra SÓ os ativos; os inativos (e os cargos e vínculos
 // encerrados) ficam na tela própria "Desativados e encerrados" (só Secretaria), lista paginada, mais recentes primeiro.
-const ListaPessoas = ({ rows, columns }) => {
+// 16/11/2026: busca por nome ou e-mail (sem acento/maiúscula), em todas as abas.
+const semAcento = (t) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const ListaPessoas = ({ rows, columns, rotulo = 'pessoas' }) => {
+  const [busca, setBusca] = useState('');
   const { visiveis } = separarInativos(rows, false);
-  return visiveis.length === 0
-    ? <Card className="py-10 text-center"><p className="font-semibold text-slate-800">Nenhum registro ativo</p></Card>
-    : <DataTable columns={columns} rows={visiveis} />;
+  if (visiveis.length === 0) return <Card className="py-10 text-center"><p className="font-semibold text-slate-800">Nenhum registro ativo</p></Card>;
+  const termo = semAcento(busca.trim());
+  const achados = termo ? visiveis.filter(p => semAcento(p.nome).includes(termo) || semAcento(p.email).includes(termo)) : visiveis;
+  return (
+    <div className="space-y-3">
+      <input className={`${inputClass} sm:max-w-sm`} type="search" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou e-mail" aria-label={`Buscar ${rotulo.toLowerCase()}`} />
+      <DataTable columns={columns} rows={achados} emptyMessage="Ninguém encontrado." />
+    </div>
+  );
 };
 
 // Tela "Desativados e encerrados" da Gestão de Pessoas (só Secretaria, 15/11/2026).
