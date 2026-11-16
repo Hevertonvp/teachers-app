@@ -36,3 +36,15 @@ export const agruparPorEscola = (turmas = []) => {
   });
   return [...mapa.values()].sort((a, b) => a.escolaNome.localeCompare(b.escolaNome));
 };
+
+// Cartão de uma folha do Professor (16/11/2026), usado na lista do 1/3 e no início: com correção pendente, o
+// selo é só "Correção solicitada" e o prazo que vale é o da correção (antes apareciam "Concluído" e o prazo do ciclo).
+export const resumoFolhaProfessor = (item) => {
+  const corrigindo = !!item.correcaoSolicitada;
+  return {
+    corrigindo,
+    selo: corrigindo ? { label: 'Correção solicitada', variant: 'yellow' } : STATUS_ENTREGA[item.status],
+    prazo: corrigindo && item.correcaoPrazoAte ? `corrigir até ${formatarDataHora(item.correcaoPrazoAte)}` : `prazo ${formatarDataHora(item.ciclo.prazoEm)}`,
+    acao: corrigindo ? 'Corrigir' : item.editavelAgora ? (item.status === 'nao_iniciado' ? 'Preencher' : item.status === 'concluida' ? 'Editar' : 'Continuar') : 'Ver',
+  };
+};

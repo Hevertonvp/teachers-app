@@ -226,6 +226,6 @@ correcoesUmTercoRouter.put('/:entregaId/respostas', async (req, res) => {
     if (error instanceof ConflitoVersaoError) throw new ConflitoVersaoError(error.message, await montarDetalhe(entregaId));
     throw error;
   }
-  await notificarMensagensDeCorrecao(prisma, actor.id, resultado.criadas, `correcao-direta-um-terco-${resultado.historicoIds[0]}`);
+  await notificarMensagensDeCorrecao(prisma, actor.id, resultado.criadas, `correcao-direta-um-terco-${resultado.historicoIds[0]}`, { titulo: 'Formulário 1/3 corrigido pela Secretaria', corpo: 'Veja o que mudou na mensagem.' });
   res.json({ ...(await montarDetalhe(entregaId)), mensagensEnviadas: resultado.criadas.length });
 });

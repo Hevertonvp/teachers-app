@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, ConfirmDialog, LoadingBlock } from './Common';
-import { listarCargos } from '../services/cargos';
+import { listarAtuacoes, listarCargos } from '../services/cargos';
 import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { criarVinculoProfessorTurmaAtuacao, encerrarVinculoProfessorTurmaAtuacao, listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 
 // Turmas do professor por DISCIPLINA DO CARGO (decisão do usuário, 15/11/2026): a disciplina não é escolhida de
 // novo — vem do cargo (escola → disciplinas). Para cada escola, uma linha por disciplina com as turmas para marcar.
@@ -14,16 +15,25 @@ export const TurmasPorDisciplina = ({ professor, escolas, turmas }) => {
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(null); // chave turma-disciplina em andamento
   const [substituir, setSubstituir] = useState(null); // { turma, disciplina, ocupante }
+  // 16/11/2026: turmas por ATUAÇÃO (Regente, Oficina do Brincar, TAE…), uma linha por atuação do cargo que tem turmas.
+  const [vinculosAtuacao, setVinculosAtuacao] = useState([]);
+  const [comTurmas, setComTurmas] = useState(new Set()); // ids das atuações que têm turmas (temTurmas da API)
 
   const carregarVinculos = useCallback(async () => {
-    setVinculos(await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id }));
+    const [d, a] = await Promise.all([
+      listarVinculosProfessorTurmaDisciplina({ professorId: professor.id }),
+      listarVinculosProfessorTurmaAtuacao({ professorId: professor.id }).catch(() => []),
+    ]);
+    setVinculos(d);
+    setVinculosAtuacao(a);
   }, [professor.id]);
 
   useEffect(() => {
     let ativo = true;
     (async () => {
       try {
-        const [c] = await Promise.all([listarCargos(professor.id), carregarVinculos()]);
+        const [c, , catalogo] = await Promise.all([listarCargos(professor.id), carregarVinculos(), listarAtuacoes().catch(() => [])]);
+        if (ativo) setComTurmas(new Set(catalogo.filter(x => x.temTurmas !== false).map(x => x.id)));
         if (ativo) setCargos(c);
       } catch (e) { if (ativo) { setErro(e.message); setCargos([]); } }
     })();
@@ -44,6 +54,27 @@ export const TurmasPorDisciplina = ({ professor, escolas, turmas }) => {
       }
     }
     return [...mapa.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  };
+  const ativosAtuacao = vinculosAtuacao.filter(v => v.status === 'ATIVO');
+  const atuacoesDaEscola = (escolaId) => {
+    const mapa = new Map();
+    for (const cargo of cargos.filter(c => c.status !== 'encerrado')) {
+      for (const parte of cargo.composicao ?? []) {
+        if (parte.escolaId !== escolaId) continue;
+        for (const a of parte.atuacoes ?? []) if (comTurmas.has(a.id)) mapa.set(a.id, a.nome);
+      }
+    }
+    return [...mapa.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  };
+  const alternarAtuacao = async (turma, atuacao) => {
+    setErro('');
+    setSalvando(`${turma.id}-a${atuacao.id}`);
+    const atual = ativosAtuacao.find(v => v.turmaId === turma.id && v.atuacaoId === atuacao.id);
+    try {
+      if (atual) await encerrarVinculoProfessorTurmaAtuacao(atual.id);
+      else await criarVinculoProfessorTurmaAtuacao({ turmaId: turma.id, professorId: professor.id, atuacaoId: atuacao.id });
+      await carregarVinculos();
+    } catch (e) { setErro(e.message); } finally { setSalvando(null); }
   };
 
   const criar = async (turma, disciplina) => {
@@ -74,22 +105,24 @@ export const TurmasPorDisciplina = ({ professor, escolas, turmas }) => {
       {erro && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{erro}</div>}
       {escolas.map(escola => {
         const disciplinas = disciplinasDaEscola(escola.id);
+        const atuacoesComTurma = atuacoesDaEscola(escola.id);
+        const linhas = [...disciplinas.map(d => ({ ...d, tipo: 'd' })), ...atuacoesComTurma.map(a => ({ ...a, tipo: 'a' }))];
         const turmasDaEscola = turmas.filter(t => t.status === 'ativa' && t.escolaId === escola.id).sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { numeric: true }));
         const foraDoCargo = ativos.filter(v => v.escolaId === escola.id && !disciplinas.some(d => d.id === v.disciplinaId));
         return (
           <section key={escola.id} className="space-y-3" data-escola={escola.nome}>
             {escolas.length > 1 && <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">{escola.nome}</p>}
-            {disciplinas.length === 0 ? (
+            {linhas.length === 0 ? (
               <p className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">Sem disciplina no cargo nesta escola.</p>
             ) : turmasDaEscola.length === 0 ? (
               <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Esta escola não tem turmas cadastradas.</p>
-            ) : disciplinas.map(disciplina => (
-              <div key={disciplina.id} className="rounded-lg border border-slate-200 p-3" data-disciplina={disciplina.nome}>
+            ) : linhas.map(disciplina => (
+              <div key={`${disciplina.tipo}${disciplina.id}`} className="rounded-lg border border-slate-200 p-3" data-disciplina={disciplina.nome}>
                 <p className="mb-2 text-sm font-semibold text-slate-900">{disciplina.nome}</p>
                 <div className="flex flex-wrap gap-2">
                   {turmasDaEscola.map(turma => {
-                    const marcada = !!vinculoDe(turma.id, disciplina.id);
-                    const ocupado = salvando === `${turma.id}-${disciplina.id}`;
+                    const marcada = disciplina.tipo === 'a' ? ativosAtuacao.some(v => v.turmaId === turma.id && v.atuacaoId === disciplina.id) : !!vinculoDe(turma.id, disciplina.id);
+                    const ocupado = salvando === (disciplina.tipo === 'a' ? `${turma.id}-a${disciplina.id}` : `${turma.id}-${disciplina.id}`);
                     return (
                       <button
                         key={turma.id}
@@ -97,7 +130,7 @@ export const TurmasPorDisciplina = ({ professor, escolas, turmas }) => {
                         aria-pressed={marcada}
                         aria-label={`${disciplina.nome} — ${turma.nome}`}
                         disabled={!!salvando}
-                        onClick={() => alternar(turma, disciplina)}
+                        onClick={() => (disciplina.tipo === 'a' ? alternarAtuacao(turma, disciplina) : alternar(turma, disciplina))}
                         className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition disabled:opacity-60 ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}
                       >
                         {ocupado ? '…' : marcada ? `✓ ${turma.nome}` : turma.nome}

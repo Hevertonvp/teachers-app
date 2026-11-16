@@ -9,7 +9,7 @@ import {
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
 import { calcularFolhas, chaveDeCargos, corteDoCiclo, DISCIPLINAS_FORA_DO_UM_TERCO, limiteDeCadastroDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
-import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
+import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, formatarPrazo, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 import { criarNotificacao } from '../../lib/notificacoes.js';
 import { textoNovaMensagem } from '../../domain/notificacoes.js';
@@ -137,8 +137,10 @@ async function exigirJanelaLivre(tx: Db, janela: { abreEm: Date; prazoEm: Date }
     const dele = escolasDoCiclo(outro);
     const comuns = minhas && dele ? outro.escolas.filter((e) => minhas.includes(e.escolaId)).map((e) => e.escola.nome) : null;
     if (comuns && comuns.length === 0) continue;
-    const motivo = comuns ? `as duas atendem ${comuns.slice(0, 3).join(', ')}${comuns.length > 3 ? '…' : ''}` : 'um deles atende todas as escolas';
-    throw new ConflictError(`A janela de preenchimento se sobrepõe ao "${outro.titulo}" (${outro.trimestre}º trimestre, ${formatarDataHoraSp(outro.abreEm)} a ${formatarDataHoraSp(outro.prazoEm)}) e ${motivo}. Dois Formulários 1/3 da mesma escola não podem ficar abertos ao mesmo tempo.`);
+    // 16/11/2026: mensagem curta (sem explicar a regra).
+    const quem = comuns ? `${comuns.slice(0, 3).join(', ')}${comuns.length > 3 ? '…' : ''}` : dele ? outro.escolas.slice(0, 3).map((e) => e.escola.nome).join(', ') : 'todas as escolas';
+    const dia = (d: Date) => formatarDataHoraSp(d).slice(0, 5);
+    throw new ConflictError(`As datas se sobrepõem ao Formulário 1/3 de ${dia(outro.abreEm)} a ${dia(outro.prazoEm)} (${quem}).`);
   }
 }
 
@@ -623,7 +625,7 @@ formularioUmTercoRouter.post('/entregas/:entregaId/devolver', async (req, res) =
     const comConversa = msgs[0] ? await tx.correcaoEntregaUmTerco.update({ where: { id: nova.id }, data: { conversaId: msgs[0].conversaId } }) : nova;
     return { correcao: comConversa, criadas: msgs };
   });
-  await notificarMensagensDeCorrecao(prisma, actor.id, criadas, `correcao-um-terco-${correcao.id}`);
+  await notificarMensagensDeCorrecao(prisma, actor.id, criadas, `correcao-um-terco-${correcao.id}`, { titulo: 'Correção pendente no Formulário 1/3', corpo: `Prazo: ${formatarPrazo(correcao.prazoAte)}.` });
   res.status(201).json({ ...formatarCorrecaoUmTerco(correcao), mensagensEnviadas: criadas.length });
 });
 

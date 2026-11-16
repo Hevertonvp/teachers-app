@@ -18,6 +18,9 @@ const carregarModelosDesativados = (pagina, porPagina) => listarDesativados('mod
 import { getEscolasAplicaveis, RECURSOS } from '../utils/aplicabilidade';
 import { getTrimestreAtual, trimestres } from '../utils/trimestres';
 
+// Disciplinas que não recebem Modelo PDI no "Criar todos os modelos" (decisão do usuário, 15/11/2026).
+const DISCIPLINAS_SEM_PDI = ['Informática'];
+
 const SOLICITADO_POR_OPTIONS = [
   { value: 'secretaria', label: 'Secretaria' },
   { value: 'gestor', label: 'Gestor' },
@@ -105,6 +108,8 @@ export const FormularioPdiPage = () => {
   const [modeloEditandoId, setModeloEditandoId] = useState(null);
   const [novoModeloForm, setNovoModeloForm] = useState(null);
   const [salvandoModelo, setSalvandoModelo] = useState(false);
+  // 16/11/2026: "Criar todos os modelos" — um modelo para cada disciplina que ainda não tem, de uma vez.
+  const [criandoTodos, setCriandoTodos] = useState(null); // { carregarPerguntasPadrao, progresso, falhas } | null
   const [perguntaForm, setPerguntaForm] = useState(null);
   const [salvandoPergunta, setSalvandoPergunta] = useState(false);
   const [inativandoPergunta, setInativandoPergunta] = useState(null);
@@ -159,6 +164,9 @@ export const FormularioPdiPage = () => {
     .sort((a, b) => new Date(b.updatedAt ?? b.createdAt) - new Date(a.updatedAt ?? a.createdAt));
   const disciplinasComModeloAtivo = new Set(modelosAtivos.map(modelo => modelo.disciplinaId));
   const disciplinasDisponiveis = disciplinasReais.filter(disciplina => !disciplinasComModeloAtivo.has(disciplina.id));
+  // Informática fica sem PDI por decisão do usuário (15/11/2026): o lote nunca cria esse modelo.
+  const paraCriarTodos = disciplinasDisponiveis.filter(d => !DISCIPLINAS_SEM_PDI.includes(d.nome)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const foraDoLote = disciplinasDisponiveis.filter(d => DISCIPLINAS_SEM_PDI.includes(d.nome));
   const modeloSelecionado = pdiModelosReais.find(modelo => modelo.id === modeloEditandoId) || null;
   const perguntasDoModeloCompletas = modeloSelecionado ? [...(modeloSelecionado.perguntas || [])].sort((left, right) => Number(left.ordem) - Number(right.ordem)) : [];
   // Só afeta a EXIBIÇÃO: o modelo continua guardando as perguntas de todos os trimestres (a
@@ -248,6 +256,21 @@ export const FormularioPdiPage = () => {
     setModeloEditandoId(resultado.modelo.id);
     setNovoModeloForm(null);
     setMessage('Modelo criado.');
+  };
+
+  const criarTodosOsModelos = async () => {
+    const lista = paraCriarTodos;
+    setCriandoTodos(prev => ({ ...prev, lista, progresso: 0 }));
+    const falhas = [];
+    let criados = 0;
+    for (let i = 0; i < lista.length; i++) {
+      if (i > 0) setCriandoTodos(prev => ({ ...prev, progresso: i }));
+      const r = await createPdiModeloReal({ nome: `PDI - ${lista[i].nome}`, disciplinaId: lista[i].id, carregarPerguntasPadrao: criandoTodos.carregarPerguntasPadrao });
+      if (r.ok) criados += 1; else falhas.push(`${lista[i].nome}: ${r.error}`);
+    }
+    if (falhas.length) setCriandoTodos(prev => ({ ...prev, progresso: null, falhas }));
+    else setCriandoTodos(null);
+    setMessage(`${criados} ${criados === 1 ? 'modelo criado' : 'modelos criados'}.`);
   };
 
   const salvarPergunta = async (event) => {
@@ -624,6 +647,7 @@ export const FormularioPdiPage = () => {
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
                     <Link to="/pdi/formulario?ver=desativados&tipo=modelos" className="self-center text-sm font-semibold text-teal-700 hover:underline">Ver modelos desativados ({modelosInativos.length}) →</Link>
+                    {paraCriarTodos.length > 1 && <Button size="sm" variant="outline" onClick={() => setCriandoTodos({ carregarPerguntasPadrao: true, progresso: null, falhas: [] })}>Criar todos os modelos</Button>}
                     {pdiModelosReais.length > 0 && <Button size="sm" onClick={abrirNovoModelo} disabled={disciplinasDisponiveis.length === 0}>+ Novo modelo</Button>}
                   </div>
                 </div>
@@ -631,8 +655,11 @@ export const FormularioPdiPage = () => {
 
                 {pdiModelosReais.length === 0 ? (
                   <div className="mt-4">
-                    <EmptyState title="Nenhum modelo PDI configurado" description="Crie o primeiro modelo escolhendo uma disciplina.">
-                      <Button size="sm" onClick={abrirNovoModelo}>+ Novo modelo</Button>
+                    <EmptyState title="Nenhum modelo PDI configurado" description="Crie um modelo por disciplina, ou todos de uma vez.">
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {paraCriarTodos.length > 1 && <Button size="sm" onClick={() => setCriandoTodos({ carregarPerguntasPadrao: true, progresso: null, falhas: [] })}>Criar todos os modelos</Button>}
+                        <Button size="sm" variant={paraCriarTodos.length > 1 ? 'outline' : 'primary'} onClick={abrirNovoModelo}>+ Novo modelo</Button>
+                      </div>
                     </EmptyState>
                   </div>
                 ) : modelosAtivos.length === 0 ? (
@@ -753,6 +780,41 @@ export const FormularioPdiPage = () => {
               </p>
               <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setNovoModeloForm(null)} disabled={salvandoModelo}>Cancelar</Button><Button type="submit" loading={salvandoModelo}>{salvandoModelo ? 'Criando...' : 'Criar modelo'}</Button></div>
             </form>
+          </Modal>
+        )}
+
+        {criandoTodos && (
+          <Modal title="Criar todos os modelos" onClose={() => criandoTodos.progresso === null && setCriandoTodos(null)}>
+            <div className="space-y-4">
+              {criandoTodos.falhas.length > 0 ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  <p className="font-semibold">Não foi possível criar:</p>
+                  <ul className="mt-1 list-disc pl-5">{criandoTodos.falhas.map(f => <li key={f}>{f}</li>)}</ul>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-700">Um modelo para cada disciplina sem modelo ({(criandoTodos.lista ?? paraCriarTodos).length}):</p>
+                  <div className="flex flex-wrap gap-2" data-lote-disciplinas>
+                    {(criandoTodos.lista ?? paraCriarTodos).map((d, i) => (
+                      <span key={d.id} className={`rounded-full border px-3 py-1 text-sm font-semibold ${criandoTodos.progresso !== null && i < criandoTodos.progresso ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>{d.nome}</span>
+                    ))}
+                  </div>
+                  {foraDoLote.length > 0 && <p className="text-xs text-slate-500">Fica de fora: {foraDoLote.map(d => d.nome).join(', ')}.</p>}
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input type="checkbox" checked={criandoTodos.carregarPerguntasPadrao} disabled={criandoTodos.progresso !== null} onChange={event => setCriandoTodos(prev => ({ ...prev, carregarPerguntasPadrao: event.target.checked }))} />
+                    Carregar perguntas padrão
+                  </label>
+                </>
+              )}
+              <div className="flex justify-end gap-3">
+                {criandoTodos.falhas.length > 0
+                  ? <Button onClick={() => setCriandoTodos(null)}>Fechar</Button>
+                  : <>
+                      <Button type="button" variant="secondary" onClick={() => setCriandoTodos(null)} disabled={criandoTodos.progresso !== null}>Cancelar</Button>
+                      <Button onClick={criarTodosOsModelos} loading={criandoTodos.progresso !== null}>{criandoTodos.progresso !== null ? `Criando ${criandoTodos.progresso + 1} de ${(criandoTodos.lista ?? paraCriarTodos).length}...` : `Criar ${paraCriarTodos.length} modelos`}</Button>
+                    </>}
+              </div>
+            </div>
           </Modal>
         )}
 

@@ -179,6 +179,7 @@ model Turma {
 
   alunos             AlunoPdi[]
   vinculosProfessor  ProfessorTurmaDisciplina[]
+  vinculosAtuacao    ProfessorTurmaAtuacao[]
   vinculosAuxiliar   AuxiliarTurma[]
   fichasPdi          FichaPdi[]
   anamneses          Anamnese[]
@@ -230,6 +231,7 @@ model Pessoa {
   vinculosEscolares         VinculoEscolar[]
   vinculosComoProfessor     ProfessorTurmaDisciplina[] @relation("ProfessorVinculo")
   vinculosComoAuxiliar      AuxiliarTurma[]            @relation("AuxiliarVinculo")
+  turmasPorAtuacao          ProfessorTurmaAtuacao[]    @relation("ProfessorTurmaAtuacao")
   eventos                   PessoaEvento[]             @relation("PessoaEventoPessoa")
   fichasComoResponsavel     FichaPdi[]                 @relation("FichaProfessorResponsavel")
   blocosPadraoComoProfessor BlocoRespostasPadraoPdi[]  @relation("BlocoPadraoProfessor")
@@ -1861,5 +1863,33 @@ model AtuacaoPedagogica {
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
 
+  vinculosTurma ProfessorTurmaAtuacao[]
+
   @@map("atuacoes_pedagogicas")
+}
+
+// Professor ligado a uma TURMA por uma atuação pedagógica, sem disciplina (decisão do usuário, 16/11/2026):
+// "Regente da 1M1", "Oficina do Brincar na Pré I A". Atuações sem turma (Biblioteca, Professor de Intervenção,
+// Eventual) são recusadas pela API (lista fixa em src/domain/cargos.ts). Não substitui ninguém: a mesma turma
+// pode ter mais de um professor na mesma atuação. No máximo um vínculo ATIVO por (professor, turma, atuação)
+// — índice único parcial na migration. Não entra no 1/3 (que é por cargo) nem no PDI.
+model ProfessorTurmaAtuacao {
+  id          Int               @id @default(autoincrement())
+  turmaId     Int
+  turma       Turma             @relation(fields: [turmaId], references: [id], onDelete: Restrict)
+  professorId Int
+  professor   Pessoa            @relation("ProfessorTurmaAtuacao", fields: [professorId], references: [id], onDelete: Restrict)
+  atuacaoId   Int
+  atuacao     AtuacaoPedagogica @relation(fields: [atuacaoId], references: [id], onDelete: Restrict)
+
+  status     StatusVinculo @default(ATIVO)
+  dataInicio DateTime      @db.Date
+  dataFim    DateTime?     @db.Date
+
+  createdAt DateTime @default(now())
+  createdBy String?  @db.VarChar(200)
+
+  @@index([turmaId])
+  @@index([professorId])
+  @@map("professor_turma_atuacoes")
 }

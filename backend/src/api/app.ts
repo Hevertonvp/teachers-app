@@ -15,6 +15,7 @@ import { cargosRouter } from './routes/cargos.js';
 import { atuacoesPedagogicasRouter } from './routes/atuacoesPedagogicas.js';
 import { professorTurmaDisciplinaRouter } from './routes/professorTurmaDisciplina.js';
 import { auxiliarTurmaRouter } from './routes/auxiliarTurma.js';
+import { professorTurmaAtuacaoRouter } from './routes/professorTurmaAtuacao.js';
 import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
 import { pdiAlunosRouter } from './routes/pdiAlunos.js';
 import { pdiModelosRouter, pdiPerguntasRouter } from './routes/pdiModelos.js';
@@ -93,6 +94,7 @@ export function createApp() {
   app.use('/api/atuacoes-pedagogicas', atuacoesPedagogicasRouter);
   app.use('/api/professor-turma-disciplina', professorTurmaDisciplinaRouter);
   app.use('/api/auxiliar-turma', auxiliarTurmaRouter);
+  app.use('/api/professor-turma-atuacao', professorTurmaAtuacaoRouter);
   app.use('/api/vinculos-escolares', vinculosEscolaresRouter);
   // O pedido sugeria /api/pdi/alunos; adaptado ao padrão flat já usado pelo resto da API
   // (professor-turma-disciplina, auxiliar-turma, vinculos-escolares — nunca rotas aninhadas).

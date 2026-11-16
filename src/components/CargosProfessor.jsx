@@ -3,6 +3,7 @@ import { Badge, Button, LoadingBlock, Modal } from './Common';
 import { ComposicaoCargo } from './ComposicaoCargo';
 import { alterarCargo, criarCargo, encerrarCargo, listarCargos, previaSaidasCargo } from '../services/cargos';
 import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { criarVinculoProfessorTurmaAtuacao, encerrarVinculoProfessorTurmaAtuacao, listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 import { inputClass } from '../utils/display';
 import { hojeSpServidor } from '../utils/horaServidor';
 
@@ -24,11 +25,13 @@ export const novoRascunhoCargo = (escolaId = '') => ({
 });
 
 // `vinculos` = turmas ATIVAS do professor (15/11/2026): cada disciplina do cargo já vem com as turmas que ele tem.
-const rascunhoDoCargo = (cargo, vinculos = []) => ({
+// `vinculosAtuacao` (16/11/2026): idem para as atuações com turma (ex.: Professor Regente).
+const rascunhoDoCargo = (cargo, vinculos = [], vinculosAtuacao = []) => ({
   chave: novaChave(), dataInicio: cargo.dataInicio,
   partes: cargo.composicao.map(p => ({
     chave: novaChave(), escolaId: String(p.escolaId), disciplinaIds: p.disciplinas.map(d => String(d.id)), atuacaoIds: (p.atuacoes ?? []).map(a => String(a.id)),
     turmas: Object.fromEntries(p.disciplinas.map(d => [String(d.id), vinculos.filter(v => v.escolaId === p.escolaId && v.disciplinaId === d.id).map(v => String(v.turmaId))])),
+    turmasAtuacao: Object.fromEntries((p.atuacoes ?? []).map(a => [String(a.id), vinculosAtuacao.filter(v => v.escolaId === p.escolaId && v.atuacaoId === a.id).map(v => String(v.turmaId))])),
   })),
 });
 
@@ -47,8 +50,10 @@ export function validarRascunhoCargo(r) {
   const ok = !erros.inicio && !erros.geral && Object.keys(erros.partes).length === 0;
   // Turmas marcadas no cadastro (15/11/2026): pares turma+disciplina, só das disciplinas que ficaram no cargo.
   const vinculos = r.partes.flatMap(p => preenchidas(p.disciplinaIds).flatMap(d => ((p.turmas ?? {})[d] ?? []).map(t => ({ turmaId: Number(t), disciplinaId: Number(d) }))));
+  // 16/11/2026: turmas por atuação (só das atuações que ficaram no cargo).
+  const vinculosAtuacao = r.partes.flatMap(p => preenchidas(p.atuacaoIds).flatMap(a => ((p.turmasAtuacao ?? {})[a] ?? []).map(t => ({ turmaId: Number(t), atuacaoId: Number(a) }))));
   return {
-    ok, erros, vinculos,
+    ok, erros, vinculos, vinculosAtuacao,
     dados: { dataInicio: r.dataInicio, composicao: r.partes.map(p => ({ escolaId: Number(p.escolaId), disciplinaIds: preenchidas(p.disciplinaIds).map(Number), atuacaoIds: preenchidas(p.atuacaoIds).map(Number) })) },
   };
 }
@@ -91,7 +96,7 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
             <div className="flex items-end gap-2">
               <label className="min-w-0 flex-1 text-sm font-semibold text-slate-700">
                 Escola
-                <select className={`${inputClass} mt-1`} value={parte.escolaId} onChange={e => mudarParte(parte.chave, { escolaId: e.target.value, turmas: {} })} aria-label={`Escola ${i + 1}`}>
+                <select className={`${inputClass} mt-1`} value={parte.escolaId} onChange={e => mudarParte(parte.chave, { escolaId: e.target.value, turmas: {}, turmasAtuacao: {} })} aria-label={`Escola ${i + 1}`}>
                   <option value="">Selecione a escola</option>
                   {escolas.filter(e => !escolasUsadas(parte.chave).has(String(e.id))).map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
                 </select>
@@ -127,15 +132,31 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
             </div>
             <div className="space-y-2 sm:pl-3">
               <p className="text-sm font-semibold text-slate-700">Atuações pedagógicas</p>
-              {atuacoesDaParte.map((a, j) => (
-                <div key={j} className="flex items-center gap-2">
-                  <select className={`${inputClass} min-w-0 flex-1`} value={a} aria-label={`Atuação ${j + 1}`} onChange={e => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.map((x, k) => (k === j ? e.target.value : x)) })}>
-                    <option value="">Selecione a atuação</option>
-                    {opcoesAtuacao(j).map(x => <option key={x.id} value={x.id}>{x.nome}{x.status === 'inativa' ? ' (inativa)' : ''}</option>)}
-                  </select>
-                  <button type="button" className={botaoRemover} aria-label="Remover atuação" title="Remover atuação" onClick={() => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.filter((_, k) => k !== j) })}>×</button>
-                </div>
-              ))}
+              {atuacoesDaParte.map((a, j) => {
+                const atuacao = atuacoes.find(x => String(x.id) === a);
+                return (
+                  <div key={j} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <select className={`${inputClass} min-w-0 flex-1`} value={a} aria-label={`Atuação ${j + 1}`} onChange={e => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.map((x, k) => (k === j ? e.target.value : x)) })}>
+                        <option value="">Selecione a atuação</option>
+                        {opcoesAtuacao(j).map(x => <option key={x.id} value={x.id}>{x.nome}{x.status === 'inativa' ? ' (inativa)' : ''}</option>)}
+                      </select>
+                      <button type="button" className={botaoRemover} aria-label="Remover atuação" title="Remover atuação" onClick={() => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.filter((_, k) => k !== j) })}>×</button>
+                    </div>
+                    {/* 16/11/2026: atuação com turmas (Regente, Oficina do Brincar, TAE…) marca as turmas aqui, sem disciplina.
+                        Biblioteca, Professor de Intervenção e Eventual não mostram turmas (temTurmas=false, vem da API). */}
+                    {turmas && parte.escolaId && atuacao && atuacao.temTurmas !== false && (
+                      <TurmasDaDisciplina
+                        disciplina={{ id: `a${atuacao.id}`, nome: atuacao.nome }}
+                        turmas={turmas.filter(t => t.status === 'ativa' && String(t.escolaId) === parte.escolaId)}
+                        marcadas={(parte.turmasAtuacao ?? {})[a] ?? []}
+                        ocupantes={null}
+                        onChange={lista => mudarParte(parte.chave, { turmasAtuacao: { ...(parte.turmasAtuacao ?? {}), [a]: lista } })}
+                      />
+                    )}
+                  </div>
+                );
+              })}
               {!atuacaoVazia && atuacoesDaParte.length < ativas.length && <button type="button" className={botaoTexto} onClick={() => mudarParte(parte.chave, { atuacaoIds: [...atuacoesDaParte, ''] })}>+ Adicionar atuação</button>}
             </div>
             {erros.partes?.[parte.chave] && <p className="text-xs font-semibold text-red-700">{erros.partes[parte.chave]}</p>}
@@ -155,21 +176,30 @@ const TurmasDaDisciplina = ({ disciplina, turmas, marcadas, ocupantes, onChange 
   if (ordenadas.length === 0) return <p className="pl-1 text-xs text-slate-500">Nenhuma turma nesta escola.</p>;
   const ocupante = (t) => ocupantes?.get(`${t.id}-${disciplina.id}`);
   const substituidas = ordenadas.filter(t => marcadas.includes(String(t.id)) && ocupante(t));
+  // 16/11/2026: turmas da Educação Infantil numa linha própria (antes vinham misturadas, ex.: "Berçário I" junto
+  // de 6M1 em Literatura, fácil de marcar por engano). Continuam disponíveis: disciplina na Infantil é opcional.
+  const infantil = ordenadas.filter(t => t.etapa === 'educacao_infantil');
+  const fundamental = ordenadas.filter(t => t.etapa !== 'educacao_infantil');
+  const chips = (lista) => lista.map(t => {
+    const marcada = marcadas.includes(String(t.id));
+    return (
+      <button key={t.id} type="button" aria-pressed={marcada} aria-label={`${disciplina.nome} — ${t.nome}`}
+        onClick={() => onChange(marcada ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)])}
+        className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
+        {marcada ? `✓ ${t.nome}` : t.nome}
+      </button>
+    );
+  });
   return (
     <div className="space-y-1 pl-1" data-disciplina={disciplina.nome}>
       <p className="text-xs font-semibold text-slate-500">Turmas de {disciplina.nome}</p>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas de ${disciplina.nome}`}>
-        {ordenadas.map(t => {
-          const marcada = marcadas.includes(String(t.id));
-          return (
-            <button key={t.id} type="button" aria-pressed={marcada} aria-label={`${disciplina.nome} — ${t.nome}`}
-              onClick={() => onChange(marcada ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)])}
-              className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
-              {marcada ? `✓ ${t.nome}` : t.nome}
-            </button>
-          );
-        })}
-      </div>
+      {fundamental.length > 0 && <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas de ${disciplina.nome}`}>{chips(fundamental)}</div>}
+      {infantil.length > 0 && (
+        <>
+          <p className="pt-1 text-xs font-semibold text-slate-500">Educação Infantil</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas da Educação Infantil de ${disciplina.nome}`}>{chips(infantil)}</div>
+        </>
+      )}
       {substituidas.map(t => <p key={t.id} className="text-xs text-amber-800">Substitui {ocupante(t)} na {t.nome}.</p>)}
     </div>
   );
@@ -209,6 +239,8 @@ const AvisoSaidas = ({ nome, saidas }) => (
 
 export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], turmas = [], onClose, onAlterado, iniciar = null }) => {
   const [vinculos, setVinculos] = useState([]); // turmas ATIVAS do professor
+  const [vinculosAtuacao, setVinculosAtuacao] = useState([]); // 16/11/2026: turmas ATIVAS por atuação (Regente…)
+  const recarregarAtuacao = async () => setVinculosAtuacao((await listarVinculosProfessorTurmaAtuacao({ professorId: professor.id }).catch(() => [])).filter(x => x.status === 'ATIVO'));
   const [ocupantes, setOcupantes] = useState(null); // "turmaId-disciplinaId" → outro professor que dá a disciplina lá
   const [saidasAlterar, setSaidasAlterar] = useState(null); // { lista, dados } — aviso antes de salvar a alteração
   const [cargos, setCargos] = useState(null);
@@ -224,18 +256,21 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
   const carregar = async () => {
     setErro('');
     try {
-      const [lista, meus, todos] = await Promise.all([
+      const [lista, meus, todos, meusAtuacao] = await Promise.all([
         listarCargos(professor.id),
         podeEditar ? listarVinculosProfessorTurmaDisciplina({ professorId: professor.id }) : [],
         podeEditar ? listarVinculosProfessorTurmaDisciplina().catch(() => []) : [],
+        podeEditar ? listarVinculosProfessorTurmaAtuacao({ professorId: professor.id }).catch(() => []) : [],
       ]);
       const ativosDele = meus.filter(v => v.status === 'ATIVO');
+      const ativosAtuacao = meusAtuacao.filter(v => v.status === 'ATIVO');
       setVinculos(ativosDele);
+      setVinculosAtuacao(ativosAtuacao);
       setOcupantes(new Map(todos.filter(v => v.status === 'ATIVO' && v.professorId !== professor.id).map(v => [`${v.turmaId}-${v.disciplinaId}`, v.professorNome])));
       setCargos(lista);
       const alvo = podeEditar && iniciar && iniciar.cargoId !== 'novo' ? lista.find(c => c.id === iniciar.cargoId) : null;
       if (alvo) {
-        const rascunho = rascunhoDoCargo(alvo, ativosDele);
+        const rascunho = rascunhoDoCargo(alvo, ativosDele, ativosAtuacao);
         if (!rascunho.partes.some(p => p.escolaId === String(iniciar.escolaId))) {
           rascunho.partes.push({ chave: novaChave(), escolaId: String(iniciar.escolaId), disciplinaIds: [''], atuacaoIds: [] });
         }
@@ -271,7 +306,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
 
   // Turmas (15/11/2026): só as das escolas+disciplinas deste cargo; marcadas que faltam são criadas, desmarcadas
   // são encerradas. Disciplina tirada do cargo não mexe nas turmas dela (continuam no botão "Turmas").
-  const aplicarTurmas = async (v) => {
+  const aplicarTurmas = async (v, anterior = null) => {
     const cobertas = new Set(v.dados.composicao.flatMap(p => p.disciplinaIds.map(d => `${p.escolaId}-${d}`)));
     const desejadas = new Map(v.vinculos.map(p => [`${p.turmaId}-${p.disciplinaId}`, p]));
     const atuais = (await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id })).filter(x => x.status === 'ATIVO');
@@ -286,7 +321,28 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
       try { await criarVinculoProfessorTurmaDisciplina({ ...p, professorId: professor.id }); } catch { falhas.push(nome(p.turmaId, p.disciplinaId)); }
     }
     setVinculos((await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id })).filter(x => x.status === 'ATIVO'));
+    await aplicarTurmasAtuacao(v, anterior, falhas);
     return falhas;
+  };
+
+  // Turmas por atuação (16/11/2026): nas escolas deste cargo (antes e depois da alteração), cria as marcadas e
+  // encerra as desmarcadas — inclusive as de atuação tirada do cargo (não há outro lugar para tirá-las). Não mexe no
+  // que pertence ao OUTRO cargo ativo do professor (mesma escola e mesma atuação).
+  const aplicarTurmasAtuacao = async (v, anterior, falhas) => {
+    const escolasDoCargo = new Set([...v.dados.composicao.map(p => p.escolaId), ...(anterior?.composicao ?? []).map(p => p.escolaId)]);
+    const doOutroCargo = new Set((cargos ?? []).filter(c => c.id !== anterior?.id).flatMap(c => c.composicao.flatMap(p => (p.atuacoes ?? []).map(a => `${p.escolaId}-${a.id}`))));
+    const desejadas = new Map(v.vinculosAtuacao.map(p => [`${p.turmaId}-${p.atuacaoId}`, p]));
+    const atuais = (await listarVinculosProfessorTurmaAtuacao({ professorId: professor.id })).filter(x => x.status === 'ATIVO');
+    const nome = (turmaId, atuacaoId) => `${turmas.find(t => t.id === turmaId)?.nome ?? 'turma'} (${atuacoes.find(a => a.id === atuacaoId)?.nome ?? 'atuação'})`;
+    for (const x of atuais) {
+      if (!escolasDoCargo.has(x.escolaId) || desejadas.has(`${x.turmaId}-${x.atuacaoId}`) || doOutroCargo.has(`${x.escolaId}-${x.atuacaoId}`)) continue;
+      try { await encerrarVinculoProfessorTurmaAtuacao(x.id); } catch { falhas.push(nome(x.turmaId, x.atuacaoId)); }
+    }
+    for (const [chave, p] of desejadas) {
+      if (atuais.some(x => `${x.turmaId}-${x.atuacaoId}` === chave)) continue;
+      try { await criarVinculoProfessorTurmaAtuacao({ ...p, professorId: professor.id }); } catch { falhas.push(nome(p.turmaId, p.atuacaoId)); }
+    }
+    await recarregarAtuacao();
   };
 
   const salvar = async (confirmarSaida = false) => {
@@ -299,11 +355,12 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
         const lista = await previaSaidasCargo(professor.id, editando.id, { composicao: v.dados.composicao });
         if (lista.length > 0) { setSaidasAlterar({ lista }); return; }
       }
+      const anterior = editando.id === 'novo' ? null : (cargos ?? []).find(c => c.id === editando.id) ?? null;
       const lista = editando.id === 'novo'
         ? await criarCargo(professor.id, v.dados)
         : await alterarCargo(professor.id, editando.id, { ...v.dados, baseUpdatedAt: editando.base, confirmarSaida });
       setCargos(lista); setEditando(null); setErros({ partes: {} }); setSaidasAlterar(null);
-      const falhas = await aplicarTurmas(v);
+      const falhas = await aplicarTurmas(v, anterior);
       if (falhas.length) setErro(`Não foi possível acertar: ${falhas.join(', ')}. Use o botão "Turmas".`);
       setMensagem(editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado.');
       onAlterado?.();
@@ -325,6 +382,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
       setCargos(await encerrarCargo(professor.id, encerrando.cargo.id, encerrando.dataFim, encerrando.saidas.length > 0));
       setMensagem('Cargo encerrado.');
       setVinculos((await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id })).filter(x => x.status === 'ATIVO'));
+      await recarregarAtuacao();
       setEncerrando(null);
       if (verEncerrados) setEncerrados((await listarCargos(professor.id, { incluirEncerrados: true })).filter(c => c.status === 'encerrado'));
       onAlterado?.();
@@ -381,7 +439,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                   </div>
                   {podeEditar && !editando && !encerrando && (
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={() => { setAvisoNumero(false); setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo, vinculos), base: cargo.updatedAt }); }}>Alterar</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setAvisoNumero(false); setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo, vinculos, vinculosAtuacao), base: cargo.updatedAt }); }}>Alterar</Button>
                       <Button size="sm" variant="outline" onClick={() => abrirEncerramento(cargo)}>Encerrar cargo</Button>
                     </div>
                   )}
