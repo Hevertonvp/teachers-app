@@ -50,20 +50,17 @@ try {
   await ir(page, '/pessoas');
   await page.getByRole('button', { name: '+ Cadastrar professor' }).click();
   const m = modal(page);
-  // 15/11/2026: cadastro em páginas — página 1 = dados + número de cargos.
-  const cargo1Aberto = (await m.getByText(/Passo 1 de 2/).isVisible()) && (await m.getByRole('radio', { name: '1' }).isVisible());
+  const cargo1Aberto = await m.getByRole('heading', { name: 'Cargo 1' }).isVisible();
   const semEscolasDeVinculo = (await m.getByText('Escolas de vínculo', { exact: true }).count()) === 0;
-  r('1', 'Cadastro em páginas: página 1 com dados e "Número de cargos", sem lista solta de escolas', 'Passo 1 de 2; sem "Escolas de vínculo"', `${cargo1Aberto}; ${semEscolasDeVinculo}`, cargo1Aberto && semEscolasDeVinculo);
+  r('1', 'Cadastro: Cargo 1 já aberto, "Número de cargos" e sem lista solta de escolas', 'Cargo 1 visível; sem "Escolas de vínculo"', `${cargo1Aberto}; ${semEscolasDeVinculo}`, cargo1Aberto && semEscolasDeVinculo);
 
   // Validação perto do campo: escola vazia.
   await m.locator('input[type=email]').fill(`${P.toLowerCase()}-1@teste.invalid`);
-  await m.locator('input:not([type=email]):not([type=date])').first().fill(`${P} Professora Ana`);
-  await m.getByRole('radio', { name: '2' }).click();
-  await m.getByRole('button', { name: 'Próximo →' }).click();
-  await m.getByRole('button', { name: 'Próximo →' }).click(); // Cargo 1 sem escola: não avança
+  await m.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   const erroEscola = await m.getByText('Escolha a escola.').first().isVisible().catch(() => false);
   r('2', 'Validação próxima do campo (escola não escolhida)', '"Escolha a escola." no bloco', erroEscola, erroEscola);
 
+  await m.locator('input:not([type=email]):not([type=date])').first().fill(`${P} Professora Ana`);
   const escola1 = m.getByLabel('Escola 1').first();
   await escolher(escola1, prud.nome);
   await escolher(m.getByLabel('Disciplina 1').first(), ing.nome);
@@ -79,13 +76,12 @@ try {
   const discDaEscola2 = m.locator('div.rounded-lg.bg-slate-50').nth(1).getByLabel('Disciplina 1');
   await escolher(discDaEscola2, ing.nome);
 
-  await m.getByRole('button', { name: 'Próximo →' }).click();
-  const cargo2 = (await m.getByRole('heading', { name: 'Cargo 2' }).isVisible()) && (await m.getByRole('heading', { name: 'Cargo 1' }).count()) === 0;
+  await m.getByRole('radio', { name: '2' }).click();
+  const cargo2 = await m.getByRole('heading', { name: 'Cargo 2' }).isVisible();
   const bloco2 = m.locator('div.rounded-xl').filter({ has: page.getByRole('heading', { name: 'Cargo 2' }) });
   await escolher(bloco2.getByLabel('Escola 1'), prud.nome);
   await escolher(bloco2.getByLabel('Disciplina 1'), ing.nome);
-  const resumo = await m.locator('[data-resumo]').innerText().catch(() => '');
-  r('5', 'Com 2 cargos, "Próximo" leva à página do Cargo 2 (sozinho, mesmo padrão), com resumo dos dois cargos antes de "Cadastrar"', 'só Cargo 2; resumo com Cargo 1 e Cargo 2', `${cargo2}; ${resumo.replace(/\n/g, ' | ').slice(0, 160)}`, cargo2 && /Cargo 1:.*Cargo 2:/s.test(resumo));
+  r('5', 'Escolher 2 abre o Cargo 2 com o mesmo padrão', 'Cargo 2 visível', cargo2, cargo2);
   await foto(page, '58-cadastro-dois-cargos');
 
   await m.getByRole('button', { name: 'Cadastrar', exact: true }).click();
@@ -132,9 +128,7 @@ try {
   await login(C.page, 'secretaria@escola.gov.br', '12345678');
   await ir(C.page, '/pessoas');
   await C.page.getByRole('button', { name: '+ Cadastrar professor' }).click();
-  await modal(C.page).locator('input[type=email]').fill('celular@teste.invalid');
   await modal(C.page).getByRole('radio', { name: '2' }).click();
-  await modal(C.page).getByRole('button', { name: 'Próximo →' }).click();
   await modal(C.page).getByRole('button', { name: '+ Adicionar escola' }).first().click();
   await foto(C.page, '58-cadastro-celular');
   r('11', 'Celular (390 px): cadastro com 2 cargos sem rolagem lateral', 'largura ≤ 390', String(await C.page.evaluate(() => document.documentElement.scrollWidth)), await larguraOk(C.page));

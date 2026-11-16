@@ -63,7 +63,6 @@ try {
   const m = modal(S.page);
   await m.locator('input[type=email]').fill(`${P.toLowerCase()}-regente@teste.invalid`);
   await m.locator('input:not([type=email]):not([type=date])').first().fill(`${P} Professora Regente`);
-  await m.getByRole('button', { name: 'Próximo →' }).click(); // 15/11/2026: cadastro em páginas
   await escolher(m.getByLabel('Escola 1').first(), AUR);
   // Select de disciplina fica em "Selecione" (não remove a linha): a linha vazia é ignorada.
   await m.getByRole('button', { name: 'Cadastrar', exact: true }).click();

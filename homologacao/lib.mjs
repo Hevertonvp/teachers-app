@@ -80,7 +80,6 @@ export async function preencherCadastroProfessor(modal, { email, nome, escola, d
   };
   await modal.locator('input[type=email]').fill(email);
   await modal.locator('input:not([type=email]):not([type=date])').first().fill(nome);
-  await modal.getByRole('button', { name: 'Próximo →' }).click(); // 15/11/2026: cadastro em páginas (Dados → Cargo 1)
   await escolher(modal.getByLabel('Escola 1').first(), escola);
   const lista = disciplinas ?? [disciplina];
   for (let i = 0; i < lista.length; i++) {
