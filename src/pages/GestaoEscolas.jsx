@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -32,6 +32,7 @@ export const GestaoEscolas = () => {
   const [reativandoEscola, setReativandoEscola] = useState(null);
   const [message, setMessage] = useState('');
   const [busca, setBusca] = useState('');
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const verDesativadas = params.get('ver') === 'desativadas';
   const [recarregar, setRecarregar] = useState(0);
@@ -68,7 +69,13 @@ export const GestaoEscolas = () => {
       setEscolaFormError(resultado.error);
       return;
     }
-    setMessage(editingEscola ? `Escola "${resultado.escola.nome}" atualizada com sucesso.` : `Escola "${resultado.escola.nome}" criada com sucesso.`);
+    // 16/11/2026: escola NOVA vai direto para "Nova turma" com ela escolhida (editar continua aqui).
+    if (!editingEscola) {
+      fecharModal();
+      navigate('/turmas', { state: { novaTurmaEscolaId: resultado.escola.id, mensagem: 'Escola criada. Cadastre as turmas.' } });
+      return;
+    }
+    setMessage(`Escola "${resultado.escola.nome}" atualizada com sucesso.`);
     fecharModal();
   };
 

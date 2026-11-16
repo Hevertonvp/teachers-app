@@ -54,6 +54,9 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   const escola = await prisma.escola.findFirst({ where: { nome: NOME }, include: { niveisInfantil: { include: { nivel: true } } } });
   const gravado = escola ? `${escola.etapasOferecidas.join(',')} | ${escola.anosFundamental.join(',')} | ${escola.niveisInfantil.map(n => n.nivel.nome).sort().join(',')}` : 'não gravou';
   r(`3-${nome}`, `${nome}: salva etapas, anos e níveis`, 'EDUCACAO_INFANTIL,FUNDAMENTAL_I | 1,2,3,4 | Maternal 2,Maternal 3', gravado, gravado === 'EDUCACAO_INFANTIL,FUNDAMENTAL_I | 1,2,3,4 | Maternal 2,Maternal 3');
+  // 16/11/2026: escola nova vai direto para "Nova turma" (roteiro 83); fecha e volta para conferir a lista.
+  if (await p.locator('div.fixed.inset-0').count()) await p.locator('div.fixed.inset-0').last().getByRole('button', { name: 'Cancelar' }).click();
+  await p.goto(BASE + '/#/escolas'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1200);
   await p.getByLabel('Buscar escola').fill(NOME); await p.waitForTimeout(300);
   const linha = (await p.locator('tbody tr').first().innerText()).replace(/\s+/g, ' ');
   r(`4-${nome}`, `${nome}: a lista mostra as etapas da escola`, '"Infantil · Fund. I"', linha.slice(0, 120), linha.includes('Infantil · Fund. I'));

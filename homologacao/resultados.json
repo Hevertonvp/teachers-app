@@ -10909,7 +10909,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:22.686Z"
+    "quando": "2026-11-16T23:43:45.738Z"
   },
   {
     "id": "ESTRUTURA-2-desktop",
@@ -10920,7 +10920,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-escola-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T23:14:25.910Z"
+    "quando": "2026-11-16T23:43:49.017Z"
   },
   {
     "id": "ESTRUTURA-3-desktop",
@@ -10931,18 +10931,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:27.793Z"
+    "quando": "2026-11-16T23:43:51.141Z"
   },
   {
     "id": "ESTRUTURA-4-desktop",
     "modulo": "Escola: etapas e níveis",
     "cenario": "desktop: a lista mostra as etapas da escola",
     "esperado": "\"Infantil · Fund. I\"",
-    "observado": "ZZ-ESTR Escola desktop 231413 Infantil · Fund. I Editar",
+    "observado": "ZZ-ESTR Escola desktop 234333 Infantil · Fund. I Editar",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:28.305Z"
+    "quando": "2026-11-16T23:43:53.579Z"
   },
   {
     "id": "ESTRUTURA-5-desktop",
@@ -10953,7 +10953,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-turma-infantil-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T23:14:40.981Z"
+    "quando": "2026-11-16T23:44:08.028Z"
   },
   {
     "id": "ESTRUTURA-6-desktop",
@@ -10964,7 +10964,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:42.963Z"
+    "quando": "2026-11-16T23:44:10.027Z"
   },
   {
     "id": "ESTRUTURA-7-desktop",
@@ -10975,7 +10975,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:44.609Z"
+    "quando": "2026-11-16T23:44:11.631Z"
   },
   {
     "id": "ESTRUTURA-1-celular",
@@ -10986,7 +10986,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:53.531Z"
+    "quando": "2026-11-16T23:44:21.826Z"
   },
   {
     "id": "ESTRUTURA-2-celular",
@@ -10997,7 +10997,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-escola-celular.png",
     "nota": "",
-    "quando": "2026-11-16T23:14:56.364Z"
+    "quando": "2026-11-16T23:44:24.515Z"
   },
   {
     "id": "ESTRUTURA-3-celular",
@@ -11008,18 +11008,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:58.250Z"
+    "quando": "2026-11-16T23:44:26.420Z"
   },
   {
     "id": "ESTRUTURA-4-celular",
     "modulo": "Escola: etapas e níveis",
     "cenario": "celular: a lista mostra as etapas da escola",
     "esperado": "\"Infantil · Fund. I\"",
-    "observado": "ZZ-ESTR Escola celular 231413 Infantil · Fund. I Editar",
+    "observado": "ZZ-ESTR Escola celular 234333 Infantil · Fund. I Editar",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:58.822Z"
+    "quando": "2026-11-16T23:44:28.688Z"
   },
   {
     "id": "ESTRUTURA-5-celular",
@@ -11030,7 +11030,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-turma-infantil-celular.png",
     "nota": "",
-    "quando": "2026-11-16T23:15:10.745Z"
+    "quando": "2026-11-16T23:44:41.057Z"
   },
   {
     "id": "ESTRUTURA-6-celular",
@@ -11041,7 +11041,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:15:12.849Z"
+    "quando": "2026-11-16T23:44:43.203Z"
   },
   {
     "id": "ESTRUTURA-7-celular",
@@ -11052,7 +11052,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:15:13.876Z"
+    "quando": "2026-11-16T23:44:44.312Z"
   },
   {
     "id": "ESTRUTURA-8",
@@ -11063,7 +11063,7 @@
     "status": "APROVADO",
     "evidencia": "79-sugerir-pelas-turmas.png",
     "nota": "",
-    "quando": "2026-11-16T23:15:24.546Z"
+    "quando": "2026-11-16T23:44:55.131Z"
   },
   {
     "id": "ESTRUTURA-9",
@@ -11074,7 +11074,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:15:27.629Z"
+    "quando": "2026-11-16T23:44:58.645Z"
   },
   {
     "id": "ESTRUTURA-10",
@@ -11085,7 +11085,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:15:28.086Z"
+    "quando": "2026-11-16T23:44:59.012Z"
   },
   {
     "id": "TURMASCARGO-1-desktop",
@@ -11316,7 +11316,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:12:46.402Z"
+    "quando": "2026-11-16T23:42:58.543Z"
   },
   {
     "id": "ESCINATIVA-2",
@@ -11327,6 +11327,72 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:12:55.461Z"
+    "quando": "2026-11-16T23:43:09.788Z"
+  },
+  {
+    "id": "NOVAESCOLA-1-desktop",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "desktop: criar escola leva a Turmas com \"Nova turma\" aberto, a escola nova escolhida, só os anos dela e o aviso",
+    "esperado": "URL /turmas; Nova turma; escola #455; 1º–5º ano; aviso",
+    "observado": "/turmas; \"Nova turma\"; escola 455; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:02.063Z"
+  },
+  {
+    "id": "NOVAESCOLA-2-desktop",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "desktop: recarregar a tela de Turmas não reabre o formulário",
+    "esperado": "0 janelas",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:09.550Z"
+  },
+  {
+    "id": "NOVAESCOLA-3-desktop",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "desktop: editar escola continua na tela de Escolas",
+    "esperado": "/escolas",
+    "observado": "/escolas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:14.885Z"
+  },
+  {
+    "id": "NOVAESCOLA-1-celular",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "celular: criar escola leva a Turmas com \"Nova turma\" aberto, a escola nova escolhida, só os anos dela e o aviso",
+    "esperado": "URL /turmas; Nova turma; escola #456; 1º–5º ano; aviso",
+    "observado": "/turmas; \"Nova turma\"; escola 456; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:30.231Z"
+  },
+  {
+    "id": "NOVAESCOLA-2-celular",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "celular: recarregar a tela de Turmas não reabre o formulário",
+    "esperado": "0 janelas",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:38.636Z"
+  },
+  {
+    "id": "NOVAESCOLA-3-celular",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "celular: editar escola continua na tela de Escolas",
+    "esperado": "/escolas",
+    "observado": "/escolas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:43.760Z"
   }
 ]

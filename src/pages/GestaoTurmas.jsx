@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -61,6 +61,11 @@ export const GestaoTurmas = () => {
   const [reativandoTurma, setReativandoTurma] = useState(null);
   const [message, setMessage] = useState('');
   const [paginaTurmas, setPaginaTurmas] = useState(1);
+  // 16/11/2026: vindo de "Nova escola", abre "Nova turma" com a escola escolhida (uma vez; o estado da navegação é
+  // limpo para não reabrir ao recarregar). Espera a escola aparecer na lista e o catálogo de níveis carregar.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const abrirNovaTurmaDaEscolaRef = useRef(null);
   // 16/11/2026: escola com etapas informadas só oferece as suas etapas/anos/níveis (níveis do catálogo local).
   const [niveisCatalogo, setNiveisCatalogo] = useState([]);
   useEffect(() => { listarNiveisInfantil().then(setNiveisCatalogo).catch(() => setNiveisCatalogo([])); }, []);
@@ -88,6 +93,13 @@ export const GestaoTurmas = () => {
     const auxiliar = vinculosReais.auxiliares.has(id) ? 1 : 0;
     return { professores, alunos, auxiliar, total: professores + alunos + auxiliar };
   };
+
+  const novaTurmaEscolaId = location.state?.novaTurmaEscolaId;
+  useEffect(() => {
+    if (!novaTurmaEscolaId || niveisCatalogo.length === 0 || !escolas.some(e => e.id === Number(novaTurmaEscolaId))) return;
+    abrirNovaTurmaDaEscolaRef.current?.(Number(novaTurmaEscolaId), location.state?.mensagem);
+    navigate('/turmas', { replace: true, state: null });
+  }, [novaTurmaEscolaId, niveisCatalogo, escolas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!canManageTurmas(user)) {
     return <Navigate to="/dashboard" replace />;
@@ -132,6 +144,11 @@ export const GestaoTurmas = () => {
     const anoSerie = e.anos.some(a => a.value === Number(form.anoSerie)) ? form.anoSerie : (e.anos[0]?.value ?? form.anoSerie);
     const nivelLocalId = e.niveis.some(n => n.id === Number(form.nivelLocalId)) ? form.nivelLocalId : (e.niveis[0]?.id ?? '');
     return { ...form, etapa, anoSerie, nivelLocalId };
+  };
+  abrirNovaTurmaDaEscolaRef.current = (escolaId, mensagem) => {
+    setEditingTurma(null); setTurmaError('');
+    if (mensagem) setMessage(mensagem);
+    setTurmaForm(ajustarAEscola(blankTurma(escolaId), null));
   };
   const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(ajustarAEscola(blankTurma(escolaDoTopo(escolasAtivas, escolasAtivas[0]?.id)), null)); };
   // Turmas legadas sem turno/identificador definidos (ver mockData.js) recebem aqui um valor de
