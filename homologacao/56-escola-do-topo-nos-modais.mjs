@@ -38,7 +38,9 @@ try {
 
   await ir(page, '#/pessoas');
   await page.getByRole('button', { name: '+ Cadastrar professor' }).click();
-  // Desde 12/11/2026 a Secretaria cadastra o Professor por CARGO: a escola do topo vem no Cargo 1.
+  // Desde 12/11/2026 a Secretaria cadastra o Professor por CARGO: a escola do topo vem no Cargo 1 (página 2 desde 15/11/2026).
+  await modal(page).locator('input[type=email]').fill('topo@teste.invalid');
+  await modal(page).getByRole('button', { name: 'Próximo →' }).click();
   const prof = await modal(page).getByLabel('Escola 1').first().evaluate(s => s.options[s.selectedIndex]?.text?.trim() ?? '');
   await fechar(page);
   r('2', 'Cadastrar professor (escola do Cargo 1)', escola, prof, prof === escola);

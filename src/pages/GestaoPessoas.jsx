@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, LoadingBlock, Modal, PersonName } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
@@ -325,6 +325,38 @@ const SenhaTemporariaModal = ({ pessoa, senha, mensagem, aviso = '', titulo = 'P
   );
 };
 
+// Indicador do cadastro em páginas: "Passo 2 de 3 · Cargo 1" e uma barrinha por passo.
+const PassosCadastro = ({ passo, total }) => (
+  <div className="space-y-2" aria-live="polite">
+    <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Passo {passo + 1} de {total} · {passo === 0 ? 'Dados' : `Cargo ${passo}`}</p>
+    <div className="flex gap-1.5" aria-hidden="true">
+      {Array.from({ length: total }, (_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= passo ? 'bg-teal-600' : 'bg-slate-200'}`} />)}
+    </div>
+  </div>
+);
+
+// Resumo na última página: uma linha por cargo (escola — disciplinas com turmas; atuações).
+const ResumoCadastro = ({ form, escolas, disciplinas, atuacoes, turmas }) => {
+  const nomeDe = (lista, id) => lista.find(x => String(x.id) === String(id))?.nome;
+  const linha = (cargo) => cargo.partes.filter(p => p.escolaId).map(p => {
+    const itens = [
+      ...p.disciplinaIds.filter(Boolean).map(d => {
+        const ts = ((p.turmas ?? {})[d] ?? []).map(t => nomeDe(turmas, t)).filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+        return `${nomeDe(disciplinas, d) ?? ''}${ts.length ? ` (${ts.join(', ')})` : ''}`;
+      }),
+      ...(p.atuacaoIds ?? []).filter(Boolean).map(a => nomeDe(atuacoes, a) ?? ''),
+    ].filter(Boolean);
+    return `${nomeDe(escolas, p.escolaId) ?? ''} — ${itens.join(', ') || '—'}`;
+  }).join('; ');
+  return (
+    <div className="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-700" data-resumo>
+      <p className="text-xs font-semibold text-slate-500">Resumo</p>
+      <p className="font-semibold text-slate-900">{form.nome || form.email}</p>
+      {form.cargos.map((c, i) => <p key={c.chave}><strong>Cargo {i + 1}:</strong> {linha(c) || '—'}</p>)}
+    </div>
+  );
+};
+
 const ProfessoresReaisManager = ({ user }) => {
   const { turmas, disciplinasReais } = useData();
   const escolaDoTopo = useEscolaDoTopo();
@@ -374,7 +406,7 @@ const ProfessoresReaisManager = ({ user }) => {
 
   const abrirCadastro = () => {
     setFormError(''); setErrosCargos([]);
-    setForm({ nome: '', email: '', escolaIds: [escolaDoTopo(minhasEscolas, null)].filter(id => id !== null), cargos: [novoRascunhoCargo(escolaDoTopo(minhasEscolas, ''))] });
+    setForm({ passo: 0, nome: '', email: '', escolaIds: [escolaDoTopo(minhasEscolas, null)].filter(id => id !== null), cargos: [novoRascunhoCargo(escolaDoTopo(minhasEscolas, ''))] });
     setBuscaEscolaCadastro('');
     setOcupantes(null);
     listarVinculosProfessorTurmaDisciplina()
@@ -393,13 +425,36 @@ const ProfessoresReaisManager = ({ user }) => {
 
   // Cria a Pessoa + cargos (as escolas viram VinculoEscolar) e, em seguida, as turmas marcadas no cargo
   // (15/11/2026: sem o assistente separado de turmas). Turma que falhar aparece na tela da senha.
+  // Cadastro em páginas (decisão do usuário, 15/11/2026): Dados → Cargo 1 → Cargo 2 (se houver). Cada página é
+  // conferida antes de avançar; nada é salvo antes de "Cadastrar"; voltar não perde nada.
+  const refCadastro = useRef(null);
+  const ultimoPasso = form?.cargos ? form.cargos.length : 0;
+  const irPara = (passo) => {
+    setFormError('');
+    setForm(prev => ({ ...prev, passo }));
+    requestAnimationFrame(() => refCadastro.current?.scrollIntoView({ block: 'start' }));
+  };
+  const avancar = () => {
+    if (form.passo === 0) {
+      const campo = refCadastro.current?.querySelector('input[type=email]');
+      if (campo && !campo.checkValidity()) { setFormError(form.email ? 'Informe um e-mail válido.' : 'Informe o e-mail.'); return; }
+    } else {
+      const i = form.passo - 1;
+      const v = validarRascunhoCargo(form.cargos[i]);
+      setErrosCargos(prev => { const n = [...prev]; n[i] = v.erros; return n; });
+      if (!v.ok) return;
+    }
+    irPara(form.passo + 1);
+  };
+
   const salvarCadastro = async (event) => {
     event.preventDefault();
+    if (comCargos && form.passo < ultimoPasso) { avancar(); return; } // Enter no meio do caminho = "Próximo"
     setFormError('');
     // Secretaria: cargos (as escolas deles viram os vínculos). Diretora: escolas de vínculo, como antes.
     const validacoes = comCargos ? form.cargos.map(validarRascunhoCargo) : [];
     setErrosCargos(validacoes.map(v => v.erros));
-    if (validacoes.some(v => !v.ok)) { setFormError('Confira os campos do cargo destacados abaixo.'); return; }
+    if (validacoes.some(v => !v.ok)) { irPara(validacoes.findIndex(v => !v.ok) + 1); return; }
     const escolaIds = comCargos ? [...new Set(validacoes.flatMap(v => v.dados.composicao.map(p => p.escolaId)))] : form.escolaIds;
     if (escolaIds.length === 0) {
       setFormError('Selecione ao menos uma escola.');
@@ -567,36 +622,44 @@ const ProfessoresReaisManager = ({ user }) => {
 
       {form && (
         <Modal title="Cadastrar professor" onClose={fecharCadastro}>
-          <form onSubmit={salvarCadastro} className="space-y-4">
+          <form ref={refCadastro} onSubmit={salvarCadastro} className="space-y-4">
+            {comCargos && <PassosCadastro passo={form.passo} total={ultimoPasso + 1} />}
             {formError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{formError}</div>}
-            <FormField label="E-mail">
-              <input className={inputClass} type="email" value={form.email} onChange={event => setForm(prev => ({ ...prev, email: event.target.value }))} required />
-            </FormField>
-            <FormField label="Nome completo">
-              <input className={inputClass} value={form.nome} onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))} />
-            </FormField>
+            {(!comCargos || form.passo === 0) && (
+              <>
+                <FormField label="E-mail">
+                  <input className={inputClass} type="email" value={form.email} onChange={event => setForm(prev => ({ ...prev, email: event.target.value }))} required />
+                </FormField>
+                <FormField label="Nome completo">
+                  <input className={inputClass} value={form.nome} onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))} />
+                </FormField>
+              </>
+            )}
             {comCargos ? (
-              <div className="space-y-3">
+              form.passo === 0 ? (
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="text-sm font-semibold text-slate-700">Número de cargos</span>
                   <NumeroDeCargos valor={form.cargos.length} onChange={mudarNumeroDeCargos} />
                 </div>
-                {form.cargos.map((cargo, i) => (
+              ) : (
+                <>
                   <EditorCargo
-                    key={cargo.chave}
-                    rotulo={`Cargo ${i + 1}`}
-                    valor={cargo}
-                    onChange={novo => setForm(prev => ({ ...prev, cargos: prev.cargos.map(c => (c.chave === cargo.chave ? novo : c)) }))}
+                    key={form.cargos[form.passo - 1].chave}
+                    rotulo={`Cargo ${form.passo}`}
+                    valor={form.cargos[form.passo - 1]}
+                    onChange={novo => setForm(prev => ({ ...prev, cargos: prev.cargos.map((c, k) => (k === prev.passo - 1 ? novo : c)) }))}
                     escolas={minhasEscolas}
                     disciplinas={disciplinasDoCargo}
                     atuacoes={atuacoes}
-                    erros={errosCargos[i]}
+                    erros={errosCargos[form.passo - 1]}
                     turmas={turmas}
                     ocupantes={ocupantes}
                   />
-                ))}
-                <p className="text-xs text-slate-500">As escolas dos cargos viram as escolas de vínculo do professor.</p>
-              </div>
+                  {form.passo === ultimoPasso && (
+                    <ResumoCadastro form={form} escolas={minhasEscolas} disciplinas={disciplinasDoCargo} atuacoes={atuacoes} turmas={turmas} />
+                  )}
+                </>
+              )
             ) : (
               <FormField label="Escolas de vínculo">
                 {minhasEscolas.length > 6 && (
@@ -612,9 +675,15 @@ const ProfessoresReaisManager = ({ user }) => {
                 </div>
               </FormField>
             )}
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>
-              <Button type="submit" loading={salvando}>{salvando ? 'Cadastrando...' : 'Cadastrar'}</Button>
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-between">
+              {/* key diferente em cada botão: sem isso o React reaproveita o mesmo <button>, que vira type=submit no
+                  meio do clique em "Próximo" e cadastra sem passar pela última página. */}
+              {comCargos && form.passo > 0
+                ? <Button key="voltar" type="button" variant="secondary" onClick={() => irPara(form.passo - 1)} disabled={salvando}>← Voltar</Button>
+                : <Button key="cancelar" type="button" variant="secondary" onClick={fecharCadastro} disabled={salvando}>Cancelar</Button>}
+              {comCargos && form.passo < ultimoPasso
+                ? <Button key="proximo" type="button" onClick={avancar}>Próximo →</Button>
+                : <Button key="cadastrar" type="submit" loading={salvando}>{salvando ? 'Cadastrando...' : 'Cadastrar'}</Button>}
             </div>
           </form>
         </Modal>
