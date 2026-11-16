@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 
 // Bloco somente leitura "Professores da turma": vínculo real Professor↔Turma↔Disciplina
 // (GET /api/professor-turma-disciplina, o mesmo usado em GestaoPessoas.jsx) — só derivado,
@@ -12,8 +13,12 @@ export const ProfessoresDaTurmaPreview = ({ turmaId }) => {
     if (!turmaId) { setVinculos([]); return; }
     let cancelado = false;
     setCarregando(true);
-    listarVinculosProfessorTurmaDisciplina({ turmaId: Number(turmaId) })
-      .then(lista => { if (!cancelado) setVinculos(lista.filter(item => item.status === 'ATIVO')); })
+    // 16/11/2026: inclui quem está na turma por atuação (ex.: "Maria — Professor Regente").
+    Promise.all([listarVinculosProfessorTurmaDisciplina({ turmaId: Number(turmaId) }), listarVinculosProfessorTurmaAtuacao({ turmaId: Number(turmaId) }).catch(() => [])])
+      .then(([porDisciplina, porAtuacao]) => { if (!cancelado) setVinculos([
+        ...porDisciplina.filter(item => item.status === 'ATIVO').map(v => ({ ...v, chave: `d${v.id}`, funcao: v.disciplinaNome })),
+        ...porAtuacao.filter(item => item.status === 'ATIVO').map(v => ({ ...v, chave: `a${v.id}`, funcao: v.atuacaoNome })),
+      ]); })
       .catch(() => { if (!cancelado) setVinculos([]); })
       .finally(() => { if (!cancelado) setCarregando(false); });
     return () => { cancelado = true; };
@@ -31,7 +36,7 @@ export const ProfessoresDaTurmaPreview = ({ turmaId }) => {
       ) : (
         <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
           {vinculos.map(vinculo => (
-            <li key={`${vinculo.professorId}-${vinculo.disciplinaId}`}>{vinculo.professorNome} — {vinculo.disciplinaNome}</li>
+            <li key={vinculo.chave}>{vinculo.professorNome} — {vinculo.funcao}</li>
           ))}
         </ul>
       )}

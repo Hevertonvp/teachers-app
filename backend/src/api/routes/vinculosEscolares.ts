@@ -156,6 +156,10 @@ vinculosEscolaresRouter.post('/:id/encerrar', async (req, res) => {
         where: { professorId: vinculo.pessoaId, status: 'ATIVO', turma: { escolaId: vinculo.escolaId } },
         data: { status: 'ENCERRADO', dataFim: agora },
       });
+      await tx.professorTurmaAtuacao.updateMany({
+        where: { professorId: vinculo.pessoaId, status: 'ATIVO', turma: { escolaId: vinculo.escolaId } },
+        data: { status: 'ENCERRADO', dataFim: agora },
+      });
     } else if (vinculo.pessoa.perfil === 'AUXILIAR') {
       await tx.auxiliarTurma.updateMany({
         where: { auxiliarId: vinculo.pessoaId, status: 'ATIVO', turma: { escolaId: vinculo.escolaId } },

@@ -285,10 +285,13 @@ async function ritmo(base: Base, escolaId: number | null, cicloIdFiltro: number 
 async function estrutura(ano: number, escolaIds: number[]) {
   const turmas = await prisma.turma.findMany({ where: { escolaId: { in: escolaIds }, anoLetivo: ano, status: 'ATIVA' }, select: { id: true, escolaId: true, etapa: true, turno: true } });
   const turmaIds = turmas.map((t) => t.id);
-  const [ptds, alunos] = turmaIds.length ? await Promise.all([
+  const [ptdsDisc, ptdsAtuacao, alunos] = turmaIds.length ? await Promise.all([
     prisma.professorTurmaDisciplina.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' }, select: { professorId: true, turmaId: true } }),
+    // 16/11/2026: quem está na turma por atuação (Regente sem disciplina) também conta como professor da escola.
+    prisma.professorTurmaAtuacao.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' }, select: { professorId: true, turmaId: true } }),
     prisma.alunoPdi.groupBy({ by: ['turmaId'], where: { turmaId: { in: turmaIds }, status: 'ATIVO' }, _count: { _all: true } }),
-  ]) : [[], []];
+  ]) : [[], [], []];
+  const ptds = [...ptdsDisc, ...ptdsAtuacao];
   const escolaDaTurma = new Map(turmas.map((t) => [t.id, t.escolaId]));
   const porEscola = new Map<number, { turmas: number; professores: Set<number>; alunosPdi: number; porEtapa: Record<string, number>; porTurno: Record<string, number> }>();
   const item = (id: number) => { if (!porEscola.has(id)) porEscola.set(id, { turmas: 0, professores: new Set(), alunosPdi: 0, porEtapa: {}, porTurno: {} }); return porEscola.get(id)!; };

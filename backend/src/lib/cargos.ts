@@ -73,13 +73,19 @@ export async function saidasDoCargo(db: Db, professorId: number, cargoId: number
   }
   const saem = [...new Set(doCargo)].filter((id) => !ficam.has(id));
   if (saem.length === 0) return [];
-  const [escolas, turmas] = await Promise.all([
+  const [escolas, turmasDisc, turmasAtuacao] = await Promise.all([
     db.escola.findMany({ where: { id: { in: saem } }, select: { id: true, nome: true } }),
     db.professorTurmaDisciplina.findMany({
       where: { professorId, status: 'ATIVO', turma: { escolaId: { in: saem } } },
       select: { turma: { select: { escolaId: true, nome: true } }, disciplina: { select: { nome: true } } },
     }),
+    // 16/11/2026: turmas por atuação (ex.: Regente da 1M1) também saem com a escola.
+    db.professorTurmaAtuacao.findMany({
+      where: { professorId, status: 'ATIVO', turma: { escolaId: { in: saem } } },
+      select: { turma: { select: { escolaId: true, nome: true } }, atuacao: { select: { nome: true } } },
+    }),
   ]);
+  const turmas = [...turmasDisc.map((t) => ({ turma: t.turma, disciplina: t.disciplina })), ...turmasAtuacao.map((t) => ({ turma: t.turma, disciplina: t.atuacao }))];
   const nome = new Map(escolas.map((e) => [e.id, e.nome]));
   return saem
     .map((escolaId) => ({
@@ -111,6 +117,10 @@ async function encerrarSaidas(tx: Db, professorId: number, saidas: Saidas, dataF
   const turmas = await tx.professorTurmaDisciplina.findMany({ where: { professorId, status: 'ATIVO', turma: { escolaId: { in: escolaIds } } } });
   for (const t of turmas) {
     await tx.professorTurmaDisciplina.update({ where: { id: t.id }, data: { status: 'ENCERRADO', dataFim: t.dataInicio > dataFim ? t.dataInicio : dataFim } });
+  }
+  const turmasAtuacao = await tx.professorTurmaAtuacao.findMany({ where: { professorId, status: 'ATIVO', turma: { escolaId: { in: escolaIds } } } });
+  for (const t of turmasAtuacao) {
+    await tx.professorTurmaAtuacao.update({ where: { id: t.id }, data: { status: 'ENCERRADO', dataFim: t.dataInicio > dataFim ? t.dataInicio : dataFim } });
   }
 }
 

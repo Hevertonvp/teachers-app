@@ -6,6 +6,7 @@ import { useData } from '../context/DataContext';
 import { useEscolaDoTopo } from '../context/EscolaContext';
 import { apiFetch } from '../services/api';
 import { criarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { criarVinculoProfessorTurmaAtuacao, listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 import { criarVinculoAuxiliarTurma, encerrarVinculoAuxiliarTurma, listarAuxiliaresReais, listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
 import { criarVinculoEscolarReal, encerrarVinculoEscolarReal, listarVinculosEscolares, reativarVinculoEscolarReal } from '../services/vinculosEscolares';
 import { MainLayout } from '../layouts/Layouts';
@@ -472,6 +473,16 @@ const ProfessoresReaisManager = ({ user }) => {
           falhas.push(`${turma?.nome ?? 'turma'} (${disciplina?.nome ?? 'disciplina'})`);
         }
       }
+      // 16/11/2026: turmas por atuação (ex.: Professor Regente sem disciplina).
+      const paresAtuacao = [...new Map(validacoes.flatMap(v => v.vinculosAtuacao).map(p => [`${p.turmaId}-${p.atuacaoId}`, p])).values()];
+      for (const par of paresAtuacao) {
+        try { await criarVinculoProfessorTurmaAtuacao({ ...par, professorId: resultado.pessoa.id }); }
+        catch {
+          const turma = turmas.find(t => t.id === par.turmaId);
+          const atuacao = atuacoes.find(a => a.id === par.atuacaoId);
+          falhas.push(`${turma?.nome ?? 'turma'} (${atuacao?.nome ?? 'atuação'})`);
+        }
+      }
       fecharCadastro();
       await carregar();
       setResultadoCriacao({ ...resultado, aviso: falhas.length ? `Não foi possível ligar: ${falhas.join(', ')}. Use o botão "Turmas".` : '' });
@@ -511,7 +522,9 @@ const ProfessoresReaisManager = ({ user }) => {
   // (professor × escola × turma × disciplina), um por linha — professor com vários vínculos aparece
   // em várias linhas da aba "Vínculos", e uma vez só na aba "Professores".
   const exportarProfessores = async () => {
-    const vinculos = await listarVinculosProfessorTurmaDisciplina();
+    // 16/11/2026: turmas por atuação (Regente…) entram como linhas com a coluna "Atuação" e sem disciplina.
+    const [porDisciplina, porAtuacao] = await Promise.all([listarVinculosProfessorTurmaDisciplina(), listarVinculosProfessorTurmaAtuacao().catch(() => [])]);
+    const vinculos = [...porDisciplina, ...porAtuacao.map(v => ({ ...v, disciplinaNome: '' }))];
     const idsDaLista = new Set(professores.map(p => p.id));
     const nomeEscola = new Map(minhasEscolas.map(e => [e.id, e.nome]));
     professores.forEach(p => p.escolas.forEach(e => nomeEscola.set(e.id, e.nome)));
@@ -539,6 +552,7 @@ const ProfessoresReaisManager = ({ user }) => {
           { titulo: 'Turma', valor: v => v.turmaNome },
           { titulo: 'Disciplina', valor: v => v.disciplinaNome, largura: 22 },
           { titulo: 'Desde', valor: v => v.dataInicio, tipo: 'data' },
+          { titulo: 'Atuação', valor: v => v.atuacaoNome ?? '', largura: 22 },
         ] },
       ],
     });
@@ -606,7 +620,7 @@ const ProfessoresReaisManager = ({ user }) => {
         </div>
       )}
 
-      {carregando ? (
+      {carregando && professores.length === 0 ? (
         <Card><LoadingBlock text="Carregando professores..." /></Card>
       ) : professores.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum professor nesta visão</p><p className="mt-1 text-sm text-slate-500">Cadastre o primeiro professor com uma conta real.</p></Card>
@@ -877,7 +891,7 @@ const GestoresReaisManager = () => {
         </div>
       )}
 
-      {carregando ? (
+      {carregando && gestoresReais.length === 0 ? (
         <Card><LoadingBlock text="Carregando supervisores..." /></Card>
       ) : gestoresReais.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum supervisor(a) cadastrado</p><p className="mt-1 text-sm text-slate-500">Cadastre o(a) primeiro(a) supervisor(a) com uma conta real.</p></Card>
@@ -1088,7 +1102,7 @@ const DiretorasReaisManager = () => {
         </div>
       )}
 
-      {carregando ? (
+      {carregando && diretorasReais.length === 0 ? (
         <Card><LoadingBlock text="Carregando diretoras..." /></Card>
       ) : diretorasReais.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhuma diretora cadastrada</p><p className="mt-1 text-sm text-slate-500">Cadastre a primeira diretora com uma conta real.</p></Card>
@@ -1469,7 +1483,7 @@ const AuxiliaresReaisManager = ({ user }) => {
         </div>
       )}
 
-      {carregando ? (
+      {carregando && auxiliares.length === 0 ? (
         <Card><LoadingBlock text="Carregando auxiliares..." /></Card>
       ) : auxiliares.length === 0 ? (
         !erro && <Card className="py-12 text-center"><p className="font-semibold text-slate-800">Nenhum Auxiliar ativo</p></Card>

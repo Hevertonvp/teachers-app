@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useEscola } from '../context/EscolaContext';
 import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
+import { listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 import { MainLayout } from '../layouts/Layouts';
 import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
 import { SeloDesenvolvimento } from '../components/PdiDesenvolvimento';
@@ -30,8 +31,12 @@ export const DashboardProfessor = () => {
 
   useEffect(() => {
     if (PDI_ATIVO) loadMeusPdisReais();
-    listarVinculosProfessorTurmaDisciplina()
-      .then((vinculos) => setMeusVinculos(vinculos.filter((v) => v.status === 'ATIVO')))
+    // 16/11/2026: turmas por disciplina e por atuação (ex.: "1M1 · Professor Regente"), numa lista só.
+    Promise.all([listarVinculosProfessorTurmaDisciplina(), listarVinculosProfessorTurmaAtuacao().catch(() => [])])
+      .then(([porDisciplina, porAtuacao]) => setMeusVinculos([
+        ...porDisciplina.filter((v) => v.status === 'ATIVO').map((v) => ({ ...v, chave: `d${v.id}`, funcao: v.disciplinaNome })),
+        ...porAtuacao.filter((v) => v.status === 'ATIVO').map((v) => ({ ...v, chave: `a${v.id}`, funcao: v.atuacaoNome })),
+      ].sort((a, b) => (a.turmaNome || '').localeCompare(b.turmaNome || '', 'pt-BR', { numeric: true }))))
       .catch(() => setMeusVinculos([]))
       .finally(() => setMeusVinculosLoading(false));
   }, [loadMeusPdisReais]);
@@ -166,8 +171,8 @@ export const DashboardProfessor = () => {
                 <p className="text-sm text-slate-500">Nenhuma turma/disciplina vinculada no momento.</p>
               ) : (
                 meusVinculos.map(vinculo => (
-                  <div key={vinculo.id} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} · {vinculo.disciplinaNome}</p>
+                  <div key={vinculo.chave} className="rounded-xl border border-slate-200 p-4">
+                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} · {vinculo.funcao}</p>
                     <p className="mt-1 text-sm text-slate-600">{escolas.find(e => e.id === vinculo.escolaId)?.nome}</p>
                   </div>
                 ))

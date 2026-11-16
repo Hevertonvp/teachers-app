@@ -90,6 +90,13 @@ export function lerComposicao(json: unknown): Composicao {
 // código (sem migration): para a disciplina passar a preencher, basta tirar daqui.
 export const DISCIPLINAS_FORA_DO_UM_TERCO = ['Informática'];
 
+// Atuações pedagógicas que NÃO se ligam a turmas (decisão do usuário, 16/11/2026). Todas as outras (Professor
+// Regente, Oficina do Brincar, TAE e as criadas depois) podem ter turmas, mesmo sem disciplina. Lista fixa pelo
+// nome (sem migration): renomear uma destas na tela faz ela passar a ter turmas até a lista ser atualizada.
+export const ATUACOES_SEM_TURMA = ['Biblioteca', 'Professor de Intervenção', 'Eventual'];
+const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+export const atuacaoTemTurmas = (nome: string) => !ATUACOES_SEM_TURMA.some((n) => semAcento(n) === semAcento(nome));
+
 export const restringirAoCiclo = (composicao: Composicao, escolasDoCiclo: number[] | null, disciplinasFora: number[] = []): Composicao =>
   (escolasDoCiclo ? composicao.filter((i) => escolasDoCiclo.includes(i.escolaId)) : composicao)
     .map((i) => (disciplinasFora.length ? { ...i, disciplinaIds: i.disciplinaIds.filter((d) => !disciplinasFora.includes(d)) } : i))

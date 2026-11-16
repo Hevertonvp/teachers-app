@@ -4914,7 +4914,7 @@
     "status": "APROVADO",
     "evidencia": "40-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-16T14:07:33.995Z"
+    "quando": "2026-11-16T19:14:19.688Z"
   },
   {
     "id": "UI-SEC-2a",
@@ -4925,7 +4925,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-16T14:07:41.504Z"
+    "quando": "2026-11-16T19:14:25.579Z"
   },
   {
     "id": "UI-SEC-2b",
@@ -4936,7 +4936,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-16T14:07:41.558Z"
+    "quando": "2026-11-16T19:14:25.593Z"
   },
   {
     "id": "UI-SEC-3",
@@ -4947,7 +4947,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:07:44.167Z"
+    "quando": "2026-11-16T19:14:27.778Z"
   },
   {
     "id": "UI-SEC-3b",
@@ -4958,7 +4958,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:07:44.222Z"
+    "quando": "2026-11-16T19:14:27.794Z"
   },
   {
     "id": "UI-SEC-4c-desktop",
@@ -4969,7 +4969,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T14:07:52.857Z"
+    "quando": "2026-11-16T19:14:31.122Z"
   },
   {
     "id": "UI-SEC-4d-desktop",
@@ -4980,7 +4980,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:07:54.866Z"
+    "quando": "2026-11-16T19:14:31.569Z"
   },
   {
     "id": "UI-SEC-4c-celular",
@@ -4991,7 +4991,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:08:06.640Z"
+    "quando": "2026-11-16T19:14:36.748Z"
   },
   {
     "id": "UI-SEC-4d-celular",
@@ -5002,7 +5002,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:08.548Z"
+    "quando": "2026-11-16T19:14:37.218Z"
   },
   {
     "id": "ASSIST-1-desktop",
@@ -5013,7 +5013,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:27.913Z"
+    "quando": "2026-11-16T19:11:08.163Z"
   },
   {
     "id": "ASSIST-2-desktop",
@@ -5024,7 +5024,7 @@
     "status": "APROVADO",
     "evidencia": "42-cadastro-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T14:08:29.958Z"
+    "quando": "2026-11-16T19:11:08.897Z"
   },
   {
     "id": "ASSIST-3-desktop",
@@ -5035,7 +5035,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:30.851Z"
+    "quando": "2026-11-16T19:11:09.300Z"
   },
   {
     "id": "ASSIST-4-desktop",
@@ -5046,7 +5046,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:32.483Z"
+    "quando": "2026-11-16T19:11:10.482Z"
   },
   {
     "id": "ASSIST-1-celular",
@@ -5057,7 +5057,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:46.305Z"
+    "quando": "2026-11-16T19:11:17.216Z"
   },
   {
     "id": "ASSIST-2-celular",
@@ -5068,7 +5068,7 @@
     "status": "APROVADO",
     "evidencia": "42-cadastro-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:08:47.719Z"
+    "quando": "2026-11-16T19:11:17.683Z"
   },
   {
     "id": "ASSIST-3-celular",
@@ -5079,7 +5079,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:48.540Z"
+    "quando": "2026-11-16T19:11:18.093Z"
   },
   {
     "id": "ASSIST-4-celular",
@@ -5090,18 +5090,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:08:50.181Z"
+    "quando": "2026-11-16T19:11:19.189Z"
   },
   {
     "id": "EXP-A1",
     "modulo": "Exportação para Excel",
     "cenario": "PDI: aba Fichas = Fichas do banco no escopo (todas as escolas), sem duplicar",
     "esperado": "95 linhas, 95 chaves únicas",
-    "observado": "95 linhas, 95 chaves únicas; arquivo educa-sao-joao-pdi-2026-11-15.xlsx; abas Fichas, Respostas, Perguntas comuns, Entrega por escola, Filtros",
+    "observado": "95 linhas, 95 chaves únicas; arquivo educa-sao-joao-pdi-2026-11-16.xlsx; abas Fichas, Respostas, Perguntas comuns, Entrega por escola, Filtros",
     "status": "APROVADO",
     "evidencia": "43-pdi.xlsx",
     "nota": "",
-    "quando": "2026-11-15T17:35:42.979Z"
+    "quando": "2026-11-16T19:14:54.578Z"
   },
   {
     "id": "EXP-A2",
@@ -5112,7 +5112,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.001Z"
+    "quando": "2026-11-16T19:14:54.589Z"
   },
   {
     "id": "EXP-A3",
@@ -5123,7 +5123,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.033Z"
+    "quando": "2026-11-16T19:14:54.606Z"
   },
   {
     "id": "EXP-A4",
@@ -5134,7 +5134,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.067Z"
+    "quando": "2026-11-16T19:14:54.621Z"
   },
   {
     "id": "EXP-A5",
@@ -5145,7 +5145,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.089Z"
+    "quando": "2026-11-16T19:14:54.632Z"
   },
   {
     "id": "EXP-A6",
@@ -5156,7 +5156,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.113Z"
+    "quando": "2026-11-16T19:14:54.641Z"
   },
   {
     "id": "EXP-A7",
@@ -5167,7 +5167,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.300Z"
+    "quando": "2026-11-16T19:14:54.723Z"
   },
   {
     "id": "EXP-A8",
@@ -5178,7 +5178,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:43.326Z"
+    "quando": "2026-11-16T19:14:54.732Z"
   },
   {
     "id": "EXP-B1",
@@ -5239,12 +5239,12 @@
     "id": "EXP-C1",
     "modulo": "Exportação para Excel",
     "cenario": "Professores: 1 linha por professor; Vínculos = vínculos ATIVOS do banco, sem duplicar",
-    "esperado": "46 professores; 51 vínculos",
-    "observado": "46 professores (46 e-mails únicos); 51 vínculos (51 únicos)",
+    "esperado": "32 professores; 44 vínculos",
+    "observado": "32 professores (32 e-mails únicos); 44 vínculos (44 únicos)",
     "status": "APROVADO",
     "evidencia": "43-professores.xlsx",
     "nota": "",
-    "quando": "2026-11-15T17:35:46.434Z"
+    "quando": "2026-11-16T19:14:57.140Z"
   },
   {
     "id": "EXP-C2",
@@ -5255,18 +5255,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:46.461Z"
+    "quando": "2026-11-16T19:14:57.153Z"
   },
   {
     "id": "EXP-D1",
     "modulo": "Exportação para Excel",
     "cenario": "Turmas (filtro Escola = ZZ-HOMOLOG Escola Aurora, Ativas): todas as turmas do filtro (não só a página), só dessa escola; professores/disciplinas ativos delas",
-    "esperado": "7 turmas; 28 vínculos; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
-    "observado": "7 turmas; 28 vínculos; só Aurora: true; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
+    "esperado": "7 turmas; 21 vínculos; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
+    "observado": "7 turmas; 21 vínculos; só Aurora: true; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
     "status": "APROVADO",
     "evidencia": "43-turmas-aurora.xlsx",
     "nota": "",
-    "quando": "2026-11-15T17:35:50.106Z"
+    "quando": "2026-11-16T19:15:00.314Z"
   },
   {
     "id": "EXP-E1",
@@ -5277,7 +5277,7 @@
     "status": "APROVADO",
     "evidencia": "43-alunos-pdi.xlsx",
     "nota": "",
-    "quando": "2026-11-15T17:35:52.919Z"
+    "quando": "2026-11-16T19:15:02.632Z"
   },
   {
     "id": "EXP-E2",
@@ -5288,7 +5288,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:52.945Z"
+    "quando": "2026-11-16T19:15:02.642Z"
   },
   {
     "id": "EXP-F1",
@@ -5299,7 +5299,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:35:57.360Z"
+    "quando": "2026-11-16T19:15:06.048Z"
   },
   {
     "id": "EXP-F2",
@@ -5310,7 +5310,7 @@
     "status": "APROVADO",
     "evidencia": "43-pdi-diretora.xlsx",
     "nota": "",
-    "quando": "2026-11-15T17:36:01.687Z"
+    "quando": "2026-11-16T19:15:10.030Z"
   },
   {
     "id": "EXP-CEL-pdi",
@@ -5977,11 +5977,11 @@
     "modulo": "Exportação para Excel",
     "cenario": "Toda exportação abre na aba de dados (com linhas); a aba Filtros é a última",
     "esperado": "todas",
-    "observado": "43-pdi: abre em \"Fichas\" (95 linhas; Escola | Turma | Aluno), última \"Filtros\" ¦ 43-professores: abre em \"Professores\" (46 linhas; Nome | E-mail | Escolas), última \"Filtros\" ¦ 43-turmas-aurora: abre em \"Turmas\" (7 linhas; Escola | Turma | Etapa), última \"Filtros\" ¦ 43-alunos-pdi: abre em \"Alunos PDI",
+    "observado": "43-pdi: abre em \"Fichas\" (95 linhas; Escola | Turma | Aluno), última \"Filtros\" ¦ 43-professores: abre em \"Professores\" (32 linhas; Nome | E-mail | Escolas), última \"Filtros\" ¦ 43-turmas-aurora: abre em \"Turmas\" (7 linhas; Escola | Turma | Etapa), última \"Filtros\" ¦ 43-alunos-pdi: abre em \"Alunos PDI",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:36:01.789Z"
+    "quando": "2026-11-16T19:15:10.130Z"
   },
   {
     "id": "UT-MODAL-1-desktop",
@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:10.214Z"
+    "quando": "2026-11-16T19:11:25.154Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:10.962Z"
+    "quando": "2026-11-16T19:11:25.470Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:12.764Z"
+    "quando": "2026-11-16T19:11:26.224Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:13.619Z"
+    "quando": "2026-11-16T19:11:26.530Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:15.050Z"
+    "quando": "2026-11-16T19:11:27.146Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:19.960Z"
+    "quando": "2026-11-16T19:11:30.470Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:27.349Z"
+    "quando": "2026-11-16T19:11:34.667Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:29.631Z"
+    "quando": "2026-11-16T19:11:36.332Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:30.637Z"
+    "quando": "2026-11-16T19:11:37.230Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:32.749Z"
+    "quando": "2026-11-16T19:11:37.639Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:42.780Z"
+    "quando": "2026-11-16T19:11:41.830Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 11:30InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
+    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 16:11InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:49.659Z"
+    "quando": "2026-11-16T19:11:44.402Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:50.660Z"
+    "quando": "2026-11-16T19:11:45.286Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":402,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":407,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:53.704Z"
+    "quando": "2026-11-16T19:11:47.837Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:30:54.128Z"
+    "quando": "2026-11-16T19:11:47.906Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "",
-    "status": "REPROVADO",
+    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 16:11InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:31:01.142Z"
+    "quando": "2026-11-16T19:11:50.508Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,18 +8434,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:31:01.810Z"
+    "quando": "2026-11-16T19:11:50.565Z"
   },
   {
     "id": "CARGO-16",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Painel: sem filtro de ano/série; folha compartilhada do P04 conta 1 vez + Cargo 2 da Ana (criado com o ciclo aberto, regra de 15/11)",
     "esperado": "sem Ano/série; linha \"Cargos 1 e 2\"; Esperadas 2",
-    "observado": "true; false; Esperadas2",
-    "status": "REPROVADO",
+    "observado": "true; true; Esperadas2",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:31:10.651Z"
+    "quando": "2026-11-16T19:11:53.578Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:31:10.708Z"
+    "quando": "2026-11-16T19:11:53.590Z"
   },
   {
     "id": "UT-P04-02",
@@ -9028,7 +9028,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.654Z"
+    "quando": "2026-11-16T19:16:25.915Z"
   },
   {
     "id": "XLS13-2",
@@ -9039,18 +9039,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.675Z"
+    "quando": "2026-11-16T19:16:25.924Z"
   },
   {
     "id": "XLS13-3",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Entregas = folhas do painel (15), sem duplicar",
-    "esperado": "15 linhas únicas",
-    "observado": "15 linhas (15 únicas)",
-    "status": "APROVADO",
+    "esperado": "14 linhas únicas",
+    "observado": "14 linhas (14 únicas)",
+    "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.700Z"
+    "quando": "2026-11-16T19:16:25.935Z"
   },
   {
     "id": "XLS13-4",
@@ -9061,7 +9061,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.733Z"
+    "quando": "2026-11-16T19:16:25.953Z"
   },
   {
     "id": "XLS13-5",
@@ -9072,29 +9072,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.755Z"
+    "quando": "2026-11-16T19:16:25.961Z"
   },
   {
     "id": "XLS13-6",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Educação Infantil (P14): só a escola, sem disciplina inventada",
     "esperado": "ZZ-HOMOLOG Escola Aurora",
-    "observado": "ZZ-HOMOLOG Escola Aurora; Em andamento",
-    "status": "APROVADO",
+    "observado": "; ",
+    "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.774Z"
+    "quando": "2026-11-16T19:16:25.972Z"
   },
   {
     "id": "XLS13-7",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Conteúdos = semanas com texto das folhas listadas (banco)",
-    "esperado": "6",
-    "observado": "6",
+    "esperado": "5",
+    "observado": "5",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.817Z"
+    "quando": "2026-11-16T19:16:25.998Z"
   },
   {
     "id": "XLS13-8",
@@ -9105,7 +9105,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.854Z"
+    "quando": "2026-11-16T19:16:26.016Z"
   },
   {
     "id": "XLS13-9",
@@ -9116,18 +9116,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.875Z"
+    "quando": "2026-11-16T19:16:26.025Z"
   },
   {
     "id": "XLS13-10",
     "modulo": "Excel do 1/3 por cargo",
     "cenario": "Cobertura por escola: folha de 2 escolas conta nas duas; o Resumo conta cada folha uma vez",
     "esperado": "Aurora 13; Boa Vista 3; Resumo 15",
-    "observado": "Aurora 13; Boa Vista 3; Resumo 15",
-    "status": "APROVADO",
+    "observado": "Aurora 12; Boa Vista 3; Resumo 14",
+    "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.899Z"
+    "quando": "2026-11-16T19:16:26.036Z"
   },
   {
     "id": "XLS13-11",
@@ -9138,7 +9138,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:46.844Z"
+    "quando": "2026-11-16T19:16:29.494Z"
   },
   {
     "id": "XLS13-12",
@@ -9149,7 +9149,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:46.866Z"
+    "quando": "2026-11-16T19:16:29.510Z"
   },
   {
     "id": "XLS13-13",
@@ -9160,7 +9160,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:46.892Z"
+    "quando": "2026-11-16T19:16:29.523Z"
   },
   {
     "id": "EI-1",
@@ -9633,7 +9633,7 @@
     "status": "APROVADO",
     "evidencia": "64-configuracoes-atuacoes.png",
     "nota": "",
-    "quando": "2026-11-16T14:10:47.304Z"
+    "quando": "2026-11-16T19:11:59.151Z"
   },
   {
     "id": "ATU-5/2",
@@ -9644,7 +9644,7 @@
     "status": "APROVADO",
     "evidencia": "64-cadastro-regente.png",
     "nota": "",
-    "quando": "2026-11-16T14:10:54.586Z"
+    "quando": "2026-11-16T19:12:02.405Z"
   },
   {
     "id": "ATU-6/7",
@@ -9655,7 +9655,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:10.777Z"
+    "quando": "2026-11-16T19:12:13.692Z"
   },
   {
     "id": "ATU-8",
@@ -9666,7 +9666,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:12.249Z"
+    "quando": "2026-11-16T19:12:13.987Z"
   },
   {
     "id": "ATU-9/10",
@@ -9677,7 +9677,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:12.477Z"
+    "quando": "2026-11-16T19:12:14.027Z"
   },
   {
     "id": "XLS13-6b",
@@ -9688,7 +9688,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T15:45:42.796Z"
+    "quando": "2026-11-16T19:16:25.986Z"
   },
   {
     "id": "ESC-1",
@@ -9754,7 +9754,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T00:05:09.579Z"
+    "quando": "2026-11-16T19:15:14.069Z"
   },
   {
     "id": "CASC-2",
@@ -9765,7 +9765,7 @@
     "status": "APROVADO",
     "evidencia": "66-aviso-tirar-escola-do-cargo.png",
     "nota": "",
-    "quando": "2026-11-16T00:05:11.933Z"
+    "quando": "2026-11-16T19:15:15.119Z"
   },
   {
     "id": "CASC-3",
@@ -9776,7 +9776,7 @@
     "status": "APROVADO",
     "evidencia": "66-aviso-encerrar-cargo.png",
     "nota": "",
-    "quando": "2026-11-16T00:05:14.221Z"
+    "quando": "2026-11-16T19:15:16.772Z"
   },
   {
     "id": "CASC-4",
@@ -9787,7 +9787,7 @@
     "status": "APROVADO",
     "evidencia": "66-aviso-celular.png",
     "nota": "",
-    "quando": "2026-11-16T00:05:19.209Z"
+    "quando": "2026-11-16T19:15:20.066Z"
   },
   {
     "id": "CASC-5",
@@ -9798,7 +9798,7 @@
     "status": "APROVADO",
     "evidencia": "66-diretora-professores.png",
     "nota": "",
-    "quando": "2026-11-16T00:05:23.468Z"
+    "quando": "2026-11-16T19:15:22.959Z"
   },
   {
     "id": "CASC-6",
@@ -9809,7 +9809,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T00:05:23.601Z"
+    "quando": "2026-11-16T19:15:23.049Z"
   },
   {
     "id": "OFF-CARGO-2a",
@@ -10326,7 +10326,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:33.878Z"
+    "quando": "2026-11-16T19:12:24.281Z"
   },
   {
     "id": "CARGOTURMA-2-desktop",
@@ -10337,7 +10337,7 @@
     "status": "APROVADO",
     "evidencia": "73-cargos-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T14:11:36.374Z"
+    "quando": "2026-11-16T19:12:24.885Z"
   },
   {
     "id": "CARGOTURMA-3-desktop",
@@ -10348,7 +10348,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:39.146Z"
+    "quando": "2026-11-16T19:12:27.498Z"
   },
   {
     "id": "CARGOTURMA-4-desktop",
@@ -10359,7 +10359,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:43.053Z"
+    "quando": "2026-11-16T19:12:30.697Z"
   },
   {
     "id": "CARGOTURMA-5-desktop",
@@ -10370,7 +10370,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:11:47.997Z"
+    "quando": "2026-11-16T19:12:33.858Z"
   },
   {
     "id": "CARGOTURMA-1-celular",
@@ -10381,7 +10381,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:14.612Z"
+    "quando": "2026-11-16T19:12:42.993Z"
   },
   {
     "id": "CARGOTURMA-2-celular",
@@ -10392,7 +10392,7 @@
     "status": "APROVADO",
     "evidencia": "73-cargos-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:12:17.477Z"
+    "quando": "2026-11-16T19:12:43.470Z"
   },
   {
     "id": "CARGOTURMA-3-celular",
@@ -10403,7 +10403,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:20.392Z"
+    "quando": "2026-11-16T19:12:46.065Z"
   },
   {
     "id": "CARGOTURMA-4-celular",
@@ -10414,7 +10414,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:24.043Z"
+    "quando": "2026-11-16T19:12:49.281Z"
   },
   {
     "id": "CARGOTURMA-5-celular",
@@ -10425,7 +10425,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:28.885Z"
+    "quando": "2026-11-16T19:12:52.410Z"
   },
   {
     "id": "UMABERTO-1-desktop",
@@ -10436,7 +10436,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:43.230Z"
+    "quando": "2026-11-16T19:12:57.880Z"
   },
   {
     "id": "UMABERTO-2-desktop",
@@ -10447,7 +10447,7 @@
     "status": "APROVADO",
     "evidencia": "74-cargo2-aberto-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T14:12:47.976Z"
+    "quando": "2026-11-16T19:12:59.439Z"
   },
   {
     "id": "UMABERTO-3-desktop",
@@ -10458,7 +10458,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:49.193Z"
+    "quando": "2026-11-16T19:13:00.349Z"
   },
   {
     "id": "UMABERTO-4-desktop",
@@ -10469,7 +10469,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:50.187Z"
+    "quando": "2026-11-16T19:13:01.079Z"
   },
   {
     "id": "UMABERTO-5-desktop",
@@ -10480,7 +10480,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:12:53.299Z"
+    "quando": "2026-11-16T19:13:02.195Z"
   },
   {
     "id": "UMABERTO-1-celular",
@@ -10491,7 +10491,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:13:02.135Z"
+    "quando": "2026-11-16T19:13:06.690Z"
   },
   {
     "id": "UMABERTO-2-celular",
@@ -10502,7 +10502,7 @@
     "status": "APROVADO",
     "evidencia": "74-cargo2-aberto-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:13:06.038Z"
+    "quando": "2026-11-16T19:13:08.217Z"
   },
   {
     "id": "UMABERTO-3-celular",
@@ -10513,7 +10513,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:13:07.289Z"
+    "quando": "2026-11-16T19:13:09.113Z"
   },
   {
     "id": "UMABERTO-4-celular",
@@ -10524,7 +10524,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:13:08.345Z"
+    "quando": "2026-11-16T19:13:09.840Z"
   },
   {
     "id": "UMABERTO-5-celular",
@@ -10535,7 +10535,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:13:11.353Z"
+    "quando": "2026-11-16T19:13:10.946Z"
   },
   {
     "id": "NUMCARGO-1-desktop",
@@ -10546,7 +10546,7 @@
     "status": "APROVADO",
     "evidencia": "75-aviso-numero-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T14:13:34.637Z"
+    "quando": "2026-11-16T19:13:21.712Z"
   },
   {
     "id": "NUMCARGO-2-desktop",
@@ -10557,7 +10557,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:13:35.941Z"
+    "quando": "2026-11-16T19:13:22.741Z"
   },
   {
     "id": "NUMCARGO-1-celular",
@@ -10568,7 +10568,7 @@
     "status": "APROVADO",
     "evidencia": "75-aviso-numero-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:13:54.862Z"
+    "quando": "2026-11-16T19:13:32.507Z"
   },
   {
     "id": "NUMCARGO-2-celular",
@@ -10579,7 +10579,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:13:56.267Z"
+    "quando": "2026-11-16T19:13:33.533Z"
   },
   {
     "id": "UXPROF-1",
@@ -10590,7 +10590,7 @@
     "status": "APROVADO",
     "evidencia": "76-cadastro-infantil-separada.png",
     "nota": "",
-    "quando": "2026-11-16T12:33:01.963Z"
+    "quando": "2026-11-16T19:13:39.851Z"
   },
   {
     "id": "UXPROF-8",
@@ -10601,7 +10601,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T12:33:06.624Z"
+    "quando": "2026-11-16T19:13:42.351Z"
   },
   {
     "id": "UXPROF-9",
@@ -10612,7 +10612,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T12:33:10.972Z"
+    "quando": "2026-11-16T19:13:45.595Z"
   },
   {
     "id": "UXPROF-2",
@@ -10623,7 +10623,7 @@
     "status": "APROVADO",
     "evidencia": "76-inicio-professor.png",
     "nota": "",
-    "quando": "2026-11-16T12:33:20.768Z"
+    "quando": "2026-11-16T19:13:51.661Z"
   },
   {
     "id": "UXPROF-4",
@@ -10634,7 +10634,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T12:33:22.594Z"
+    "quando": "2026-11-16T19:13:53.251Z"
   },
   {
     "id": "UXPROF-3",
@@ -10645,7 +10645,7 @@
     "status": "APROVADO",
     "evidencia": "76-falta-preencher.png",
     "nota": "",
-    "quando": "2026-11-16T12:33:25.727Z"
+    "quando": "2026-11-16T19:13:55.714Z"
   },
   {
     "id": "UXPROF-3b",
@@ -10656,7 +10656,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T12:33:27.556Z"
+    "quando": "2026-11-16T19:13:57.139Z"
   },
   {
     "id": "UXPROF-7",
@@ -10667,29 +10667,29 @@
     "status": "APROVADO",
     "evidencia": "76-notificacoes-celular.png",
     "nota": "",
-    "quando": "2026-11-16T12:33:51.631Z"
+    "quando": "2026-11-16T19:14:10.881Z"
   },
   {
     "id": "UXPROF-5",
     "modulo": "Melhorias de UX (teste como usuário)",
     "cenario": "Notificação da correção diz o que é e o prazo",
     "esperado": "\"Correção pendente no Formulário 1/3\" + \"Prazo:\"",
-    "observado": "Notificações | Marcar todas como lidas | 💬 | Correção pendente no Formulário 1/3 | Prazo: 19/11/2026, às 09h33. | 16/11/2026, 09:33",
+    "observado": "Notificações | Marcar todas como lidas | 💬 | Correção pendente no Formulário 1/3 | Prazo: 19/11/2026, às 16h14. | 16/11/2026, 16:14",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T12:33:51.674Z"
+    "quando": "2026-11-16T19:14:10.889Z"
   },
   {
     "id": "UXPROF-2b",
     "modulo": "Melhorias de UX (teste como usuário)",
     "cenario": "Início: a folha devolvida aparece com \"Correção solicitada\", o prazo da correção e \"Corrigir\"",
     "esperado": "Correção solicitada; corrigir até; Corrigir; sem \"Concluído\"",
-    "observado": "Correção solicitada | Cargo 1 |  | ZZ-HOMOLOG Escola Aurora |  | Literatura |  | 4/4 semanas · corrigir até 19/11/2026, 09:33 |  | Corrigir",
+    "observado": "Correção solicitada | Cargo 1 |  | ZZ-HOMOLOG Escola Aurora |  | Literatura |  | 4/4 semanas · corrigir até 19/11/2026, 16:14 |  | Corrigir",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T12:33:53.799Z"
+    "quando": "2026-11-16T19:14:12.869Z"
   },
   {
     "id": "UXPROF-6",
@@ -10700,7 +10700,7 @@
     "status": "APROVADO",
     "evidencia": "76-tela-correcao.png",
     "nota": "",
-    "quando": "2026-11-16T12:33:55.946Z"
+    "quando": "2026-11-16T19:14:14.470Z"
   },
   {
     "id": "PDILOTE-1",
@@ -10745,5 +10745,159 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-16T12:35:14.599Z"
+  },
+  {
+    "id": "TURMAATU-1-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: no cadastro, \"Professor Regente\" (sem disciplina) mostra as turmas da escola; Intervenção e Eventual não mostram turmas",
+    "esperado": "turmas do Regente; 0 listas para Intervenção/Eventual",
+    "observado": "Regente: 6M1 6M2 6M3 6M4 7M1 7M2; listas Intervenção/Eventual: 0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:10.071Z"
+  },
+  {
+    "id": "TURMAATU-2-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: \"Cadastrar\" grava o cargo e as turmas do Regente (sem disciplina); sem rolagem lateral",
+    "esperado": "Professor Regente:6M1, Professor Regente:6M2; sem rolagem",
+    "observado": "Professor Regente:6M1, Professor Regente:6M2; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "78-cadastro-regente-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T19:09:13.479Z"
+  },
+  {
+    "id": "TURMAATU-3-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: \"Cargos e escolas\" → Alterar mostra as turmas do Regente; trocar 6M2 por 6M3 grava ao salvar",
+    "esperado": "6M1 marcada; Professor Regente:6M1, Professor Regente:6M3",
+    "observado": "6M1: true; Professor Regente:6M1, Professor Regente:6M3",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:18.921Z"
+  },
+  {
+    "id": "TURMAATU-4-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: botão \"Turmas\" mostra a linha \"Professor Regente\" e marca/desmarca na hora",
+    "esperado": "✓ 6M1, ✓ 6M3; depois + 6M4",
+    "observado": "✓ 6M1, ✓ 6M3; Professor Regente:6M1, Professor Regente:6M3, Professor Regente:6M4",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:22.784Z"
+  },
+  {
+    "id": "TURMAATU-5-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: API recusa turma para Eventual e Intervenção; repetir Regente na mesma turma não duplica",
+    "esperado": "400, 400; 200 e 1 ativo",
+    "observado": "400 \"Eventual não se liga a turmas.\", 400; Regente 200, ativos 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:23.498Z"
+  },
+  {
+    "id": "TURMAATU-6-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: o professor vê as turmas com a função (\"6M1 · Professor Regente\") em Minhas turmas",
+    "esperado": "6M1, 6M3, 6M4 · Professor Regente",
+    "observado": "6M1 · Professor Regente, 6M3 · Professor Regente, 6M4 · Professor Regente",
+    "status": "APROVADO",
+    "evidencia": "78-minhas-turmas-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T19:09:30.808Z"
+  },
+  {
+    "id": "TURMAATU-7-desktop",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "desktop: tirar \"Professor Regente\" do cargo encerra as turmas dele (Intervenção e Eventual ficam no cargo)",
+    "esperado": "nenhuma turma ativa",
+    "observado": "\"\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:40.367Z"
+  },
+  {
+    "id": "TURMAATU-1-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: no cadastro, \"Professor Regente\" (sem disciplina) mostra as turmas da escola; Intervenção e Eventual não mostram turmas",
+    "esperado": "turmas do Regente; 0 listas para Intervenção/Eventual",
+    "observado": "Regente: 6M1 6M2 6M3 6M4 7M1 7M2; listas Intervenção/Eventual: 0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:47.863Z"
+  },
+  {
+    "id": "TURMAATU-2-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: \"Cadastrar\" grava o cargo e as turmas do Regente (sem disciplina); sem rolagem lateral",
+    "esperado": "Professor Regente:6M1, Professor Regente:6M2; sem rolagem",
+    "observado": "Professor Regente:6M1, Professor Regente:6M2; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "78-cadastro-regente-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T19:09:51.090Z"
+  },
+  {
+    "id": "TURMAATU-3-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: \"Cargos e escolas\" → Alterar mostra as turmas do Regente; trocar 6M2 por 6M3 grava ao salvar",
+    "esperado": "6M1 marcada; Professor Regente:6M1, Professor Regente:6M3",
+    "observado": "6M1: true; Professor Regente:6M1, Professor Regente:6M3",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:09:56.518Z"
+  },
+  {
+    "id": "TURMAATU-4-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: botão \"Turmas\" mostra a linha \"Professor Regente\" e marca/desmarca na hora",
+    "esperado": "✓ 6M1, ✓ 6M3; depois + 6M4",
+    "observado": "✓ 6M1, ✓ 6M3; Professor Regente:6M1, Professor Regente:6M3, Professor Regente:6M4",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:10:00.457Z"
+  },
+  {
+    "id": "TURMAATU-5-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: API recusa turma para Eventual e Intervenção; repetir Regente na mesma turma não duplica",
+    "esperado": "400, 400; 200 e 1 ativo",
+    "observado": "400 \"Eventual não se liga a turmas.\", 400; Regente 200, ativos 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:10:00.933Z"
+  },
+  {
+    "id": "TURMAATU-6-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: o professor vê as turmas com a função (\"6M1 · Professor Regente\") em Minhas turmas",
+    "esperado": "6M1, 6M3, 6M4 · Professor Regente",
+    "observado": "6M1 · Professor Regente, 6M3 · Professor Regente, 6M4 · Professor Regente",
+    "status": "APROVADO",
+    "evidencia": "78-minhas-turmas-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T19:10:07.891Z"
+  },
+  {
+    "id": "TURMAATU-7-celular",
+    "modulo": "Turmas por atuação pedagógica",
+    "cenario": "celular: tirar \"Professor Regente\" do cargo encerra as turmas dele (Intervenção e Eventual ficam no cargo)",
+    "esperado": "nenhuma turma ativa",
+    "observado": "\"\"",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T19:10:17.479Z"
   }
 ]

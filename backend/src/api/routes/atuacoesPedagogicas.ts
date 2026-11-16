@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { marcarDesativacao } from '../../lib/desativacao.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../domain/errors.js';
+import { atuacaoTemTurmas } from '../../domain/cargos.js';
 
 // Catálogo de ATUAÇÕES PEDAGÓGICAS do cargo (decisão do usuário, 12/11/2026): Professor Regente, Oficina do
 // Brincar, Professor de Intervenção… Não são disciplinas. Consulta: Secretaria e Diretora (que vê os cargos).
@@ -13,7 +14,8 @@ export const atuacoesPedagogicasRouter = Router();
 
 type Actor = { id: number; perfil: string };
 const exigirSecretaria = (actor: Actor) => { if (actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria cadastra atuações pedagógicas.'); };
-const formatar = (a: { id: number; nome: string; status: string }) => ({ id: a.id, nome: a.nome, status: a.status === 'ATIVA' ? 'ativa' : 'inativa' });
+// temTurmas (16/11/2026): se a atuação pode ter turmas (falso para Biblioteca, Professor de Intervenção e Eventual).
+const formatar = (a: { id: number; nome: string; status: string }) => ({ id: a.id, nome: a.nome, status: a.status === 'ATIVA' ? 'ativa' : 'inativa', temTurmas: atuacaoTemTurmas(a.nome) });
 const ehNomeRepetido = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
 
 atuacoesPedagogicasRouter.get('/', async (_req, res) => {

@@ -13,6 +13,7 @@ export async function limparProfessoresDeTeste(prefixos = ['ui-', 'assist-']) {
   await prisma.cargoVersao.deleteMany({ where: { cargoId: { in: cargos } } });
   await prisma.cargoProfessor.deleteMany({ where: { id: { in: cargos } } });
   await prisma.professorTurmaDisciplina.deleteMany({ where: { professorId: { in: pessoas } } });
+  await prisma.professorTurmaAtuacao.deleteMany({ where: { professorId: { in: pessoas } } }); // 16/11/2026: turmas por atuação
   await prisma.vinculoEscolar.deleteMany({ where: { pessoaId: { in: pessoas } } });
   await prisma.pessoaEvento.deleteMany({ where: { OR: [{ pessoaId: { in: pessoas } }, { autorId: { in: pessoas } }] } });
   await prisma.pessoa.deleteMany({ where: { id: { in: pessoas } } });
