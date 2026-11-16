@@ -26,6 +26,7 @@ const CONTAS_DEMONSTRACAO: { email: string; nome: string; cargo: string | null; 
 const DISCIPLINAS = [
   'Língua Portuguesa',
   'Redação',
+  'Literatura', // 16/11/2026: mesmas habilidades de Língua Portuguesa
   'Arte',
   'Educação Física',
   'Matemática',
@@ -40,6 +41,7 @@ const DISCIPLINAS = [
 const COMPONENTE_POR_DISCIPLINA: Record<string, ComponenteCurricular> = {
   'Língua Portuguesa': 'LINGUA_PORTUGUESA',
   'Redação': 'LINGUA_PORTUGUESA',
+  'Literatura': 'LINGUA_PORTUGUESA',
   'Arte': 'ARTE',
   'Educação Física': 'EDUCACAO_FISICA',
   'Matemática': 'MATEMATICA',
