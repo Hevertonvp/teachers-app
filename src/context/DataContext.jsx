@@ -23,22 +23,23 @@ import {
   inativarAnamnesePerguntaReal, listarAnamneseModelosReais, listarAnamnesesPendentesReal, obterAnamneseModeloReal, obterAnamneseReal,
   obterHistoricoAnamneseReal, reativarAnamnesePerguntaReal, reordenarAnamnesePerguntasReais, salvarAnamneseReal,
 } from '../services/anamnese';
-import {
-  auxiliares as auxiliaresIniciais,
-  correcoesSimulados as correcoesIniciais,
-  disciplinas,
-  eventosPedagogicos as eventosIniciais,
-  formulariosPrazos,
-  diretores as diretoresIniciais,
-  formulariosUmTerco as formulariosIniciais,
-  gestores as gestoresIniciais,
-  noticiasRede as noticiasIniciais,
-  pdis as pdisIniciais,
-  professores as professoresIniciais,
-  secretarias as secretariasIniciais,
-  turmaProfessores as turmaProfessoresIniciais,
-  vinculosEscolares as vinculosEscolaresIniciais,
-} from '../data/mockData';
+// 16/11/2026: dados de demonstração (src/data/mockData.js) REMOVIDOS a pedido do usuário. As listas abaixo, que só
+// alimentavam telas antigas do protótipo (a maioria já fora das rotas), começam vazias; os nomes ficam para nada que
+// ainda as lê quebrar. O que é real vem da API (escolas, turmas, disciplinas reais, pessoas, PDI, 1/3...).
+const auxiliaresIniciais = [];
+const correcoesIniciais = [];
+const disciplinas = [];
+const eventosIniciais = [];
+const formulariosPrazos = [];
+const diretoresIniciais = [];
+const formulariosIniciais = [];
+const gestoresIniciais = [];
+const noticiasIniciais = [];
+const pdisIniciais = [];
+const professoresIniciais = [];
+const secretariasIniciais = [];
+const turmaProfessoresIniciais = [];
+const vinculosEscolaresIniciais = [];
 import {
   pdiAcompanhamentosHistoricos as pdiAcompanhamentosIniciais,
   pdiAlunos as pdiAlunosIniciais,

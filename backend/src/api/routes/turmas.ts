@@ -74,6 +74,8 @@ function mensagemConflito(conflito: Turma): string {
 async function montarTurma(input: SalvarTurmaInput, existente: Turma | null) {
   const escola = await prisma.escola.findUnique({ where: { id: input.escolaId }, include: { niveisInfantil: { select: { nivelId: true } } } });
   if (!escola) throw new NotFoundError('Escola não encontrada.');
+  // 16/11/2026: escola inativa não recebe turma (criar ou mover para ela). Editar turma que já está nela continua.
+  if (escola.status !== 'ATIVA' && (!existente || existente.escolaId !== escola.id)) throw new ValidationError('Esta escola está inativa.');
   const informada = escola.etapasOferecidas.length > 0;
   const base = { escolaId: input.escolaId, anoLetivo: input.anoLetivo, etapa: input.etapa, turno: input.turno, identificador: input.identificador };
 
@@ -187,6 +189,7 @@ turmasRouter.post('/:id/reativar', async (req, res) => {
 
   // 16/11/2026: escola com etapas informadas só reativa turma do que ela oferece.
   const escola = await prisma.escola.findUnique({ where: { id: existente.escolaId }, include: { niveisInfantil: { select: { nivelId: true } } } });
+  if (escola && escola.status !== 'ATIVA') throw new ConflictError('Esta escola está inativa.');
   if (escola && escola.etapasOferecidas.length) {
     const coberta = existente.etapa === 'FUNDAMENTAL'
       ? !!existente.anoSerie && escola.anosFundamental.includes(existente.anoSerie)

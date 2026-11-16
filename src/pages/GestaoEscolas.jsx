@@ -14,58 +14,16 @@ import { EstruturaEscola, estruturaDaEscola, rotuloEtapas, sugerirPelasTurmas } 
 // Desativadas em tela própria (pedido do usuário, 15/11/2026): lista paginada, mais recentes primeiro.
 const carregarDesativadas = (pagina, porPagina) => listarDesativados('escolas', { pagina, porPagina });
 
-const VinculosModal = ({ escola, professores, gestores, vinculosEscolares, createVinculoEscolar, desvincularEscola, onClose }) => {
-  const isVinculado = (usuarioTipo, usuarioId) => vinculosEscolares.some(vinculo => vinculo.escolaId === escola.id && vinculo.usuarioTipo === usuarioTipo && vinculo.usuarioId === usuarioId && vinculo.status === 'ativo');
-
-  const toggle = (usuarioTipo, usuarioId) => {
-    const vinculoAtivo = vinculosEscolares.find(vinculo => vinculo.escolaId === escola.id && vinculo.usuarioTipo === usuarioTipo && vinculo.usuarioId === usuarioId && vinculo.status === 'ativo');
-    if (vinculoAtivo) desvincularEscola(vinculoAtivo.id);
-    else createVinculoEscolar({ escolaId: escola.id, usuarioTipo, usuarioId, status: 'ativo' });
-  };
-
-  return (
-    <Modal title={`Vínculos - ${escola.nome}`} onClose={onClose}>
-      <div className="space-y-6">
-        <div>
-          <p className="mb-2 text-sm font-semibold text-slate-700">Supervisores(as)</p>
-          <div className="space-y-2">
-            {gestores.map(gestor => (
-              <label key={gestor.id} className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" checked={isVinculado('gestor', gestor.id)} onChange={() => toggle('gestor', gestor.id)} />
-                {gestor.nome}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-semibold text-slate-700">Professores(as)</p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {professores.map(professor => (
-              <label key={professor.id} className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" checked={isVinculado('professor', professor.id)} onChange={() => toggle('professor', professor.id)} />
-                {professor.nome}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="mt-6 flex justify-end">
-        <Button onClick={onClose}>Concluir</Button>
-      </div>
-    </Modal>
-  );
-};
+// 16/11/2026: a janela "Gerenciar vínculos" (dados de demonstração do protótipo) foi removida. Professor ganha escola
+// pelo cargo ("Cargos e escolas"); supervisores e diretoras, em Gestão de Pessoas.
 
 export const GestaoEscolas = () => {
   const { user } = useAuth();
   const {
     escolas, escolasLoading, escolasError, loadEscolas, turmas,
-    professores, gestores, vinculosEscolares,
     createEscola, updateEscola, inativarEscola, reativarEscola,
-    createVinculoEscolar, desvincularEscola,
   } = useData();
 
-  const [managingEscola, setManagingEscola] = useState(null);
   const [escolaForm, setEscolaForm] = useState(null);
   const [editingEscola, setEditingEscola] = useState(null);
   const [escolaFormError, setEscolaFormError] = useState('');
@@ -134,9 +92,6 @@ export const GestaoEscolas = () => {
     { key: 'etapas', header: 'Etapas', render: row => (rotuloEtapas(row)
       ? <span className="text-sm text-slate-700">{rotuloEtapas(row)}</span>
       : <span className="text-xs text-slate-400">Não informadas</span>) },
-    { key: 'vinculos', header: 'Vínculos', render: row => (
-      <Button size="sm" variant="outline" onClick={() => setManagingEscola(row)}>Gerenciar vínculos</Button>
-    ) },
     { key: 'acoes', header: 'Ações', render: row => (
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={() => abrirEdicao(row)}>Editar</Button>
@@ -158,7 +113,7 @@ export const GestaoEscolas = () => {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-950">Escolas</h1>
-            <p className="mt-2 max-w-2xl text-slate-600">Cadastre, edite e desative escolas da rede. Desativar bloqueia o acesso operacional, mas preserva o histórico. Vínculos de professores e supervisores são gerenciados por escola.</p>
+            <p className="mt-2 max-w-2xl text-slate-600">Cadastre, edite e desative escolas da rede. Desativar bloqueia o acesso operacional, mas preserva o histórico.</p>
             <Link to="/escolas?ver=desativadas" className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver escolas desativadas ({escolas.filter(e => e.status !== 'ativa').length}) →</Link>
           </div>
           <Button onClick={abrirNovaEscola} disabled={escolasLoading}>+ Nova escola</Button>
@@ -232,17 +187,6 @@ export const GestaoEscolas = () => {
         />
       )}
 
-      {managingEscola && (
-        <VinculosModal
-          escola={managingEscola}
-          professores={professores}
-          gestores={gestores}
-          vinculosEscolares={vinculosEscolares}
-          createVinculoEscolar={createVinculoEscolar}
-          desvincularEscola={desvincularEscola}
-          onClose={() => setManagingEscola(null)}
-        />
-      )}
     </MainLayout>
   );
 };

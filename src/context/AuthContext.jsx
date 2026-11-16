@@ -1,5 +1,4 @@
 import { createContext, useEffect, useState, useContext } from 'react';
-import { usuarios as usuariosIniciais } from '../data/mockData';
 import { apiFetch, getAuthToken, setAuthToken, setSenhaTemporariaPendenteHandler, setUnauthorizedHandler } from '../services/api';
 import { registrarUsuarioAtual, sincronizarAoEntrar } from '../offline/syncQueue';
 import { useData } from './DataContext';
@@ -22,12 +21,7 @@ const getStoredUser = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getStoredUser);
-  const [usuarios] = useState(usuariosIniciais);
-  // Lê os perfis sempre atualizados do DataContext (não mais uma cópia estática do mockData) —
-  // assim, uma pessoa cadastrada ou editada em Gestão de Pessoas já entra corretamente aqui,
-  // sem depender de recarregar a página. Por isso o AuthProvider precisa estar DENTRO do
-  // DataProvider (ver App.jsx).
-  const { professores, gestores, diretores, secretarias, auxiliares, loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais, loadTrimestres } = useData();
+  const { loadEscolas, loadTurmas, loadDisciplinasReais, loadPdiAlunosReais, loadTrimestres } = useData();
 
   // Carga inicial de dados reais depois que a sessão está liberada. Com senha temporária pendente o
   // backend recusa TODAS estas chamadas (403), então só roda no login normal e, no primeiro acesso,
@@ -43,9 +37,7 @@ export const AuthProvider = ({ children }) => {
     if (['SECRETARIA', 'GESTOR', 'DIRETORA'].includes(perfil)) loadPdiAlunosReais();
   };
 
-  // Login REAL: quem valida e-mail/senha é o backend (bcrypt + JWT). O array `usuarios` do mock
-  // continua servindo só para ligar a conta ao perfil detalhado (turmas, disciplinas, avatar...)
-  // que ainda vive no DataContext mockado — a autenticação em si não depende mais dele.
+  // Login REAL: quem valida e-mail/senha é o backend (bcrypt + JWT); o usuário é o que ele devolve.
   const login = async (email, senha) => {
     let resposta;
     try {
@@ -55,51 +47,18 @@ export const AuthProvider = ({ children }) => {
     }
 
     const { token, pessoa } = resposta;
-    const usuario = usuarios.find(u => u.email.toLowerCase() === pessoa.email.toLowerCase());
-
-    // O backend devolve o perfil em maiúsculas (PROFESSOR, GESTOR...); o frontend usa minúsculas.
-    let userData;
-    if (usuario) {
-      userData = {
-        id: usuario.id,
-        email: usuario.email,
-        tipo: pessoa.perfil.toLowerCase(),
-      };
-
-      if (usuario.tipo === 'professor') {
-        const professor = professores.find(p => p.id === usuario.professorId);
-        userData = { ...userData, ...professor };
-      } else if (usuario.tipo === 'gestor') {
-        const gestor = gestores.find(g => g.id === usuario.gestorId);
-        userData = { ...userData, ...gestor };
-      } else if (usuario.tipo === 'diretora') {
-        const diretora = diretores.find(d => d.id === usuario.diretoraId);
-        userData = { ...userData, ...diretora };
-      } else if (usuario.tipo === 'secretaria') {
-        const secretaria = secretarias.find(s => s.id === usuario.secretariaId);
-        userData = { ...userData, ...secretaria };
-      } else if (usuario.tipo === 'auxiliar') {
-        const auxiliar = auxiliares.find(a => a.id === usuario.auxiliarId);
-        userData = { ...userData, ...auxiliar };
-      }
-
-      // `id` acima é sobrescrito pelo id do perfil (professorId/gestorId/...) nos spreads
-      // acima — é o que o resto do app usa como "user.id" hoje. `usuarioId` preserva à parte
-      // o id da credencial de login (usuarios.id), que não deve ser perdido nessa fusão.
-      userData.usuarioId = usuario.id;
-    } else {
-      // Pessoa real sem correspondente no mock (criada pelo fluxo real de cadastro de Professor,
-      // ver GestaoPessoas.jsx) — usa só o que o backend devolveu. Sem "perfil rico" (turmas,
-      // disciplinas): essa pessoa ainda não existe no ecossistema mock de Turmas/PDI, então
-      // aparece corretamente sem nenhuma turma/ficha até esse vínculo também virar real.
-      userData = {
-        id: pessoa.id,
-        email: pessoa.email,
-        nome: pessoa.nome,
-        cargo: pessoa.cargo,
-        tipo: pessoa.perfil.toLowerCase(),
-      };
-    }
+    // 16/11/2026: dados de demonstração (mockData) removidos — o usuário vem só do backend. Iniciais do nome para o
+    // círculo do cabeçalho (antes vinham do mock só para as contas de demonstração; professores ficavam sem).
+    const palavras = (pessoa.nome || pessoa.email || '').trim().split(/\s+/).filter(Boolean);
+    const iniciais = palavras.length > 1 ? `${palavras[0][0]}${palavras[palavras.length - 1][0]}` : (palavras[0] ?? '').slice(0, 2);
+    const userData = {
+      id: pessoa.id,
+      email: pessoa.email,
+      nome: pessoa.nome,
+      cargo: pessoa.cargo,
+      tipo: pessoa.perfil.toLowerCase(),
+      avatar: iniciais.toUpperCase(),
+    };
 
     userData.senhaTemporaria = pessoa.senhaTemporaria;
 
