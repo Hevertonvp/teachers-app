@@ -669,6 +669,7 @@ const ProfessoresReaisManager = ({ user }) => {
           escolas={minhasEscolas}
           disciplinas={disciplinasDoCargo}
           atuacoes={atuacoes}
+          turmas={turmas}
           onAlterado={carregar}
           onClose={() => setManagingCargos(null)}
         />

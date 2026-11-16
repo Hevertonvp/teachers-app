@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { Badge, Button, LoadingBlock, Modal } from './Common';
 import { ComposicaoCargo } from './ComposicaoCargo';
 import { alterarCargo, criarCargo, encerrarCargo, listarCargos, previaSaidasCargo } from '../services/cargos';
+import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { inputClass } from '../utils/display';
 import { hojeSpServidor } from '../utils/horaServidor';
 
 // Cargos do Professor (decisão do usuário, 12/11/2026): Professor → Cargo(s) → Escola(s) → Disciplina(s).
 // Tela simples e progressiva: "Cargo 1" aberto; cada bloco é Escola + Disciplina(s) e/ou Atuação(ões)
 // pedagógica(s) (12/11/2026: Professor Regente, Oficina do Brincar…), com "+ Adicionar disciplina",
-// "+ Adicionar atuação" e "+ Adicionar escola". Turmas só no cadastro (15/11/2026); sem séries, sem IDs. Cada escola precisa de ao
+// "+ Adicionar atuação" e "+ Adicionar escola". Turmas no cadastro e em "Cargos e escolas" (15/11/2026); sem séries, sem IDs. Cada escola precisa de ao
 // menos uma disciplina ou uma atuação. "Cargo 1/2" é só rótulo; quem guarda a identidade é o banco.
 
 let seq = 0;
@@ -22,9 +23,13 @@ export const novoRascunhoCargo = (escolaId = '') => ({
   partes: [{ chave: novaChave(), escolaId: escolaId ? String(escolaId) : '', disciplinaIds: [''], atuacaoIds: [] }],
 });
 
-const rascunhoDoCargo = (cargo) => ({
+// `vinculos` = turmas ATIVAS do professor (15/11/2026): cada disciplina do cargo já vem com as turmas que ele tem.
+const rascunhoDoCargo = (cargo, vinculos = []) => ({
   chave: novaChave(), dataInicio: cargo.dataInicio,
-  partes: cargo.composicao.map(p => ({ chave: novaChave(), escolaId: String(p.escolaId), disciplinaIds: p.disciplinas.map(d => String(d.id)), atuacaoIds: (p.atuacoes ?? []).map(a => String(a.id)) })),
+  partes: cargo.composicao.map(p => ({
+    chave: novaChave(), escolaId: String(p.escolaId), disciplinaIds: p.disciplinas.map(d => String(d.id)), atuacaoIds: (p.atuacoes ?? []).map(a => String(a.id)),
+    turmas: Object.fromEntries(p.disciplinas.map(d => [String(d.id), vinculos.filter(v => v.escolaId === p.escolaId && v.disciplinaId === d.id).map(v => String(v.turmaId))])),
+  })),
 });
 
 // Validação perto do campo. Devolve { ok, erros: { inicio?, partes: { [chave]: texto } }, dados }.
@@ -202,7 +207,9 @@ const AvisoSaidas = ({ nome, saidas }) => (
   </div>
 );
 
-export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], onClose, onAlterado, iniciar = null }) => {
+export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuacoes = [], turmas = [], onClose, onAlterado, iniciar = null }) => {
+  const [vinculos, setVinculos] = useState([]); // turmas ATIVAS do professor
+  const [ocupantes, setOcupantes] = useState(null); // "turmaId-disciplinaId" → outro professor que dá a disciplina lá
   const [saidasAlterar, setSaidasAlterar] = useState(null); // { lista, dados } — aviso antes de salvar a alteração
   const [cargos, setCargos] = useState(null);
   const [encerrados, setEncerrados] = useState(null);
@@ -217,11 +224,18 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
   const carregar = async () => {
     setErro('');
     try {
-      const lista = await listarCargos(professor.id);
+      const [lista, meus, todos] = await Promise.all([
+        listarCargos(professor.id),
+        podeEditar ? listarVinculosProfessorTurmaDisciplina({ professorId: professor.id }) : [],
+        podeEditar ? listarVinculosProfessorTurmaDisciplina().catch(() => []) : [],
+      ]);
+      const ativosDele = meus.filter(v => v.status === 'ATIVO');
+      setVinculos(ativosDele);
+      setOcupantes(new Map(todos.filter(v => v.status === 'ATIVO' && v.professorId !== professor.id).map(v => [`${v.turmaId}-${v.disciplinaId}`, v.professorNome])));
       setCargos(lista);
       const alvo = podeEditar && iniciar && iniciar.cargoId !== 'novo' ? lista.find(c => c.id === iniciar.cargoId) : null;
       if (alvo) {
-        const rascunho = rascunhoDoCargo(alvo);
+        const rascunho = rascunhoDoCargo(alvo, ativosDele);
         if (!rascunho.partes.some(p => p.escolaId === String(iniciar.escolaId))) {
           rascunho.partes.push({ chave: novaChave(), escolaId: String(iniciar.escolaId), disciplinaIds: [''], atuacaoIds: [] });
         }
@@ -250,6 +264,26 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
     if (n === 1 && cargos?.length === 2) setMensagem('Para ficar com um cargo, encerre um deles abaixo.');
   };
 
+  // Turmas (15/11/2026): só as das escolas+disciplinas deste cargo; marcadas que faltam são criadas, desmarcadas
+  // são encerradas. Disciplina tirada do cargo não mexe nas turmas dela (continuam no botão "Turmas").
+  const aplicarTurmas = async (v) => {
+    const cobertas = new Set(v.dados.composicao.flatMap(p => p.disciplinaIds.map(d => `${p.escolaId}-${d}`)));
+    const desejadas = new Map(v.vinculos.map(p => [`${p.turmaId}-${p.disciplinaId}`, p]));
+    const atuais = (await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id })).filter(x => x.status === 'ATIVO');
+    const falhas = [];
+    const nome = (turmaId, disciplinaId) => `${turmas.find(t => t.id === turmaId)?.nome ?? 'turma'} (${disciplinas.find(d => d.id === disciplinaId)?.nome ?? 'disciplina'})`;
+    for (const x of atuais) {
+      if (!cobertas.has(`${x.escolaId}-${x.disciplinaId}`) || desejadas.has(`${x.turmaId}-${x.disciplinaId}`)) continue;
+      try { await encerrarVinculoProfessorTurmaDisciplina(x.id); } catch { falhas.push(nome(x.turmaId, x.disciplinaId)); }
+    }
+    for (const [chave, p] of desejadas) {
+      if (atuais.some(x => `${x.turmaId}-${x.disciplinaId}` === chave)) continue;
+      try { await criarVinculoProfessorTurmaDisciplina({ ...p, professorId: professor.id }); } catch { falhas.push(nome(p.turmaId, p.disciplinaId)); }
+    }
+    setVinculos((await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id })).filter(x => x.status === 'ATIVO'));
+    return falhas;
+  };
+
   const salvar = async (confirmarSaida = false) => {
     const v = validarRascunhoCargo(editando.rascunho);
     setErros(v.erros);
@@ -264,6 +298,8 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
         ? await criarCargo(professor.id, v.dados)
         : await alterarCargo(professor.id, editando.id, { ...v.dados, baseUpdatedAt: editando.base, confirmarSaida });
       setCargos(lista); setEditando(null); setErros({ partes: {} }); setSaidasAlterar(null);
+      const falhas = await aplicarTurmas(v);
+      if (falhas.length) setErro(`Não foi possível acertar: ${falhas.join(', ')}. Use o botão "Turmas".`);
       setMensagem(editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado.');
       onAlterado?.();
     } catch (e) { setErro(e.message); } finally { setSalvando(false); }
@@ -283,6 +319,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
     try {
       setCargos(await encerrarCargo(professor.id, encerrando.cargo.id, encerrando.dataFim, encerrando.saidas.length > 0));
       setMensagem('Cargo encerrado.');
+      setVinculos((await listarVinculosProfessorTurmaDisciplina({ professorId: professor.id })).filter(x => x.status === 'ATIVO'));
       setEncerrando(null);
       if (verEncerrados) setEncerrados((await listarCargos(professor.id, { incluirEncerrados: true })).filter(c => c.status === 'encerrado'));
       onAlterado?.();
@@ -311,7 +348,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
 
             {cargos.map(cargo => (editando?.id === cargo.id ? (
               <div key={cargo.id} className="space-y-2">
-                <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => { setSaidasAlterar(null); setEditando(prev => ({ ...prev, rascunho: r })); }} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
+                <EditorCargo rotulo={cargo.rotulo} valor={editando.rascunho} onChange={r => { setSaidasAlterar(null); setEditando(prev => ({ ...prev, rascunho: r })); }} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} turmas={podeEditar ? turmas : null} ocupantes={ocupantes} />
                 {saidasAlterar ? (
                   <div className="space-y-3 rounded-lg border-2 border-red-200 bg-red-50 p-3" role="alert">
                     <AvisoSaidas nome={professor.nome} saidas={saidasAlterar.lista} />
@@ -336,7 +373,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                   </div>
                   {podeEditar && !editando && !encerrando && (
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo), base: cargo.updatedAt }); }}>Alterar</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo, vinculos), base: cargo.updatedAt }); }}>Alterar</Button>
                       <Button size="sm" variant="outline" onClick={() => abrirEncerramento(cargo)}>Encerrar cargo</Button>
                     </div>
                   )}
@@ -366,7 +403,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
 
             {editando?.id === 'novo' && (
               <div className="space-y-2">
-                <EditorCargo rotulo={`Cargo ${cargos.length + 1}`} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} />
+                <EditorCargo rotulo={`Cargo ${cargos.length + 1}`} valor={editando.rascunho} onChange={r => setEditando(prev => ({ ...prev, rascunho: r }))} escolas={escolas} disciplinas={disciplinas} atuacoes={atuacoes} erros={erros} turmas={podeEditar ? turmas : null} ocupantes={ocupantes} />
                 <div className="flex justify-end gap-2">
                   {cargos.length > 0 && <Button variant="secondary" size="sm" onClick={() => { setEditando(null); setErros({ partes: {} }); }} disabled={salvando}>Cancelar</Button>}
                   <Button size="sm" onClick={() => salvar()} loading={salvando}>Cadastrar cargo</Button>

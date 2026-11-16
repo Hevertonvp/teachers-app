@@ -5013,7 +5013,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:42:45.018Z"
+    "quando": "2026-11-16T00:05:32.149Z"
   },
   {
     "id": "ASSIST-2-desktop",
@@ -5024,7 +5024,7 @@
     "status": "APROVADO",
     "evidencia": "42-cadastro-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-15T23:42:45.404Z"
+    "quando": "2026-11-16T00:05:32.992Z"
   },
   {
     "id": "ASSIST-3-desktop",
@@ -5035,7 +5035,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:42:45.683Z"
+    "quando": "2026-11-16T00:05:33.404Z"
   },
   {
     "id": "ASSIST-4-desktop",
@@ -5046,7 +5046,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:42:46.156Z"
+    "quando": "2026-11-16T00:05:34.515Z"
   },
   {
     "id": "ASSIST-1-celular",
@@ -5057,7 +5057,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:42:52.163Z"
+    "quando": "2026-11-16T00:05:41.802Z"
   },
   {
     "id": "ASSIST-2-celular",
@@ -5068,7 +5068,7 @@
     "status": "APROVADO",
     "evidencia": "42-cadastro-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-15T23:42:52.446Z"
+    "quando": "2026-11-16T00:05:42.372Z"
   },
   {
     "id": "ASSIST-3-celular",
@@ -5079,7 +5079,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:42:52.675Z"
+    "quando": "2026-11-16T00:05:42.759Z"
   },
   {
     "id": "ASSIST-4-celular",
@@ -5090,7 +5090,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:42:53.073Z"
+    "quando": "2026-11-16T00:05:43.963Z"
   },
   {
     "id": "EXP-A1",
@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:35.509Z"
+    "quando": "2026-11-16T00:04:29.048Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:35.683Z"
+    "quando": "2026-11-16T00:04:29.434Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:36.074Z"
+    "quando": "2026-11-16T00:04:30.347Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:36.211Z"
+    "quando": "2026-11-16T00:04:30.758Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:36.544Z"
+    "quando": "2026-11-16T00:04:31.663Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:39.483Z"
+    "quando": "2026-11-16T00:04:35.345Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:43.023Z"
+    "quando": "2026-11-16T00:04:40.363Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:44.545Z"
+    "quando": "2026-11-16T00:04:42.103Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:45.417Z"
+    "quando": "2026-11-16T00:04:43.025Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:45.745Z"
+    "quando": "2026-11-16T00:04:43.886Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:49.212Z"
+    "quando": "2026-11-16T00:04:48.835Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 20:43InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
+    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 21:04InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:51.893Z"
+    "quando": "2026-11-16T00:04:52.549Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:52.765Z"
+    "quando": "2026-11-16T00:04:53.474Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":376,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":378,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:55.326Z"
+    "quando": "2026-11-16T00:04:56.210Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:55.423Z"
+    "quando": "2026-11-16T00:04:56.413Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 20:43InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
+    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 25/11/2026, 21:04InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:58.124Z"
+    "quando": "2026-11-16T00:05:00.357Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,7 +8434,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:43:58.188Z"
+    "quando": "2026-11-16T00:05:00.501Z"
   },
   {
     "id": "CARGO-16",
@@ -8445,7 +8445,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:44:01.359Z"
+    "quando": "2026-11-16T00:05:04.811Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T23:44:01.368Z"
+    "quando": "2026-11-16T00:05:04.837Z"
   },
   {
     "id": "UT-P04-02",
@@ -9754,7 +9754,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:49:53.157Z"
+    "quando": "2026-11-16T00:05:09.579Z"
   },
   {
     "id": "CASC-2",
@@ -9765,7 +9765,7 @@
     "status": "APROVADO",
     "evidencia": "66-aviso-tirar-escola-do-cargo.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:54.119Z"
+    "quando": "2026-11-16T00:05:11.933Z"
   },
   {
     "id": "CASC-3",
@@ -9776,7 +9776,7 @@
     "status": "APROVADO",
     "evidencia": "66-aviso-encerrar-cargo.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:55.539Z"
+    "quando": "2026-11-16T00:05:14.221Z"
   },
   {
     "id": "CASC-4",
@@ -9787,7 +9787,7 @@
     "status": "APROVADO",
     "evidencia": "66-aviso-celular.png",
     "nota": "",
-    "quando": "2026-11-15T20:49:58.934Z"
+    "quando": "2026-11-16T00:05:19.209Z"
   },
   {
     "id": "CASC-5",
@@ -9798,7 +9798,7 @@
     "status": "APROVADO",
     "evidencia": "66-diretora-professores.png",
     "nota": "",
-    "quando": "2026-11-15T20:50:01.933Z"
+    "quando": "2026-11-16T00:05:23.468Z"
   },
   {
     "id": "CASC-6",
@@ -9809,7 +9809,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:50:02.045Z"
+    "quando": "2026-11-16T00:05:23.601Z"
   },
   {
     "id": "OFF-CARGO-2a",
@@ -10316,5 +10316,115 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-15T20:33:35.162Z"
+  },
+  {
+    "id": "CARGOTURMA-1-desktop",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "desktop: \"Alterar\" mostra a turma que o professor já tem marcada",
+    "esperado": "Redação — 6M1 marcada",
+    "observado": "aria-pressed=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:03:44.466Z"
+  },
+  {
+    "id": "CARGOTURMA-2-desktop",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "desktop: marcar/desmarcar não grava antes de \"Salvar cargo\"; sem rolagem lateral",
+    "esperado": "6M1-Redação; sem rolagem",
+    "observado": "6M1-Redação; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "73-cargos-turmas-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T00:03:45.757Z"
+  },
+  {
+    "id": "CARGOTURMA-3-desktop",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "desktop: \"Salvar cargo\" grava as turmas: sai 6M1 de Redação, entram 6M2 de Redação e 6M1 de Geografia",
+    "esperado": "6M1-Geografia, 6M2-Redação",
+    "observado": "6M1-Geografia, 6M2-Redação",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:03:48.415Z"
+  },
+  {
+    "id": "CARGOTURMA-4-desktop",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "desktop: tirar a disciplina do cargo não apaga as turmas dela",
+    "esperado": "6M1-Geografia, 6M2-Redação",
+    "observado": "6M1-Geografia, 6M2-Redação",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:03:51.823Z"
+  },
+  {
+    "id": "CARGOTURMA-5-desktop",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "desktop: o botão \"Turmas\" continua e mostra o mesmo (6M2 de Redação marcada; Geografia em \"Fora do cargo\")",
+    "esperado": "marcada; Fora do cargo",
+    "observado": "6M2 aria-pressed=true; fora do cargo: 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:03:55.547Z"
+  },
+  {
+    "id": "CARGOTURMA-1-celular",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "celular: \"Alterar\" mostra a turma que o professor já tem marcada",
+    "esperado": "Redação — 6M1 marcada",
+    "observado": "aria-pressed=true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:04:07.132Z"
+  },
+  {
+    "id": "CARGOTURMA-2-celular",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "celular: marcar/desmarcar não grava antes de \"Salvar cargo\"; sem rolagem lateral",
+    "esperado": "6M1-Redação; sem rolagem",
+    "observado": "6M1-Redação; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "73-cargos-turmas-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T00:04:08.251Z"
+  },
+  {
+    "id": "CARGOTURMA-3-celular",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "celular: \"Salvar cargo\" grava as turmas: sai 6M1 de Redação, entram 6M2 de Redação e 6M1 de Geografia",
+    "esperado": "6M1-Geografia, 6M2-Redação",
+    "observado": "6M1-Geografia, 6M2-Redação",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:04:10.946Z"
+  },
+  {
+    "id": "CARGOTURMA-4-celular",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "celular: tirar a disciplina do cargo não apaga as turmas dela",
+    "esperado": "6M1-Geografia, 6M2-Redação",
+    "observado": "6M1-Geografia, 6M2-Redação",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:04:14.445Z"
+  },
+  {
+    "id": "CARGOTURMA-5-celular",
+    "modulo": "Turmas em Cargos e escolas",
+    "cenario": "celular: o botão \"Turmas\" continua e mostra o mesmo (6M2 de Redação marcada; Geografia em \"Fora do cargo\")",
+    "esperado": "marcada; Fora do cargo",
+    "observado": "6M2 aria-pressed=true; fora do cargo: 1",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T00:04:18.037Z"
   }
 ]
