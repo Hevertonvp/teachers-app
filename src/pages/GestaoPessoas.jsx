@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Badge, Button, Card, ConfirmDialog, DataTable, FormField, LoadingBlock, Modal, PersonName } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
@@ -325,6 +325,31 @@ const SenhaTemporariaModal = ({ pessoa, senha, mensagem, aviso = '', titulo = 'P
   );
 };
 
+// Cargo fechado no cadastro (15/11/2026): uma linha "Escola — Disciplina (turmas), Atuação" e "Editar".
+const ResumoCargoFechado = ({ rotulo, cargo, comErro, escolas, disciplinas, atuacoes, turmas, onEditar }) => {
+  const nomeDe = (lista, id) => lista.find(x => String(x.id) === String(id))?.nome;
+  const texto = cargo.partes.filter(p => p.escolaId).map(p => {
+    const itens = [
+      ...p.disciplinaIds.filter(Boolean).map(d => {
+        const ts = ((p.turmas ?? {})[d] ?? []).map(t => nomeDe(turmas, t)).filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+        return `${nomeDe(disciplinas, d) ?? ''}${ts.length ? ` (${ts.join(', ')})` : ''}`;
+      }),
+      ...(p.atuacaoIds ?? []).filter(Boolean).map(a => nomeDe(atuacoes, a) ?? ''),
+    ].filter(Boolean);
+    return `${nomeDe(escolas, p.escolaId) ?? ''}${itens.length ? ` — ${itens.join(', ')}` : ''}`;
+  }).join('; ');
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${comErro ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`} data-cargo-fechado={rotulo}>
+      <div className="min-w-0 text-sm">
+        <p className="font-bold text-slate-900">{rotulo}</p>
+        <p className="break-words text-slate-600">{texto || 'Não preenchido'}</p>
+        {comErro && <p className="text-xs font-semibold text-red-700">Confira este cargo.</p>}
+      </div>
+      <Button type="button" size="sm" variant="outline" onClick={onEditar}>Editar</Button>
+    </div>
+  );
+};
+
 const ProfessoresReaisManager = ({ user }) => {
   const { turmas, disciplinasReais } = useData();
   const escolaDoTopo = useEscolaDoTopo();
@@ -382,7 +407,22 @@ const ProfessoresReaisManager = ({ user }) => {
       .catch(() => setOcupantes(new Map()));
   };
   const fecharCadastro = () => { setForm(null); setFormError(''); setErrosCargos([]); };
-  const mudarNumeroDeCargos = (n) => setForm(prev => ({ ...prev, cargos: n === 1 ? prev.cargos.slice(0, 1) : (prev.cargos.length === 2 ? prev.cargos : [...prev.cargos, novoRascunhoCargo()]) }));
+  // Um cargo aberto por vez (decisão do usuário, 15/11/2026): com o Cargo 2 aberto embaixo, quem olhava o topo
+  // preenchia o Cargo 1 de novo. Agora o outro cargo vira uma linha de resumo com "Editar".
+  const refCargoAberto = useRef(null);
+  const abrirCargo = (i) => {
+    setForm(prev => ({ ...prev, aberto: i }));
+    requestAnimationFrame(() => {
+      const bloco = refCargoAberto.current;
+      bloco?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      bloco?.querySelector('select')?.focus({ preventScroll: true });
+    });
+  };
+  const mudarNumeroDeCargos = (n) => {
+    setForm(prev => ({ ...prev, cargos: n === 1 ? prev.cargos.slice(0, 1) : (prev.cargos.length === 2 ? prev.cargos : [...prev.cargos, novoRascunhoCargo()]) }));
+    setErrosCargos(prev => prev.slice(0, n));
+    abrirCargo(n === 2 ? 1 : 0);
+  };
 
   const toggleEscola = (escolaId) => {
     setForm(prev => ({
@@ -399,7 +439,7 @@ const ProfessoresReaisManager = ({ user }) => {
     // Secretaria: cargos (as escolas deles viram os vínculos). Diretora: escolas de vínculo, como antes.
     const validacoes = comCargos ? form.cargos.map(validarRascunhoCargo) : [];
     setErrosCargos(validacoes.map(v => v.erros));
-    if (validacoes.some(v => !v.ok)) { setFormError('Confira os campos do cargo destacados abaixo.'); return; }
+    if (validacoes.some(v => !v.ok)) { abrirCargo(validacoes.findIndex(v => !v.ok)); return; }
     const escolaIds = comCargos ? [...new Set(validacoes.flatMap(v => v.dados.composicao.map(p => p.escolaId)))] : form.escolaIds;
     if (escolaIds.length === 0) {
       setFormError('Selecione ao menos uma escola.');
@@ -581,21 +621,33 @@ const ProfessoresReaisManager = ({ user }) => {
                   <span className="text-sm font-semibold text-slate-700">Número de cargos</span>
                   <NumeroDeCargos valor={form.cargos.length} onChange={mudarNumeroDeCargos} />
                 </div>
-                {form.cargos.map((cargo, i) => (
-                  <EditorCargo
+                {form.cargos.map((cargo, i) => ((form.aberto ?? 0) === i || form.cargos.length === 1 ? (
+                  <div key={cargo.chave} ref={refCargoAberto} className="scroll-mt-4">
+                    <EditorCargo
+                      rotulo={`Cargo ${i + 1}`}
+                      valor={cargo}
+                      onChange={novo => setForm(prev => ({ ...prev, cargos: prev.cargos.map(c => (c.chave === cargo.chave ? novo : c)) }))}
+                      escolas={minhasEscolas}
+                      disciplinas={disciplinasDoCargo}
+                      atuacoes={atuacoes}
+                      erros={errosCargos[i]}
+                      turmas={turmas}
+                      ocupantes={ocupantes}
+                    />
+                  </div>
+                ) : (
+                  <ResumoCargoFechado
                     key={cargo.chave}
                     rotulo={`Cargo ${i + 1}`}
-                    valor={cargo}
-                    onChange={novo => setForm(prev => ({ ...prev, cargos: prev.cargos.map(c => (c.chave === cargo.chave ? novo : c)) }))}
+                    cargo={cargo}
+                    comErro={!!errosCargos[i] && (!!errosCargos[i].inicio || !!errosCargos[i].geral || Object.keys(errosCargos[i].partes ?? {}).length > 0)}
                     escolas={minhasEscolas}
                     disciplinas={disciplinasDoCargo}
                     atuacoes={atuacoes}
-                    erros={errosCargos[i]}
                     turmas={turmas}
-                    ocupantes={ocupantes}
+                    onEditar={() => abrirCargo(i)}
                   />
-                ))}
-                <p className="text-xs text-slate-500">As escolas dos cargos viram as escolas de vínculo do professor.</p>
+                )))}
               </div>
             ) : (
               <FormField label="Escolas de vínculo">
