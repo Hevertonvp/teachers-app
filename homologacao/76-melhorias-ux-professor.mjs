@@ -4,7 +4,7 @@
 //  2. Início do professor: bloco do Formulário 1/3 com "Preencher".    6. Tela de correção: um selo, sem prazo do ciclo, sem "Salvar progresso".
 //  3. Concluir com semanas vazias: atalhos "Falta preencher".          7. Caixa de notificações dentro da tela no celular.
 //  4. Etapas com número e alvo grande.                                 8. Busca por nome/e-mail.  9. Sobreposição de ciclo: mensagem curta.
-import { abrir, login, foto, preencherCadastroProfessor, BASE } from './lib.mjs';
+import { abrir, login, foto, preencherCadastroProfessor, marcarTurma, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 import { limparProfessoresDeTeste } from './limpar-professores-teste.mjs';
@@ -36,12 +36,16 @@ await login(p, 'secretaria@escola.gov.br', '12345678');
 await p.goto(BASE + '/#/pessoas'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1500);
 await p.getByRole('button', { name: '+ Cadastrar professor' }).click(); await p.waitForTimeout(1000);
 await preencherCadastroProfessor(modal(), { email, nome: NOME, escola: 'ZZ-HOMOLOG Escola Aurora', disciplina: 'Literatura', enviar: false });
-const grupoFund = await modal().getByRole('group', { name: 'Turmas de Literatura' }).innerText();
-const grupoInf = await modal().getByRole('group', { name: 'Turmas da Educação Infantil de Literatura' }).innerText().catch(() => '');
+// 16/11/2026: turmas da Infantil numa aba própria ("Infantil"), separadas das do Fundamental.
+const grupoLit = modal().getByRole('group', { name: 'Turmas de Literatura' });
+const grupoFund = (await grupoLit.innerText()).replace(/Infantil|Fund. II/g, '');
+await grupoLit.getByRole('tab', { name: /^Infantil/ }).click();
+const grupoInf = await grupoLit.innerText();
+await grupoLit.getByRole('tab', { name: /^Fund. II/ }).click();
 await foto(p, '76-cadastro-infantil-separada');
 r('1', 'Cadastro: turmas da Educação Infantil numa linha própria (não misturadas com 6M1…)', 'Berçário só no grupo "Educação Infantil"', `fundamental: ${grupoFund.replace(/\n/g, ' ')} | infantil: ${grupoInf.replace(/\n/g, ' ')}`,
   !/Berçário/.test(grupoFund) && /Berçário/.test(grupoInf) && /6M1/.test(grupoFund), '76-cadastro-infantil-separada.png');
-await modal().getByRole('button', { name: 'Literatura — 6M1', exact: true }).click();
+await marcarTurma(modal(), 'Literatura — 6M1');
 await modal().getByRole('button', { name: 'Cadastrar', exact: true }).click();
 await p.getByText('Senha temporária').waitFor({ timeout: 15000 });
 const senhaTemp = (await modal().innerText()).match(/SENHA TEMPORÁRIA\s+(\S+)/i)?.[1];

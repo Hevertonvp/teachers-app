@@ -21,8 +21,8 @@ export const rotuloEtapas = (escola) => {
   return etapas.length ? ETAPAS_OFERECIDAS.filter(e => etapas.includes(e.value)).map(e => e.curto).join(' · ') : null;
 };
 
-// Sugestão a partir das turmas ativas (só marca na tela; a Secretaria confere e salva). Turmas antigas da Infantil
-// (Pré I/Pré II) só sugerem a ETAPA — o nível delas não é convertido.
+// Sugestão a partir das turmas ativas (só marca na tela; a Secretaria confere e salva). Turma da Infantil ligada a
+// um nível do catálogo (inclusive as antigas 1º/2º Período, antes Pré I/II) sugere o nível; as demais, só a etapa.
 export const sugerirPelasTurmas = (turmasDaEscola) => {
   const ativas = turmasDaEscola.filter(t => t.status === 'ativa');
   const anos = [...new Set(ativas.filter(t => t.etapa === 'fundamental' && t.anoSerie).map(t => Number(t.anoSerie)))].sort((a, b) => a - b);

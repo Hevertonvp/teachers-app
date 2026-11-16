@@ -8,7 +8,7 @@ import {
   cicloEditavelAgora, dataLocalSp, exigirAberturaNaoPassada, paraDataIsoUtc, statusDoCiclo, TEXTO_SEMANA_MAX, validarCiclo, validarReabertura,
   type JanelaInstantes,
 } from '../../domain/umTerco.js';
-import { calcularFolhas, chaveDeCargos, corteDoCiclo, DISCIPLINAS_FORA_DO_UM_TERCO, limiteDeCadastroDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
+import { ATUACOES_FORA_DO_UM_TERCO, calcularFolhas, chaveDeCargos, corteDoCiclo, DISCIPLINAS_FORA_DO_UM_TERCO, limiteDeCadastroDoCiclo, rotuloDaFolha, rotulosDosCargos, type Composicao } from '../../domain/cargos.js';
 import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, formatarPrazo, idsDePessoasDasCorrecoes, OBSERVACAO_MAX, PRAZO_CORRECAO_MS, situacaoCorrecaoUmTerco, textoMensagemCorrecao, textoMensagemReenvio } from '../../domain/correcoes.js';
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 import { criarNotificacao } from '../../lib/notificacoes.js';
@@ -239,7 +239,9 @@ async function folhasDoCiclo(db: Db, ciclo: CicloCompleto, filtro: { professorId
   const professores = new Map(cargos.map((c) => [c.professorId, c.professor]));
   // Disciplinas fora do 1/3 (Informática, decisão de 15/11/2026) somem da folha; cargo que fica vazio não gera folha.
   const disciplinasFora = (await db.disciplina.findMany({ where: { nome: { in: DISCIPLINAS_FORA_DO_UM_TERCO } }, select: { id: true } })).map((d) => d.id);
-  const calculadas = calcularFolhas(cargos, ciclo, escolasDoCiclo(ciclo), disciplinasFora);
+  // Biblioteca fora do 1/3 (16/11/2026), pelo nome (sem acento/maiúscula não importa: o nome é único no catálogo).
+  const atuacoesFora = (await db.atuacaoPedagogica.findMany({ where: { nome: { in: ATUACOES_FORA_DO_UM_TERCO, mode: 'insensitive' } }, select: { id: true } })).map((a) => a.id);
+  const calculadas = calcularFolhas(cargos, ciclo, escolasDoCiclo(ciclo), disciplinasFora, atuacoesFora);
 
   // Rótulos "Cargo 1/2" pelos cargos de HOJE do Professor (só visual).
   const ids = [...new Set([...calculadas.map((f) => f.professorId), ...entregas.map((e) => e.professorId)])];

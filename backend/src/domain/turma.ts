@@ -16,8 +16,9 @@ const ROTULO_NIVEL: Record<NivelInfantil, string> = {
   BERCARIO_II: 'Berçário II',
   MATERNAL_I: 'Maternal I',
   MATERNAL_II: 'Maternal II',
-  PRE_I: 'Pré I',
-  PRE_II: 'Pré II',
+  // 16/11/2026: em SJN, Pré I/Pré II passaram a se chamar 1º/2º Período (o código do enum não mudou).
+  PRE_I: '1º Período',
+  PRE_II: '2º Período',
 };
 
 export interface DadosTurmaFundamental {
@@ -117,4 +118,7 @@ export function validarECalcularTurmaInfantilLocal(dados: DadosTurmaInfantilLoca
 }
 
 // Estrutura da escola (16/11/2026). Fund. I = 1º ao 5º; Fund. II = 6º ao 9º.
+// Nível antigo (enum) → nome do nível no catálogo (16/11/2026: Pré I/II = 1º/2º Período). Só os que têm equivalente.
+export const NIVEL_ANTIGO_NO_CATALOGO: Partial<Record<NivelInfantil, string>> = { PRE_I: '1º Período', PRE_II: '2º Período' };
+
 export const anoDaEtapa = (ano: number) => (ano <= 5 ? 'FUNDAMENTAL_I' : 'FUNDAMENTAL_II');

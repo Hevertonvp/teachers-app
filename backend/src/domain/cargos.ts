@@ -97,9 +97,15 @@ export const ATUACOES_SEM_TURMA = ['Biblioteca', 'Professor de Intervenção', '
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 export const atuacaoTemTurmas = (nome: string) => !ATUACOES_SEM_TURMA.some((n) => semAcento(n) === semAcento(nome));
 
-export const restringirAoCiclo = (composicao: Composicao, escolasDoCiclo: number[] | null, disciplinasFora: number[] = []): Composicao =>
+// Atuações que NÃO entram no 1/3 (decisão do usuário, 16/11/2026: "1/3 é pra quem dá aula"): Biblioteca. Somem da
+// folha como a Informática; escola só com Biblioteca sai da folha; cargo só com Biblioteca não gera folha. Biblioteca
+// junto de outra atuação/disciplina: a folha existe, só sem a Biblioteca. O cargo em si não muda.
+export const ATUACOES_FORA_DO_UM_TERCO = ['Biblioteca'];
+
+export const restringirAoCiclo = (composicao: Composicao, escolasDoCiclo: number[] | null, disciplinasFora: number[] = [], atuacoesFora: number[] = []): Composicao =>
   (escolasDoCiclo ? composicao.filter((i) => escolasDoCiclo.includes(i.escolaId)) : composicao)
     .map((i) => (disciplinasFora.length ? { ...i, disciplinaIds: i.disciplinaIds.filter((d) => !disciplinasFora.includes(d)) } : i))
+    .map((i) => (atuacoesFora.length && i.atuacaoIds ? { ...i, atuacaoIds: i.atuacaoIds.filter((a) => !atuacoesFora.includes(a)) } : i))
     .filter((i) => i.disciplinaIds.length > 0 || (i.atuacaoIds ?? []).length > 0);
 
 export type CargoParaCiclo = {
@@ -166,12 +172,12 @@ export type FolhaCalculada = {
 
 // Folhas de um ciclo: uma por cargo participante; cargos do MESMO Professor com a mesma parte no ciclo
 // dividem uma folha. Cargo cuja parte no ciclo é vazia (nenhuma escola do ciclo) não gera folha.
-export function calcularFolhas(cargos: CargoParaCiclo[], ciclo: { abreEm: Date; prazoEm: Date }, escolasDoCiclo: number[] | null, disciplinasFora: number[] = []): FolhaCalculada[] {
+export function calcularFolhas(cargos: CargoParaCiclo[], ciclo: { abreEm: Date; prazoEm: Date }, escolasDoCiclo: number[] | null, disciplinasFora: number[] = [], atuacoesFora: number[] = []): FolhaCalculada[] {
   const grupos = new Map<string, FolhaCalculada>();
   for (const cargo of [...cargos].sort((a, b) => a.id - b.id)) {
     const naAbertura = composicaoNaAbertura(cargo, ciclo);
     if (!naAbertura) continue;
-    const parte = restringirAoCiclo(naAbertura, escolasDoCiclo, disciplinasFora);
+    const parte = restringirAoCiclo(naAbertura, escolasDoCiclo, disciplinasFora, atuacoesFora);
     if (parte.length === 0) continue;
     const chave = `${cargo.professorId}|${chaveComposicao(parte)}`;
     const folha = grupos.get(chave) ?? { professorId: cargo.professorId, cargoIds: [], composicao: parte, esperada: false };

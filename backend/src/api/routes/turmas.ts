@@ -1,7 +1,7 @@
 import type { Turma } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
-import { validarECalcularTurma, validarECalcularTurmaInfantilLocal, type DadosTurma } from '../../domain/turma.js';
+import { NIVEL_ANTIGO_NO_CATALOGO, validarECalcularTurma, validarECalcularTurmaInfantilLocal, type DadosTurma } from '../../domain/turma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { prisma } from '../../lib/prisma.js';
 import { marcarDesativacao } from '../../lib/desativacao.js';
@@ -99,11 +99,14 @@ async function montarTurma(input: SalvarTurmaInput, existente: Turma | null) {
   if (informada && !turmaAntiga) throw new ValidationError('Escolha o nível da turma entre os que a escola oferece.');
   const dados = paraDadosTurma(input);
   const calculado = validarECalcularTurma(dados);
+  // 16/11/2026: o nível antigo com equivalente no catálogo (Pré I/II = 1º/2º Período) fica ligado a ele.
+  const equivalente = dados.etapa === 'EDUCACAO_INFANTIL' ? NIVEL_ANTIGO_NO_CATALOGO[dados.nivel] : undefined;
+  const nivelLocalId = equivalente ? (await prisma.nivelInfantilLocal.findUnique({ where: { nome: equivalente } }))?.id ?? null : null;
   return {
     ...base, ...calculado, anoSerie: null,
     segmento: dados.etapa === 'EDUCACAO_INFANTIL' ? dados.segmento : null,
     nivel: dados.etapa === 'EDUCACAO_INFANTIL' ? dados.nivel : null,
-    nivelLocalId: null,
+    nivelLocalId,
   };
 }
 

@@ -64,8 +64,9 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   // 15/11/2026: turmas marcadas no PRÓPRIO cadastro (seis de Redação), sem assistente depois; o modal não passa da tela.
   await preencherCadastroProfessor(c, { email: `ui-${nome}-${TAG}@homolog.nexo`, nome: `Professor UI ${nome} ${TAG}`, escola: 'ZZ-HOMOLOG Escola Aurora', disciplina: 'Redação', enviar: false });
   const w = modal(Y.page);
-  await w.locator('[data-disciplina="Redação"]').waitFor({ timeout: 10000 });
-  const chips = w.locator('[data-disciplina="Redação"] button[aria-pressed]');
+  // 16/11/2026: área única de turmas da escola (aba Fund. II já aberta para a disciplina).
+  await w.getByRole('group', { name: 'Turmas de Redação' }).waitFor({ timeout: 10000 });
+  const chips = w.getByRole('group', { name: 'Turmas de Redação' }).locator('button[aria-pressed]');
   const adicionadas = [];
   for (let i = 0; i < 6; i++) { const chip = chips.nth(i); adicionadas.push(await chip.innerText()); await chip.click(); }
   const cartao = await w.locator('> div').first().boundingBox();

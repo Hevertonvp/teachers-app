@@ -1,7 +1,7 @@
 // Turmas por ATUAÇÃO pedagógica (decisão do usuário, 16/11/2026): Professor Regente, Oficina do Brincar e TAE
 // podem ter turmas mesmo sem disciplina; Biblioteca, Professor de Intervenção e Eventual não mostram turmas.
 // Navegador real (computador e celular), banco LOCAL. Limpa o que cria.
-import { abrir, login, foto, BASE } from './lib.mjs';
+import { abrir, login, foto, marcarTurma, turmaMarcada, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 import { limparProfessoresDeTeste } from './limpar-professores-teste.mjs';
@@ -30,16 +30,17 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   await modal().getByRole('button', { name: 'Remover disciplina' }).first().click();
   await modal().getByRole('button', { name: '+ Adicionar atuação' }).click();
   await escolher(modal().getByLabel('Atuação 1').first(), 'Professor Regente'); await p.waitForTimeout(300);
-  const chipsRegente = await modal().getByRole('group', { name: 'Turmas de Professor Regente' }).getByRole('button').allInnerTexts().catch(() => []);
+  // 16/11/2026: área única de turmas com abas por etapa; a do Regente mostra as etapas da escola.
+  const chipsRegente = await modal().getByRole('group', { name: 'Turmas de Professor Regente' }).getByRole('tab').allInnerTexts().catch(() => []);
   await modal().getByRole('button', { name: '+ Adicionar atuação' }).click();
   await escolher(modal().getByLabel('Atuação 2').first(), 'Professor de Intervenção'); await p.waitForTimeout(300);
   await modal().getByRole('button', { name: '+ Adicionar atuação' }).click();
   await escolher(modal().getByLabel('Atuação 3').first(), 'Eventual'); await p.waitForTimeout(300);
   const gruposSemTurma = (await modal().getByRole('group', { name: 'Turmas de Professor de Intervenção' }).count()) + (await modal().getByRole('group', { name: 'Turmas de Eventual' }).count());
   r(`1-${nome}`, `${nome}: no cadastro, "Professor Regente" (sem disciplina) mostra as turmas da escola; Intervenção e Eventual não mostram turmas`, 'turmas do Regente; 0 listas para Intervenção/Eventual',
-    `Regente: ${chipsRegente.join(' ')}; listas Intervenção/Eventual: ${gruposSemTurma}`, chipsRegente.includes('6M1') && gruposSemTurma === 0);
-  await modal().getByRole('button', { name: 'Professor Regente — 6M1', exact: true }).click();
-  await modal().getByRole('button', { name: 'Professor Regente — 6M2', exact: true }).click();
+    `Regente: ${chipsRegente.join(' ')}; listas Intervenção/Eventual: ${gruposSemTurma}`, chipsRegente.some(a => a.startsWith('Fund. II')) && gruposSemTurma === 0);
+  await marcarTurma(modal(), 'Professor Regente — 6M1');
+  await marcarTurma(modal(), 'Professor Regente — 6M2');
   const largura = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   await foto(p, `78-cadastro-regente-${nome}`);
   await modal().getByRole('button', { name: 'Cadastrar', exact: true }).click();
@@ -55,9 +56,9 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   await p.getByRole('searchbox', { name: /Buscar professores/i }).fill(email); await p.waitForTimeout(400);
   await linha().getByRole('button', { name: 'Cargos e escolas' }).click(); await p.waitForTimeout(1500);
   await modal().getByRole('button', { name: 'Alterar' }).click(); await p.waitForTimeout(500);
-  const ja = await modal().getByRole('button', { name: 'Professor Regente — 6M1', exact: true }).getAttribute('aria-pressed');
-  await modal().getByRole('button', { name: 'Professor Regente — 6M2', exact: true }).click();
-  await modal().getByRole('button', { name: 'Professor Regente — 6M3', exact: true }).click();
+  const ja = await turmaMarcada(modal(), 'Professor Regente — 6M1');
+  await marcarTurma(modal(), 'Professor Regente — 6M2');
+  await marcarTurma(modal(), 'Professor Regente — 6M3');
   await modal().getByRole('button', { name: 'Salvar cargo' }).click(); await p.waitForTimeout(2500);
   const depois = await turmasDe(email);
   r(`3-${nome}`, `${nome}: "Cargos e escolas" → Alterar mostra as turmas do Regente; trocar 6M2 por 6M3 grava ao salvar`, '6M1 marcada; Professor Regente:6M1, Professor Regente:6M3', `6M1: ${ja}; ${depois}`, ja === 'true' && depois === 'Professor Regente:6M1, Professor Regente:6M3');
