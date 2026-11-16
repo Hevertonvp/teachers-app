@@ -1,7 +1,7 @@
 // Turmas em "Cargos e escolas" (decisão do usuário, 15/11/2026: "idêntico" ao cadastro; o botão "Turmas" continua).
 // Alterar o cargo mostra, em cada disciplina, as turmas que o professor JÁ tem marcadas; marcar/desmarcar só vale
 // em "Salvar cargo". Disciplina tirada do cargo não leva as turmas dela. Navegador real, banco LOCAL. Limpa o que cria.
-import { abrir, login, foto, preencherCadastroProfessor, BASE } from './lib.mjs';
+import { abrir, login, foto, preencherCadastroProfessor, marcarTurma, turmaMarcada, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 import { limparProfessoresDeTeste } from './limpar-professores-teste.mjs';
@@ -30,17 +30,19 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   };
   await abrirCargos();
   await modal().getByRole('button', { name: 'Alterar' }).click(); await p.waitForTimeout(500);
-  const ja = await modal().getByRole('button', { name: 'Redação — 6M1', exact: true }).getAttribute('aria-pressed');
+  const ja = await turmaMarcada(modal(), 'Redação — 6M1');
   r(`1-${nome}`, `${nome}: "Alterar" mostra a turma que o professor já tem marcada`, 'Redação — 6M1 marcada', `aria-pressed=${ja}`, ja === 'true');
 
   // Troca 6M1 → 6M2 e adiciona Geografia 6M1.
-  await modal().getByRole('button', { name: 'Redação — 6M1', exact: true }).click();
-  await modal().getByRole('button', { name: 'Redação — 6M2', exact: true }).click();
+  await marcarTurma(modal(), 'Redação — 6M1');
+  await marcarTurma(modal(), 'Redação — 6M2');
   const antesDeSalvar = await ativas();
   await modal().getByRole('button', { name: '+ Adicionar disciplina' }).first().click();
   const sel = modal().getByLabel('Disciplina 2').first();
   await sel.selectOption(await sel.evaluate(s => [...s.options].find(o => o.text.trim() === 'Geografia').value));
-  await modal().getByRole('button', { name: 'Geografia — 6M1', exact: true }).click();
+  // 16/11/2026: na lista única a Geografia herda a 6M2; separada, fica só com a 6M1.
+  await marcarTurma(modal(), 'Geografia — 6M1');
+  await marcarTurma(modal(), 'Geografia — 6M2');
   const largura = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   await foto(p, `73-cargos-turmas-${nome}`);
   r(`2-${nome}`, `${nome}: marcar/desmarcar não grava antes de "Salvar cargo"; sem rolagem lateral`, '6M1-Redação; sem rolagem', `${antesDeSalvar}; sem rolagem: ${largura}`, antesDeSalvar === '6M1-Redação' && largura, `73-cargos-turmas-${nome}.png`);
@@ -61,7 +63,7 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   const linha = p.getByText(email, { exact: true }).locator('xpath=ancestor::*[.//button[normalize-space()="Cargos e escolas"]][1]');
   await linha.getByRole('button', { name: 'Turmas', exact: true }).click(); await p.waitForTimeout(2000);
   await foto(p, `73-botao-turmas-${nome}`);
-  const m6m2 = await modal().getByRole('button', { name: 'Redação — 6M2', exact: true }).getAttribute('aria-pressed');
+  const m6m2 = await turmaMarcada(modal(), 'Redação — 6M2');
   const fora = await modal().getByText('Fora do cargo').count();
   r(`5-${nome}`, `${nome}: o botão "Turmas" continua e mostra o mesmo (6M2 de Redação marcada; Geografia em "Fora do cargo")`, 'marcada; Fora do cargo', `6M2 aria-pressed=${m6m2}; fora do cargo: ${fora}`, m6m2 === 'true' && fora === 1);
   await X.browser.close();

@@ -376,6 +376,35 @@ try {
     });
   }
 
+  // Biblioteca fora do 1/3 (decisão do usuário, 16/11/2026: "1/3 é pra quem dá aula").
+  {
+    const biblio = await prisma.atuacaoPedagogica.upsert({ where: { nome: 'Biblioteca' }, update: {}, create: { nome: 'Biblioteca' } });
+    const tae = await prisma.atuacaoPedagogica.upsert({ where: { nome: 'TAE' }, update: {}, create: { nome: 'TAE' } });
+    const pSoBiblio = await novoProfessor([{ composicao: C([prud.id, [], [biblio.id]]) }]);
+    const pBiblioRegente = await novoProfessor([{ composicao: C([prud.id, [], [biblio.id, regente.id]]) }]);
+    const pBiblioDisc = await novoProfessor([{ composicao: C([prud.id, [ing.id], [biblio.id]]) }]);
+    const pElegiveis = await Promise.all([regente, oficina, intervencao, tae].map((a) => novoProfessor([{ composicao: C([prud.id, [], [a.id]]) }])));
+    for (const p of [pSoBiblio, pBiblioRegente, pBiblioDisc, ...pElegiveis]) await recuar(p.id, 40);
+    await caso('BIBLIO 1. Professor SÓ de Biblioteca não recebe folha nem conta no painel', async () => {
+      assert.equal((await minhas(pSoBiblio.token, ciclo.id)).length, 0);
+      assert.equal((await painel(ciclo.id, `?professorId=${pSoBiblio.id}`)).linhas.length, 0);
+    });
+    await caso('BIBLIO 2. Biblioteca + Professor Regente: uma folha, só com Professor Regente', async () => {
+      const itens = await minhas(pBiblioRegente.token, ciclo.id);
+      assert.equal(itens.length, 1);
+      assert.deepEqual(itens[0].composicao.map((p) => (p as unknown as { atuacoes: { nome: string }[] }).atuacoes.map((a) => a.nome)), [['Professor Regente']]);
+      assert.equal((await painel(ciclo.id, `?professorId=${pBiblioRegente.id}`)).linhas.length, 1);
+    });
+    await caso('BIBLIO 3. Biblioteca + Inglês: uma folha com Inglês', async () => {
+      const itens = await minhas(pBiblioDisc.token, ciclo.id);
+      assert.equal(itens.length, 1);
+      assert.deepEqual(itens[0].composicao.map((p) => p.disciplinas.map((d) => d.nome)), [[ing.nome]]);
+    });
+    await caso('BIBLIO 4. Regente, Oficina do Brincar, Intervenção e TAE (sozinhos) geram folha', async () => {
+      for (const p of pElegiveis) assert.equal((await minhas(p.token, ciclo.id)).length, 1);
+    });
+  }
+
   // Regra de 15/11/2026: cargo criado com o ciclo aberto entra no ciclo atual (antes: só no próximo).
   const respostasAntes = await prisma.respostaSemanaUmTerco.findMany({ where: { entrega: { cicloId: ciclo.id } }, select: { id: true, texto: true, updatedAt: true }, orderBy: { id: 'asc' } });
   const entregasAntes = await prisma.entregaUmTerco.findMany({ where: { cicloId: ciclo.id }, select: { id: true, status: true, chaveCargos: true }, orderBy: { id: 'asc' } });

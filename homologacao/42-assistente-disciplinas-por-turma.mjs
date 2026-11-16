@@ -22,12 +22,15 @@ for (const [nome, vp] of [['desktop', { width: 1280, height: 800 }], ['celular',
   const c = X.page.locator('div.fixed.inset-0.z-50');
   const email = `assist-${nome}-${TAG}@homolog.nexo`;
   await preencherCadastroProfessor(c, { email, nome: `Professor Assistente ${nome} ${TAG}`, escola: 'ZZ-HOMOLOG Escola Aurora', disciplinas: ['Redação', 'Geografia', 'Matemática'], turmas: ['Redação — 6M1', 'Geografia — 6M1', 'Matemática — 6M1'], enviar: false });
-  const linhas = await c.locator('[data-disciplina]').evaluateAll(els => els.map(e => e.getAttribute('data-disciplina')));
-  r(`1-${nome}`, `${nome}: cada disciplina escolhida no cargo mostra as turmas da escola logo abaixo`, 'Redação, Geografia, Matemática', linhas.join(', '), JSON.stringify(linhas) === JSON.stringify(['Redação', 'Geografia', 'Matemática']));
+  // 16/11/2026: turmas numa área única por escola; com turmas diferentes por disciplina, "Separar por disciplina"
+  // mostra uma linha de resumo por disciplina (o auxiliar marcarTurma separa e abre cada uma).
+  const area = (await c.locator('[data-turmas-escola]').innerText()).replace(/\s+/g, ' ');
+  const linhas = ['Redação', 'Geografia', 'Matemática'].filter(d => area.includes(`${d}: 6M1`));
+  r(`1-${nome}`, `${nome}: a área "Turmas" da escola mostra uma linha por disciplina do cargo, com a turma marcada`, 'Redação, Geografia, Matemática', linhas.join(', '), JSON.stringify(linhas) === JSON.stringify(['Redação', 'Geografia', 'Matemática']));
 
-  const aviso = (await c.getByText(/^Substitui .* na 6M1\.$/).allInnerTexts()).join(' | ');
+  const aviso = (await c.getByText(/^Substitui .* na 6M1/).allInnerTexts()).join(' | ');
   await foto(X.page, `42-cadastro-turmas-${nome}`);
-  r(`2-${nome}`, `${nome}: marcar turma em que outro professor dá a disciplina avisa a substituição com o nome dele`, `Substitui ${ocupante?.professor.nome} na 6M1.`, aviso || '(sem aviso)', !!ocupante && aviso === `Substitui ${ocupante.professor.nome} na 6M1.`, `42-cadastro-turmas-${nome}.png`);
+  r(`2-${nome}`, `${nome}: marcar turma em que outro professor dá a disciplina avisa a substituição com o nome dele`, `Substitui ${ocupante?.professor.nome} na 6M1 (Matemática).`, aviso || '(sem aviso)', !!ocupante && aviso === `Substitui ${ocupante.professor.nome} na 6M1 (Matemática).`, `42-cadastro-turmas-${nome}.png`);
 
   // Desmarca e tira Matemática (não substitui ninguém de verdade).
   await c.getByRole('button', { name: 'Matemática — 6M1', exact: true }).click();

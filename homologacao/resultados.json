@@ -4914,7 +4914,7 @@
     "status": "APROVADO",
     "evidencia": "40-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:19.688Z"
+    "quando": "2026-11-16T23:13:18.643Z"
   },
   {
     "id": "UI-SEC-2a",
@@ -4925,7 +4925,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:25.579Z"
+    "quando": "2026-11-16T23:13:26.543Z"
   },
   {
     "id": "UI-SEC-2b",
@@ -4936,7 +4936,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:25.593Z"
+    "quando": "2026-11-16T23:13:26.608Z"
   },
   {
     "id": "UI-SEC-3",
@@ -4947,7 +4947,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:27.778Z"
+    "quando": "2026-11-16T23:13:29.298Z"
   },
   {
     "id": "UI-SEC-3b",
@@ -4958,7 +4958,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:27.794Z"
+    "quando": "2026-11-16T23:13:29.382Z"
   },
   {
     "id": "UI-SEC-4c-desktop",
@@ -4969,7 +4969,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:31.122Z"
+    "quando": "2026-11-16T23:13:39.485Z"
   },
   {
     "id": "UI-SEC-4d-desktop",
@@ -4980,7 +4980,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:31.569Z"
+    "quando": "2026-11-16T23:13:42.432Z"
   },
   {
     "id": "UI-SEC-4c-celular",
@@ -4991,7 +4991,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:36.748Z"
+    "quando": "2026-11-16T23:14:02.429Z"
   },
   {
     "id": "UI-SEC-4d-celular",
@@ -5002,29 +5002,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:37.218Z"
+    "quando": "2026-11-16T23:14:05.294Z"
   },
   {
     "id": "ASSIST-1-desktop",
     "modulo": "Turmas no cadastro do professor",
-    "cenario": "desktop: cada disciplina escolhida no cargo mostra as turmas da escola logo abaixo",
+    "cenario": "desktop: a área \"Turmas\" da escola mostra uma linha por disciplina do cargo, com a turma marcada",
     "esperado": "Redação, Geografia, Matemática",
     "observado": "Redação, Geografia, Matemática",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:08.163Z"
+    "quando": "2026-11-16T22:21:58.428Z"
   },
   {
     "id": "ASSIST-2-desktop",
     "modulo": "Turmas no cadastro do professor",
     "cenario": "desktop: marcar turma em que outro professor dá a disciplina avisa a substituição com o nome dele",
-    "esperado": "Substitui Ana Paula Ribeiro na 6M1.",
-    "observado": "Substitui Ana Paula Ribeiro na 6M1.",
+    "esperado": "Substitui Ana Paula Ribeiro na 6M1 (Matemática).",
+    "observado": "Substitui Ana Paula Ribeiro na 6M1 (Matemática).",
     "status": "APROVADO",
     "evidencia": "42-cadastro-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:11:08.897Z"
+    "quando": "2026-11-16T22:21:59.411Z"
   },
   {
     "id": "ASSIST-3-desktop",
@@ -5035,7 +5035,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:09.300Z"
+    "quando": "2026-11-16T22:21:59.897Z"
   },
   {
     "id": "ASSIST-4-desktop",
@@ -5046,29 +5046,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:10.482Z"
+    "quando": "2026-11-16T22:22:01.018Z"
   },
   {
     "id": "ASSIST-1-celular",
     "modulo": "Turmas no cadastro do professor",
-    "cenario": "celular: cada disciplina escolhida no cargo mostra as turmas da escola logo abaixo",
+    "cenario": "celular: a área \"Turmas\" da escola mostra uma linha por disciplina do cargo, com a turma marcada",
     "esperado": "Redação, Geografia, Matemática",
     "observado": "Redação, Geografia, Matemática",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:17.216Z"
+    "quando": "2026-11-16T22:22:09.764Z"
   },
   {
     "id": "ASSIST-2-celular",
     "modulo": "Turmas no cadastro do professor",
     "cenario": "celular: marcar turma em que outro professor dá a disciplina avisa a substituição com o nome dele",
-    "esperado": "Substitui Ana Paula Ribeiro na 6M1.",
-    "observado": "Substitui Ana Paula Ribeiro na 6M1.",
+    "esperado": "Substitui Ana Paula Ribeiro na 6M1 (Matemática).",
+    "observado": "Substitui Ana Paula Ribeiro na 6M1 (Matemática).",
     "status": "APROVADO",
     "evidencia": "42-cadastro-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:11:17.683Z"
+    "quando": "2026-11-16T22:22:10.402Z"
   },
   {
     "id": "ASSIST-3-celular",
@@ -5079,7 +5079,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:18.093Z"
+    "quando": "2026-11-16T22:22:10.880Z"
   },
   {
     "id": "ASSIST-4-celular",
@@ -5090,7 +5090,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:19.189Z"
+    "quando": "2026-11-16T22:22:11.986Z"
   },
   {
     "id": "EXP-A1",
@@ -5101,7 +5101,7 @@
     "status": "APROVADO",
     "evidencia": "43-pdi.xlsx",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.578Z"
+    "quando": "2026-11-16T23:00:34.957Z"
   },
   {
     "id": "EXP-A2",
@@ -5112,7 +5112,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.589Z"
+    "quando": "2026-11-16T23:00:35.002Z"
   },
   {
     "id": "EXP-A3",
@@ -5123,7 +5123,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.606Z"
+    "quando": "2026-11-16T23:00:35.057Z"
   },
   {
     "id": "EXP-A4",
@@ -5134,7 +5134,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.621Z"
+    "quando": "2026-11-16T23:00:35.122Z"
   },
   {
     "id": "EXP-A5",
@@ -5145,7 +5145,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.632Z"
+    "quando": "2026-11-16T23:00:35.167Z"
   },
   {
     "id": "EXP-A6",
@@ -5156,7 +5156,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.641Z"
+    "quando": "2026-11-16T23:00:35.211Z"
   },
   {
     "id": "EXP-A7",
@@ -5167,7 +5167,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.723Z"
+    "quando": "2026-11-16T23:00:35.533Z"
   },
   {
     "id": "EXP-A8",
@@ -5178,7 +5178,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:54.732Z"
+    "quando": "2026-11-16T23:00:35.597Z"
   },
   {
     "id": "EXP-B1",
@@ -5239,12 +5239,12 @@
     "id": "EXP-C1",
     "modulo": "Exportação para Excel",
     "cenario": "Professores: 1 linha por professor; Vínculos = vínculos ATIVOS do banco, sem duplicar",
-    "esperado": "32 professores; 44 vínculos",
-    "observado": "32 professores (32 e-mails únicos); 44 vínculos (44 únicos)",
+    "esperado": "32 professores; 43 vínculos",
+    "observado": "32 professores (32 e-mails únicos); 43 vínculos (43 únicos)",
     "status": "APROVADO",
     "evidencia": "43-professores.xlsx",
     "nota": "",
-    "quando": "2026-11-16T19:14:57.140Z"
+    "quando": "2026-11-16T23:00:40.543Z"
   },
   {
     "id": "EXP-C2",
@@ -5255,18 +5255,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:57.153Z"
+    "quando": "2026-11-16T23:00:40.614Z"
   },
   {
     "id": "EXP-D1",
     "modulo": "Exportação para Excel",
     "cenario": "Turmas (filtro Escola = ZZ-HOMOLOG Escola Aurora, Ativas): todas as turmas do filtro (não só a página), só dessa escola; professores/disciplinas ativos delas",
-    "esperado": "7 turmas; 21 vínculos; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
-    "observado": "7 turmas; 21 vínculos; só Aurora: true; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
+    "esperado": "7 turmas; 20 vínculos; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
+    "observado": "7 turmas; 20 vínculos; só Aurora: true; Filtros: Escola = ZZ-HOMOLOG Escola Aurora",
     "status": "APROVADO",
     "evidencia": "43-turmas-aurora.xlsx",
     "nota": "",
-    "quando": "2026-11-16T19:15:00.314Z"
+    "quando": "2026-11-16T23:00:45.484Z"
   },
   {
     "id": "EXP-E1",
@@ -5277,7 +5277,7 @@
     "status": "APROVADO",
     "evidencia": "43-alunos-pdi.xlsx",
     "nota": "",
-    "quando": "2026-11-16T19:15:02.632Z"
+    "quando": "2026-11-16T23:00:49.521Z"
   },
   {
     "id": "EXP-E2",
@@ -5288,7 +5288,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:15:02.642Z"
+    "quando": "2026-11-16T23:00:49.597Z"
   },
   {
     "id": "EXP-F1",
@@ -5299,7 +5299,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:15:06.048Z"
+    "quando": "2026-11-16T23:00:59.834Z"
   },
   {
     "id": "EXP-F2",
@@ -5310,7 +5310,7 @@
     "status": "APROVADO",
     "evidencia": "43-pdi-diretora.xlsx",
     "nota": "",
-    "quando": "2026-11-16T19:15:10.030Z"
+    "quando": "2026-11-16T23:01:11.924Z"
   },
   {
     "id": "EXP-CEL-pdi",
@@ -5981,7 +5981,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:15:10.130Z"
+    "quando": "2026-11-16T23:01:12.331Z"
   },
   {
     "id": "UT-MODAL-1-desktop",
@@ -5992,18 +5992,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:02.698Z"
+    "quando": "2026-11-16T21:28:37.260Z"
   },
   {
     "id": "UT-MODAL-2-desktop",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "desktop: abertura ontem (2026-11-14) → aviso na hora e Salvar bloqueado",
+    "cenario": "desktop: abertura ontem (2026-11-15) → aviso na hora e Salvar bloqueado",
     "esperado": "aviso \"não pode ser no passado\"; bloqueado",
     "observado": "A abertura não pode ser no passado: escolha hoje ou uma data futura.; bloqueado: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:03.084Z"
+    "quando": "2026-11-16T21:28:37.668Z"
   },
   {
     "id": "UT-MODAL-3-desktop",
@@ -6014,7 +6014,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:03.701Z"
+    "quando": "2026-11-16T21:28:38.477Z"
   },
   {
     "id": "UT-MODAL-1-celular",
@@ -6025,18 +6025,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:14.737Z"
+    "quando": "2026-11-16T21:28:51.984Z"
   },
   {
     "id": "UT-MODAL-2-celular",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "celular: abertura ontem (2026-11-14) → aviso na hora e Salvar bloqueado",
+    "cenario": "celular: abertura ontem (2026-11-15) → aviso na hora e Salvar bloqueado",
     "esperado": "aviso \"não pode ser no passado\"; bloqueado",
     "observado": "A abertura não pode ser no passado: escolha hoje ou uma data futura.; bloqueado: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:15.063Z"
+    "quando": "2026-11-16T21:28:52.360Z"
   },
   {
     "id": "UT-MODAL-3-celular",
@@ -6047,7 +6047,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:15.682Z"
+    "quando": "2026-11-16T21:28:53.138Z"
   },
   {
     "id": "UT-MODAL-8",
@@ -6058,7 +6058,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:07.906Z"
+    "quando": "2026-11-16T21:28:43.504Z"
   },
   {
     "id": "DASH-1-desktop",
@@ -6151,13 +6151,13 @@
   {
     "id": "UT-MODAL-2b-desktop",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "desktop: abertura hoje (2026-11-15) é aceita",
+    "cenario": "desktop: abertura hoje (2026-11-16) é aceita",
     "esperado": "sem aviso de passado",
     "observado": "sem aviso",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:03.381Z"
+    "quando": "2026-11-16T21:28:38.007Z"
   },
   {
     "id": "UT-MODAL-4-desktop",
@@ -6168,7 +6168,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:04.144Z"
+    "quando": "2026-11-16T21:28:39.016Z"
   },
   {
     "id": "UT-MODAL-5-desktop",
@@ -6179,7 +6179,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-desktop.png",
     "nota": "",
-    "quando": "2026-11-15T19:37:04.975Z"
+    "quando": "2026-11-16T21:28:40.203Z"
   },
   {
     "id": "UT-MODAL-6-desktop",
@@ -6190,7 +6190,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:05.332Z"
+    "quando": "2026-11-16T21:28:40.671Z"
   },
   {
     "id": "UT-MODAL-7-desktop",
@@ -6201,7 +6201,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:05.819Z"
+    "quando": "2026-11-16T21:28:41.371Z"
   },
   {
     "id": "UT-MODAL-9",
@@ -6212,18 +6212,18 @@
     "status": "APROVADO",
     "evidencia": "44-ciclo-antigo.png",
     "nota": "",
-    "quando": "2026-11-15T19:37:09.446Z"
+    "quando": "2026-11-16T21:28:45.415Z"
   },
   {
     "id": "UT-MODAL-10",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
     "cenario": "API recusa (400) abertura no passado, semanas sobrepostas, fora de ordem e semana depois do prazo — mesmo sem passar pela tela",
     "esperado": "400 nos 4",
-    "observado": "passado: 400 A abertura (14/11/2026) não pode ser no passado: escolha hoje ou uma data futura. | sobreposta: 400 Semana 2 (início 27/11/2026) precisa começar depois do fim da Semana 1 (27/11/2026): as semanas ficam em ordem e não | foraDeOrdem: 400 Semana 2 (início 23/11/2026) precisa começar depois",
+    "observado": "passado: 400 A abertura (15/11/2026) não pode ser no passado: escolha hoje ou uma data futura. | sobreposta: 400 Semana 2 (início 27/11/2026) precisa começar depois do fim da Semana 1 (27/11/2026): as semanas ficam em ordem e não | foraDeOrdem: 400 Semana 2 (início 23/11/2026) precisa começar depois",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:09.565Z"
+    "quando": "2026-11-16T21:28:45.645Z"
   },
   {
     "id": "UT-MODAL-11",
@@ -6234,18 +6234,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:10.589Z"
+    "quando": "2026-11-16T21:28:46.904Z"
   },
   {
     "id": "UT-MODAL-2b-celular",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "celular: abertura hoje (2026-11-15) é aceita",
+    "cenario": "celular: abertura hoje (2026-11-16) é aceita",
     "esperado": "sem aviso de passado",
     "observado": "sem aviso",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:15.356Z"
+    "quando": "2026-11-16T21:28:52.682Z"
   },
   {
     "id": "UT-MODAL-4-celular",
@@ -6256,7 +6256,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:16.087Z"
+    "quando": "2026-11-16T21:28:53.638Z"
   },
   {
     "id": "UT-MODAL-5-celular",
@@ -6267,7 +6267,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-15T19:37:16.912Z"
+    "quando": "2026-11-16T21:28:54.822Z"
   },
   {
     "id": "UT-MODAL-6-celular",
@@ -6278,7 +6278,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:17.268Z"
+    "quando": "2026-11-16T21:28:55.270Z"
   },
   {
     "id": "UT-MODAL-7-celular",
@@ -6289,7 +6289,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:37:17.794Z"
+    "quando": "2026-11-16T21:28:56.030Z"
   },
   {
     "id": "UT-MODAL-12-celular",
@@ -6300,7 +6300,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-15T19:37:17.813Z"
+    "quando": "2026-11-16T21:28:56.055Z"
   },
   {
     "id": "UT-ESC-1",
@@ -6311,7 +6311,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:20.288Z"
+    "quando": "2026-11-16T21:29:03.550Z"
   },
   {
     "id": "UT-ESC-2",
@@ -6322,18 +6322,18 @@
     "status": "APROVADO",
     "evidencia": "46-modal-escolas.png",
     "nota": "",
-    "quando": "2026-11-16T13:54:24.323Z"
+    "quando": "2026-11-16T21:29:06.604Z"
   },
   {
     "id": "UT-ESC-3",
     "modulo": "Formulário 1/3 — escolas do ciclo",
     "cenario": "Painel do ciclo só da Aurora: todas as folhas esperadas são da Aurora; o cargo de 2 escolas do P05 aparece só com a parte da Aurora",
     "esperado": "só \"ZZ-HOMOLOG Escola Aurora\"; P05 só Aurora",
-    "observado": "12 folhas; escolas: ZZ-HOMOLOG Escola Aurora; P05: ZZ-HOMOLOG Escola Aurora",
+    "observado": "11 folhas; escolas: ZZ-HOMOLOG Escola Aurora; P05: ZZ-HOMOLOG Escola Aurora",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:24.775Z"
+    "quando": "2026-11-16T21:29:06.771Z"
   },
   {
     "id": "UT-ESC-4",
@@ -6344,7 +6344,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:26.705Z"
+    "quando": "2026-11-16T21:29:07.608Z"
   },
   {
     "id": "UT-ESC-5",
@@ -6355,7 +6355,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:26.938Z"
+    "quando": "2026-11-16T21:29:07.743Z"
   },
   {
     "id": "UT-ESC-6",
@@ -6366,7 +6366,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:27.014Z"
+    "quando": "2026-11-16T21:29:07.782Z"
   },
   {
     "id": "UT-ESC-7",
@@ -6377,7 +6377,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:28.500Z"
+    "quando": "2026-11-16T21:29:08.535Z"
   },
   {
     "id": "UT-ESC-8",
@@ -6388,7 +6388,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T13:54:39.018Z"
+    "quando": "2026-11-16T21:29:15.417Z"
   },
   {
     "id": "UT-MODAL-4",
@@ -7994,7 +7994,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:11.006Z"
+    "quando": "2026-11-16T23:01:29.447Z"
   },
   {
     "id": "TOPO-1",
@@ -8005,7 +8005,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:13.490Z"
+    "quando": "2026-11-16T23:01:32.667Z"
   },
   {
     "id": "TOPO-2",
@@ -8016,7 +8016,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:15.685Z"
+    "quando": "2026-11-16T23:01:36.239Z"
   },
   {
     "id": "TOPO-3",
@@ -8027,7 +8027,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:17.252Z"
+    "quando": "2026-11-16T23:01:38.117Z"
   },
   {
     "id": "TOPO-4",
@@ -8038,7 +8038,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:18.799Z"
+    "quando": "2026-11-16T23:01:39.608Z"
   },
   {
     "id": "TOPO-5",
@@ -8049,7 +8049,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:20.190Z"
+    "quando": "2026-11-16T23:01:40.907Z"
   },
   {
     "id": "TOPO-6",
@@ -8060,7 +8060,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:23.030Z"
+    "quando": "2026-11-16T23:01:43.961Z"
   },
   {
     "id": "TOPO-7",
@@ -8071,7 +8071,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:25.652Z"
+    "quando": "2026-11-16T23:01:46.660Z"
   },
   {
     "id": "TOPO-8",
@@ -8082,7 +8082,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:28.255Z"
+    "quando": "2026-11-16T23:01:49.346Z"
   },
   {
     "id": "TOPO-9",
@@ -8093,7 +8093,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:30.593Z"
+    "quando": "2026-11-16T23:01:52.124Z"
   },
   {
     "id": "TOPO-10",
@@ -8104,7 +8104,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:30.661Z"
+    "quando": "2026-11-16T23:01:52.228Z"
   },
   {
     "id": "TOPO-11",
@@ -8115,7 +8115,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:40.804Z"
+    "quando": "2026-11-16T23:02:05.053Z"
   },
   {
     "id": "TOPO-12",
@@ -8126,7 +8126,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:14:46.610Z"
+    "quando": "2026-11-16T23:02:12.930Z"
   },
   {
     "id": "FILTRO-1",
@@ -8137,7 +8137,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:38.036Z"
+    "quando": "2026-11-16T23:02:27.149Z"
   },
   {
     "id": "FILTRO-2",
@@ -8148,7 +8148,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:39.026Z"
+    "quando": "2026-11-16T23:02:28.323Z"
   },
   {
     "id": "FILTRO-3",
@@ -8159,7 +8159,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:40.245Z"
+    "quando": "2026-11-16T23:02:30.544Z"
   },
   {
     "id": "FILTRO-4",
@@ -8170,7 +8170,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:41.258Z"
+    "quando": "2026-11-16T23:02:32.062Z"
   },
   {
     "id": "FILTRO-5",
@@ -8181,7 +8181,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:42.284Z"
+    "quando": "2026-11-16T23:02:33.478Z"
   },
   {
     "id": "FILTRO-6",
@@ -8192,7 +8192,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:43.518Z"
+    "quando": "2026-11-16T23:02:35.058Z"
   },
   {
     "id": "FILTRO-7",
@@ -8203,7 +8203,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:44.404Z"
+    "quando": "2026-11-16T23:02:36.181Z"
   },
   {
     "id": "FILTRO-8",
@@ -8214,7 +8214,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:45.734Z"
+    "quando": "2026-11-16T23:02:38.724Z"
   },
   {
     "id": "FILTRO-9",
@@ -8225,7 +8225,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:46.682Z"
+    "quando": "2026-11-16T23:02:39.892Z"
   },
   {
     "id": "FILTRO-10",
@@ -8236,7 +8236,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:47.234Z"
+    "quando": "2026-11-16T23:02:41.831Z"
   },
   {
     "id": "FILTRO-11",
@@ -8247,7 +8247,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T17:12:51.944Z"
+    "quando": "2026-11-16T23:02:59.744Z"
   },
   {
     "id": "CARGO-1",
@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:25.154Z"
+    "quando": "2026-11-16T23:07:01.662Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:25.470Z"
+    "quando": "2026-11-16T23:07:02.370Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:26.224Z"
+    "quando": "2026-11-16T23:07:04.019Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:26.530Z"
+    "quando": "2026-11-16T23:07:04.723Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:27.146Z"
+    "quando": "2026-11-16T23:07:06.016Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:30.470Z"
+    "quando": "2026-11-16T23:07:11.123Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:34.667Z"
+    "quando": "2026-11-16T23:07:18.495Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:36.332Z"
+    "quando": "2026-11-16T23:07:21.260Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:37.230Z"
+    "quando": "2026-11-16T23:07:22.270Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:37.639Z"
+    "quando": "2026-11-16T23:07:23.214Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:41.830Z"
+    "quando": "2026-11-16T23:07:33.620Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 16:11InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
+    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 20:07InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:44.402Z"
+    "quando": "2026-11-16T23:07:40.204Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:45.286Z"
+    "quando": "2026-11-16T23:07:41.178Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":407,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":426,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:47.837Z"
+    "quando": "2026-11-16T23:07:44.125Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:47.906Z"
+    "quando": "2026-11-16T23:07:44.493Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 16:11InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
+    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 26/11/2026, 20:07InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:50.508Z"
+    "quando": "2026-11-16T23:07:51.803Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,18 +8434,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:50.565Z"
+    "quando": "2026-11-16T23:07:52.114Z"
   },
   {
     "id": "CARGO-16",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Painel: sem filtro de ano/série; folha compartilhada do P04 conta 1 vez + Cargo 2 da Ana (criado com o ciclo aberto, regra de 15/11)",
     "esperado": "sem Ano/série; linha \"Cargos 1 e 2\"; Esperadas 2",
-    "observado": "true; true; Esperadas2",
-    "status": "APROVADO",
+    "observado": "true; false; Esperadas2",
+    "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:53.578Z"
+    "quando": "2026-11-16T23:08:00.085Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:11:53.590Z"
+    "quando": "2026-11-16T23:08:00.136Z"
   },
   {
     "id": "UT-P04-02",
@@ -9171,7 +9171,7 @@
     "status": "APROVADO",
     "evidencia": "60-cargo-educacao-infantil.png",
     "nota": "",
-    "quando": "2026-11-15T19:45:46.280Z"
+    "quando": "2026-11-16T21:35:06.950Z"
   },
   {
     "id": "EI-2",
@@ -9182,7 +9182,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:45:46.294Z"
+    "quando": "2026-11-16T21:35:06.991Z"
   },
   {
     "id": "EI-3",
@@ -9501,7 +9501,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:21:16.188Z"
+    "quando": "2026-11-16T23:08:16.647Z"
   },
   {
     "id": "CORR13UI-2",
@@ -9512,18 +9512,18 @@
     "status": "APROVADO",
     "evidencia": "63-lista.png",
     "nota": "",
-    "quando": "2026-11-16T14:21:23.390Z"
+    "quando": "2026-11-16T23:08:23.262Z"
   },
   {
     "id": "CORR13UI-3",
     "modulo": "Correções do 1/3 (telas)",
     "cenario": "Abrir a folha: Professor, cargo, ciclo, escola → disciplina, semanas e conteúdos (sem turmas)",
     "esperado": "Ana Paula Ribeiro — Cargo 1; Aurora — Matemática; 4 semanas",
-    "observado": "Carregando folha...",
-    "status": "REPROVADO",
+    "observado": "← Correções > Formulário 1/3 FORMULÁRIO 1/3 — NOV/2026 (HOMOLOG) · 3º TRIMESTRE DE 2026 Ana Paula Ribeiro — Cargo 1 Sem correção Concluída em 16/11/2026, às 20h08 ZZ-HOMOLOG Escola Aurora — Matemática",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:21:24.582Z"
+    "quando": "2026-11-16T23:08:24.145Z"
   },
   {
     "id": "CORR13UI-4",
@@ -9534,7 +9534,7 @@
     "status": "APROVADO",
     "evidencia": "63-correcao-direta.png",
     "nota": "",
-    "quando": "2026-11-16T14:21:28.261Z"
+    "quando": "2026-11-16T23:08:25.965Z"
   },
   {
     "id": "CORR13UI-5",
@@ -9545,7 +9545,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:21:30.240Z"
+    "quando": "2026-11-16T23:08:27.093Z"
   },
   {
     "id": "CORR13UI-6",
@@ -9556,7 +9556,7 @@
     "status": "APROVADO",
     "evidencia": "63-professor-correcao-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:21:41.032Z"
+    "quando": "2026-11-16T23:08:36.341Z"
   },
   {
     "id": "CORR13UI-7",
@@ -9567,7 +9567,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:21:53.804Z"
+    "quando": "2026-11-16T23:08:48.887Z"
   },
   {
     "id": "CORR13UI-8",
@@ -9578,7 +9578,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:21:54.900Z"
+    "quando": "2026-11-16T23:08:49.960Z"
   },
   {
     "id": "CORR13UI-9",
@@ -9589,7 +9589,7 @@
     "status": "APROVADO",
     "evidencia": "63-professor-reenviado-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:21:57.929Z"
+    "quando": "2026-11-16T23:08:53.063Z"
   },
   {
     "id": "CORR13UI-10",
@@ -9600,7 +9600,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:22:00.705Z"
+    "quando": "2026-11-16T23:08:55.679Z"
   },
   {
     "id": "CORR13UI-11",
@@ -9611,7 +9611,7 @@
     "status": "APROVADO",
     "evidencia": "63-professor-expirada-celular.png",
     "nota": "",
-    "quando": "2026-11-16T14:22:09.670Z"
+    "quando": "2026-11-16T23:09:03.976Z"
   },
   {
     "id": "CORR13UI-12",
@@ -9622,7 +9622,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T14:22:10.457Z"
+    "quando": "2026-11-16T23:09:04.617Z"
   },
   {
     "id": "ATU-CAT",
@@ -9633,7 +9633,7 @@
     "status": "APROVADO",
     "evidencia": "64-configuracoes-atuacoes.png",
     "nota": "",
-    "quando": "2026-11-16T19:11:59.151Z"
+    "quando": "2026-11-16T22:16:48.099Z"
   },
   {
     "id": "ATU-5/2",
@@ -9644,7 +9644,7 @@
     "status": "APROVADO",
     "evidencia": "64-cadastro-regente.png",
     "nota": "",
-    "quando": "2026-11-16T19:12:02.405Z"
+    "quando": "2026-11-16T22:16:52.727Z"
   },
   {
     "id": "ATU-6/7",
@@ -9655,7 +9655,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:13.692Z"
+    "quando": "2026-11-16T22:17:05.412Z"
   },
   {
     "id": "ATU-8",
@@ -9666,7 +9666,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:13.987Z"
+    "quando": "2026-11-16T22:17:06.097Z"
   },
   {
     "id": "ATU-9/10",
@@ -9677,7 +9677,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:14.027Z"
+    "quando": "2026-11-16T22:17:06.190Z"
   },
   {
     "id": "XLS13-6b",
@@ -9992,11 +9992,11 @@
     "modulo": "Desativados por área",
     "cenario": "computador: Escolas — lista principal sem inativas; \"Ver escolas desativadas\" abre TABELA paginada (20 por página), mais recente primeiro, com motivo",
     "esperado": "sem ZZDES inativa na principal; tabela; 20 linhas; 1ª = inativa 22; \"Página 1 de N\"; sem rolagem lateral",
-    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 15/11/2026,\"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
+    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 16/11/2026,\"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
     "status": "APROVADO",
     "evidencia": "68-escolas-desativadas-computador.png",
     "nota": "",
-    "quando": "2026-11-15T20:32:47.090Z"
+    "quando": "2026-11-16T23:09:20.438Z"
   },
   {
     "id": "DESAT-2",
@@ -10007,7 +10007,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:48.773Z"
+    "quando": "2026-11-16T23:09:22.499Z"
   },
   {
     "id": "DESAT-3-computador",
@@ -10018,7 +10018,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:50.973Z"
+    "quando": "2026-11-16T23:09:24.855Z"
   },
   {
     "id": "DESAT-4-computador",
@@ -10029,7 +10029,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:54.188Z"
+    "quando": "2026-11-16T23:09:28.302Z"
   },
   {
     "id": "DESAT-5-computador",
@@ -10040,29 +10040,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:32:56.372Z"
+    "quando": "2026-11-16T23:09:30.606Z"
   },
   {
     "id": "DESAT-6-computador",
     "modulo": "Desativados por área",
     "cenario": "computador: 1/3 — vencido e inativo fora da principal; tela \"Encerrados e inativos\" em tabela (sem cartões) com \"Encerrado pelo prazo\" (Painel/Excel/Reabrir) e \"Desativado manualmente\" (Reativar, sem Reabrir)",
     "esperado": "fora; vencido: Encerrado pelo prazo + Reabrir; inativo: Desativado manualmente + Reativar; 0 cartões",
-    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 12/11/2026, 17:32 · prazo 15/11/2026, 17:31 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
+    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 13/11/2026, 20:09 · prazo 16/11/2026, 20:08 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
     "status": "APROVADO",
     "evidencia": "68-um-terco-encerrados-computador.png",
     "nota": "",
-    "quando": "2026-11-15T20:32:58.756Z"
+    "quando": "2026-11-16T23:09:34.118Z"
   },
   {
     "id": "DESAT-7",
     "modulo": "Desativados por área",
     "cenario": "1/3 — \"Painel\" na linha do ciclo vencido abre o painel de entregas dele",
-    "esperado": "/formulario-um-terco/ciclos/376",
-    "observado": "/formulario-um-terco/ciclos/376",
+    "esperado": "/formulario-um-terco/ciclos/433",
+    "observado": "/formulario-um-terco/ciclos/433",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:00.318Z"
+    "quando": "2026-11-16T23:09:35.798Z"
   },
   {
     "id": "DESAT-8-computador",
@@ -10073,18 +10073,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:03.393Z"
+    "quando": "2026-11-16T23:09:38.988Z"
   },
   {
     "id": "DESAT-1-celular",
     "modulo": "Desativados por área",
     "cenario": "celular: Escolas — lista principal sem inativas; \"Ver escolas desativadas\" abre TABELA paginada (20 por página), mais recente primeiro, com motivo",
     "esperado": "sem ZZDES inativa na principal; tabela; 20 linhas; 1ª = inativa 22; \"Página 1 de N\"; sem rolagem lateral",
-    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 15/11/2026, \"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
+    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 16/11/2026, \"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
     "status": "APROVADO",
     "evidencia": "68-escolas-desativadas-celular.png",
     "nota": "",
-    "quando": "2026-11-15T20:33:07.890Z"
+    "quando": "2026-11-16T23:09:47.996Z"
   },
   {
     "id": "DESAT-3-celular",
@@ -10095,7 +10095,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:10.073Z"
+    "quando": "2026-11-16T23:09:50.389Z"
   },
   {
     "id": "DESAT-4-celular",
@@ -10106,7 +10106,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:13.274Z"
+    "quando": "2026-11-16T23:09:53.800Z"
   },
   {
     "id": "DESAT-5-celular",
@@ -10117,18 +10117,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:15.458Z"
+    "quando": "2026-11-16T23:09:56.093Z"
   },
   {
     "id": "DESAT-6-celular",
     "modulo": "Desativados por área",
     "cenario": "celular: 1/3 — vencido e inativo fora da principal; tela \"Encerrados e inativos\" em tabela (sem cartões) com \"Encerrado pelo prazo\" (Painel/Excel/Reabrir) e \"Desativado manualmente\" (Reativar, sem Reabrir)",
     "esperado": "fora; vencido: Encerrado pelo prazo + Reabrir; inativo: Desativado manualmente + Reativar; 0 cartões",
-    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 12/11/2026, 17:32 · prazo 15/11/2026, 17:31 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
+    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 13/11/2026, 20:09 · prazo 16/11/2026, 20:08 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
     "status": "APROVADO",
     "evidencia": "68-um-terco-encerrados-celular.png",
     "nota": "",
-    "quando": "2026-11-15T20:33:17.845Z"
+    "quando": "2026-11-16T23:10:00.196Z"
   },
   {
     "id": "DESAT-8-celular",
@@ -10139,7 +10139,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:20.908Z"
+    "quando": "2026-11-16T23:10:03.368Z"
   },
   {
     "id": "DESAT-9",
@@ -10150,7 +10150,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:24.789Z"
+    "quando": "2026-11-16T23:10:10.764Z"
   },
   {
     "id": "DESAT-10",
@@ -10161,7 +10161,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T20:33:24.918Z"
+    "quando": "2026-11-16T23:10:11.153Z"
   },
   {
     "id": "CORRPDI-professor",
@@ -10326,7 +10326,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:24.281Z"
+    "quando": "2026-11-16T22:22:27.089Z"
   },
   {
     "id": "CARGOTURMA-2-desktop",
@@ -10337,7 +10337,7 @@
     "status": "APROVADO",
     "evidencia": "73-cargos-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:12:24.885Z"
+    "quando": "2026-11-16T22:22:28.905Z"
   },
   {
     "id": "CARGOTURMA-3-desktop",
@@ -10348,7 +10348,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:27.498Z"
+    "quando": "2026-11-16T22:22:31.579Z"
   },
   {
     "id": "CARGOTURMA-4-desktop",
@@ -10359,7 +10359,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:30.697Z"
+    "quando": "2026-11-16T22:22:34.973Z"
   },
   {
     "id": "CARGOTURMA-5-desktop",
@@ -10370,7 +10370,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:33.858Z"
+    "quando": "2026-11-16T22:22:38.671Z"
   },
   {
     "id": "CARGOTURMA-1-celular",
@@ -10381,7 +10381,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:42.993Z"
+    "quando": "2026-11-16T22:22:50.722Z"
   },
   {
     "id": "CARGOTURMA-2-celular",
@@ -10392,7 +10392,7 @@
     "status": "APROVADO",
     "evidencia": "73-cargos-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:12:43.470Z"
+    "quando": "2026-11-16T22:22:52.216Z"
   },
   {
     "id": "CARGOTURMA-3-celular",
@@ -10403,7 +10403,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:46.065Z"
+    "quando": "2026-11-16T22:22:54.879Z"
   },
   {
     "id": "CARGOTURMA-4-celular",
@@ -10414,7 +10414,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:49.281Z"
+    "quando": "2026-11-16T22:22:58.296Z"
   },
   {
     "id": "CARGOTURMA-5-celular",
@@ -10425,7 +10425,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:52.410Z"
+    "quando": "2026-11-16T22:23:01.849Z"
   },
   {
     "id": "UMABERTO-1-desktop",
@@ -10436,7 +10436,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:12:57.880Z"
+    "quando": "2026-11-16T22:13:38.320Z"
   },
   {
     "id": "UMABERTO-2-desktop",
@@ -10447,7 +10447,7 @@
     "status": "APROVADO",
     "evidencia": "74-cargo2-aberto-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:12:59.439Z"
+    "quando": "2026-11-16T22:13:40.986Z"
   },
   {
     "id": "UMABERTO-3-desktop",
@@ -10458,7 +10458,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:00.349Z"
+    "quando": "2026-11-16T22:13:42.023Z"
   },
   {
     "id": "UMABERTO-4-desktop",
@@ -10469,7 +10469,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:01.079Z"
+    "quando": "2026-11-16T22:13:42.857Z"
   },
   {
     "id": "UMABERTO-5-desktop",
@@ -10480,7 +10480,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:02.195Z"
+    "quando": "2026-11-16T22:13:44.916Z"
   },
   {
     "id": "UMABERTO-1-celular",
@@ -10491,7 +10491,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:06.690Z"
+    "quando": "2026-11-16T22:13:50.558Z"
   },
   {
     "id": "UMABERTO-2-celular",
@@ -10502,7 +10502,7 @@
     "status": "APROVADO",
     "evidencia": "74-cargo2-aberto-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:13:08.217Z"
+    "quando": "2026-11-16T22:13:53.153Z"
   },
   {
     "id": "UMABERTO-3-celular",
@@ -10513,7 +10513,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:09.113Z"
+    "quando": "2026-11-16T22:13:54.138Z"
   },
   {
     "id": "UMABERTO-4-celular",
@@ -10524,7 +10524,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:09.840Z"
+    "quando": "2026-11-16T22:13:54.973Z"
   },
   {
     "id": "UMABERTO-5-celular",
@@ -10535,7 +10535,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:10.946Z"
+    "quando": "2026-11-16T22:13:57.041Z"
   },
   {
     "id": "NUMCARGO-1-desktop",
@@ -10546,7 +10546,7 @@
     "status": "APROVADO",
     "evidencia": "75-aviso-numero-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:13:21.712Z"
+    "quando": "2026-11-16T22:17:21.610Z"
   },
   {
     "id": "NUMCARGO-2-desktop",
@@ -10557,7 +10557,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:22.741Z"
+    "quando": "2026-11-16T22:17:22.718Z"
   },
   {
     "id": "NUMCARGO-1-celular",
@@ -10568,7 +10568,7 @@
     "status": "APROVADO",
     "evidencia": "75-aviso-numero-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:13:32.507Z"
+    "quando": "2026-11-16T22:17:35.089Z"
   },
   {
     "id": "NUMCARGO-2-celular",
@@ -10579,18 +10579,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:33.533Z"
+    "quando": "2026-11-16T22:17:36.232Z"
   },
   {
     "id": "UXPROF-1",
     "modulo": "Melhorias de UX (teste como usuário)",
     "cenario": "Cadastro: turmas da Educação Infantil numa linha própria (não misturadas com 6M1…)",
     "esperado": "Berçário só no grupo \"Educação Infantil\"",
-    "observado": "fundamental: 6M1 6M2 6M3 6M4 7M1 7M2 | infantil: Berçário I — Manhã",
+    "observado": "fundamental:    6º ano  6M1 6M2 6M3 6M4  7º ano  7M1 7M2 | infantil: Infantil Fund. II  Berçário I  Manhã",
     "status": "APROVADO",
     "evidencia": "76-cadastro-infantil-separada.png",
     "nota": "",
-    "quando": "2026-11-16T19:13:39.851Z"
+    "quando": "2026-11-16T23:05:56.222Z"
   },
   {
     "id": "UXPROF-8",
@@ -10601,7 +10601,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:42.351Z"
+    "quando": "2026-11-16T23:06:00.769Z"
   },
   {
     "id": "UXPROF-9",
@@ -10612,7 +10612,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:45.595Z"
+    "quando": "2026-11-16T23:06:04.724Z"
   },
   {
     "id": "UXPROF-2",
@@ -10623,7 +10623,7 @@
     "status": "APROVADO",
     "evidencia": "76-inicio-professor.png",
     "nota": "",
-    "quando": "2026-11-16T19:13:51.661Z"
+    "quando": "2026-11-16T23:06:14.889Z"
   },
   {
     "id": "UXPROF-4",
@@ -10634,7 +10634,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:53.251Z"
+    "quando": "2026-11-16T23:06:16.726Z"
   },
   {
     "id": "UXPROF-3",
@@ -10645,7 +10645,7 @@
     "status": "APROVADO",
     "evidencia": "76-falta-preencher.png",
     "nota": "",
-    "quando": "2026-11-16T19:13:55.714Z"
+    "quando": "2026-11-16T23:06:20.560Z"
   },
   {
     "id": "UXPROF-3b",
@@ -10656,7 +10656,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:13:57.139Z"
+    "quando": "2026-11-16T23:06:22.311Z"
   },
   {
     "id": "UXPROF-7",
@@ -10667,29 +10667,29 @@
     "status": "APROVADO",
     "evidencia": "76-notificacoes-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:10.881Z"
+    "quando": "2026-11-16T23:06:44.025Z"
   },
   {
     "id": "UXPROF-5",
     "modulo": "Melhorias de UX (teste como usuário)",
     "cenario": "Notificação da correção diz o que é e o prazo",
     "esperado": "\"Correção pendente no Formulário 1/3\" + \"Prazo:\"",
-    "observado": "Notificações | Marcar todas como lidas | 💬 | Correção pendente no Formulário 1/3 | Prazo: 19/11/2026, às 16h14. | 16/11/2026, 16:14",
+    "observado": "Notificações | Marcar todas como lidas | 💬 | Correção pendente no Formulário 1/3 | Prazo: 19/11/2026, às 20h06. | 16/11/2026, 20:06",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:10.889Z"
+    "quando": "2026-11-16T23:06:44.073Z"
   },
   {
     "id": "UXPROF-2b",
     "modulo": "Melhorias de UX (teste como usuário)",
     "cenario": "Início: a folha devolvida aparece com \"Correção solicitada\", o prazo da correção e \"Corrigir\"",
     "esperado": "Correção solicitada; corrigir até; Corrigir; sem \"Concluído\"",
-    "observado": "Correção solicitada | Cargo 1 |  | ZZ-HOMOLOG Escola Aurora |  | Literatura |  | 4/4 semanas · corrigir até 19/11/2026, 16:14 |  | Corrigir",
+    "observado": "Correção solicitada | Cargo 1 |  | ZZ-HOMOLOG Escola Aurora |  | Literatura |  | 4/4 semanas · corrigir até 19/11/2026, 20:06 |  | Corrigir",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:14:12.869Z"
+    "quando": "2026-11-16T23:06:46.181Z"
   },
   {
     "id": "UXPROF-6",
@@ -10700,7 +10700,7 @@
     "status": "APROVADO",
     "evidencia": "76-tela-correcao.png",
     "nota": "",
-    "quando": "2026-11-16T19:14:14.470Z"
+    "quando": "2026-11-16T23:06:48.105Z"
   },
   {
     "id": "PDILOTE-1",
@@ -10751,11 +10751,11 @@
     "modulo": "Turmas por atuação pedagógica",
     "cenario": "desktop: no cadastro, \"Professor Regente\" (sem disciplina) mostra as turmas da escola; Intervenção e Eventual não mostram turmas",
     "esperado": "turmas do Regente; 0 listas para Intervenção/Eventual",
-    "observado": "Regente: 6M1 6M2 6M3 6M4 7M1 7M2; listas Intervenção/Eventual: 0",
+    "observado": "Regente: Infantil Fund. II; listas Intervenção/Eventual: 0",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:10.071Z"
+    "quando": "2026-11-16T22:23:12.930Z"
   },
   {
     "id": "TURMAATU-2-desktop",
@@ -10766,7 +10766,7 @@
     "status": "APROVADO",
     "evidencia": "78-cadastro-regente-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:09:13.479Z"
+    "quando": "2026-11-16T22:23:16.759Z"
   },
   {
     "id": "TURMAATU-3-desktop",
@@ -10777,7 +10777,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:18.921Z"
+    "quando": "2026-11-16T22:23:22.406Z"
   },
   {
     "id": "TURMAATU-4-desktop",
@@ -10788,7 +10788,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:22.784Z"
+    "quando": "2026-11-16T22:23:26.345Z"
   },
   {
     "id": "TURMAATU-5-desktop",
@@ -10799,7 +10799,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:23.498Z"
+    "quando": "2026-11-16T22:23:26.999Z"
   },
   {
     "id": "TURMAATU-6-desktop",
@@ -10810,7 +10810,7 @@
     "status": "APROVADO",
     "evidencia": "78-minhas-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T19:09:30.808Z"
+    "quando": "2026-11-16T22:23:34.721Z"
   },
   {
     "id": "TURMAATU-7-desktop",
@@ -10821,18 +10821,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:40.367Z"
+    "quando": "2026-11-16T22:23:44.962Z"
   },
   {
     "id": "TURMAATU-1-celular",
     "modulo": "Turmas por atuação pedagógica",
     "cenario": "celular: no cadastro, \"Professor Regente\" (sem disciplina) mostra as turmas da escola; Intervenção e Eventual não mostram turmas",
     "esperado": "turmas do Regente; 0 listas para Intervenção/Eventual",
-    "observado": "Regente: 6M1 6M2 6M3 6M4 7M1 7M2; listas Intervenção/Eventual: 0",
+    "observado": "Regente: Infantil Fund. II; listas Intervenção/Eventual: 0",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:47.863Z"
+    "quando": "2026-11-16T22:23:52.924Z"
   },
   {
     "id": "TURMAATU-2-celular",
@@ -10843,7 +10843,7 @@
     "status": "APROVADO",
     "evidencia": "78-cadastro-regente-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:09:51.090Z"
+    "quando": "2026-11-16T22:23:56.549Z"
   },
   {
     "id": "TURMAATU-3-celular",
@@ -10854,7 +10854,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:09:56.518Z"
+    "quando": "2026-11-16T22:24:02.233Z"
   },
   {
     "id": "TURMAATU-4-celular",
@@ -10865,7 +10865,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:10:00.457Z"
+    "quando": "2026-11-16T22:24:06.170Z"
   },
   {
     "id": "TURMAATU-5-celular",
@@ -10876,7 +10876,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:10:00.933Z"
+    "quando": "2026-11-16T22:24:06.679Z"
   },
   {
     "id": "TURMAATU-6-celular",
@@ -10887,7 +10887,7 @@
     "status": "APROVADO",
     "evidencia": "78-minhas-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-16T19:10:07.891Z"
+    "quando": "2026-11-16T22:24:14.201Z"
   },
   {
     "id": "TURMAATU-7-celular",
@@ -10898,6 +10898,501 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T19:10:17.479Z"
+    "quando": "2026-11-16T22:24:24.232Z"
+  },
+  {
+    "id": "ESTRUTURA-1-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: escola nova mostra só \"Etapas oferecidas\" (nenhum quadro de nível) e não salva sem etapa",
+    "esperado": "0 quadros; \"Marque ao menos uma etapa.\"",
+    "observado": "0 quadros; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:43:45.738Z"
+  },
+  {
+    "id": "ESTRUTURA-2-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: níveis da Infantil começam desmarcados; anos do Fund. I começam marcados; resumo claro; sem rolagem lateral",
+    "esperado": "0 níveis marcados; 5 anos marcados; \"Infantil: Maternal 2, Maternal 3 · Fund. I: 1º ao 4º ano\"",
+    "observado": "0 níveis (Berçário I, Berçário II, Maternal 1, Maternal 2, Maternal 3, 1º Período, 2º Período); 5 anos; \"Infantil: Maternal 2, Maternal 3 · Fund. I: 1º ao 4º ano\"; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "79-nova-escola-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T23:43:49.017Z"
+  },
+  {
+    "id": "ESTRUTURA-3-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: salva etapas, anos e níveis",
+    "esperado": "EDUCACAO_INFANTIL,FUNDAMENTAL_I | 1,2,3,4 | Maternal 2,Maternal 3",
+    "observado": "EDUCACAO_INFANTIL,FUNDAMENTAL_I | 1,2,3,4 | Maternal 2,Maternal 3",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:43:51.141Z"
+  },
+  {
+    "id": "ESTRUTURA-4-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: a lista mostra as etapas da escola",
+    "esperado": "\"Infantil · Fund. I\"",
+    "observado": "ZZ-ESTR Escola desktop 234333 Infantil · Fund. I Editar",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:43:53.579Z"
+  },
+  {
+    "id": "ESTRUTURA-5-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: Nova turma oferece só os anos e níveis da escola (sem \"Segmento\"); sem rolagem lateral",
+    "esperado": "1º–4º ano; Maternal 2, Maternal 3; sem Segmento",
+    "observado": "1º ano, 2º ano, 3º ano, 4º ano; Maternal 2, Maternal 3; Segmento: 0; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "79-nova-turma-infantil-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T23:44:08.028Z"
+  },
+  {
+    "id": "ESTRUTURA-6-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: a turma fica ligada ao nível da escola, com nome \"Maternal 3 B — Manhã\" e faixa Creche",
+    "esperado": "Maternal 3 B — Manhã; nível Maternal 3; CRECHE; nível antigo vazio",
+    "observado": "Maternal 3 B — Manhã; nível Maternal 3; CRECHE; antigo null",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:10.027Z"
+  },
+  {
+    "id": "ESTRUTURA-7-desktop",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "desktop: não deixa tirar nível/etapa com turma ativa nem criar turma fora do que a escola oferece",
+    "esperado": "409, 409, 400, 400; escola sem mudança",
+    "observado": "409 \"Estas turmas ativas ficariam fora do que a escola oferece: Maternal 3 \", 409, 400, 400; níveis 2, etapas EDUCACAO_INFANTIL,FUNDAMENTAL_I",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:11.631Z"
+  },
+  {
+    "id": "ESTRUTURA-1-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: escola nova mostra só \"Etapas oferecidas\" (nenhum quadro de nível) e não salva sem etapa",
+    "esperado": "0 quadros; \"Marque ao menos uma etapa.\"",
+    "observado": "0 quadros; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:21.826Z"
+  },
+  {
+    "id": "ESTRUTURA-2-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: níveis da Infantil começam desmarcados; anos do Fund. I começam marcados; resumo claro; sem rolagem lateral",
+    "esperado": "0 níveis marcados; 5 anos marcados; \"Infantil: Maternal 2, Maternal 3 · Fund. I: 1º ao 4º ano\"",
+    "observado": "0 níveis (Berçário I, Berçário II, Maternal 1, Maternal 2, Maternal 3, 1º Período, 2º Período); 5 anos; \"Infantil: Maternal 2, Maternal 3 · Fund. I: 1º ao 4º ano\"; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "79-nova-escola-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T23:44:24.515Z"
+  },
+  {
+    "id": "ESTRUTURA-3-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: salva etapas, anos e níveis",
+    "esperado": "EDUCACAO_INFANTIL,FUNDAMENTAL_I | 1,2,3,4 | Maternal 2,Maternal 3",
+    "observado": "EDUCACAO_INFANTIL,FUNDAMENTAL_I | 1,2,3,4 | Maternal 2,Maternal 3",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:26.420Z"
+  },
+  {
+    "id": "ESTRUTURA-4-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: a lista mostra as etapas da escola",
+    "esperado": "\"Infantil · Fund. I\"",
+    "observado": "ZZ-ESTR Escola celular 234333 Infantil · Fund. I Editar",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:28.688Z"
+  },
+  {
+    "id": "ESTRUTURA-5-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: Nova turma oferece só os anos e níveis da escola (sem \"Segmento\"); sem rolagem lateral",
+    "esperado": "1º–4º ano; Maternal 2, Maternal 3; sem Segmento",
+    "observado": "1º ano, 2º ano, 3º ano, 4º ano; Maternal 2, Maternal 3; Segmento: 0; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "79-nova-turma-infantil-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T23:44:41.057Z"
+  },
+  {
+    "id": "ESTRUTURA-6-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: a turma fica ligada ao nível da escola, com nome \"Maternal 3 B — Manhã\" e faixa Creche",
+    "esperado": "Maternal 3 B — Manhã; nível Maternal 3; CRECHE; nível antigo vazio",
+    "observado": "Maternal 3 B — Manhã; nível Maternal 3; CRECHE; antigo null",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:43.203Z"
+  },
+  {
+    "id": "ESTRUTURA-7-celular",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "celular: não deixa tirar nível/etapa com turma ativa nem criar turma fora do que a escola oferece",
+    "esperado": "409, 409, 400, 400; escola sem mudança",
+    "observado": "409 \"Estas turmas ativas ficariam fora do que a escola oferece: Maternal 3 \", 409, 400, 400; níveis 2, etapas EDUCACAO_INFANTIL,FUNDAMENTAL_I",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:44.312Z"
+  },
+  {
+    "id": "ESTRUTURA-8",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "Escola antiga: \"Sugerir pelas turmas\" marca na tela pelo que as turmas indicam; \"Cancelar\" não grava nada",
+    "esperado": "botão visível; resumo com as etapas; escola continua sem etapas",
+    "observado": "botão: true; \"Infantil: nenhum nível · Fund. II: 6º, 7º ano\"; gravado: (nada)",
+    "status": "APROVADO",
+    "evidencia": "79-sugerir-pelas-turmas.png",
+    "nota": "",
+    "quando": "2026-11-16T23:44:55.131Z"
+  },
+  {
+    "id": "ESTRUTURA-9",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "Escola antiga: Nova turma continua com o formulário de sempre (Segmento + níveis antigos)",
+    "esperado": "Segmento; Berçário I, Berçário II…",
+    "observado": "Berçário I,Berçário II,Maternal I,Maternal II",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:58.645Z"
+  },
+  {
+    "id": "ESTRUTURA-10",
+    "modulo": "Escola: etapas e níveis",
+    "cenario": "Nenhuma turma nem escola existente mudou (nome, chave, nível, etapas) — foto antes e depois",
+    "esperado": "iguais",
+    "observado": "turmas iguais: true; escolas iguais: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:44:59.012Z"
+  },
+  {
+    "id": "TURMASCARGO-1-desktop",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "desktop: com uma disciplina a área \"Turmas\" já abre, com abas só das etapas da escola, começando no Fundamental",
+    "esperado": "Infantil, Fund. II; aba Fund. II",
+    "observado": "Infantil, Fund. II; aba Fund. II",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:04:37.261Z"
+  },
+  {
+    "id": "TURMASCARGO-2-desktop",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "desktop: com várias disciplinas/atuações, uma lista só (\"Valem para…\", sem Biblioteca); aba mostra a contagem; Infantil em linha por nível; sem rolagem lateral",
+    "esperado": "Valem para Redação, Geografia, Professor Regente.; Fund. II (2); linha \"Berçário I\"",
+    "observado": "Valem para Redação, Geografia, Professor Regente.; Fund. II (2); Infantil | Fund. II (2) |  | Berçário I |  | Manhã; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "80-cadastro-lista-unica-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T23:04:42.801Z"
+  },
+  {
+    "id": "TURMASCARGO-3-desktop",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "desktop: \"Cadastrar\" grava as turmas para cada disciplina e atuação com turma (Geografia e Regente herdaram a 6M1); nada para Biblioteca",
+    "esperado": "Geografia:6M1, Geografia:6M2, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "observado": "Geografia:6M1, Geografia:6M2, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:04:47.088Z"
+  },
+  {
+    "id": "TURMASCARGO-4-desktop",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "desktop: \"Alterar\" abre a área fechada com o resumo; \"Separar por disciplina\" mostra uma linha por item",
+    "esperado": "[\"6M1, 6M2\"]; fechada; 3 linhas",
+    "observado": "[\"6M1, 6M2\"]; fechada: true; 3 linhas",
+    "status": "APROVADO",
+    "evidencia": "80-separado-desktop.png",
+    "nota": "",
+    "quando": "2026-11-16T23:04:51.736Z"
+  },
+  {
+    "id": "TURMASCARGO-5-desktop",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "desktop: salvar separado tira a 6M2 só de Geografia",
+    "esperado": "Geografia:6M1, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "observado": "Geografia:6M1, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:04:54.525Z"
+  },
+  {
+    "id": "TURMASCARGO-6-desktop",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "desktop: cargo com turmas diferentes reabre separado, mostrando cada item; cancelar não grava",
+    "esperado": "Geografia: 6M1; Redação: 6M1, 6M2; nada muda",
+    "observado": "Turmas |  | Geografia: 6M1 |  | Escolher ▸ |  | Redação: 6M1, 6M2 |  | Escolher ▸ |  | Professor Regente: 6M1, 6M2 |  | Escolher ▸ | Mesmas turmas para todas; igual: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:04:55.985Z"
+  },
+  {
+    "id": "TURMASCARGO-1-celular",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "celular: com uma disciplina a área \"Turmas\" já abre, com abas só das etapas da escola, começando no Fundamental",
+    "esperado": "Infantil, Fund. II; aba Fund. II",
+    "observado": "Infantil, Fund. II; aba Fund. II",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:05:08.840Z"
+  },
+  {
+    "id": "TURMASCARGO-2-celular",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "celular: com várias disciplinas/atuações, uma lista só (\"Valem para…\", sem Biblioteca); aba mostra a contagem; Infantil em linha por nível; sem rolagem lateral",
+    "esperado": "Valem para Redação, Geografia, Professor Regente.; Fund. II (2); linha \"Berçário I\"",
+    "observado": "Valem para Redação, Geografia, Professor Regente.; Fund. II (2); Infantil | Fund. II (2) |  | Berçário I |  | Manhã; sem rolagem: true",
+    "status": "APROVADO",
+    "evidencia": "80-cadastro-lista-unica-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T23:05:13.589Z"
+  },
+  {
+    "id": "TURMASCARGO-3-celular",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "celular: \"Cadastrar\" grava as turmas para cada disciplina e atuação com turma (Geografia e Regente herdaram a 6M1); nada para Biblioteca",
+    "esperado": "Geografia:6M1, Geografia:6M2, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "observado": "Geografia:6M1, Geografia:6M2, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:05:17.057Z"
+  },
+  {
+    "id": "TURMASCARGO-4-celular",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "celular: \"Alterar\" abre a área fechada com o resumo; \"Separar por disciplina\" mostra uma linha por item",
+    "esperado": "[\"6M1, 6M2\"]; fechada; 3 linhas",
+    "observado": "[\"6M1, 6M2\"]; fechada: true; 3 linhas",
+    "status": "APROVADO",
+    "evidencia": "80-separado-celular.png",
+    "nota": "",
+    "quando": "2026-11-16T23:05:22.128Z"
+  },
+  {
+    "id": "TURMASCARGO-5-celular",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "celular: salvar separado tira a 6M2 só de Geografia",
+    "esperado": "Geografia:6M1, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "observado": "Geografia:6M1, Professor Regente:6M1, Professor Regente:6M2, Redação:6M1, Redação:6M2",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:05:25.030Z"
+  },
+  {
+    "id": "TURMASCARGO-6-celular",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "celular: cargo com turmas diferentes reabre separado, mostrando cada item; cancelar não grava",
+    "esperado": "Geografia: 6M1; Redação: 6M1, 6M2; nada muda",
+    "observado": "Turmas |  | Geografia: 6M1 |  | Escolher ▸ |  | Redação: 6M1, 6M2 |  | Escolher ▸ |  | Professor Regente: 6M1, 6M2 |  | Escolher ▸ | Mesmas turmas para todas; igual: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:05:26.476Z"
+  },
+  {
+    "id": "TURMASCARGO-7",
+    "modulo": "Turmas do cargo por escola",
+    "cenario": "Escola só com Biblioteca: \"Sem turmas para Biblioteca.\" e nenhuma área de turmas",
+    "esperado": "linha cinza; 0 áreas",
+    "observado": "\"Sem turmas para Biblioteca.\"; 0 área(s)",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:05:37.789Z"
+  },
+  {
+    "id": "SEMMOCK-1-Secretaria",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Secretaria: todas as telas do menu abrem sem quebrar, sem erro de console nem 5xx, sem nenhum nome falso",
+    "esperado": "14 telas; 0 quebradas; 0 erros; 0 nomes falsos",
+    "observado": "14 telas; quebradas: 0; erros: 0; 5xx: 0; falsos: 0",
+    "status": "APROVADO",
+    "evidencia": "81-secretaria.png",
+    "nota": "",
+    "quando": "2026-11-16T22:57:58.783Z"
+  },
+  {
+    "id": "SEMMOCK-2-Secretaria",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Secretaria: o cabeçalho continua com as iniciais",
+    "esperado": "SE",
+    "observado": "ZZ,ZZ,SE",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T22:57:58.835Z"
+  },
+  {
+    "id": "SEMMOCK-1-Diretora",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Diretora: todas as telas do menu abrem sem quebrar, sem erro de console nem 5xx, sem nenhum nome falso",
+    "esperado": "7 telas; 0 quebradas; 0 erros; 0 nomes falsos",
+    "observado": "7 telas; quebradas: 0; erros: 0; 5xx: 0; falsos: 0",
+    "status": "APROVADO",
+    "evidencia": "81-diretora.png",
+    "nota": "",
+    "quando": "2026-11-16T22:58:13.931Z"
+  },
+  {
+    "id": "SEMMOCK-1-Supervisor",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Supervisor: todas as telas do menu abrem sem quebrar, sem erro de console nem 5xx, sem nenhum nome falso",
+    "esperado": "10 telas; 0 quebradas; 0 erros; 0 nomes falsos",
+    "observado": "10 telas; quebradas: 0; erros: 0; 5xx: 0; falsos: 0",
+    "status": "APROVADO",
+    "evidencia": "81-supervisor.png",
+    "nota": "",
+    "quando": "2026-11-16T22:58:31.845Z"
+  },
+  {
+    "id": "SEMMOCK-1-Professor",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Professor: todas as telas do menu abrem sem quebrar, sem erro de console nem 5xx, sem nenhum nome falso",
+    "esperado": "10 telas; 0 quebradas; 0 erros; 0 nomes falsos",
+    "observado": "10 telas; quebradas: 0; erros: 0; 5xx: 0; falsos: 0",
+    "status": "APROVADO",
+    "evidencia": "81-professor.png",
+    "nota": "",
+    "quando": "2026-11-16T22:58:50.721Z"
+  },
+  {
+    "id": "SEMMOCK-3",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Escolas: o botão \"Gerenciar vínculos\" (dados falsos) não existe mais",
+    "esperado": "0 botões",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T22:58:58.927Z"
+  },
+  {
+    "id": "SEMMOCK-4",
+    "modulo": "Sem dados de demonstração",
+    "cenario": "Turmas: a contagem de vínculos da 6M1 vem dos dados reais (professores distintos + alunos PDI + auxiliar)",
+    "esperado": "3 vínculo(s)",
+    "observado": "6M1 |  | Ensino Fundamental • 6º ano • Manhã |  | ZZ-HOMOLOG Escola Aurora • 2026 • 3 vínculos ativos |  | Editar",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T22:59:01.171Z"
+  },
+  {
+    "id": "ESCINATIVA-1",
+    "modulo": "Escola inativa sem turma",
+    "cenario": "API: criar turma em escola inativa, mover turma para ela e reativar turma dela são recusados; editar a turma que já estava nela continua",
+    "esperado": "400, 400, 409; editar 200",
+    "observado": "criar 400 \"Esta escola está inativa.\", mover 400, reativar 409; editar 200",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:42:58.543Z"
+  },
+  {
+    "id": "ESCINATIVA-2",
+    "modulo": "Escola inativa sem turma",
+    "cenario": "Tela: \"Nova turma\" não oferece a escola inativa (a ativa aparece)",
+    "esperado": "sem a inativa; com a ativa",
+    "observado": "inativa: false; ativa: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:43:09.788Z"
+  },
+  {
+    "id": "NOVAESCOLA-1-desktop",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "desktop: criar escola leva a Turmas com \"Nova turma\" aberto, a escola nova escolhida, só os anos dela e o aviso",
+    "esperado": "URL /turmas; Nova turma; escola #455; 1º–5º ano; aviso",
+    "observado": "/turmas; \"Nova turma\"; escola 455; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:02.063Z"
+  },
+  {
+    "id": "NOVAESCOLA-2-desktop",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "desktop: recarregar a tela de Turmas não reabre o formulário",
+    "esperado": "0 janelas",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:09.550Z"
+  },
+  {
+    "id": "NOVAESCOLA-3-desktop",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "desktop: editar escola continua na tela de Escolas",
+    "esperado": "/escolas",
+    "observado": "/escolas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:14.885Z"
+  },
+  {
+    "id": "NOVAESCOLA-1-celular",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "celular: criar escola leva a Turmas com \"Nova turma\" aberto, a escola nova escolhida, só os anos dela e o aviso",
+    "esperado": "URL /turmas; Nova turma; escola #456; 1º–5º ano; aviso",
+    "observado": "/turmas; \"Nova turma\"; escola 456; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:30.231Z"
+  },
+  {
+    "id": "NOVAESCOLA-2-celular",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "celular: recarregar a tela de Turmas não reabre o formulário",
+    "esperado": "0 janelas",
+    "observado": "0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:38.636Z"
+  },
+  {
+    "id": "NOVAESCOLA-3-celular",
+    "modulo": "Nova escola vai para Turmas",
+    "cenario": "celular: editar escola continua na tela de Escolas",
+    "esperado": "/escolas",
+    "observado": "/escolas",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-16T23:41:43.760Z"
   }
 ]

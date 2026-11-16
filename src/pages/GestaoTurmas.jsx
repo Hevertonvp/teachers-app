@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Button, Card, ConfirmDialog, EmptyState, FormField, LoadingBlock, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -12,12 +12,15 @@ import { escolaName, inputClass } from '../utils/display';
 import { canManageTurmas } from '../utils/roles';
 import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
 import { listarDesativados } from '../services/desativados';
+import { listarNiveisInfantil } from '../services/niveisInfantil';
+import { listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
+import { listarVinculosAuxiliarTurma } from '../services/auxiliaresTurma';
 
 // Turmas desativadas em tela própria (pedido do usuário, 15/11/2026): lista paginada, mais recentes primeiro.
 const carregarDesativadas = (pagina, porPagina) => listarDesativados('turmas', { pagina, porPagina });
 import {
   ANOS_FUNDAMENTAL, ETAPAS, SEGMENTOS_INFANTIL, TURNOS,
-  descricaoTurma, niveisDoSegmento, turnoLabel, vinculosDaTurma,
+  descricaoTurma, niveisDoSegmento, turnoLabel,
 } from '../utils/turmas';
 
 const ANO_LETIVO_PADRAO = 2026;
@@ -37,7 +40,7 @@ const blankTurma = (escolaId) => ({
 export const GestaoTurmas = () => {
   const { user } = useAuth();
   const {
-    escolas, turmas, turmasLoading, turmasError, loadTurmas, turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos,
+    escolas, turmas, turmasLoading, turmasError, loadTurmas, pdiAlunosReais,
     createTurma, updateTurma, inativarTurma, reativarTurma,
   } = useData();
   const escolaDoTopo = useEscolaDoTopo();
@@ -58,12 +61,55 @@ export const GestaoTurmas = () => {
   const [reativandoTurma, setReativandoTurma] = useState(null);
   const [message, setMessage] = useState('');
   const [paginaTurmas, setPaginaTurmas] = useState(1);
+  // 16/11/2026: vindo de "Nova escola", abre "Nova turma" com a escola escolhida (uma vez; o estado da navegação é
+  // limpo para não reabrir ao recarregar). Espera a escola aparecer na lista e o catálogo de níveis carregar.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const abrirNovaTurmaDaEscolaRef = useRef(null);
+  // 16/11/2026: escola com etapas informadas só oferece as suas etapas/anos/níveis (níveis do catálogo local).
+  const [niveisCatalogo, setNiveisCatalogo] = useState([]);
+  useEffect(() => { listarNiveisInfantil().then(setNiveisCatalogo).catch(() => setNiveisCatalogo([])); }, []);
+  // 16/11/2026: vínculos de cada turma pelos dados REAIS (antes vinham dos dados de demonstração, já removidos):
+  // professores (por disciplina e por atuação), alunos do PDI ativos e Auxiliar.
+  const [vinculosReais, setVinculosReais] = useState({ professores: new Map(), auxiliares: new Set() });
+  useEffect(() => {
+    Promise.all([
+      listarVinculosProfessorTurmaDisciplina().catch(() => []),
+      listarVinculosProfessorTurmaAtuacao().catch(() => []),
+      listarVinculosAuxiliarTurma().catch(() => []),
+    ]).then(([porDisciplina, porAtuacao, aux]) => {
+      const professores = new Map();
+      for (const v of [...porDisciplina, ...porAtuacao].filter(x => x.status === 'ATIVO')) {
+        if (!professores.has(v.turmaId)) professores.set(v.turmaId, new Set());
+        professores.get(v.turmaId).add(v.professorId);
+      }
+      setVinculosReais({ professores, auxiliares: new Set(aux.filter(x => x.status === 'ATIVO').map(x => x.turmaId)) });
+    });
+  }, []);
+  const vinculosDaTurma = (turmaId) => {
+    const id = Number(turmaId);
+    const professores = vinculosReais.professores.get(id)?.size ?? 0;
+    const alunos = (pdiAlunosReais ?? []).filter(a => a.turmaId === id && a.status === 'ativo').length;
+    const auxiliar = vinculosReais.auxiliares.has(id) ? 1 : 0;
+    return { professores, alunos, auxiliar, total: professores + alunos + auxiliar };
+  };
+
+  const novaTurmaEscolaId = location.state?.novaTurmaEscolaId;
+  useEffect(() => {
+    if (!novaTurmaEscolaId || niveisCatalogo.length === 0 || !escolas.some(e => e.id === Number(novaTurmaEscolaId))) return;
+    abrirNovaTurmaDaEscolaRef.current?.(Number(novaTurmaEscolaId), location.state?.mensagem);
+    navigate('/turmas', { replace: true, state: null });
+  }, [novaTurmaEscolaId, niveisCatalogo, escolas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!canManageTurmas(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const escolasOrdenadas = [...escolas].sort((a, b) => a.nome.localeCompare(b.nome));
+  // 16/11/2026: escola inativa não recebe turma — some de "Nova turma". Ao editar turma antiga de escola já inativa,
+  // a escola dela continua na lista (só ela), para a edição não quebrar. O filtro do topo continua com todas.
+  const escolasAtivas = escolasOrdenadas.filter(e => e.status === 'ativa');
+  const escolasDoFormulario = escolasOrdenadas.filter(e => e.status === 'ativa' || (editingTurma && e.id === Number(editingTurma.escolaId)));
   const anosLetivos = [...new Set(turmas.map(turma => turma.anoLetivo).filter(Boolean))].sort((a, b) => b - a);
 
   const turmasFiltradas = turmas
@@ -77,7 +123,34 @@ export const GestaoTurmas = () => {
   const paginaAtualTurmas = Math.min(paginaTurmas, totalPaginasTurmas);
   const turmasPaginadas = turmasFiltradas.slice((paginaAtualTurmas - 1) * TURMAS_POR_PAGINA, paginaAtualTurmas * TURMAS_POR_PAGINA);
 
-  const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(blankTurma(escolaDoTopo(escolasOrdenadas, escolasOrdenadas[0]?.id))); };
+  // Estrutura da escola escolhida no formulário (vazia = "não informada": formulário de sempre).
+  const estruturaDe = (escolaId, turmaEditada = null) => {
+    const escola = escolas.find(e => e.id === Number(escolaId));
+    const etapas = escola?.etapasOferecidas ?? [];
+    const informada = etapas.length > 0;
+    const antigaInfantil = !!turmaEditada && turmaEditada.etapa === 'educacao_infantil' && !turmaEditada.nivelLocalId;
+    return {
+      informada,
+      etapas: informada ? ETAPAS.filter(e => (e.value === 'fundamental' ? etapas.some(x => x.startsWith('FUNDAMENTAL')) : etapas.includes('EDUCACAO_INFANTIL'))) : ETAPAS,
+      anos: informada ? ANOS_FUNDAMENTAL.filter(a => (escola.anosFundamental ?? []).includes(a.value)) : ANOS_FUNDAMENTAL,
+      niveis: niveisCatalogo.filter(n => (escola?.niveisInfantilIds ?? []).includes(n.id)),
+      usaNivelLocal: informada && !antigaInfantil,
+    };
+  };
+  // Ajusta etapa/ano/nível aos que a escola oferece (sem mudar o que já é válido).
+  const ajustarAEscola = (form, turmaEditada = editingTurma) => {
+    const e = estruturaDe(form.escolaId, turmaEditada);
+    const etapa = e.etapas.some(x => x.value === form.etapa) ? form.etapa : (e.etapas[0]?.value ?? form.etapa);
+    const anoSerie = e.anos.some(a => a.value === Number(form.anoSerie)) ? form.anoSerie : (e.anos[0]?.value ?? form.anoSerie);
+    const nivelLocalId = e.niveis.some(n => n.id === Number(form.nivelLocalId)) ? form.nivelLocalId : (e.niveis[0]?.id ?? '');
+    return { ...form, etapa, anoSerie, nivelLocalId };
+  };
+  abrirNovaTurmaDaEscolaRef.current = (escolaId, mensagem) => {
+    setEditingTurma(null); setTurmaError('');
+    if (mensagem) setMessage(mensagem);
+    setTurmaForm(ajustarAEscola(blankTurma(escolaId), null));
+  };
+  const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(ajustarAEscola(blankTurma(escolaDoTopo(escolasAtivas, escolasAtivas[0]?.id)), null)); };
   // Turmas legadas sem turno/identificador definidos (ver mockData.js) recebem aqui um valor de
   // partida editável — só passam a valer de fato quando a Secretaria confirmar "Salvar".
   const abrirEdicao = (turma) => {
@@ -94,7 +167,7 @@ export const GestaoTurmas = () => {
   const fecharModal = () => { setTurmaForm(null); setEditingTurma(null); setTurmaError(''); };
 
   const mudarEtapa = (etapa) => {
-    setTurmaForm(prev => ({
+    setTurmaForm(prev => ajustarAEscola({
       ...prev,
       etapa,
       anoSerie: ANOS_FUNDAMENTAL[0].value,
@@ -117,9 +190,16 @@ export const GestaoTurmas = () => {
       turno: turmaForm.turno,
       identificador: Number(turmaForm.identificador),
     };
+    const est = estruturaDe(turmaForm.escolaId, editingTurma);
+    if (turmaForm.etapa === 'educacao_infantil' && est.usaNivelLocal && !turmaForm.nivelLocalId) {
+      setTurmaError('Esta escola não tem níveis da Educação Infantil marcados. Ajuste em Escolas.');
+      return;
+    }
     const payload = turmaForm.etapa === 'fundamental'
       ? { ...base, anoSerie: Number(turmaForm.anoSerie), segmento: null, nivel: null }
-      : { ...base, anoSerie: null, segmento: turmaForm.segmento, nivel: turmaForm.nivel };
+      : est.usaNivelLocal
+        ? { ...base, anoSerie: null, segmento: null, nivel: null, nivelLocalId: Number(turmaForm.nivelLocalId) }
+        : { ...base, anoSerie: null, segmento: turmaForm.segmento, nivel: turmaForm.nivel };
 
     setSalvando(true);
     const resultado = editingTurma ? await updateTurma(editingTurma.id, payload) : await createTurma(payload);
@@ -176,7 +256,8 @@ export const GestaoTurmas = () => {
     });
   };
 
-  const vinculosDaTurmaEmEdicao = editingTurma ? vinculosDaTurma(editingTurma.id, { turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos }) : null;
+  const vinculosDaTurmaEmEdicao = editingTurma ? vinculosDaTurma(editingTurma.id) : null;
+  const estruturaForm = turmaForm ? estruturaDe(turmaForm.escolaId, editingTurma) : null;
 
   return (
     <MainLayout>
@@ -195,7 +276,7 @@ export const GestaoTurmas = () => {
           </div>
           <div className="flex flex-wrap items-start gap-2">
             <BotaoExportarExcel size="md" gerar={exportarTurmas} disabled={turmasLoading || turmasFiltradas.length === 0} />
-            <Button onClick={abrirNovaTurma} disabled={escolasOrdenadas.length === 0 || turmasLoading}>+ Nova turma</Button>
+            <Button onClick={abrirNovaTurma} disabled={escolasAtivas.length === 0 || turmasLoading}>+ Nova turma</Button>
           </div>
         </div>
 
@@ -247,7 +328,7 @@ export const GestaoTurmas = () => {
           <Card className="p-0">
             <div className="divide-y divide-slate-200">
               {turmasPaginadas.map(turma => {
-                const vinculos = vinculosDaTurma(turma.id, { turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos });
+                const vinculos = vinculosDaTurma(turma.id);
                 return (
                   <div key={turma.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
                     <div className="min-w-0 flex-1">
@@ -287,9 +368,9 @@ export const GestaoTurmas = () => {
               )}
 
               <FormField label="Escola">
-                <select className={inputClass} value={turmaForm.escolaId} onChange={event => setTurmaForm(prev => ({ ...prev, escolaId: event.target.value }))} required>
+                <select className={inputClass} value={turmaForm.escolaId} onChange={event => setTurmaForm(prev => ajustarAEscola({ ...prev, escolaId: event.target.value }))} required>
                   <option value="" disabled>Selecione</option>
-                  {escolasOrdenadas.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                  {escolasDoFormulario.map(escola => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
                 </select>
               </FormField>
 
@@ -299,7 +380,7 @@ export const GestaoTurmas = () => {
                 </FormField>
                 <FormField label="Etapa">
                   <select className={inputClass} value={turmaForm.etapa} onChange={event => mudarEtapa(event.target.value)}>
-                    {ETAPAS.map(etapa => <option key={etapa.value} value={etapa.value}>{etapa.label}</option>)}
+                    {estruturaForm.etapas.map(etapa => <option key={etapa.value} value={etapa.value}>{etapa.label}</option>)}
                   </select>
                 </FormField>
               </div>
@@ -308,7 +389,7 @@ export const GestaoTurmas = () => {
                 <div className="grid gap-4 md:grid-cols-3">
                   <FormField label="Ano/série">
                     <select className={inputClass} value={turmaForm.anoSerie} onChange={event => setTurmaForm(prev => ({ ...prev, anoSerie: event.target.value }))}>
-                      {ANOS_FUNDAMENTAL.map(ano => <option key={ano.value} value={ano.value}>{ano.label}</option>)}
+                      {estruturaForm.anos.map(ano => <option key={ano.value} value={ano.value}>{ano.label}</option>)}
                     </select>
                   </FormField>
                   <FormField label="Turno">
@@ -318,6 +399,25 @@ export const GestaoTurmas = () => {
                   </FormField>
                   <FormField label="Identificador da turma">
                     <input className={inputClass} type="number" min="1" value={turmaForm.identificador} onChange={event => setTurmaForm(prev => ({ ...prev, identificador: event.target.value }))} required />
+                  </FormField>
+                </div>
+              ) : estruturaForm.usaNivelLocal ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <FormField label="Nível">
+                    <select className={inputClass} value={turmaForm.nivelLocalId} onChange={event => setTurmaForm(prev => ({ ...prev, nivelLocalId: event.target.value }))}>
+                      {estruturaForm.niveis.length === 0 && <option value="">Nenhum nível marcado na escola</option>}
+                      {estruturaForm.niveis.map(nivel => <option key={nivel.id} value={nivel.id}>{nivel.nome}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Turno">
+                    <select className={inputClass} value={turmaForm.turno} onChange={event => setTurmaForm(prev => ({ ...prev, turno: event.target.value }))}>
+                      {TURNOS.map(turno => <option key={turno.value} value={turno.value}>{turno.label}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Turma (A, B, C…)">
+                    <select className={inputClass} value={turmaForm.identificador} onChange={event => setTurmaForm(prev => ({ ...prev, identificador: event.target.value }))}>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{String.fromCharCode(64 + n)}</option>)}
+                    </select>
                   </FormField>
                 </div>
               ) : (
@@ -355,7 +455,7 @@ export const GestaoTurmas = () => {
           <ConfirmDialog
             title="Inativar turma"
             message={(() => {
-              const vinculos = vinculosDaTurma(inativandoTurma.id, { turmaProfessores, pdiAlunos, pdiAuxiliaresVinculos });
+              const vinculos = vinculosDaTurma(inativandoTurma.id);
               return `Deseja inativar a turma "${inativandoTurma.nome}"? Ela deixa de aparecer como opção para novos vínculos, mas continua existindo para consulta histórica.${vinculos.total > 0 ? ` Os ${vinculos.total} vínculo(s) ativo(s) hoje (professores, alunos PDI, auxiliar) NÃO são removidos.` : ''}`;
             })()}
             confirmLabel="Inativar"

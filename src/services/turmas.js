@@ -38,7 +38,9 @@ const paraPayloadApi = (payload) => ({
   identificador: Number(payload.identificador),
   anoSerie: payload.etapa === 'fundamental' ? Number(payload.anoSerie) : null,
   segmento: payload.etapa === 'educacao_infantil' ? SEGMENTO_TO_API[payload.segmento] : null,
-  nivel: payload.etapa === 'educacao_infantil' ? NIVEL_TO_API[payload.nivel] : null,
+  nivel: payload.etapa === 'educacao_infantil' && !payload.nivelLocalId ? NIVEL_TO_API[payload.nivel] : null,
+  // 16/11/2026: nível local da Educação Infantil (escola com etapas informadas). Turma antiga continua sem.
+  nivelLocalId: payload.etapa === 'educacao_infantil' && payload.nivelLocalId ? Number(payload.nivelLocalId) : null,
 });
 
 export const listarTurmas = async () => (await apiFetch('/api/turmas')).map(normalizeTurma);

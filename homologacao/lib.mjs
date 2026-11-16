@@ -72,6 +72,29 @@ export async function abrirCartao(page, regex) {
 // Primeiro passo do cadastro de Professor (por CARGO, desde 12–13/11/2026): e-mail, nome e Cargo 1 com
 // uma escola e uma disciplina (e, se pedido, marca turmas). "Cadastrar" salva e mostra a senha.
 // 15/11/2026: as turmas são marcadas no próprio cadastro (turmas = ['Disciplina — Turma', ...]); "Cadastrar" salva tudo.
+// 16/11/2026: turmas do cargo numa área única por escola (abas por etapa, "Escolher", "Separar por disciplina").
+// Marca o botão "Disciplina — Turma" abrindo o que precisar: separa por disciplina (se houver mais de uma), abre o
+// "Escolher" daquele item e troca de aba até o botão aparecer.
+export async function mostrarTurma(modal, rotulo) {
+  const botao = modal.getByRole('button', { name: rotulo, exact: true });
+  if (await botao.isVisible().catch(() => false)) return botao;
+  const item = rotulo.split(' — ')[0];
+  const separar = modal.getByRole('button', { name: 'Separar por disciplina' });
+  const abrirUnica = modal.getByRole('button', { name: 'Escolher turmas', exact: true });
+  const abrirItem = modal.getByRole('button', { name: 'Escolher turmas de ' + item, exact: true });
+  const fechada = async (b) => (await b.isVisible().catch(() => false)) && (await b.getAttribute('aria-expanded')) !== 'true';
+  if (!(await separar.isVisible().catch(() => false)) && await fechada(abrirUnica)) await abrirUnica.click();
+  if (await separar.isVisible().catch(() => false)) await separar.click();
+  if (await fechada(abrirItem)) await abrirItem.click();
+  if (await botao.isVisible().catch(() => false)) return botao;
+  const abas = modal.getByRole('tab');
+  for (let i = 0; i < await abas.count(); i++) { await abas.nth(i).click(); if (await botao.isVisible().catch(() => false)) return botao; }
+  throw new Error('Turma não encontrada na tela: ' + rotulo);
+}
+// Alterna (marca/desmarca) a turma; turmaMarcada lê o estado sem mudar nada.
+export const marcarTurma = async (modal, rotulo) => (await mostrarTurma(modal, rotulo)).click();
+export const turmaMarcada = async (modal, rotulo) => (await mostrarTurma(modal, rotulo)).getAttribute('aria-pressed');
+
 export async function preencherCadastroProfessor(modal, { email, nome, escola, disciplina, disciplinas, turmas = [], enviar = true }) {
   const escolher = async (sel, texto) => {
     const v = await sel.evaluate((s, t) => [...s.options].find(o => o.text.trim() === t)?.value, texto);
@@ -86,6 +109,6 @@ export async function preencherCadastroProfessor(modal, { email, nome, escola, d
     if (i > 0) await modal.getByRole('button', { name: '+ Adicionar disciplina' }).first().click();
     await escolher(modal.getByLabel(`Disciplina ${i + 1}`).first(), lista[i]);
   }
-  for (const t of turmas) await modal.getByRole('button', { name: t, exact: true }).click();
+  for (const t of turmas) await marcarTurma(modal, t);
   if (enviar) await modal.getByRole('button', { name: 'Cadastrar', exact: true }).click();
 }

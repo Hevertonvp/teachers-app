@@ -27,8 +27,9 @@ export const SEGMENTOS_INFANTIL = [
     value: 'pre_escola',
     label: 'Pré-escola',
     niveis: [
-      { value: 'pre_1', label: 'Pré I' },
-      { value: 'pre_2', label: 'Pré II' },
+      // 16/11/2026: em SJN, Pré I/Pré II passaram a se chamar 1º/2º Período.
+      { value: 'pre_1', label: '1º Período' },
+      { value: 'pre_2', label: '2º Período' },
     ],
   },
 ];

@@ -5,6 +5,8 @@ import { alterarCargo, criarCargo, encerrarCargo, listarCargos, previaSaidasCarg
 import { criarVinculoProfessorTurmaDisciplina, encerrarVinculoProfessorTurmaDisciplina, listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { criarVinculoProfessorTurmaAtuacao, encerrarVinculoProfessorTurmaAtuacao, listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 import { inputClass } from '../utils/display';
+import { nivelLabel } from '../utils/turmas';
+import { listarNiveisInfantil } from '../services/niveisInfantil';
 import { hojeSpServidor } from '../utils/horaServidor';
 
 // Cargos do Professor (decisão do usuário, 12/11/2026): Professor → Cargo(s) → Escola(s) → Disciplina(s).
@@ -69,6 +71,33 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
   const mudarParte = (chave, mudanca) => onChange({ ...valor, partes: valor.partes.map(p => (p.chave === chave ? { ...p, ...mudanca } : p)) });
   const escolasUsadas = (exceto) => new Set(valor.partes.filter(p => p.chave !== exceto).map(p => p.escolaId));
   const todasUsadas = valor.partes.length >= escolas.length;
+  // 16/11/2026: disciplinas e atuações COM turma da escola (Biblioteca, Intervenção e Eventual ficam em semTurma).
+  const itensComTurma = (parte) => {
+    const itens = [];
+    for (const d of (parte.disciplinaIds ?? []).filter(Boolean)) {
+      const x = disciplinas.find(y => String(y.id) === d);
+      if (x) itens.push({ chave: `d${x.id}`, tipo: 'd', id: x.id, nome: x.nome });
+    }
+    const semTurma = [];
+    for (const a of (parte.atuacaoIds ?? []).filter(Boolean)) {
+      const x = atuacoes.find(y => String(y.id) === a);
+      if (!x) continue;
+      if (x.temTurmas === false) semTurma.push(x.nome);
+      else itens.push({ chave: `a${x.id}`, tipo: 'a', id: x.id, nome: x.nome });
+    }
+    return { itens, semTurma };
+  };
+  // Na lista única, a disciplina/atuação escolhida agora herda as turmas já marcadas na escola.
+  const herdar = (parte, tipo, novoId) => {
+    if (!novoId) return {};
+    const { itens } = itensComTurma(parte);
+    const listas = itens.map(it => ((it.tipo === 'd' ? parte.turmas : parte.turmasAtuacao) ?? {})[String(it.id)] ?? []);
+    if (parte.separar ?? !listasIguais(listas)) return {};
+    const atual = uniao(listas);
+    if (!atual.length) return {};
+    if (tipo === 'a' && atuacoes.find(y => String(y.id) === novoId)?.temTurmas === false) return {};
+    return tipo === 'd' ? { turmas: { ...(parte.turmas ?? {}), [novoId]: atual } } : { turmasAtuacao: { ...(parte.turmasAtuacao ?? {}), [novoId]: atual } };
+  };
 
   return (
     <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
@@ -96,7 +125,7 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
             <div className="flex items-end gap-2">
               <label className="min-w-0 flex-1 text-sm font-semibold text-slate-700">
                 Escola
-                <select className={`${inputClass} mt-1`} value={parte.escolaId} onChange={e => mudarParte(parte.chave, { escolaId: e.target.value, turmas: {}, turmasAtuacao: {} })} aria-label={`Escola ${i + 1}`}>
+                <select className={`${inputClass} mt-1`} value={parte.escolaId} onChange={e => mudarParte(parte.chave, { escolaId: e.target.value, turmas: {}, turmasAtuacao: {}, separar: undefined, abertoTurmas: undefined })} aria-label={`Escola ${i + 1}`}>
                   <option value="">Selecione a escola</option>
                   {escolas.filter(e => !escolasUsadas(parte.chave).has(String(e.id))).map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
                 </select>
@@ -110,21 +139,12 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
               {parte.disciplinaIds.map((d, j) => (
                 <div key={j} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <select className={`${inputClass} min-w-0 flex-1`} value={d} aria-label={`Disciplina ${j + 1}`} onChange={e => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.map((x, k) => (k === j ? e.target.value : x)) })}>
+                    <select className={`${inputClass} min-w-0 flex-1`} value={d} aria-label={`Disciplina ${j + 1}`} onChange={e => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.map((x, k) => (k === j ? e.target.value : x)), ...herdar(parte, 'd', e.target.value) })}>
                       <option value="">Selecione a disciplina</option>
                       {disciplinas.filter(x => !usadasNaEscola(j).has(String(x.id))).map(x => <option key={x.id} value={x.id}>{x.nome}</option>)}
                     </select>
                     <button type="button" className={botaoRemover} aria-label="Remover disciplina" title="Remover disciplina" onClick={() => mudarParte(parte.chave, { disciplinaIds: parte.disciplinaIds.filter((_, k) => k !== j) })}>×</button>
                   </div>
-                  {turmas && parte.escolaId && d && (
-                    <TurmasDaDisciplina
-                      disciplina={disciplinas.find(x => String(x.id) === d)}
-                      turmas={turmas.filter(t => t.status === 'ativa' && String(t.escolaId) === parte.escolaId)}
-                      marcadas={(parte.turmas ?? {})[d] ?? []}
-                      ocupantes={ocupantes}
-                      onChange={lista => mudarParte(parte.chave, { turmas: { ...(parte.turmas ?? {}), [d]: lista } })}
-                    />
-                  )}
                 </div>
               ))}
               {/* 15/11/2026: com uma linha vazia o botão some (antes ficava cinza e parecia quebrado). */}
@@ -133,32 +153,30 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
             <div className="space-y-2 sm:pl-3">
               <p className="text-sm font-semibold text-slate-700">Atuações pedagógicas</p>
               {atuacoesDaParte.map((a, j) => {
-                const atuacao = atuacoes.find(x => String(x.id) === a);
                 return (
                   <div key={j} className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <select className={`${inputClass} min-w-0 flex-1`} value={a} aria-label={`Atuação ${j + 1}`} onChange={e => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.map((x, k) => (k === j ? e.target.value : x)) })}>
+                      <select className={`${inputClass} min-w-0 flex-1`} value={a} aria-label={`Atuação ${j + 1}`} onChange={e => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.map((x, k) => (k === j ? e.target.value : x)), ...herdar(parte, 'a', e.target.value) })}>
                         <option value="">Selecione a atuação</option>
                         {opcoesAtuacao(j).map(x => <option key={x.id} value={x.id}>{x.nome}{x.status === 'inativa' ? ' (inativa)' : ''}</option>)}
                       </select>
                       <button type="button" className={botaoRemover} aria-label="Remover atuação" title="Remover atuação" onClick={() => mudarParte(parte.chave, { atuacaoIds: atuacoesDaParte.filter((_, k) => k !== j) })}>×</button>
                     </div>
-                    {/* 16/11/2026: atuação com turmas (Regente, Oficina do Brincar, TAE…) marca as turmas aqui, sem disciplina.
-                        Biblioteca, Professor de Intervenção e Eventual não mostram turmas (temTurmas=false, vem da API). */}
-                    {turmas && parte.escolaId && atuacao && atuacao.temTurmas !== false && (
-                      <TurmasDaDisciplina
-                        disciplina={{ id: `a${atuacao.id}`, nome: atuacao.nome }}
-                        turmas={turmas.filter(t => t.status === 'ativa' && String(t.escolaId) === parte.escolaId)}
-                        marcadas={(parte.turmasAtuacao ?? {})[a] ?? []}
-                        ocupantes={null}
-                        onChange={lista => mudarParte(parte.chave, { turmasAtuacao: { ...(parte.turmasAtuacao ?? {}), [a]: lista } })}
-                      />
-                    )}
                   </div>
                 );
               })}
               {!atuacaoVazia && atuacoesDaParte.length < ativas.length && <button type="button" className={botaoTexto} onClick={() => mudarParte(parte.chave, { atuacaoIds: [...atuacoesDaParte, ''] })}>+ Adicionar atuação</button>}
             </div>
+            {turmas && parte.escolaId && (() => {
+              const { itens, semTurma } = itensComTurma(parte);
+              return (
+                <div className="sm:pl-3">
+                  <TurmasDaParte parte={parte} itens={itens} semTurma={semTurma} ocupantes={ocupantes} todasTurmas={turmas}
+                    turmasEscola={turmas.filter(t => t.status === 'ativa' && String(t.escolaId) === parte.escolaId)}
+                    onMudar={mudanca => mudarParte(parte.chave, mudanca)} />
+                </div>
+              );
+            })()}
             {erros.partes?.[parte.chave] && <p className="text-xs font-semibold text-red-700">{erros.partes[parte.chave]}</p>}
           </div>
         );
@@ -169,38 +187,172 @@ export const EditorCargo = ({ rotulo, valor, onChange, escolas, disciplinas, atu
   );
 };
 
-// Turmas de uma disciplina no cadastro: botões para marcar (nada é salvo antes de "Cadastrar").
-const TurmasDaDisciplina = ({ disciplina, turmas, marcadas, ocupantes, onChange }) => {
-  if (!disciplina) return null;
-  const ordenadas = [...turmas].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { numeric: true }));
-  if (ordenadas.length === 0) return <p className="pl-1 text-xs text-slate-500">Nenhuma turma nesta escola.</p>;
-  const ocupante = (t) => ocupantes?.get(`${t.id}-${disciplina.id}`);
-  const substituidas = ordenadas.filter(t => marcadas.includes(String(t.id)) && ocupante(t));
-  // 16/11/2026: turmas da Educação Infantil numa linha própria (antes vinham misturadas, ex.: "Berçário I" junto
-  // de 6M1 em Literatura, fácil de marcar por engano). Continuam disponíveis: disciplina na Infantil é opcional.
-  const infantil = ordenadas.filter(t => t.etapa === 'educacao_infantil');
-  const fundamental = ordenadas.filter(t => t.etapa !== 'educacao_infantil');
-  const chips = (lista) => lista.map(t => {
-    const marcada = marcadas.includes(String(t.id));
-    return (
-      <button key={t.id} type="button" aria-pressed={marcada} aria-label={`${disciplina.nome} — ${t.nome}`}
-        onClick={() => onChange(marcada ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)])}
-        className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
-        {marcada ? `✓ ${t.nome}` : t.nome}
-      </button>
-    );
-  });
+// ===== Turmas do cargo, por escola (decisão do usuário, 16/11/2026) =====
+// Uma área "Turmas" por escola do cargo: fechada vira uma linha de resumo + "Escolher"; aberta mostra abas por etapa
+// (Infantil / Fund. I / Fund. II — só as que têm turma; "Outras" para turma marcada que não está na lista) e, dentro
+// da aba, uma linha por ano ou nível. Por padrão as turmas valem para TODAS as disciplinas e atuações com turma da
+// escola ("lista única"); "Separar por disciplina" dá uma linha de resumo + "Escolher" para cada item. O que é gravado
+// não muda: turma × disciplina e turma × atuação. Cargo existente com turmas diferentes por item abre separado.
+
+let catalogoNiveis = null; // cache do catálogo de níveis da Infantil
+const useNiveisInfantil = () => {
+  const [niveis, setNiveis] = useState([]);
+  useEffect(() => {
+    let vivo = true;
+    catalogoNiveis ??= listarNiveisInfantil().catch(() => []);
+    catalogoNiveis.then(l => { if (vivo) setNiveis(l); });
+    return () => { vivo = false; };
+  }, []);
+  return niveis;
+};
+
+const GRUPOS = [
+  { chave: 'INF', rotulo: 'Infantil' },
+  { chave: 'F1', rotulo: 'Fund. I' },
+  { chave: 'F2', rotulo: 'Fund. II' },
+];
+const grupoDaTurma = (t) => (t.etapa === 'educacao_infantil' ? 'INF' : Number(t.anoSerie) <= 5 ? 'F1' : 'F2');
+const listasIguais = (listas) => listas.every(l => [...l].sort().join() === [...(listas[0] ?? [])].sort().join());
+const uniao = (listas) => [...new Set(listas.flat())];
+const ordenarPorNome = (a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { numeric: true });
+
+// Linha (ano ou nível) de uma turma. Nível da Infantil vem do catálogo (nivelLocalId) ou do nível antigo — nunca do nome.
+const linhaDaTurma = (t, niveis) => {
+  if (t.etapa !== 'educacao_infantil') return { chave: `ano-${t.anoSerie}`, rotulo: `${t.anoSerie}º ano`, ordem: Number(t.anoSerie) };
+  const local = niveis.find(n => n.id === t.nivelLocalId);
+  if (local) return { chave: `niv-${local.id}`, rotulo: local.nome, ordem: local.ordem };
+  return { chave: `ant-${t.nivel}`, rotulo: nivelLabel(t.segmento, t.nivel), ordem: 50 };
+};
+// Texto do botão: dentro da linha do nível, sem repetir o nível ("Maternal 3 B — Manhã" → "B — Manhã"). Só exibição.
+const textoDoBotao = (t, rotuloLinha) => (t.etapa === 'educacao_infantil' && rotuloLinha && t.nome?.startsWith(rotuloLinha) ? t.nome.slice(rotuloLinha.length).replace(/^\s*—\s*/, '').trim() || t.nome : t.nome);
+
+const SeletorTurmas = ({ turmas, extras, marcadas, onChange, rotuloBotao, grupo, preferirFundamental }) => {
+  const niveis = useNiveisInfantil();
+  const abas = [
+    ...GRUPOS.filter(g => turmas.some(t => grupoDaTurma(t) === g.chave)),
+    ...(extras.length ? [{ chave: 'OUT', rotulo: 'Outras' }] : []),
+  ];
+  const daAba = (chave) => (chave === 'OUT' ? extras : turmas.filter(t => grupoDaTurma(t) === chave));
+  const contagem = (chave) => daAba(chave).filter(t => marcadas.includes(String(t.id))).length;
+  const inicial = abas.find(a => contagem(a.chave) > 0)?.chave
+    ?? (preferirFundamental ? abas.find(a => a.chave !== 'INF')?.chave : null) ?? abas[0]?.chave;
+  const [aba, setAba] = useState(inicial);
+  const atual = abas.some(a => a.chave === aba) ? aba : inicial;
+  if (abas.length === 0) return <p className="text-xs text-slate-500">Nenhuma turma nesta escola.</p>;
+  const linhas = new Map();
+  for (const t of [...daAba(atual)].sort(ordenarPorNome)) {
+    const l = atual === 'OUT' ? { chave: 'out', rotulo: '', ordem: 0 } : linhaDaTurma(t, niveis);
+    if (!linhas.has(l.chave)) linhas.set(l.chave, { ...l, turmas: [] });
+    linhas.get(l.chave).turmas.push(t);
+  }
+  const alternar = (t) => onChange(marcadas.includes(String(t.id)) ? marcadas.filter(x => x !== String(t.id)) : [...marcadas, String(t.id)]);
   return (
-    <div className="space-y-1 pl-1" data-disciplina={disciplina.nome}>
-      <p className="text-xs font-semibold text-slate-500">Turmas de {disciplina.nome}</p>
-      {fundamental.length > 0 && <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas de ${disciplina.nome}`}>{chips(fundamental)}</div>}
-      {infantil.length > 0 && (
-        <>
-          <p className="pt-1 text-xs font-semibold text-slate-500">Educação Infantil</p>
-          <div className="flex flex-wrap gap-2" role="group" aria-label={`Turmas da Educação Infantil de ${disciplina.nome}`}>{chips(infantil)}</div>
-        </>
+    <div className="space-y-2" role="group" aria-label={grupo}>
+      {abas.length > 1 && (
+        <div className="grid gap-1 rounded-lg bg-slate-100 p-1" style={{ gridTemplateColumns: `repeat(${abas.length}, minmax(0, 1fr))` }} role="tablist" aria-label="Etapas">
+          {abas.map(a => {
+            const n = contagem(a.chave);
+            return (
+              <button key={a.chave} type="button" role="tab" aria-selected={a.chave === atual} onClick={() => setAba(a.chave)}
+                className={`min-h-9 truncate rounded-md px-2 text-sm font-semibold transition ${a.chave === atual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                {a.rotulo}{n ? ` (${n})` : ''}
+              </button>
+            );
+          })}
+        </div>
       )}
-      {substituidas.map(t => <p key={t.id} className="text-xs text-amber-800">Substitui {ocupante(t)} na {t.nome}.</p>)}
+      <div className="space-y-2">
+        {[...linhas.values()].sort((a, b) => a.ordem - b.ordem || a.rotulo.localeCompare(b.rotulo, 'pt-BR')).map(l => (
+          <div key={l.chave} className="sm:flex sm:items-start sm:gap-3">
+            {l.rotulo && <p className="pb-1 text-xs font-semibold text-slate-500 sm:w-24 sm:shrink-0 sm:pb-0 sm:pt-2">{l.rotulo}</p>}
+            <div className="flex min-w-0 flex-wrap gap-2">
+              {l.turmas.map(t => {
+                const marcada = marcadas.includes(String(t.id));
+                return (
+                  <button key={t.id} type="button" aria-pressed={marcada} aria-label={rotuloBotao(t)} onClick={() => alternar(t)}
+                    className={`min-h-9 rounded-lg border px-3 text-sm font-semibold transition ${marcada ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-teal-400'}`}>
+                    {marcada ? `✓ ${textoDoBotao(t, l.rotulo)}` : textoDoBotao(t, l.rotulo)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const resumoDeTurmas = (ids, todas) => {
+  const nomes = ids.map(id => todas.find(t => String(t.id) === id)?.nome).filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  if (!nomes.length) return 'Nenhuma';
+  return nomes.length > 5 ? `${nomes.slice(0, 5).join(', ')} +${nomes.length - 5}` : nomes.join(', ');
+};
+
+// Área "Turmas" de UMA escola do cargo. `itens` = disciplinas e atuações com turma: [{ chave, tipo: 'd'|'a', id, nome }].
+const TurmasDaParte = ({ parte, itens, semTurma, turmasEscola, todasTurmas, ocupantes, onMudar }) => {
+  if (!itens.length) {
+    return semTurma.length ? <p className="text-xs text-slate-500" data-sem-turma>Sem turmas para {semTurma.join(', ')}.</p> : null;
+  }
+  const listaDe = (item) => ((item.tipo === 'd' ? parte.turmas : parte.turmasAtuacao) ?? {})[String(item.id)] ?? [];
+  const separar = parte.separar ?? !listasIguais(itens.map(listaDe));
+  const unicaMarcadas = uniao(itens.map(listaDe));
+  const aberto = parte.abertoTurmas !== undefined ? parte.abertoTurmas : (!separar && unicaMarcadas.length === 0 ? 'unica' : null);
+  const gravar = (itensAlvo, lista, extra = {}) => {
+    const turmas = { ...(parte.turmas ?? {}) };
+    const turmasAtuacao = { ...(parte.turmasAtuacao ?? {}) };
+    for (const it of itensAlvo) (it.tipo === 'd' ? turmas : turmasAtuacao)[String(it.id)] = lista;
+    // Marcar mantém a área aberta (senão ela fecharia sozinha assim que houvesse turma marcada).
+    onMudar({ turmas, turmasAtuacao, abertoTurmas: aberto, ...extra });
+  };
+  const idsEscola = new Set(turmasEscola.map(t => String(t.id)));
+  const extrasDe = (ids) => ids.filter(id => !idsEscola.has(id)).map(id => todasTurmas.find(t => String(t.id) === id)).filter(Boolean);
+  const temDisciplina = itens.some(i => i.tipo === 'd');
+  const substituicoes = (ids, alvo) => ids.flatMap(id => alvo.filter(i => i.tipo === 'd' && ocupantes?.get(`${id}-${i.id}`)).map(i => ({ id, item: i, nome: ocupantes.get(`${id}-${i.id}`), turma: todasTurmas.find(t => String(t.id) === id)?.nome })));
+  const avisos = (lista) => lista.map(s => <p key={`${s.id}-${s.item.id}`} className="text-xs text-amber-800">Substitui {s.nome} na {s.turma}{itens.length > 1 ? ` (${s.item.nome})` : ''}.</p>);
+  const linhaResumo = (chave, titulo, ids, rotulo) => (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <p className="min-w-0 text-sm text-slate-700"><span className="font-semibold">{titulo}</span> <span data-resumo-turmas>{resumoDeTurmas(ids, todasTurmas)}</span></p>
+      <button type="button" className={botaoTexto} aria-label={rotulo} aria-expanded={aberto === chave} onClick={() => onMudar({ abertoTurmas: aberto === chave ? null : chave })}>{aberto === chave ? 'Pronto ▴' : 'Escolher ▸'}</button>
+    </div>
+  );
+
+  if (!separar) {
+    const titulo = itens.length === 1 ? `Turmas de ${itens[0].nome}:` : 'Turmas:';
+    return (
+      <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" data-turmas-escola>
+        {linhaResumo('unica', titulo, unicaMarcadas, itens.length === 1 ? `Escolher turmas de ${itens[0].nome}` : 'Escolher turmas')}
+        {itens.length > 1 && <p className="text-xs text-slate-500">Valem para {itens.map(i => i.nome).join(', ')}.</p>}
+        {aberto === 'unica' && (
+          <>
+            <SeletorTurmas turmas={turmasEscola} extras={extrasDe(unicaMarcadas)} marcadas={unicaMarcadas} preferirFundamental={temDisciplina}
+              grupo={itens.length === 1 ? `Turmas de ${itens[0].nome}` : 'Turmas de todas as disciplinas'}
+              rotuloBotao={t => (itens.length === 1 ? `${itens[0].nome} — ${t.nome}` : `Turma ${t.nome}`)}
+              onChange={lista => gravar(itens, lista)} />
+            {itens.length > 1 && <button type="button" className="text-xs font-semibold text-teal-700 hover:underline" onClick={() => onMudar({ separar: true, abertoTurmas: null })}>Separar por disciplina</button>}
+          </>
+        )}
+        {avisos(substituicoes(unicaMarcadas, itens))}
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3" data-turmas-escola>
+      <p className="text-sm font-semibold text-slate-700">Turmas</p>
+      {itens.map(item => {
+        const ids = listaDe(item);
+        return (
+          <div key={item.chave} className="space-y-2 border-t border-slate-100 pt-2">
+            {linhaResumo(item.chave, `${item.nome}:`, ids, `Escolher turmas de ${item.nome}`)}
+            {aberto === item.chave && (
+              <SeletorTurmas turmas={turmasEscola} extras={extrasDe(ids)} marcadas={ids} preferirFundamental={item.tipo === 'd'}
+                grupo={`Turmas de ${item.nome}`} rotuloBotao={t => `${item.nome} — ${t.nome}`} onChange={lista => gravar([item], lista)} />
+            )}
+            {avisos(substituicoes(ids, [item]))}
+          </div>
+        );
+      })}
+      <button type="button" className="text-xs font-semibold text-teal-700 hover:underline" onClick={() => gravar(itens, unicaMarcadas, { separar: false, abertoTurmas: 'unica' })}>Mesmas turmas para todas</button>
     </div>
   );
 };

@@ -45,6 +45,14 @@ enum Turno {
   TARDE
 }
 
+// Etapas que a ESCOLA oferece (16/11/2026). Fundamental I = 1º ao 5º ano; Fundamental II = 6º ao 9º. A turma
+// continua guardando a etapa dela (EtapaEnsino) — isto é só o que a escola declara oferecer.
+enum EtapaOferecida {
+  EDUCACAO_INFANTIL
+  FUNDAMENTAL_I
+  FUNDAMENTAL_II
+}
+
 enum SegmentoInfantil {
   CRECHE
   PRE_ESCOLA
@@ -97,6 +105,12 @@ model Escola {
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
   version   Int       @default(1) // preparado para concorrência otimista (ver README)
+
+  // Estrutura da escola (16/11/2026, só aditiva). Vazio = "etapas não informadas": a escola funciona como antes
+  // (sem restrição na criação de turmas). Informadas: turmas novas só nas etapas/anos/níveis oferecidos.
+  etapasOferecidas EtapaOferecida[]      @default([])
+  anosFundamental  Int[]                 @default([]) // 1–5 (Fund. I) e/ou 6–9 (Fund. II)
+  niveisInfantil   EscolaNivelInfantil[]
 
   modulos           EscolaModulo[]
   turmas            Turma[]
@@ -160,6 +174,12 @@ model Turma {
 
   turno         Turno
   identificador Int
+
+  // 16/11/2026: nível LOCAL da Educação Infantil (catálogo NivelInfantilLocal). Turmas novas de escolas com etapas
+  // informadas usam este campo (e `nivel` fica nulo); turmas antigas continuam com `nivel` (enum) e este nulo —
+  // nada é convertido.
+  nivelLocalId Int?
+  nivelLocal   NivelInfantilLocal? @relation(fields: [nivelLocalId], references: [id], onDelete: Restrict)
 
   nome          String         @db.VarChar(60)
   status        StatusRegistro @default(ATIVA)
@@ -1866,6 +1886,33 @@ model AtuacaoPedagogica {
   vinculosTurma ProfessorTurmaAtuacao[]
 
   @@map("atuacoes_pedagogicas")
+}
+
+// Catálogo de níveis da Educação Infantil (16/11/2026): nome usado pela rede + faixa oficial (Creche/Pré-escola).
+// Cada escola marca só os que oferece (EscolaNivelInfantil). Nunca apagado: inativo some das escolhas.
+model NivelInfantilLocal {
+  id        Int              @id @default(autoincrement())
+  nome      String           @unique @db.VarChar(60)
+  faixa     SegmentoInfantil
+  ordem     Int
+  status    StatusRegistro   @default(ATIVA)
+  createdAt DateTime         @default(now())
+
+  escolas EscolaNivelInfantil[]
+  turmas  Turma[]
+
+  @@map("niveis_infantil")
+}
+
+model EscolaNivelInfantil {
+  escolaId  Int
+  escola    Escola             @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+  nivelId   Int
+  nivel     NivelInfantilLocal @relation(fields: [nivelId], references: [id], onDelete: Restrict)
+  createdAt DateTime           @default(now())
+
+  @@id([escolaId, nivelId])
+  @@map("escola_niveis_infantil")
 }
 
 // Professor ligado a uma TURMA por uma atuação pedagógica, sem disciplina (decisão do usuário, 16/11/2026):
