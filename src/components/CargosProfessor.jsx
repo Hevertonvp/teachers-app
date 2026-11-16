@@ -257,7 +257,12 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
   };
 
   const quantidade = (cargos?.length ?? 0) + (editando?.id === 'novo' ? 1 : 0);
+  // 16/11/2026: durante "Alterar" o número de cargos não muda (cada cargo salva sozinho); em vez de botão apagado
+  // sem explicação, tocar nele diz o que fazer.
+  const [avisoNumero, setAvisoNumero] = useState(false);
+  const alterandoExistente = !!editando && editando.id !== 'novo';
   const mudarQuantidade = (n) => {
+    if (alterandoExistente) { if (n !== Math.max(1, quantidade)) setAvisoNumero(true); return; }
     setMensagem('');
     if (n === 2 && quantidade < 2) { setErros({ partes: {} }); setEditando({ id: 'novo', rascunho: novoRascunhoCargo() }); }
     if (n === 1 && editando?.id === 'novo' && cargos?.length === 1) setEditando(null);
@@ -342,7 +347,10 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
             {podeEditar && (
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm font-semibold text-slate-700">Número de cargos</span>
-                <NumeroDeCargos valor={Math.max(1, quantidade)} onChange={mudarQuantidade} desabilitado={salvando || (editando && editando.id !== 'novo')} />
+                <NumeroDeCargos valor={Math.max(1, quantidade)} onChange={mudarQuantidade} desabilitado={salvando} />
+                {avisoNumero && alterandoExistente && (
+                  <p className="text-sm font-semibold text-amber-800" role="status">Salve ou cancele o {cargos.find(c => c.id === editando.id)?.rotulo ?? 'cargo'} primeiro.</p>
+                )}
               </div>
             )}
 
@@ -373,7 +381,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
                   </div>
                   {podeEditar && !editando && !encerrando && (
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={() => { setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo, vinculos), base: cargo.updatedAt }); }}>Alterar</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setAvisoNumero(false); setMensagem(''); setErros({ partes: {} }); setSaidasAlterar(null); setEditando({ id: cargo.id, rascunho: rascunhoDoCargo(cargo, vinculos), base: cargo.updatedAt }); }}>Alterar</Button>
                       <Button size="sm" variant="outline" onClick={() => abrirEncerramento(cargo)}>Encerrar cargo</Button>
                     </div>
                   )}
