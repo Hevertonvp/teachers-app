@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import { CalendarioTrimestresError, ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
 import { bloquearSenhaTemporariaPendente, requireAuth } from './middleware/auth.js';
 import { authProtectedRouter, authRouter } from './routes/auth.js';
-import { escolasRouter } from './routes/escolas.js';
+import { escolasRouter, niveisInfantilRouter } from './routes/escolas.js';
 import { desativadosRouter } from './routes/desativados.js';
 import { escolaModulosRouter } from './routes/escolaModulos.js';
 import { disciplinasRouter } from './routes/disciplinas.js';
@@ -86,6 +86,7 @@ export function createApp() {
 
   app.use('/api/desativados', desativadosRouter); // 15/11/2026: telas de desativados (só Secretaria)
   app.use('/api/escolas', escolasRouter);
+  app.use('/api/niveis-infantil', niveisInfantilRouter);
   app.use('/api/escolas', escolaModulosRouter); // /api/escolas/:escolaId/modulos/...
   app.use('/api/disciplinas', disciplinasRouter);
   app.use('/api/turmas', turmasRouter);

@@ -88,3 +88,33 @@ export function validarECalcularTurma(dados: DadosTurma): { nome: string; identi
     identidadeChave: `I|${dados.escolaId}|${dados.anoLetivo}|${dados.segmento}|${dados.nivel}|${dados.turno}|${dados.identificador}`,
   };
 }
+
+// Turma da Educação Infantil com nível LOCAL (catálogo NivelInfantilLocal, 16/11/2026): nome "<nível> <letra> —
+// <turno>" (ex.: "Maternal 1 A — Manhã"; letra = identificador: 1→A, 2→B…). Chave com prefixo próprio ("IL|") —
+// nunca colide com as turmas antigas ("I|", nível enum), que continuam como estão.
+export interface DadosTurmaInfantilLocal {
+  escolaId: number;
+  anoLetivo: number;
+  nivelLocal: { id: number; nome: string };
+  turno: Turno;
+  identificador: number;
+}
+
+export const letraDaTurma = (identificador: number) => {
+  let n = identificador, s = '';
+  while (n > 0) { n -= 1; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
+  return s;
+};
+
+export function validarECalcularTurmaInfantilLocal(dados: DadosTurmaInfantilLocal): { nome: string; identidadeChave: string } {
+  if (dados.anoLetivo < ANO_LETIVO_MINIMO || dados.anoLetivo > ANO_LETIVO_MAXIMO) throw new ValidationError('Ano letivo fora do intervalo esperado.');
+  if (dados.identificador < 1) throw new ValidationError('Identificador da turma deve ser 1 ou mais.');
+  const turnoLabel = dados.turno === 'MANHA' ? 'Manhã' : 'Tarde';
+  return {
+    nome: `${dados.nivelLocal.nome} ${letraDaTurma(dados.identificador)} — ${turnoLabel}`,
+    identidadeChave: `IL|${dados.escolaId}|${dados.anoLetivo}|${dados.nivelLocal.id}|${dados.turno}|${dados.identificador}`,
+  };
+}
+
+// Estrutura da escola (16/11/2026). Fund. I = 1º ao 5º; Fund. II = 6º ao 9º.
+export const anoDaEtapa = (ano: number) => (ano <= 5 ? 'FUNDAMENTAL_I' : 'FUNDAMENTAL_II');

@@ -1078,9 +1078,14 @@ export const DataProvider = ({ children }) => {
 
   // Sem optimistic update neste piloto: só atualiza o estado local com o registro que o backend
   // efetivamente confirmou salvar. Em caso de erro, a lista atual permanece intacta.
+  // 16/11/2026: além do nome, a estrutura (etapas, anos do Fundamental, níveis da Infantil) quando a tela manda.
+  const corpoEscola = (payload) => ({
+    nome: payload.nome,
+    ...(payload.etapasOferecidas ? { etapasOferecidas: payload.etapasOferecidas, anosFundamental: payload.anosFundamental ?? [], niveisInfantilIds: payload.niveisInfantilIds ?? [] } : {}),
+  });
   const createEscola = async (payload) => {
     try {
-      const escola = normalizeEscola(await apiFetch('/api/escolas', { method: 'POST', body: { nome: payload.nome } }));
+      const escola = normalizeEscola(await apiFetch('/api/escolas', { method: 'POST', body: corpoEscola(payload) }));
       setEscolas(prev => [...prev, escola]);
       return { ok: true, escola };
     } catch (error) {
@@ -1092,7 +1097,7 @@ export const DataProvider = ({ children }) => {
   // endpoints dedicados de inativar/reativar (ver abaixo), nunca por aqui.
   const updateEscola = async (id, payload) => {
     try {
-      const escola = normalizeEscola(await apiFetch(`/api/escolas/${id}`, { method: 'PUT', body: { nome: payload.nome } }));
+      const escola = normalizeEscola(await apiFetch(`/api/escolas/${id}`, { method: 'PUT', body: corpoEscola(payload) }));
       setEscolas(prev => prev.map(item => (item.id === Number(id) ? escola : item)));
       return { ok: true, escola };
     } catch (error) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { ActionMenu, Button, Card, ConfirmDialog, DataTable, EmptyState, FormField, Modal } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,8 @@ import { inputClass } from '../utils/display';
 import { canManageEscolas } from '../utils/roles';
 import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
 import { listarDesativados } from '../services/desativados';
+import { listarNiveisInfantil } from '../services/niveisInfantil';
+import { EstruturaEscola, estruturaDaEscola, rotuloEtapas, sugerirPelasTurmas } from '../components/EstruturaEscola';
 
 // Desativadas em tela própria (pedido do usuário, 15/11/2026): lista paginada, mais recentes primeiro.
 const carregarDesativadas = (pagina, porPagina) => listarDesativados('escolas', { pagina, porPagina });
@@ -57,7 +59,7 @@ const VinculosModal = ({ escola, professores, gestores, vinculosEscolares, creat
 export const GestaoEscolas = () => {
   const { user } = useAuth();
   const {
-    escolas, escolasLoading, escolasError, loadEscolas,
+    escolas, escolasLoading, escolasError, loadEscolas, turmas,
     professores, gestores, vinculosEscolares,
     createEscola, updateEscola, inativarEscola, reativarEscola,
     createVinculoEscolar, desvincularEscola,
@@ -75,20 +77,34 @@ export const GestaoEscolas = () => {
   const [params] = useSearchParams();
   const verDesativadas = params.get('ver') === 'desativadas';
   const [recarregar, setRecarregar] = useState(0);
+  // 16/11/2026: estrutura da escola (etapas, anos do Fundamental, níveis da Infantil).
+  const [niveisCatalogo, setNiveisCatalogo] = useState([]);
+  const [erroEstrutura, setErroEstrutura] = useState('');
+  useEffect(() => { listarNiveisInfantil().then(setNiveisCatalogo).catch(() => setNiveisCatalogo([])); }, []);
 
   if (!canManageEscolas(user)) return <Navigate to="/dashboard" replace />;
 
-  const abrirNovaEscola = () => { setEditingEscola(null); setEscolaFormError(''); setEscolaForm({ nome: '' }); };
-  const abrirEdicao = (escola) => { setEditingEscola(escola); setEscolaFormError(''); setEscolaForm({ nome: escola.nome }); };
+  const abrirNovaEscola = () => { setEditingEscola(null); setEscolaFormError(''); setErroEstrutura(''); setEscolaForm({ nome: '', estrutura: { etapas: [], anos: [], niveis: [] } }); };
+  const abrirEdicao = (escola) => { setEditingEscola(escola); setEscolaFormError(''); setErroEstrutura(''); setEscolaForm({ nome: escola.nome, estrutura: estruturaDaEscola(escola) }); };
+  const turmasDaEscolaEditada = editingEscola ? (turmas ?? []).filter(t => t.escolaId === editingEscola.id) : [];
+  const podeSugerir = !!editingEscola && (editingEscola.etapasOferecidas ?? []).length === 0 && turmasDaEscolaEditada.some(t => t.status === 'ativa') && escolaForm?.estrutura.etapas.length === 0;
   const fecharModal = () => { setEscolaForm(null); setEditingEscola(null); setEscolaFormError(''); };
 
   const salvarEscola = async (event) => {
     event.preventDefault();
     setEscolaFormError('');
+    setErroEstrutura('');
+    const e = escolaForm.estrutura;
+    // Escola nova sempre informa as etapas; escola antiga pode continuar "não informada" (só o nome muda).
+    const jaInformada = (editingEscola?.etapasOferecidas ?? []).length > 0;
+    if (e.etapas.length === 0 && (!editingEscola || jaInformada)) { setErroEstrutura('Marque ao menos uma etapa.'); return; }
+    if (e.etapas.includes('FUNDAMENTAL_I') && !e.anos.some(a => a <= 5)) { setErroEstrutura('Marque ao menos um ano do Fundamental I.'); return; }
+    if (e.etapas.includes('FUNDAMENTAL_II') && !e.anos.some(a => a >= 6)) { setErroEstrutura('Marque ao menos um ano do Fundamental II.'); return; }
+    const estrutura = e.etapas.length ? { etapasOferecidas: e.etapas, anosFundamental: e.anos, niveisInfantilIds: e.niveis } : {};
     setSalvando(true);
     const resultado = editingEscola
-      ? await updateEscola(editingEscola.id, { nome: escolaForm.nome })
-      : await createEscola({ nome: escolaForm.nome });
+      ? await updateEscola(editingEscola.id, { nome: escolaForm.nome, ...estrutura })
+      : await createEscola({ nome: escolaForm.nome, ...estrutura });
     setSalvando(false);
     if (!resultado.ok) {
       setEscolaFormError(resultado.error);
@@ -115,6 +131,9 @@ export const GestaoEscolas = () => {
 
   const columns = [
     { key: 'nome', header: 'Escola' },
+    { key: 'etapas', header: 'Etapas', render: row => (rotuloEtapas(row)
+      ? <span className="text-sm text-slate-700">{rotuloEtapas(row)}</span>
+      : <span className="text-xs text-slate-400">Não informadas</span>) },
     { key: 'vinculos', header: 'Vínculos', render: row => (
       <Button size="sm" variant="outline" onClick={() => setManagingEscola(row)}>Gerenciar vínculos</Button>
     ) },
@@ -178,6 +197,13 @@ export const GestaoEscolas = () => {
             <FormField label="Nome da escola">
               <input className={inputClass} value={escolaForm.nome} onChange={event => setEscolaForm(prev => ({ ...prev, nome: event.target.value }))} required />
             </FormField>
+            <EstruturaEscola
+              valor={escolaForm.estrutura}
+              onChange={estrutura => { setErroEstrutura(''); setEscolaForm(prev => ({ ...prev, estrutura })); }}
+              niveisCatalogo={niveisCatalogo}
+              erro={erroEstrutura}
+              acaoExtra={podeSugerir ? <button type="button" className="text-sm font-semibold text-teal-700 hover:underline" onClick={() => setEscolaForm(prev => ({ ...prev, estrutura: sugerirPelasTurmas(turmasDaEscolaEditada) }))}>Sugerir pelas turmas</button> : null}
+            />
             <div className="flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={fecharModal} disabled={salvando}>Cancelar</Button>
               <Button type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Button>
