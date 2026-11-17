@@ -65,3 +65,16 @@ habilidadesCurricularesRouter.get('/', async (req, res) => {
 
   res.json({ componente, componenteNome: COMPONENTE_NOME[componente], resultados });
 });
+
+// GET /api/habilidades-curriculares/computacao?ano=6 (17/11/2026) — catálogo da BNCC Computação. Com `ano`:
+// só as habilidades daquele ano (a Ficha mostra todas para marcar, são no máximo 11). Sem `ano`: o
+// catálogo inteiro (82, 1º ao 9º), usado pela Secretaria ao cadastrar perguntas de Computação.
+const computacaoSchema = z.object({ ano: z.coerce.number().int().min(1).max(9).optional() });
+habilidadesCurricularesRouter.get('/computacao', async (req, res) => {
+  const { ano } = computacaoSchema.parse(req.query);
+  const habilidades = await prisma.habilidadeCurricular.findMany({
+    where: { componente: 'COMPUTACAO', ativa: true, ...(ano ? { anosEscolares: { has: ano } } : {}) },
+    orderBy: [{ codigo: 'asc' }, { id: 'asc' }],
+  });
+  res.json(habilidades.map((h) => ({ ...formatarHabilidade(h), anos: h.anosEscolares })));
+});

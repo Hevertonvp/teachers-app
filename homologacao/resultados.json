@@ -1808,11 +1808,11 @@
     "modulo": "PDI",
     "cenario": "P02 vê só as 3 disciplinas dele (LP, Ciências, História), sem as do P04",
     "esperado": "LP+Ciências+História; sem Inglês/Arte/ER",
-    "observado": "confere",
-    "status": "APROVADO",
+    "observado": "",
+    "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-04T16:41:36.739Z"
+    "quando": "2026-11-17T15:49:35.365Z"
   },
   {
     "id": "PDI-MULTI-02",
@@ -4914,7 +4914,7 @@
     "status": "APROVADO",
     "evidencia": "40-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-17T01:01:59.516Z"
+    "quando": "2026-11-17T15:44:30.042Z"
   },
   {
     "id": "UI-SEC-2a",
@@ -4925,7 +4925,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-17T01:02:07.223Z"
+    "quando": "2026-11-17T15:44:38.659Z"
   },
   {
     "id": "UI-SEC-2b",
@@ -4936,7 +4936,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-17T01:02:07.283Z"
+    "quando": "2026-11-17T15:44:38.760Z"
   },
   {
     "id": "UI-SEC-3",
@@ -4947,7 +4947,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T01:02:09.972Z"
+    "quando": "2026-11-17T15:44:41.567Z"
   },
   {
     "id": "UI-SEC-3b",
@@ -4958,7 +4958,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T01:02:10.050Z"
+    "quando": "2026-11-17T15:44:41.682Z"
   },
   {
     "id": "UI-SEC-4c-desktop",
@@ -4969,7 +4969,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-desktop.png",
     "nota": "",
-    "quando": "2026-11-17T01:02:17.916Z"
+    "quando": "2026-11-17T15:44:53.545Z"
   },
   {
     "id": "UI-SEC-4d-desktop",
@@ -4980,7 +4980,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T01:02:19.839Z"
+    "quando": "2026-11-17T15:44:56.964Z"
   },
   {
     "id": "UI-SEC-4c-celular",
@@ -4991,7 +4991,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-celular.png",
     "nota": "",
-    "quando": "2026-11-17T01:02:34.031Z"
+    "quando": "2026-11-17T15:45:14.187Z"
   },
   {
     "id": "UI-SEC-4d-celular",
@@ -5002,7 +5002,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T01:02:36.012Z"
+    "quando": "2026-11-17T15:45:16.443Z"
   },
   {
     "id": "ASSIST-1-desktop",
@@ -10755,7 +10755,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:57:37.794Z"
+    "quando": "2026-11-17T15:42:10.964Z"
   },
   {
     "id": "TURMAATU-2-desktop",
@@ -10766,7 +10766,7 @@
     "status": "APROVADO",
     "evidencia": "78-cadastro-regente-desktop.png",
     "nota": "",
-    "quando": "2026-11-17T00:57:44.237Z"
+    "quando": "2026-11-17T15:42:17.914Z"
   },
   {
     "id": "TURMAATU-3-desktop",
@@ -10777,7 +10777,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:57:50.624Z"
+    "quando": "2026-11-17T15:42:24.526Z"
   },
   {
     "id": "TURMAATU-4-desktop",
@@ -10788,7 +10788,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:57:54.721Z"
+    "quando": "2026-11-17T15:42:29.047Z"
   },
   {
     "id": "TURMAATU-5-desktop",
@@ -10799,7 +10799,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:57:56.038Z"
+    "quando": "2026-11-17T15:42:30.494Z"
   },
   {
     "id": "TURMAATU-6-desktop",
@@ -10810,7 +10810,7 @@
     "status": "APROVADO",
     "evidencia": "78-minhas-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-17T00:58:07.524Z"
+    "quando": "2026-11-17T15:42:43.594Z"
   },
   {
     "id": "TURMAATU-7-desktop",
@@ -10821,7 +10821,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:58:22.124Z"
+    "quando": "2026-11-17T15:43:01.031Z"
   },
   {
     "id": "TURMAATU-1-celular",
@@ -10832,7 +10832,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:58:37.006Z"
+    "quando": "2026-11-17T15:43:17.982Z"
   },
   {
     "id": "TURMAATU-2-celular",
@@ -10843,7 +10843,7 @@
     "status": "APROVADO",
     "evidencia": "78-cadastro-regente-celular.png",
     "nota": "",
-    "quando": "2026-11-17T00:58:42.709Z"
+    "quando": "2026-11-17T15:43:25.395Z"
   },
   {
     "id": "TURMAATU-3-celular",
@@ -10854,7 +10854,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:58:49.127Z"
+    "quando": "2026-11-17T15:43:32.339Z"
   },
   {
     "id": "TURMAATU-4-celular",
@@ -10865,7 +10865,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:58:53.272Z"
+    "quando": "2026-11-17T15:43:36.772Z"
   },
   {
     "id": "TURMAATU-5-celular",
@@ -10876,7 +10876,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:58:54.416Z"
+    "quando": "2026-11-17T15:43:38.200Z"
   },
   {
     "id": "TURMAATU-6-celular",
@@ -10887,7 +10887,7 @@
     "status": "APROVADO",
     "evidencia": "78-minhas-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-17T00:59:05.672Z"
+    "quando": "2026-11-17T15:43:52.807Z"
   },
   {
     "id": "TURMAATU-7-celular",
@@ -10898,7 +10898,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:59:20.143Z"
+    "quando": "2026-11-17T15:44:09.523Z"
   },
   {
     "id": "ESTRUTURA-1-desktop",
@@ -11399,12 +11399,12 @@
     "id": "USOFIX-1",
     "modulo": "Correções do teste de uso",
     "cenario": "\"+ Nova turma\" depois de criar uma turma continua na mesma escola",
-    "esperado": "escola #464",
-    "observado": "escola #464",
+    "esperado": "escola #479",
+    "observado": "escola #479",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:56:36.104Z"
+    "quando": "2026-11-17T15:47:22.728Z"
   },
   {
     "id": "USOFIX-2",
@@ -11415,18 +11415,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:56:38.141Z"
+    "quando": "2026-11-17T15:47:24.756Z"
   },
   {
     "id": "USOFIX-3",
     "modulo": "Correções do teste de uso",
     "cenario": "Sem turma criada, \"+ Nova turma\" usa a escola escolhida no filtro da lista",
-    "esperado": "escola #464",
-    "observado": "escola #464",
+    "esperado": "escola #479",
+    "observado": "escola #479",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:56:47.203Z"
+    "quando": "2026-11-17T15:47:35.508Z"
   },
   {
     "id": "USOFIX-4",
@@ -11437,6 +11437,171 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-17T00:57:09.858Z"
+    "quando": "2026-11-17T15:47:58.881Z"
+  },
+  {
+    "id": "COMP-1",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Catálogo BNCC Computação: 82 habilidades (1º–9º), 10 do 6º ano, texto oficial",
+    "esperado": "82 / 10 / EF06CO02 \"Elaborar algoritmos…\"",
+    "observado": "82 / 10 / Elaborar algoritmos que envolvam instruç",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:07.585Z"
+  },
+  {
+    "id": "COMP-2",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Cadastro sobre uma habilidade: código e ano vêm do catálogo",
+    "esperado": "EF06CO02 / [6]",
+    "observado": "EF06CO02 / [6]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:10.300Z"
+  },
+  {
+    "id": "COMP-3",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Cadastro \"marcar habilidades\" para o 7º ano; sem habilidade e sem ser \"marcar\" é recusado; professor não cadastra",
+    "esperado": "201 / 400 / 403",
+    "observado": "201 / 400 / 403",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:10.397Z"
+  },
+  {
+    "id": "COMP-4",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Aplicação criada ANTES do cadastro não recebe a pergunta (não retroativo)",
+    "esperado": "mesmas perguntas de antes",
+    "observado": "2 × 2; computação: 0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:10.734Z"
+  },
+  {
+    "id": "COMP-5",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Aplicação nova: 6º ano recebe só a pergunta do 6º",
+    "esperado": "[\"EF06CO02\"], ano 6",
+    "observado": "[\"EF06CO02\"], ano 6",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:13.392Z"
+  },
+  {
+    "id": "COMP-6",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Aplicação nova: 7º ano recebe só a do 7º (marcar habilidades)",
+    "esperado": "[\"HABILIDADE_COMPUTACAO\"]",
+    "observado": "[\"HABILIDADE_COMPUTACAO\"]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:13.476Z"
+  },
+  {
+    "id": "COMP-7",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Aplicação nova: aluno da Educação Infantil não recebe pergunta de Computação",
+    "esperado": "[] e ano nulo",
+    "observado": "[], ano null",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:13.568Z"
+  },
+  {
+    "id": "COMP-8",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Perguntas do Modelo continuam iguais (Computação é bloco adicional, no fim)",
+    "esperado": "mesma lista + Computação por último",
+    "observado": "2 do Modelo × 2 antes; última: EF06CO02",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:13.633Z"
+  },
+  {
+    "id": "COMP-9",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Resposta com códigos: habilidade de outro ano é recusada; do 7º ano grava código e texto",
+    "esperado": "400; EF07CO01, EF07CO02",
+    "observado": "400; EF07CO01, EF07CO02",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:14.019Z"
+  },
+  {
+    "id": "COMP-10",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Ficha do 6º não aceita resposta para a pergunta do 7º",
+    "esperado": "400",
+    "observado": "400",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:14.145Z"
+  },
+  {
+    "id": "COMP-11",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Concluir conta a pergunta de Computação do ano como obrigatória",
+    "esperado": "400 \"faltam N\"",
+    "observado": "400 Esta Ficha ainda não pode ser concluída: faltam 4 perguntas sem resposta.",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:14.323Z"
+  },
+  {
+    "id": "COMP-12",
+    "modulo": "Perguntas de Computação",
+    "cenario": "Inativar depois não tira a pergunta da Aplicação já criada; usada não pode ser excluída",
+    "esperado": "continua; 400",
+    "observado": "EF06CO02; 400",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T15:33:14.600Z"
+  },
+  {
+    "id": "COMPTELA-1",
+    "modulo": "Computação na tela",
+    "cenario": "Secretaria cadastra pela tela: ano 6 → habilidade EF06CO03; texto vem do catálogo; aparece na lista",
+    "esperado": "EF06CO03 · Seleção · 6º ano",
+    "observado": "EF06CO03[ZZ-COMP] Descrever com precisão a solução de um problema, construindo o programa que implementa a solução descrita. | ",
+    "status": "APROVADO",
+    "evidencia": "86a-modal-computacao.png",
+    "nota": "",
+    "quando": "2026-11-17T15:37:58.358Z"
+  },
+  {
+    "id": "COMPTELA-2",
+    "modulo": "Computação na tela",
+    "cenario": "Professor (celular) vê as 11 habilidades do 7º ano, marca EF07CO01 e ao sair (Voltar) grava",
+    "esperado": "11 opções; gravou EF07CO01; sem rolagem lateral",
+    "observado": "11 opções; gravou EF07CO01; largura 390",
+    "status": "APROVADO",
+    "evidencia": "86b-ficha-7ano-celular.png",
+    "nota": "",
+    "quando": "2026-11-17T15:38:17.371Z"
+  },
+  {
+    "id": "COMPTELA-3",
+    "modulo": "Computação na tela",
+    "cenario": "Ficha do 6º ano mostra a pergunta EF06CO03 e não mostra a do 7º",
+    "esperado": "EF06CO03 sim; \"Quais habilidades…\" não",
+    "observado": "EF06CO03: true; 7º: false",
+    "status": "APROVADO",
+    "evidencia": "86c-ficha-6ano-celular.png",
+    "nota": "",
+    "quando": "2026-11-17T15:38:20.598Z"
   }
 ]

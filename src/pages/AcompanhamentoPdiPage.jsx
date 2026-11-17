@@ -26,7 +26,7 @@ const respostaResumo = (pergunta, registro) => {
   if (!registro) return null;
   if (pergunta.tipoResposta === 'marcacao') return registro.resposta ? 'Marcado' : 'Não marcado';
   if (pergunta.tipoResposta === 'selecao') return registro.complementarTexto ? `${registro.resposta} · ${registro.complementarTexto}` : registro.resposta;
-  if (pergunta.tipoResposta === 'habilidade_crmg') return habilidadesResumo(registro);
+  if (pergunta.tipoResposta === 'habilidade_crmg' || pergunta.tipoResposta === 'habilidade_computacao') return habilidadesResumo(registro);
   return registro.resposta;
 };
 
@@ -38,7 +38,7 @@ const respostaEstruturadaValor = (pergunta, registro) => {
   if (!registro) return undefined;
   if (pergunta.tipoResposta === 'marcacao') return registro.resposta ? 'Marcado' : 'Não marcado';
   if (pergunta.tipoResposta === 'selecao') return registro.resposta;
-  if (pergunta.tipoResposta === 'habilidade_crmg') return habilidadesResumo(registro);
+  if (pergunta.tipoResposta === 'habilidade_crmg' || pergunta.tipoResposta === 'habilidade_computacao') return habilidadesResumo(registro);
   return undefined;
 };
 

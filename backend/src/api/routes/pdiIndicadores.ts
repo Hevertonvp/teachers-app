@@ -37,7 +37,8 @@ pdiIndicadoresRouter.get('/alunos/:alunoId', async (req, res) => {
       where: { alunoId, ...(disciplinasPermitidas ? { disciplinaId: { in: disciplinasPermitidas } } : {}) },
       include: {
         aplicacao: { select: { id: true, nome: true, dataInicio: true, dataFim: true, trimestre: true } },
-        aplicacaoModelo: { select: { perguntas: { select: { id: true, texto: true, tipoResposta: true, ordem: true } } } },
+        // Só perguntas do Modelo (perguntaIdOriginal): as de Computação (17/11/2026) não entram nos indicadores.
+        aplicacaoModelo: { select: { perguntas: { where: { perguntaIdOriginal: { not: null } }, select: { id: true, texto: true, tipoResposta: true, ordem: true } } } },
         respostas: { select: { aplicacaoPerguntaId: true, valor: true } },
       },
     }),

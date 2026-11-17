@@ -13,6 +13,7 @@ import {
 import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
 import { formatarCorrecao } from '../../domain/correcoes.js';
 import { escolasPermitidas } from './pessoas.js';
+import { anoSerieDaTurma, perguntasDaFicha } from '../../domain/perguntasComputacao.js';
 
 export const pdiFichasRouter = Router();
 
@@ -151,7 +152,7 @@ const formatarFicha = (f: {
   escolaId: number; escolaNomeSnapshot: string; disciplinaNomeSnapshot: string; professorNomeSnapshot: string;
   aplicacaoDataInicioSnapshot: Date; aplicacaoDataFimSnapshot: Date; status: string;
   createdAt: Date; createdBy: string | null; updatedAt: Date | null; updatedBy: string | null;
-  concluidaEm: Date | null; concluidaPor: string | null;
+  concluidaEm: Date | null; concluidaPor: string | null; anoSerieSnapshot: number | null;
 }) => ({
   id: f.id,
   aplicacaoId: f.aplicacaoId,
@@ -175,12 +176,14 @@ const formatarFicha = (f: {
   updatedBy: f.updatedBy,
   concluidaEm: f.concluidaEm,
   concluidaPor: f.concluidaPor,
+  // Ano do Fundamental congelado na criação (17/11/2026) — decide as perguntas de Computação; null = nenhuma.
+  anoSerie: f.anoSerieSnapshot,
 });
 
 const formatarPerguntaSnapshot = (p: {
-  id: number; perguntaIdOriginal: number; secao: string; subsecao: string | null; codigo: string | null;
+  id: number; perguntaIdOriginal: number | null; secao: string; subsecao: string | null; codigo: string | null;
   texto: string; indicador: string | null; origem: string; tipoResposta: string; opcoes: unknown;
-  complementar: unknown; ordem: number;
+  complementar: unknown; ordem: number; perguntaComputacaoIdOriginal?: number | null; anos?: number[]; observacao?: string | null;
 }) => ({
   id: p.id,
   perguntaIdOriginal: p.perguntaIdOriginal,
@@ -194,6 +197,9 @@ const formatarPerguntaSnapshot = (p: {
   opcoes: p.opcoes ?? [],
   complementar: p.complementar ?? null,
   ordem: p.ordem,
+  // Pergunta de Computação (17/11/2026): bloco adicional, só do ano do aluno.
+  computacao: !!p.perguntaComputacaoIdOriginal,
+  observacao: p.observacao ?? null,
 });
 
 const formatarResposta = (r: {
@@ -219,7 +225,8 @@ const formatarResposta = (r: {
 // DELE (ver identidadeBlocoAtual). Sem `opcoes` (Correções da Secretaria) = bloco da fotografia.
 export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>, opcoes?: { identidadeBloco: IdentidadeBloco | null }) {
   const [perguntas, respostas, aplicacao, reaberturas, escola, correcaoIndividualAtiva] = await Promise.all([
-    prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId }, orderBy: { ordem: 'asc' } }),
+    // Perguntas do Modelo + as de Computação do ano congelado desta Ficha (domain/perguntasComputacao.ts).
+    perguntasDaFicha(prisma, ficha),
     prisma.respostaPdi.findMany({ where: { fichaId: ficha.id } }),
     prisma.aplicacaoPdi.findUniqueOrThrow({ where: { id: ficha.aplicacaoId } }),
     prisma.reaberturaPdi.findMany({ where: { aplicacaoId: ficha.aplicacaoId }, select: { dataInicio: true, dataFim: true } }),
@@ -332,6 +339,7 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
           professorNomeSnapshot: contexto.ptd.professor.nome,
           aplicacaoDataInicioSnapshot: contexto.aplicacao.dataInicio,
           aplicacaoDataFimSnapshot: contexto.aplicacao.dataFim,
+          anoSerieSnapshot: anoSerieDaTurma(contexto.aluno.turma),
           status: 'PENDENTE',
           createdBy: String(actor.id),
         },
@@ -533,10 +541,10 @@ async function escopoFichas(actor: Actor, where: Prisma.FichaPdiWhereInput): Pro
 
 // Resposta salva -> texto legível na planilha (sem interpretar nada além do que a tela já mostra).
 function valorEmTexto(tipo: string, valor: unknown): string | number {
-  const v = (valor ?? {}) as { resposta?: unknown; todas?: boolean; habilidades?: { codigo?: string; descricao?: string }[] };
-  if (tipo === 'HABILIDADE_CRMG') {
+  const v = (valor ?? {}) as { resposta?: unknown; todas?: boolean; habilidades?: { codigo?: string; descricao?: string; descricaoOficial?: string }[] };
+  if (tipo === 'HABILIDADE_CRMG' || tipo === 'HABILIDADE_COMPUTACAO') {
     if (v.todas) return 'Todas as habilidades';
-    return (v.habilidades ?? []).map((h) => [h.codigo, h.descricao].filter(Boolean).join(' — ')).join('; ');
+    return (v.habilidades ?? []).map((h) => [h.codigo, h.descricao ?? h.descricaoOficial].filter(Boolean).join(' — ')).join('; ');
   }
   if (tipo === 'MARCACAO') return v.resposta === true ? 'Sim' : v.resposta === false ? 'Não' : '';
   if (tipo === 'NUMERO') return typeof v.resposta === 'number' ? v.resposta : (v.resposta == null ? '' : String(v.resposta));
@@ -637,7 +645,7 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   // contexto/autorização, então roda em paralelo com resolverContexto em vez de depois dele.
   const [contexto, perguntasDoModelo] = await Promise.all([
     resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId),
-    prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId } }),
+    perguntasDaFicha(prisma, ficha),
   ]);
   // As duas checagens de autorização são independentes entre si (nenhuma usa o resultado da
   // outra) — também em paralelo. `correcaoIndividualAtiva` vem do retorno de exigirEditavelAgora
@@ -665,7 +673,7 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
     prisma,
     respostas.filter((item) => perguntasPorId.get(item.aplicacaoPerguntaId)!.tipoResposta !== 'ORIENTACAO'),
     new Map(perguntasDoModelo.map((p) => [p.id, p.tipoResposta])),
-    ficha.disciplinaId,
+    { disciplinaId: ficha.disciplinaId, anoSerie: ficha.anoSerieSnapshot },
   );
 
   // Auditoria (seção 30/38 do pedido de Correções): só lê o valor "antes" quando há uma correção
@@ -864,7 +872,7 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
     // disciplina quanto as perguntas padrão compartilhadas do bloco comum — nunca exige que as
     // OUTRAS disciplinas do mesmo Professor estejam concluídas (cada Ficha conclui sozinha).
     const [perguntasObrigatorias, respostasExistentes, perguntasPadrao] = await Promise.all([
-      prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId, tipoResposta: { not: 'ORIENTACAO' } }, select: { id: true } }),
+      perguntasDaFicha(prisma, ficha, { tipoResposta: { not: 'ORIENTACAO' } }),
       prisma.respostaPdi.findMany({ where: { fichaId }, select: { aplicacaoPerguntaId: true } }),
       perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId),
     ]);

@@ -17,6 +17,7 @@ import { inputClass } from '../utils/display';
 import { formatFullDate } from '../utils/formAvailability';
 import { agruparPorSecao, analisarRascunho, answerFromResposta, MENSAGEM_CONFLITO_RASCUNHO } from '../utils/pdiFicha';
 import { isProfessor } from '../utils/roles';
+import { HabilidadesComputacaoSelecao } from '../components/HabilidadesComputacaoSelecao';
 
 // Formulário ÚNICO do aluno para o Professor (mesma Aplicação, todas as disciplinas que ele
 // leciona para aquele aluno). Só experiência de tela: por baixo continuam existindo as Fichas
@@ -38,7 +39,7 @@ const chaveDraftFicha = (userId, fichaId) => `${userId}::ficha-resposta::${ficha
 const chaveDraftBloco = (userId, fichaId) => `${userId}::bloco-resposta::${fichaId}`;
 
 // Uma pergunta, qualquer tipo — mesmo visual da tela de UMA Ficha.
-const CampoPergunta = ({ question, value, onChange, editavel, bloqueado, disciplinaId }) => {
+const CampoPergunta = ({ question, value, onChange, editavel, bloqueado, disciplinaId, anoSerie }) => {
   const current = value || answerFromResposta(question, null);
   if (question.tipoResposta === 'orientacao') {
     return <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{question.pergunta}</div>;
@@ -49,6 +50,17 @@ const CampoPergunta = ({ question, value, onChange, editavel, bloqueado, discipl
         <FormField label={question.pergunta}>
           <textarea className={`${inputClass} resize-none`} rows="4" spellCheck lang="pt-BR" value={current.texto} onChange={event => onChange({ ...current, texto: event.target.value })} onBlur={() => onChange({ ...current, texto: aplicarAutoCorrecao(current.texto) })} readOnly={!editavel} disabled={bloqueado && editavel} />
         </FormField>
+      </div>
+    );
+  }
+  if (question.tipoResposta === 'habilidade_computacao') {
+    return (
+      <div className="border-b border-slate-100 py-3 last:border-0">
+        <p className="text-sm font-semibold text-slate-800">{question.pergunta}</p>
+        {question.observacao && <p className="mt-1 text-sm text-slate-500">{question.observacao}</p>}
+        <div className="mt-2">
+          <HabilidadesComputacaoSelecao ano={anoSerie} value={current} onChange={novo => onChange({ ...current, ...novo })} readOnly={!editavel} disabled={bloqueado} />
+        </div>
       </div>
     );
   }
@@ -66,6 +78,7 @@ const CampoPergunta = ({ question, value, onChange, editavel, bloqueado, discipl
   return (
     <div className="border-b border-slate-100 py-3 last:border-0">
       <p className="text-sm font-semibold text-slate-800">{question.codigo && <span className="mr-1.5 text-xs font-bold text-teal-700">{question.codigo}</span>}{question.pergunta}</p>
+      {question.observacao && <p className="mt-1 text-sm text-slate-500">{question.observacao}</p>}
       <div className="mt-2">
         {question.tipoResposta === 'numero' ? (
           <input type="number" className={`${inputClass} max-w-40`} value={current.valor} onChange={event => onChange({ valor: event.target.value })} readOnly={!editavel} disabled={bloqueado && editavel} />
@@ -705,7 +718,7 @@ export const FormularioPdiAlunoPage = () => {
                     <div key={subsecao.nome || 'default'} className="mt-2">
                       {subsecao.nome && <p className="mb-2 text-xs font-semibold text-slate-400">{subsecao.nome}</p>}
                       {subsecao.questions.map(question => (
-                        <CampoPergunta key={question.id} question={question} value={f.answers[question.id]} onChange={valor => atualizarResposta(f.disciplinaId, question, valor)} editavel={editavelAgora && !f.rascunhoPendente} bloqueado={bloqueado} disciplinaId={ficha.disciplinaId} />
+                        <CampoPergunta key={question.id} question={question} value={f.answers[question.id]} onChange={valor => atualizarResposta(f.disciplinaId, question, valor)} editavel={editavelAgora && !f.rascunhoPendente} bloqueado={bloqueado} disciplinaId={ficha.disciplinaId} anoSerie={ficha.anoSerie} />
                       ))}
                     </div>
                   ))}

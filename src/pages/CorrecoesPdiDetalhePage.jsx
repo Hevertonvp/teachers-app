@@ -232,7 +232,7 @@ export const CorrecoesPdiDetalhePage = () => {
               return (
                 <div key={pergunta.id} className="py-3">
                   <p className="text-sm font-semibold text-slate-800">{pergunta.texto}</p>
-                  {pergunta.tipoResposta === 'HABILIDADE_CRMG' ? (
+                  {pergunta.tipoResposta === 'HABILIDADE_CRMG' || pergunta.tipoResposta === 'HABILIDADE_COMPUTACAO' ? (
                     // Só leitura: habilidades marcadas, com código/descrição congelados na resposta.
                     // Para alterar, a Secretaria devolve a Ficha ao Professor (fluxo de sempre).
                     <div className="mt-2">

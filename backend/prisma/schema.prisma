@@ -497,6 +497,9 @@ enum TipoRespostaPdi {
   NUMERO
   ORIENTACAO
   HABILIDADE_CRMG
+  // 17/11/2026: só em perguntas de Computação (PerguntaComputacaoPdi). A resposta é a escolha de habilidades
+  // da BNCC Computação DO ANO do aluno (congelado na Ficha) — mesmo formato de valor do HABILIDADE_CRMG.
+  HABILIDADE_COMPUTACAO
 }
 
 model PerguntaPdi {
@@ -581,6 +584,40 @@ model PerguntaPdiPadrao {
   @@map("perguntas_pdi_padrao")
 }
 
+// Pergunta de Computação (17/11/2026, Configurações): entra, como bloco adicional, nas Aplicações PDI criadas
+// DEPOIS de cadastrada — nunca em Modelos nem nas perguntas padrão. Duas formas:
+//  - sobre UMA habilidade do catálogo (habilidadeId): código e ano vêm do catálogo e ficam congelados aqui;
+//  - tipo HABILIDADE_COMPUTACAO: a resposta é escolher habilidades do ano do aluno; anos escolhidos pela Secretaria.
+// Em toda Ficha só aparece para aluno de um dos `anos`. Nunca apagada depois de usada (snapshot referencia).
+model PerguntaComputacaoPdi {
+  id            Int                   @id @default(autoincrement())
+  habilidadeId  Int?
+  habilidade    HabilidadeCurricular? @relation(fields: [habilidadeId], references: [id], onDelete: Restrict)
+  codigo        String?               @db.VarChar(20)
+  anos          Int[]
+  secao         String                @db.VarChar(100)
+  texto         String                @db.Text
+  observacao    String?               @db.Text
+  tipoResposta  TipoRespostaPdi
+  opcoes        Json?
+  complementar  Json?
+  ordem         Int
+  status        StatusRegistro        @default(ATIVA)
+  desativadoEm  DateTime?
+  desativadoPor String?
+
+  createdAt DateTime  @default(now())
+  createdBy String?   @db.VarChar(200)
+  updatedAt DateTime? @updatedAt
+  updatedBy String?   @db.VarChar(200)
+  version   Int       @default(1)
+
+  snapshots AplicacaoPerguntaPdi[]
+
+  @@index([status, ordem])
+  @@map("perguntas_computacao_pdi")
+}
+
 // Aplicação PDI pertence a UMA escola (nunca a uma disciplina) — define o período em que os
 // professores preenchem os formulários. `nome` é opcional — a UI atual nunca pediu isso à
 // Secretaria, quem identifica a aplicação é escola+período. Vigência continua sempre derivada de
@@ -656,8 +693,19 @@ model AplicacaoPerguntaPdi {
   aplicacaoModeloId Int
   aplicacaoModelo   AplicacaoModeloPdi @relation(fields: [aplicacaoModeloId], references: [id], onDelete: Restrict)
 
-  perguntaIdOriginal Int
-  perguntaOriginal   PerguntaPdi @relation(fields: [perguntaIdOriginal], references: [id], onDelete: Restrict)
+  // Origem: pergunta do Modelo (perguntaIdOriginal) OU pergunta de Computação (perguntaComputacaoIdOriginal) —
+  // exatamente uma das duas (CHECK no banco). Antes de 17/11/2026 sempre do Modelo.
+  perguntaIdOriginal Int?
+  perguntaOriginal   PerguntaPdi? @relation(fields: [perguntaIdOriginal], references: [id], onDelete: Restrict)
+
+  perguntaComputacaoIdOriginal Int?
+  perguntaComputacaoOriginal   PerguntaComputacaoPdi? @relation(fields: [perguntaComputacaoIdOriginal], references: [id], onDelete: Restrict)
+  // Anos (1–9) do Fundamental em que a pergunta aparece. Vazio = aparece para todo aluno (todas as
+  // perguntas de Modelo). Pergunta de Computação nunca vem vazia (CHECK): só entra na Ficha cujo
+  // anoSerieSnapshot estiver aqui.
+  anos                         Int[]                  @default([])
+  // Observação complementar da pergunta de Computação (livre), congelada junto.
+  observacao                   String?                @db.Text
 
   secao        String            @db.VarChar(100)
   subsecao     String?           @db.VarChar(100)
@@ -843,6 +891,9 @@ enum ComponenteCurricular {
   LINGUA_INGLESA
   LINGUA_PORTUGUESA
   MATEMATICA
+  // 17/11/2026: BNCC Computação (complemento à BNCC, Parecer CNE/CEB 2/2022). Não está ligado a nenhuma
+  // disciplina (DisciplinaComponenteCurricular): é usado só pelas perguntas de Computação do PDI.
+  COMPUTACAO
 }
 
 // Habilidade oficial de um currículo de referência, importada de forma reproduzível por
@@ -878,6 +929,8 @@ model HabilidadeCurricular {
 
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
+
+  perguntasComputacao PerguntaComputacaoPdi[]
 
   @@unique([versaoCurriculo, chaveImportacao])
   @@index([componente, ativa])
@@ -985,6 +1038,9 @@ model FichaPdi {
   professorNomeSnapshot       String   @db.VarChar(200)
   aplicacaoDataInicioSnapshot DateTime @db.Date
   aplicacaoDataFimSnapshot    DateTime @db.Date
+  // 17/11/2026: ano do Fundamental (1–9) da turma do aluno quando a Ficha nasceu — decide quais perguntas
+  // de Computação ela mostra. Null = Educação Infantil ou Ficha anterior a este campo (nenhuma de Computação).
+  anoSerieSnapshot            Int?
 
   // Status muda só por ação explícita (ver domain/pdiFichas.ts): nenhuma resposta = PENDENTE;
   // alguma resposta salva = EM_ANDAMENTO; ação explícita de concluir = CONCLUIDA. Nunca volta

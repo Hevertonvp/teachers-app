@@ -7,6 +7,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
 import { perguntaValeParaTrimestre, resolverTrimestreObrigatorio, travarCalendarioDoAno } from '../../domain/trimestres.js';
 import { escolasPermitidas } from './pessoas.js';
+import { perguntasComputacaoParaSnapshot } from '../../domain/perguntasComputacao.js';
 
 export const pdiAplicacoesRouter = Router();
 
@@ -88,7 +89,7 @@ const formatarReabertura = (r: {
 });
 
 const formatarPerguntaSnapshot = (p: {
-  id: number; perguntaIdOriginal: number; secao: string; subsecao: string | null; codigo: string | null;
+  id: number; perguntaIdOriginal: number | null; secao: string; subsecao: string | null; codigo: string | null;
   texto: string; indicador: string | null; origem: string; tipoResposta: string;
   opcoes: unknown; complementar: unknown; ordem: number;
 }) => ({
@@ -417,6 +418,9 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
     // MESMO snapshot AplicacaoPerguntaPadraoPdi, nunca um por disciplina (ver schema.prisma e
         // domain/pdiBlocoPadrao.ts). `snapshotPadraoPorOriginal` garante isso dentro do loop abaixo.
     const snapshotPadraoPorOriginal = new Map<number, number>(); // padraoOriginalId -> AplicacaoPerguntaPadraoPdi.id
+    // Perguntas de Computação ativas HOJE (17/11/2026): bloco adicional congelado em cada Modelo desta
+    // Aplicação, com os anos — cada Ficha só mostra as do ano do aluno (domain/perguntasComputacao.ts).
+    const perguntasComputacao = await perguntasComputacaoParaSnapshot(tx);
 
     for (const modelo of modelosParaUsar) {
       const aplicacaoModelo = await tx.aplicacaoModeloPdi.create({
@@ -484,6 +488,10 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
         await tx.aplicacaoModeloPerguntaPadraoPdi.create({
           data: { aplicacaoModeloId: aplicacaoModelo.id, aplicacaoPerguntaPadraoId: snapshotPadraoId },
         });
+      }
+
+      if (perguntasComputacao.length > 0) {
+        await tx.aplicacaoPerguntaPdi.createMany({ data: perguntasComputacao.map((p) => ({ ...p, aplicacaoModeloId: aplicacaoModelo.id })) });
       }
     }
     return aplicacao;

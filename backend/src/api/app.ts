@@ -20,6 +20,7 @@ import { vinculosEscolaresRouter } from './routes/vinculosEscolares.js';
 import { pdiAlunosRouter } from './routes/pdiAlunos.js';
 import { pdiModelosRouter, pdiPerguntasRouter } from './routes/pdiModelos.js';
 import { pdiPerguntasPadraoRouter } from './routes/pdiPerguntasPadrao.js';
+import { pdiPerguntasComputacaoRouter } from './routes/pdiPerguntasComputacao.js';
 import { pdiAplicacoesRouter } from './routes/pdiAplicacoes.js';
 import { pdiFichasRouter } from './routes/pdiFichas.js';
 import { pdiFichaAnualRouter } from './routes/pdiFichaAnual.js';
@@ -103,6 +104,7 @@ export function createApp() {
   app.use('/api/pdi-modelos', pdiModelosRouter);
   app.use('/api/pdi-perguntas', pdiPerguntasRouter);
   app.use('/api/pdi-perguntas-padrao', pdiPerguntasPadraoRouter);
+  app.use('/api/pdi-perguntas-computacao', pdiPerguntasComputacaoRouter);
   app.use('/api/pdi-aplicacoes', pdiAplicacoesRouter);
   app.use('/api/formulario-um-terco', formularioUmTercoRouter);
   app.use('/api/pdi-fichas', pdiFichasRouter);

@@ -16,6 +16,7 @@ type Db = PrismaClient | Prisma.TransactionClient;
 export const VERSAO_CRMG_ATUAL = 'CRMG-EIEF-2023-05';
 export const VERSOES_CURRICULO: Record<string, string> = {
   [VERSAO_CRMG_ATUAL]: 'CRMG – Versão atualizada',
+  'BNCC-COMPUTACAO-2022': 'BNCC Computação',
 };
 
 export const COMPONENTE_NOME: Record<ComponenteCurricular, string> = {
@@ -28,6 +29,7 @@ export const COMPONENTE_NOME: Record<ComponenteCurricular, string> = {
   LINGUA_INGLESA: 'Língua Inglesa',
   LINGUA_PORTUGUESA: 'Língua Portuguesa',
   MATEMATICA: 'Matemática',
+  COMPUTACAO: 'Computação',
 };
 
 const MAX_HABILIDADES_POR_RESPOSTA = 500;
@@ -67,16 +69,21 @@ type ItemResposta = {
 // Valor efetivamente gravado em RespostaPdi para cada item. Tipos de sempre: EXATAMENTE o que era
 // gravado antes ({ resposta, complementarTexto }, só as chaves enviadas) — os campos novos da
 // entrada nunca vazam para eles. HABILIDADE_CRMG: valor montado no servidor a partir do catálogo.
+// `contexto`: disciplina da Ficha (CRMG) e ano congelado do aluno (Computação, 17/11/2026).
 export async function prepararValoresResposta(
   db: Db,
   itens: ItemResposta[],
   tipoPorPergunta: Map<number, string>,
-  disciplinaId: number,
+  contexto: { disciplinaId: number | null; anoSerie: number | null },
 ): Promise<{ aplicacaoPerguntaId: number; valor: Prisma.InputJsonValue }[]> {
   const saida = [];
   for (const item of itens) {
-    if (tipoPorPergunta.get(item.aplicacaoPerguntaId) === 'HABILIDADE_CRMG') {
-      saida.push({ aplicacaoPerguntaId: item.aplicacaoPerguntaId, valor: await montarValorHabilidades(db, item.valor, disciplinaId) as unknown as Prisma.InputJsonValue });
+    const tipo = tipoPorPergunta.get(item.aplicacaoPerguntaId);
+    if (tipo === 'HABILIDADE_CRMG') {
+      if (contexto.disciplinaId === null) throw new ValidationError('Habilidades do CRMG só existem em Ficha de disciplina.');
+      saida.push({ aplicacaoPerguntaId: item.aplicacaoPerguntaId, valor: await montarValorHabilidades(db, item.valor, contexto.disciplinaId) as unknown as Prisma.InputJsonValue });
+    } else if (tipo === 'HABILIDADE_COMPUTACAO') {
+      saida.push({ aplicacaoPerguntaId: item.aplicacaoPerguntaId, valor: await montarValorHabilidadesComputacao(db, item.valor, contexto.anoSerie) as unknown as Prisma.InputJsonValue });
     } else {
       const { resposta, complementarTexto } = item.valor;
       const valor: Record<string, unknown> = {};
@@ -126,6 +133,31 @@ export async function montarValorHabilidades(db: Db, entrada: EntradaHabilidades
       .sort((a, b) => a.codigo.localeCompare(b.codigo) || a.id - b.id)
       .map((h) => ({ id: h.id, codigo: h.codigo, descricaoOficial: h.descricaoOficial })),
     ...base,
+    versaoCurriculo: versao,
+    versaoNome: VERSOES_CURRICULO[versao] ?? versao,
+  };
+}
+
+// Resposta HABILIDADE_COMPUTACAO (17/11/2026): habilidades da BNCC Computação do ANO congelado na Ficha.
+// Mesmo formato de valor do CRMG (lido pelas mesmas telas); código/descrição sempre do catálogo.
+export async function montarValorHabilidadesComputacao(db: Db, entrada: EntradaHabilidades, anoSerie: number | null): Promise<ValorHabilidades> {
+  if (anoSerie === null) throw new ValidationError('Esta Ficha não tem ano do Fundamental: não há habilidades de Computação para ela.');
+  const ids = [...new Set(entrada.habilidadeIds ?? [])];
+  if (ids.length > MAX_HABILIDADES_POR_RESPOSTA) throw new ValidationError('Habilidades demais selecionadas.');
+  const encontradas = ids.length ? await db.habilidadeCurricular.findMany({ where: { id: { in: ids } } }) : [];
+  if (encontradas.length !== ids.length || encontradas.some((h) => !h.ativa || h.componente !== 'COMPUTACAO')) {
+    throw new ValidationError('Uma ou mais habilidades selecionadas não existem no catálogo da BNCC Computação.');
+  }
+  const deOutroAno = encontradas.find((h) => !h.anosEscolares.includes(anoSerie));
+  if (deOutroAno) throw new ValidationError(`A habilidade ${deOutroAno.codigo} não é do ${anoSerie}º ano.`);
+  const versao = encontradas[0]?.versaoCurriculo ?? 'BNCC-COMPUTACAO-2022';
+  return {
+    todas: false,
+    habilidades: encontradas
+      .sort((a, b) => a.codigo.localeCompare(b.codigo) || a.id - b.id)
+      .map((h) => ({ id: h.id, codigo: h.codigo, descricaoOficial: h.descricaoOficial })),
+    componente: 'COMPUTACAO',
+    componenteNome: COMPONENTE_NOME.COMPUTACAO,
     versaoCurriculo: versao,
     versaoNome: VERSOES_CURRICULO[versao] ?? versao,
   };

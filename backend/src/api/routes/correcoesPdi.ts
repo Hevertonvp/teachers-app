@@ -9,6 +9,7 @@ import { prepararValoresResposta } from '../../domain/habilidadesCurriculares.js
 import { montarRespostaCompleta } from './pdiFichas.js';
 import { perguntasPadraoDaFicha, resolverOuCriarBloco } from '../../domain/pdiBlocoPadrao.js';
 import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
+import { perguntasDaFicha } from '../../domain/perguntasComputacao.js';
 
 export const correcoesPdiRouter = Router();
 
@@ -213,7 +214,7 @@ correcoesPdiRouter.put('/:fichaId/respostas', async (req, res) => {
     'Esta Ficha foi alterada enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.',
   );
 
-  const perguntasDoModelo = await prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId } });
+  const perguntasDoModelo = await perguntasDaFicha(prisma, ficha);
   const perguntasPorId = new Map(perguntasDoModelo.map((p) => [p.id, p]));
   if (respostas.some((item) => !perguntasPorId.has(item.aplicacaoPerguntaId))) {
     throw new ValidationError('Uma ou mais perguntas informadas não pertencem a esta Ficha.');
@@ -222,7 +223,7 @@ correcoesPdiRouter.put('/:fichaId/respostas', async (req, res) => {
     prisma,
     respostas.filter((item) => perguntasPorId.get(item.aplicacaoPerguntaId)!.tipoResposta !== 'ORIENTACAO'),
     new Map(perguntasDoModelo.map((p) => [p.id, p.tipoResposta])),
-    ficha.disciplinaId,
+    { disciplinaId: ficha.disciplinaId, anoSerie: ficha.anoSerieSnapshot },
   );
   if (respostasAplicaveis.length === 0) throw new ValidationError('Nenhuma resposta válida para corrigir.');
 

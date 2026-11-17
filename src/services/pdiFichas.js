@@ -6,7 +6,7 @@ import { apiFetch } from './api';
 // migrados (MeusPdisPage, DashboardProfessor — ver seção 35/37 do pedido).
 const STATUS_FICHA_FROM_API = { PENDENTE: 'pendente', EM_ANDAMENTO: 'em_andamento', CONCLUIDA: 'concluida' };
 const ORIGEM_FROM_API = { ESTRUTURADA: 'estruturada', HABILIDADE: 'habilidade', ORIENTACAO: 'orientacao', QUALITATIVA: 'qualitativa', PERSONALIZADA: 'personalizada' };
-const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao', HABILIDADE_CRMG: 'habilidade_crmg' };
+const TIPO_FROM_API = { TEXTO: 'texto', SELECAO: 'selecao', MARCACAO: 'marcacao', NUMERO: 'numero', ORIENTACAO: 'orientacao', HABILIDADE_CRMG: 'habilidade_crmg', HABILIDADE_COMPUTACAO: 'habilidade_computacao' };
 
 // Datas @db.Date chegam como ISO completo — o resto do app trata como 'YYYY-MM-DD' (ver
 // utils/formAvailability.js).
@@ -90,7 +90,7 @@ export const salvarRespostasPadraoFichaReal = async (fichaId, respostas, version
   body: { respostas: respostas.map((item) => ({ aplicacaoPerguntaPadraoId: item.aplicacaoPerguntaPadraoId, valor: item.valor })), version },
 }));
 
-export const paraPayloadValor = (tipoResposta, current) => (tipoResposta === 'habilidade_crmg' ? {
+export const paraPayloadValor = (tipoResposta, current) => (tipoResposta === 'habilidade_crmg' || tipoResposta === 'habilidade_computacao' ? {
   // Só os ids vão pro backend — código/descrição são resolvidos lá, a partir do catálogo.
   todas: !!current.todas,
   habilidadeIds: current.todas ? [] : (current.habilidades || []).map(h => h.id),

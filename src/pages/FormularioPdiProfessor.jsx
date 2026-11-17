@@ -16,6 +16,7 @@ import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 import { chaveFila, enfileirar, removerDaFila } from '../offline/syncQueue';
 import { SavingIndicator } from '../components/SavingIndicator';
 import { agruparPorSecao, analisarRascunho, answerFromResposta, MENSAGEM_CONFLITO_RASCUNHO } from '../utils/pdiFicha';
+import { HabilidadesComputacaoSelecao } from '../components/HabilidadesComputacaoSelecao';
 
 const STATUS_LABEL = { pendente: 'Pendente', em_andamento: 'Em preenchimento', concluida: 'Concluído' };
 const STATUS_VARIANT = { pendente: 'gray', em_andamento: 'blue', concluida: 'green' };
@@ -389,6 +390,7 @@ export const FormularioPdiProfessor = () => {
     return (
       <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
         <p className="text-sm font-semibold text-slate-800">{question.codigo && <span className="mr-1.5 text-xs font-bold text-teal-700">{question.codigo}</span>}{question.pergunta}</p>
+        {question.observacao && <p className="mt-1 text-sm text-slate-500">{question.observacao}</p>}
         <div className="mt-2">
           {question.tipoResposta === 'numero' ? (
             <input type="number" className={`${inputClass} max-w-40`} value={current.valor} onChange={event => updateAnswer(question, { valor: event.target.value })} readOnly={!podePreencher} disabled={bloqueado && podePreencher} />
@@ -444,8 +446,23 @@ export const FormularioPdiProfessor = () => {
     );
   };
 
+  // Habilidades de Computação (17/11/2026): marca habilidades da BNCC Computação do ano do aluno.
+  const renderHabilidadesComputacao = (question) => {
+    const current = answers[question.id] || answerFromResposta(question, null);
+    return (
+      <div key={question.id} className="border-b border-slate-100 py-3 last:border-0">
+        <p className="text-sm font-semibold text-slate-800">{question.pergunta}</p>
+        {question.observacao && <p className="mt-1 text-sm text-slate-500">{question.observacao}</p>}
+        <div className="mt-2">
+          <HabilidadesComputacaoSelecao ano={ficha.anoSerie} value={current} onChange={value => updateAnswer(question, { ...current, ...value })} readOnly={!podePreencher} disabled={bloqueado} />
+        </div>
+      </div>
+    );
+  };
+
   const renderQuestion = (question) => {
     if (question.tipoResposta === 'orientacao') return renderOrientacao(question);
+    if (question.tipoResposta === 'habilidade_computacao') return renderHabilidadesComputacao(question);
     if (question.tipoResposta === 'texto') return renderTexto(question);
     if (question.tipoResposta === 'habilidade_crmg') return renderHabilidadesCrmg(question);
     return renderSelecaoOuMarcacao(question);
