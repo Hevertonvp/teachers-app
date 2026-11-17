@@ -189,6 +189,7 @@ const respostaItemSchema = z.object({
     complementarTexto: z.string().nullish(),
     habilidadeIds: z.array(z.number().int()).nullish(), // só HABILIDADE_CRMG
     todas: z.boolean().nullish(),
+    nenhuma: z.boolean().nullish(), // resposta "Nenhuma" (17/11/2026)
   }),
 });
 const corrigirSchema = z.object({

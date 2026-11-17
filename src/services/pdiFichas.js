@@ -100,7 +100,8 @@ export const salvarRespostasPadraoFichaReal = async (fichaId, respostas, version
 export const paraPayloadValor = (tipoResposta, current) => (tipoResposta === 'habilidade_crmg' || tipoResposta === 'habilidade_computacao' ? {
   // Só os ids vão pro backend — código/descrição são resolvidos lá, a partir do catálogo.
   todas: !!current.todas,
-  habilidadeIds: current.todas ? [] : (current.habilidades || []).map(h => h.id),
+  nenhuma: !!current.nenhuma, // resposta "Nenhuma" (17/11/2026)
+  habilidadeIds: current.todas || current.nenhuma ? [] : (current.habilidades || []).map(h => h.id),
 } : {
   resposta: tipoResposta === 'numero' ? (current.valor === '' ? null : Number(current.valor))
     : tipoResposta === 'selecao' ? current.opcao

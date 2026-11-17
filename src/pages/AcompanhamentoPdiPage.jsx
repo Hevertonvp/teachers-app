@@ -20,7 +20,7 @@ const TEAL = '#0f766e';
 const perguntaLabel = (pergunta) => (pergunta.pergunta.length > 60 ? `${pergunta.pergunta.slice(0, 60)}…` : pergunta.pergunta);
 
 // Habilidades do CRMG: lista dos códigos marcados (ou "Todas as habilidades").
-const habilidadesResumo = (registro) => (registro.todas ? 'Todas as habilidades' : (registro.habilidades || []).map(h => h.codigo).join(', ') || '—');
+const habilidadesResumo = (registro) => (registro.todas ? 'Todas as habilidades' : registro.nenhuma ? 'Nenhuma' : (registro.habilidades || []).map(h => h.codigo).join(', ') || '—');
 
 const respostaResumo = (pergunta, registro) => {
   if (!registro) return null;

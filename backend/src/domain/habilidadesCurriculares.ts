@@ -59,7 +59,8 @@ export function formatarHabilidade(h: HabilidadeCurricular) {
   };
 }
 
-export type EntradaHabilidades = { habilidadeIds?: number[] | null; todas?: boolean | null };
+// nenhuma (17/11/2026): resposta explícita "Nenhuma" — conta como respondida, sem habilidades.
+export type EntradaHabilidades = { habilidadeIds?: number[] | null; todas?: boolean | null; nenhuma?: boolean | null };
 
 type ItemResposta = {
   aplicacaoPerguntaId: number;
@@ -97,6 +98,7 @@ export async function prepararValoresResposta(
 
 export type ValorHabilidades = {
   todas: boolean;
+  nenhuma?: boolean;
   habilidades: { id: number; codigo: string; descricaoOficial: string }[];
   componente: ComponenteCurricular;
   componenteNome: string;
@@ -114,6 +116,9 @@ export async function montarValorHabilidades(db: Db, entrada: EntradaHabilidades
 
   if (entrada.todas) {
     return { todas: true, habilidades: [], ...base, versaoCurriculo: VERSAO_CRMG_ATUAL, versaoNome: VERSOES_CURRICULO[VERSAO_CRMG_ATUAL] };
+  }
+  if (entrada.nenhuma) {
+    return { todas: false, nenhuma: true, habilidades: [], ...base, versaoCurriculo: VERSAO_CRMG_ATUAL, versaoNome: VERSOES_CURRICULO[VERSAO_CRMG_ATUAL] };
   }
 
   const ids = [...new Set(entrada.habilidadeIds ?? [])];
@@ -142,6 +147,9 @@ export async function montarValorHabilidades(db: Db, entrada: EntradaHabilidades
 // Mesmo formato de valor do CRMG (lido pelas mesmas telas); código/descrição sempre do catálogo.
 export async function montarValorHabilidadesComputacao(db: Db, entrada: EntradaHabilidades, anoSerie: number | null): Promise<ValorHabilidades> {
   if (anoSerie === null) throw new ValidationError('Esta Ficha não tem ano do Fundamental: não há habilidades de Computação para ela.');
+  if (entrada.nenhuma) {
+    return { todas: false, nenhuma: true, habilidades: [], componente: 'COMPUTACAO', componenteNome: COMPONENTE_NOME.COMPUTACAO, versaoCurriculo: 'BNCC-COMPUTACAO-2022', versaoNome: VERSOES_CURRICULO['BNCC-COMPUTACAO-2022'] };
+  }
   const ids = [...new Set(entrada.habilidadeIds ?? [])];
   if (ids.length > MAX_HABILIDADES_POR_RESPOSTA) throw new ValidationError('Habilidades demais selecionadas.');
   const encontradas = ids.length ? await db.habilidadeCurricular.findMany({ where: { id: { in: ids } } }) : [];
