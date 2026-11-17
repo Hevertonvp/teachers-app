@@ -59,7 +59,8 @@ async function lerEstrutura(dados: SalvarEscola) {
 // nada é desativado sozinho). Só vale quando a estrutura está informada.
 async function exigirTurmasCobertas(escolaId: number, estrutura: NonNullable<Awaited<ReturnType<typeof lerEstrutura>>>) {
   if (estrutura.etapas.length === 0) return;
-  const turmas = await prisma.turma.findMany({ where: { escolaId, status: 'ATIVA' }, select: { nome: true, etapa: true, anoSerie: true, nivelLocalId: true } });
+  // Integral (17/11/2026) não depende das etapas/anos que a escola oferece.
+  const turmas = await prisma.turma.findMany({ where: { escolaId, status: 'ATIVA', tipo: 'REGULAR' }, select: { nome: true, etapa: true, anoSerie: true, nivelLocalId: true } });
   const fora = turmas.filter((t) => (t.etapa === 'FUNDAMENTAL'
     ? !(t.anoSerie && estrutura.anos.includes(t.anoSerie))
     : !estrutura.etapas.includes('EDUCACAO_INFANTIL') || (t.nivelLocalId !== null && !estrutura.niveis.includes(t.nivelLocalId))));

@@ -59,6 +59,7 @@ export const nomeTurma = (payload) => {
 // Descrição curta para listagem — nunca lota o card com campos técnicos. Turmas legadas sem
 // turno definido (ver migração em mockData.js) mostram "Turno não informado" em vez de quebrar.
 export const descricaoTurma = (turma) => {
+  if (turma.tipo === 'integral') return `Integral • ${turma.turno ? turnoLabel(turma.turno) : 'Turno não informado'}`;
   if (turma.etapa === 'educacao_infantil') {
     return `Educação Infantil • ${segmentoLabel(turma.segmento)}`;
   }

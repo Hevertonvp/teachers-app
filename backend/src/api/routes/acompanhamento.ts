@@ -299,7 +299,7 @@ async function estrutura(ano: number, escolaIds: number[]) {
   const escolaDaTurma = new Map(turmas.map((t) => [t.id, t.escolaId]));
   const porEscola = new Map<number, { turmas: number; professores: Set<number>; alunosPdi: number; porEtapa: Record<string, number>; porTurno: Record<string, number> }>();
   const item = (id: number) => { if (!porEscola.has(id)) porEscola.set(id, { turmas: 0, professores: new Set(), alunosPdi: 0, porEtapa: {}, porTurno: {} }); return porEscola.get(id)!; };
-  for (const t of turmas) { const i = item(t.escolaId); i.turmas += 1; i.porEtapa[t.etapa] = (i.porEtapa[t.etapa] ?? 0) + 1; i.porTurno[t.turno] = (i.porTurno[t.turno] ?? 0) + 1; }
+  for (const t of turmas) { const i = item(t.escolaId); i.turmas += 1; const etapa = t.etapa ?? 'INTEGRAL'; i.porEtapa[etapa] = (i.porEtapa[etapa] ?? 0) + 1; i.porTurno[t.turno] = (i.porTurno[t.turno] ?? 0) + 1; }
   for (const p of ptds) item(escolaDaTurma.get(p.turmaId)!).professores.add(p.professorId);
   for (const a of alunos) item(escolaDaTurma.get(a.turmaId)!).alunosPdi += a._count._all;
   const rede = { turmas: turmas.length, professores: new Set(ptds.map((p) => p.professorId)).size, alunosPdi: alunos.reduce((s, a) => s + a._count._all, 0) };

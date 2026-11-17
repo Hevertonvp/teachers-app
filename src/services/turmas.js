@@ -22,15 +22,23 @@ const STATUS_FROM_API = { ATIVA: 'ativa', INATIVA: 'inativa' };
 // mock tinha esse campo solto; o backend não precisa guardar algo que já é dedutível da etapa).
 export const normalizeTurma = (turma) => ({
   ...turma,
-  etapa: ETAPA_FROM_API[turma.etapa],
+  // 17/11/2026: 'regular' (padrão) ou 'integral' (sem etapa/ano/série/número; nome livre).
+  tipo: turma.tipo === 'INTEGRAL' ? 'integral' : 'regular',
+  etapa: turma.etapa ? ETAPA_FROM_API[turma.etapa] : null,
   turno: TURNO_FROM_API[turma.turno],
   segmento: turma.segmento ? SEGMENTO_FROM_API[turma.segmento] : null,
   nivel: turma.nivel ? NIVEL_FROM_API[turma.nivel] : null,
   status: STATUS_FROM_API[turma.status],
-  ciclo: turma.etapa === 'FUNDAMENTAL' ? 'Ensino Fundamental' : 'Educação Infantil',
+  ciclo: turma.tipo === 'INTEGRAL' ? 'Integral' : turma.etapa === 'FUNDAMENTAL' ? 'Ensino Fundamental' : 'Educação Infantil',
 });
 
-const paraPayloadApi = (payload) => ({
+const paraPayloadApi = (payload) => (payload.tipo === 'integral' ? {
+  tipo: 'INTEGRAL',
+  escolaId: Number(payload.escolaId),
+  anoLetivo: Number(payload.anoLetivo),
+  nome: payload.nome,
+  turno: TURNO_TO_API[payload.turno],
+} : {
   escolaId: Number(payload.escolaId),
   anoLetivo: Number(payload.anoLetivo),
   etapa: ETAPA_TO_API[payload.etapa],

@@ -40,6 +40,13 @@ enum EtapaEnsino {
   EDUCACAO_INFANTIL
 }
 
+// 17/11/2026: tipo da turma. REGULAR = como sempre. INTEGRAL = turma complementar, só para registro e vínculo de
+// Professor (cargo); nome livre, sem etapa/ano/série/número (pode ser multisseriada). Não gera PDI; 1/3 inalterado.
+enum TipoTurma {
+  REGULAR
+  INTEGRAL
+}
+
 enum Turno {
   MANHA
   TARDE
@@ -163,7 +170,9 @@ model Turma {
   escola   Escola @relation(fields: [escolaId], references: [id], onDelete: Restrict)
 
   anoLetivo Int
-  etapa     EtapaEnsino
+  // 17/11/2026: REGULAR (padrão, todas as existentes) ou INTEGRAL. Integral: etapa e identificador nulos (CHECK no banco).
+  tipo      TipoTurma    @default(REGULAR)
+  etapa     EtapaEnsino?
 
   // Fundamental
   anoSerie Int?
@@ -173,7 +182,7 @@ model Turma {
   nivel    NivelInfantil?
 
   turno         Turno
-  identificador Int
+  identificador Int?
 
   // 16/11/2026: nível LOCAL da Educação Infantil (catálogo NivelInfantilLocal). Turmas novas de escolas com etapas
   // informadas usam este campo (e `nivel` fica nulo); turmas antigas continuam com `nivel` (enum) e este nulo —

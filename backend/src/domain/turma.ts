@@ -122,3 +122,15 @@ export function validarECalcularTurmaInfantilLocal(dados: DadosTurmaInfantilLoca
 export const NIVEL_ANTIGO_NO_CATALOGO: Partial<Record<NivelInfantil, string>> = { PRE_I: '1º Período', PRE_II: '2º Período' };
 
 export const anoDaEtapa = (ano: number) => (ano <= 5 ? 'FUNDAMENTAL_I' : 'FUNDAMENTAL_II');
+
+// 17/11/2026: turma INTEGRAL — nome livre (o que a escola usa: "Integral A", "Grupo Girassol"…), sem etapa/ano/série.
+// Nenhuma regra é tirada do nome. Unicidade: escola + ano letivo + nome (sem diferença de maiúscula/acento/espaços).
+const NOME_INTEGRAL_MAX = 60;
+export const normalizarNomeTurma = (nome: string) => nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+export function validarECalcularTurmaIntegral(dados: { escolaId: number; anoLetivo: number; nome: string | null | undefined }): { nome: string; identidadeChave: string } {
+  if (dados.anoLetivo < ANO_LETIVO_MINIMO || dados.anoLetivo > ANO_LETIVO_MAXIMO) throw new ValidationError('Ano letivo fora do intervalo esperado.');
+  const nome = (dados.nome ?? '').replace(/\s+/g, ' ').trim();
+  if (!nome) throw new ValidationError('Informe o nome da turma.');
+  if (nome.length > NOME_INTEGRAL_MAX) throw new ValidationError(`Nome com no máximo ${NOME_INTEGRAL_MAX} caracteres.`);
+  return { nome, identidadeChave: `I|${dados.escolaId}|${dados.anoLetivo}|${normalizarNomeTurma(nome)}`.slice(0, 100) };
+}
