@@ -35,6 +35,7 @@ export async function limparComputacao() {
   const turmas = (await prisma.turma.findMany({ where: { escolaId: { in: escolas } }, select: { id: true } })).map(t => t.id);
   const alunos = (await prisma.alunoPdi.findMany({ where: { turmaId: { in: turmas } }, select: { id: true } })).map(a => a.id);
   await prisma.movimentacaoAlunoPdi.deleteMany({ where: { alunoId: { in: alunos } } });
+  await prisma.fichaAnualPdi.deleteMany({ where: { alunoId: { in: alunos } } });
   await prisma.alunoPdi.deleteMany({ where: { id: { in: alunos } } });
   await prisma.professorTurmaDisciplina.deleteMany({ where: { turmaId: { in: turmas } } });
   await prisma.professorTurmaAtuacao.deleteMany({ where: { turmaId: { in: turmas } } });

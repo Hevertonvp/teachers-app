@@ -183,7 +183,7 @@ export const FichaAnualPdiPage = () => {
                         <button
                           key={ficha.fichaId}
                           type="button"
-                          onClick={() => navigate(`/pdi/fichas/${periodo.aplicacaoId}/${ficha.disciplinaId}/${id}`)}
+                          onClick={() => navigate(`/pdi/fichas/${periodo.aplicacaoId}/${ficha.atuacaoId ? `a${ficha.atuacaoId}` : ficha.disciplinaId}/${id}`)}
                           className="flex w-full flex-wrap items-center justify-between gap-2 py-3 text-left transition hover:bg-slate-50"
                         >
                           <div>

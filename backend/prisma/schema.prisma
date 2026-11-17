@@ -667,13 +667,18 @@ model AplicacaoModeloPdi {
   aplicacaoId Int
   aplicacao   AplicacaoPdi @relation(fields: [aplicacaoId], references: [id], onDelete: Restrict)
 
-  modeloIdOriginal Int
-  modeloOriginal   ModeloPdi @relation(fields: [modeloIdOriginal], references: [id], onDelete: Restrict)
-  nome             String    @db.VarChar(200)
+  // 17/11/2026: snapshot de DISCIPLINA (modeloIdOriginal + disciplinaId, como sempre) OU de ATUAÇÃO pedagógica com
+  // formulário próprio (atuacaoId, ex.: Professor TAE — sem Modelo, só perguntas de Computação). Exatamente um dos
+  // dois (CHECK no banco). Todas as linhas anteriores são de disciplina.
+  modeloIdOriginal Int?
+  modeloOriginal   ModeloPdi? @relation(fields: [modeloIdOriginal], references: [id], onDelete: Restrict)
+  nome             String     @db.VarChar(200)
 
-  disciplinaId   Int
-  disciplina     Disciplina @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
-  disciplinaNome String     @db.VarChar(100)
+  disciplinaId   Int?
+  disciplina     Disciplina?        @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  atuacaoId      Int?
+  atuacao        AtuacaoPedagogica? @relation(fields: [atuacaoId], references: [id], onDelete: Restrict)
+  disciplinaNome String             @db.VarChar(100)
 
   perguntas       AplicacaoPerguntaPdi[]
   fichas          FichaPdi[]
@@ -1015,8 +1020,12 @@ model FichaPdi {
   aplicacaoModelo   AplicacaoModeloPdi @relation(fields: [aplicacaoModeloId], references: [id], onDelete: Restrict)
   alunoId           Int
   aluno             AlunoPdi           @relation(fields: [alunoId], references: [id], onDelete: Restrict)
-  disciplinaId      Int
-  disciplina        Disciplina         @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  // 17/11/2026: Ficha de DISCIPLINA (disciplinaId) OU de ATUAÇÃO com formulário próprio (atuacaoId, Professor TAE).
+  // Exatamente um dos dois (CHECK). Identidade: aplicação+aluno+disciplina ou aplicação+aluno+atuação.
+  disciplinaId      Int?
+  disciplina        Disciplina?        @relation(fields: [disciplinaId], references: [id], onDelete: Restrict)
+  atuacaoId         Int?
+  atuacao           AtuacaoPedagogica? @relation(fields: [atuacaoId], references: [id], onDelete: Restrict)
 
   // Professor RESPONSÁVEL pela turma+disciplina no momento da criação — um fato pedagógico,
   // resolvido via ProfessorTurmaDisciplina ATIVO. Nunca confundir com quem executou a ação
@@ -1060,6 +1069,7 @@ model FichaPdi {
   historicoCorrecao HistoricoCorrecaoResposta[]
 
   @@unique([aplicacaoId, alunoId, disciplinaId])
+  @@unique([aplicacaoId, alunoId, atuacaoId])
   @@index([alunoId])
   @@index([professorResponsavelId])
   @@map("fichas_pdi")
@@ -1939,7 +1949,9 @@ model AtuacaoPedagogica {
   updatedAt DateTime? @updatedAt
   updatedBy String?   @db.VarChar(200)
 
-  vinculosTurma ProfessorTurmaAtuacao[]
+  vinculosTurma       ProfessorTurmaAtuacao[]
+  aplicacaoModelosPdi AplicacaoModeloPdi[]
+  fichasPdi           FichaPdi[]
 
   @@map("atuacoes_pedagogicas")
 }

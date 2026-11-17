@@ -31,12 +31,12 @@ export const MeusPdisPage = () => {
   if (!isProfessor(user)) return <Navigate to="/pdi" replace />;
 
   const escolasDisponiveis = [...new Map(meusPdisReais.map(item => [item.escolaId, item.escolaNome])).entries()];
-  const disciplinasDisponiveis = [...new Map(meusPdisReais.map(item => [item.disciplinaId, item.disciplinaNome])).entries()];
+  const disciplinasDisponiveis = [...new Map(meusPdisReais.map(item => [item.chave, item.disciplinaNome])).entries()];
   const turmasDisponiveis = [...new Map(meusPdisReais.map(item => [item.turmaId, item.turmaNome])).entries()];
 
   const itensFiltrados = meusPdisReais.filter(item => (
     (filtroEscola === 'todas' || String(item.escolaId) === filtroEscola)
-    && (filtroDisciplina === 'todas' || String(item.disciplinaId) === filtroDisciplina)
+    && (filtroDisciplina === 'todas' || String(item.chave) === filtroDisciplina)
     && (filtroTurma === 'todas' || String(item.turmaId) === filtroTurma)
     && (filtroStatus === 'todos' || item.statusVisual === filtroStatus)
   ));
@@ -63,7 +63,7 @@ export const MeusPdisPage = () => {
     { key: 'disciplinas', header: 'Disciplinas', render: row => (
       <div className="flex flex-col gap-1">
         {row.disciplinas.map(item => (
-          <span key={item.disciplinaId} className="flex flex-wrap items-center gap-2">
+          <span key={item.chave} className="flex flex-wrap items-center gap-2">
             <span>{item.disciplinaNome}</span>
             <Badge variant={STATUS_VISUAL_VARIANT[item.statusVisual]}>{STATUS_VISUAL_LABEL[item.statusVisual]}</Badge>
             {item.correcaoSolicitada && <Badge variant="yellow">Correção solicitada</Badge>}

@@ -5,6 +5,7 @@ import { diaDeHojeSp } from '../../lib/cargos.js';
 import { atuacaoTemTurmas } from '../../domain/cargos.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { escolasPermitidas, exigirSecretariaOuDiretora, type Actor } from './pessoas.js';
+import { ATUACOES_COM_FORMULARIO_PDI, responsavelDaAtuacao } from '../../domain/pdiAtuacao.js';
 
 // Professor ↔ Turma por ATUAÇÃO pedagógica, sem disciplina (decisão do usuário, 16/11/2026): "Regente da 1M1".
 // Mesmas permissões do vínculo por disciplina (professorTurmaDisciplina.ts): leitura para Secretaria, Diretora,
@@ -104,7 +105,14 @@ professorTurmaAtuacaoRouter.post('/', async (req, res) => {
   const novo = await prisma.professorTurmaAtuacao.create({
     data: { turmaId, professorId, atuacaoId, status: 'ATIVO', dataInicio: diaDeHojeSp(), createdBy: String(actor.id) },
   });
-  res.status(201).json(formatarVinculo({ ...novo, turma, professor, atuacao }));
+  // Atuação com formulário PDI (Professor TAE, 17/11/2026): a turma pode ter mais de um, mas o PDI fica com o
+  // ligado primeiro — avisa quem está ligando (mensagem curta, decisão do usuário). Nada é bloqueado.
+  let aviso: string | null = null;
+  if (ATUACOES_COM_FORMULARIO_PDI.includes(atuacao.nome)) {
+    const responsavel = await responsavelDaAtuacao(prisma, turmaId, atuacaoId);
+    if (responsavel && responsavel.professorId !== professorId) aviso = `A ${turma.nome} já tem TAE (${responsavel.professor.nome}). O PDI fica com ele(a).`;
+  }
+  res.status(201).json({ ...formatarVinculo({ ...novo, turma, professor, atuacao }), aviso });
 });
 
 professorTurmaAtuacaoRouter.post('/:id/encerrar', async (req, res) => {

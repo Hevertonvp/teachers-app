@@ -72,7 +72,10 @@ export const TurmasPorDisciplina = ({ professor, escolas, turmas }) => {
     const atual = ativosAtuacao.find(v => v.turmaId === turma.id && v.atuacaoId === atuacao.id);
     try {
       if (atual) await encerrarVinculoProfessorTurmaAtuacao(atual.id);
-      else await criarVinculoProfessorTurmaAtuacao({ turmaId: turma.id, professorId: professor.id, atuacaoId: atuacao.id });
+      else {
+        const r = await criarVinculoProfessorTurmaAtuacao({ turmaId: turma.id, professorId: professor.id, atuacaoId: atuacao.id });
+        if (r?.aviso) setErro(r.aviso); // turma já tinha TAE: o PDI fica com o primeiro
+      }
       await carregarVinculos();
     } catch (e) { setErro(e.message); } finally { setSalvando(null); }
   };

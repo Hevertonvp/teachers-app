@@ -17,10 +17,14 @@ export async function executarFotografiaPdi(prisma: PrismaClient, agora: Date = 
   const desde = new Date(hoje.getTime() - LIMITES.diasParaFotografia * DIA);
   const aplicacoes = await prisma.aplicacaoPdi.findMany({
     where: { status: 'ATIVA', dataFim: { gte: desde, lt: hoje }, fotografia: null },
-    select: { id: true, escolaId: true, modelos: { select: { disciplinaId: true } } },
+    select: { id: true, escolaId: true, modelos: { select: { disciplinaId: true, atuacaoId: true } } },
   });
   if (aplicacoes.length === 0) return 0;
-  const contagens = await contarFichasPdi(prisma, aplicacoes.map((a) => ({ id: a.id, escolaId: a.escolaId, disciplinaIds: a.modelos.map((m) => m.disciplinaId) })));
+  const contagens = await contarFichasPdi(prisma, aplicacoes.map((a) => ({
+    id: a.id, escolaId: a.escolaId,
+    disciplinaIds: a.modelos.map((m) => m.disciplinaId).filter((id): id is number => id !== null),
+    atuacaoIds: a.modelos.map((m) => m.atuacaoId).filter((id): id is number => id !== null), // Professor TAE (17/11/2026)
+  })));
   const { count } = await prisma.fotografiaAplicacaoPdi.createMany({
     data: aplicacoes.map((a) => {
       const c = contagens.get(a.id)!;

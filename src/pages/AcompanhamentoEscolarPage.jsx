@@ -345,7 +345,7 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
   if (PDI_ATIVO) cartoes.push(<Cartao key="corr" rotulo="Correções do PDI" valor={fmt(dados.correcoesAbertas)} sub="em aberto · informativo" atraso={180} />);
 
   const disciplinas = dados.porDisciplina.map((d) => ({
-    chave: d.disciplinaId, rotulo: d.disciplina,
+    chave: d.disciplinaId ?? `a${d.atuacaoId}`, rotulo: d.disciplina,
     texto: d.esperado === null ? `${fmt(d.concluidas)} concluídas` : `${fmt(d.concluidas)} de ${fmt(d.esperado)}`,
     barra: d.esperado === null ? null : <BarraSituacao {...d} />,
   }));

@@ -9,6 +9,7 @@ import {
   chaveIdempotenciaPrazoGestor,
 } from '../domain/notificacoes.js';
 import { criarNotificacao } from '../lib/notificacoes.js';
+import { responsaveisPorAtuacao } from '../domain/pdiAtuacao.js';
 
 // Para UMA Aplicação, recalcula ao vivo quantas Fichas pendentes cada Professor atualmente
 // responsável possui — mesma lógica de candidatos de GET /pdi-fichas/meus-pdis
@@ -21,6 +22,7 @@ async function calcularPendentesPorProfessor(
   prisma: PrismaClient,
   aplicacao: { id: number; escolaId: number },
   disciplinaIds: number[],
+  atuacaoIds: number[] = [],
 ): Promise<Map<number, number>> {
   const ptds = await prisma.professorTurmaDisciplina.findMany({
     where: {
@@ -30,29 +32,37 @@ async function calcularPendentesPorProfessor(
     },
     select: { professorId: true, turmaId: true, disciplinaId: true },
   });
-  if (ptds.length === 0) return new Map();
+  // Professor TAE (17/11/2026): o responsável de cada turma (o ligado primeiro) também é avisado.
+  const taes = atuacaoIds.length ? await responsaveisPorAtuacao(prisma, { escolaIds: [aplicacao.escolaId], atuacaoIds }) : [];
+  if (ptds.length === 0 && taes.length === 0) return new Map();
 
-  const turmaIds = [...new Set(ptds.map((p) => p.turmaId))];
+  const turmaIds = [...new Set([...ptds.map((p) => p.turmaId), ...taes.map((t) => t.turmaId)])];
   const alunos = await prisma.alunoPdi.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' }, select: { id: true, turmaId: true } });
   if (alunos.length === 0) return new Map();
 
-  const candidatos: { professorId: number; alunoId: number; disciplinaId: number }[] = [];
+  const candidatos: { professorId: number; alunoId: number; disciplinaId: number | null; atuacaoId: number | null }[] = [];
   for (const ptd of ptds) {
     for (const aluno of alunos.filter((a) => a.turmaId === ptd.turmaId)) {
-      candidatos.push({ professorId: ptd.professorId, alunoId: aluno.id, disciplinaId: ptd.disciplinaId });
+      candidatos.push({ professorId: ptd.professorId, alunoId: aluno.id, disciplinaId: ptd.disciplinaId, atuacaoId: null });
+    }
+  }
+  for (const tae of taes) {
+    for (const aluno of alunos.filter((a) => a.turmaId === tae.turmaId)) {
+      candidatos.push({ professorId: tae.professorId, alunoId: aluno.id, disciplinaId: null, atuacaoId: tae.atuacaoId });
     }
   }
   if (candidatos.length === 0) return new Map();
 
+  const chave = (c: { alunoId: number; disciplinaId: number | null; atuacaoId: number | null }) => (c.disciplinaId !== null ? `${c.alunoId}-${c.disciplinaId}` : `${c.alunoId}-a${c.atuacaoId}`);
   const fichas = await prisma.fichaPdi.findMany({
-    where: { aplicacaoId: aplicacao.id, OR: candidatos.map((c) => ({ alunoId: c.alunoId, disciplinaId: c.disciplinaId })) },
-    select: { alunoId: true, disciplinaId: true, status: true },
+    where: { aplicacaoId: aplicacao.id, OR: candidatos.map((c) => (c.disciplinaId !== null ? { alunoId: c.alunoId, disciplinaId: c.disciplinaId } : { alunoId: c.alunoId, atuacaoId: c.atuacaoId })) },
+    select: { alunoId: true, disciplinaId: true, atuacaoId: true, status: true },
   });
-  const fichaPorChave = new Map(fichas.map((f) => [`${f.alunoId}-${f.disciplinaId}`, f]));
+  const fichaPorChave = new Map(fichas.map((f) => [chave(f), f]));
 
   const pendentesPorProfessor = new Map<number, number>();
   for (const c of candidatos) {
-    const ficha = fichaPorChave.get(`${c.alunoId}-${c.disciplinaId}`);
+    const ficha = fichaPorChave.get(chave(c));
     const concluida = ficha?.status === 'CONCLUIDA';
     if (concluida) continue;
     pendentesPorProfessor.set(c.professorId, (pendentesPorProfessor.get(c.professorId) ?? 0) + 1);
@@ -79,7 +89,7 @@ export async function executarVerificacaoPrazosPdi(prisma: PrismaClient, opts: {
 
   const aplicacoes = await prisma.aplicacaoPdi.findMany({
     where: { status: 'ATIVA', escola: { status: 'ATIVA' } }, // removida (INATIVA) nunca gera aviso de prazo
-    include: { escola: { select: { id: true, nome: true } }, modelos: { select: { disciplinaId: true } } },
+    include: { escola: { select: { id: true, nome: true } }, modelos: { select: { disciplinaId: true, atuacaoId: true } } },
   });
 
   let notificacoesProfessorTentadas = 0;
@@ -92,10 +102,11 @@ export async function executarVerificacaoPrazosPdi(prisma: PrismaClient, opts: {
     if (!marco) continue;
     aplicacoesAvaliadas++;
 
-    const disciplinaIds = [...new Set(aplicacao.modelos.map((m) => m.disciplinaId))];
-    if (disciplinaIds.length === 0) continue;
+    const disciplinaIds = [...new Set(aplicacao.modelos.map((m) => m.disciplinaId).filter((id): id is number => id !== null))];
+    const atuacaoIds = [...new Set(aplicacao.modelos.map((m) => m.atuacaoId).filter((id): id is number => id !== null))];
+    if (disciplinaIds.length === 0 && atuacaoIds.length === 0) continue;
 
-    const pendentesPorProfessor = await calcularPendentesPorProfessor(prisma, aplicacao, disciplinaIds);
+    const pendentesPorProfessor = await calcularPendentesPorProfessor(prisma, aplicacao, disciplinaIds, atuacaoIds);
 
     for (const [professorId, pendentes] of pendentesPorProfessor) {
       if (pendentes === 0) continue;

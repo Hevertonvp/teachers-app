@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
@@ -14,6 +14,7 @@ import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
 import { formatarCorrecao } from '../../domain/correcoes.js';
 import { escolasPermitidas } from './pessoas.js';
 import { anoSerieDaTurma, perguntasDaFicha } from '../../domain/perguntasComputacao.js';
+import { alvoDaFicha, chaveDoAlvo, filtroDoAlvo, responsavelDaAtuacao, responsaveisPorAtuacao, type AlvoFicha } from '../../domain/pdiAtuacao.js';
 
 export const pdiFichasRouter = Router();
 
@@ -32,13 +33,16 @@ type Cliente = typeof prisma | Prisma.TransactionClient;
 // Ficha PDI fazia ~12 consultas em sequência (contando as outras funções chamadas depois desta) —
 // cada uma pagando a latência real até o Neon, daí a demora perceptível por clique relatada em
 // teste manual.
-async function resolverContexto(client: Cliente, aplicacaoId: number, alunoId: number, disciplinaId: number) {
-  const [aplicacao, aluno, disciplina, aplicacaoModelo] = await Promise.all([
+// 17/11/2026: o alvo é uma disciplina OU uma atuação com formulário próprio (Professor TAE, domain/pdiAtuacao.ts).
+// Para atuação, o "ptd" é o vínculo de atuação RESPONSÁVEL (o mais antigo ativo da turma) — mesmos campos usados.
+async function resolverContexto(client: Cliente, aplicacaoId: number, alunoId: number, alvo: AlvoFicha) {
+  const [aplicacao, aluno, disciplina, atuacao, aplicacaoModelo] = await Promise.all([
     client.aplicacaoPdi.findUnique({ where: { id: aplicacaoId } }),
     client.alunoPdi.findUnique({ where: { id: alunoId }, include: { turma: { include: { escola: true } } } }),
-    client.disciplina.findUnique({ where: { id: disciplinaId } }),
+    alvo.disciplinaId !== null ? client.disciplina.findUnique({ where: { id: alvo.disciplinaId } }) : Promise.resolve(null),
+    alvo.atuacaoId !== null ? client.atuacaoPedagogica.findUnique({ where: { id: alvo.atuacaoId } }) : Promise.resolve(null),
     // Nunca lê o ModeloPdi vivo — só o snapshot já congelado na Aplicação (seção 12 do pedido).
-    client.aplicacaoModeloPdi.findFirst({ where: { aplicacaoId, disciplinaId } }),
+    client.aplicacaoModeloPdi.findFirst({ where: { aplicacaoId, ...filtroDoAlvo(alvo) } }),
   ]);
 
   if (!aplicacao) throw new NotFoundError('Aplicação não encontrada.');
@@ -46,17 +50,17 @@ async function resolverContexto(client: Cliente, aplicacaoId: number, alunoId: n
   if (aluno.turma.escolaId !== aplicacao.escolaId) {
     throw new ValidationError('Esta aplicação não pertence à escola atual deste aluno.');
   }
-  if (!disciplina) throw new NotFoundError('Disciplina não encontrada.');
+  if (alvo.disciplinaId !== null && !disciplina) throw new NotFoundError('Disciplina não encontrada.');
+  if (alvo.atuacaoId !== null && !atuacao) throw new NotFoundError('Atuação não encontrada.');
   if (!aplicacaoModelo) {
-    throw new ValidationError('Esta Aplicação não possui um Modelo PDI desta disciplina no snapshot. Não é possível abrir esta Ficha.');
+    throw new ValidationError(alvo.atuacaoId !== null ? 'Esta Aplicação não tem formulário desta atuação.' : 'Esta Aplicação não possui um Modelo PDI desta disciplina no snapshot. Não é possível abrir esta Ficha.');
   }
 
-  const ptd = await client.professorTurmaDisciplina.findFirst({
-    where: { turmaId: aluno.turmaId, disciplinaId, status: 'ATIVO' },
-    include: { professor: true },
-  });
+  const ptd = alvo.disciplinaId !== null
+    ? await client.professorTurmaDisciplina.findFirst({ where: { turmaId: aluno.turmaId, disciplinaId: alvo.disciplinaId, status: 'ATIVO' }, include: { professor: true } })
+    : await responsavelDaAtuacao(client, aluno.turmaId, alvo.atuacaoId!);
 
-  return { aplicacao, aluno, disciplina, aplicacaoModelo, ptd };
+  return { aplicacao, aluno, disciplina, aplicacaoModelo, ptd, alvo };
 }
 
 type Contexto = Awaited<ReturnType<typeof resolverContexto>>;
@@ -84,7 +88,7 @@ async function exigirAcessoOperacional(client: Cliente, actor: Actor, contexto: 
     // Professor só acessa (leitura OU escrita) a própria turma/disciplina, agora — ver exemplo do
     // Carlos na seção 23: o nome no snapshot não dá acesso a quem não é mais o responsável hoje.
     if (!contexto.ptd || contexto.ptd.professorId !== actor.id) {
-      throw new ForbiddenError('Você não é o professor responsável por esta turma e disciplina.');
+      throw new ForbiddenError(contexto.alvo.atuacaoId !== null ? 'Você não é o Professor TAE responsável por esta turma.' : 'Você não é o professor responsável por esta turma e disciplina.');
     }
     return;
   }
@@ -147,7 +151,7 @@ async function exigirEditavelAgora(
 }
 
 const formatarFicha = (f: {
-  id: number; aplicacaoId: number; aplicacaoModeloId: number; alunoId: number; disciplinaId: number;
+  id: number; aplicacaoId: number; aplicacaoModeloId: number; alunoId: number; disciplinaId: number | null; atuacaoId: number | null;
   professorResponsavelId: number; alunoNomeSnapshot: string; turmaId: number; turmaNomeSnapshot: string;
   escolaId: number; escolaNomeSnapshot: string; disciplinaNomeSnapshot: string; professorNomeSnapshot: string;
   aplicacaoDataInicioSnapshot: Date; aplicacaoDataFimSnapshot: Date; status: string;
@@ -159,6 +163,8 @@ const formatarFicha = (f: {
   aplicacaoModeloId: f.aplicacaoModeloId,
   alunoId: f.alunoId,
   disciplinaId: f.disciplinaId,
+  // 17/11/2026: Ficha de atuação (Professor TAE) — disciplinaId nulo; disciplinaNome traz "Professor TAE".
+  atuacaoId: f.atuacaoId,
   professorResponsavelId: f.professorResponsavelId,
   alunoNome: f.alunoNomeSnapshot,
   turmaId: f.turmaId,
@@ -267,16 +273,18 @@ const respostaParaQuemPreenche = (ficha: Awaited<ReturnType<typeof prisma.fichaP
 const obterOuCriarSchema = z.object({
   aplicacaoId: z.number().int(),
   alunoId: z.number().int(),
-  disciplinaId: z.number().int(),
-});
+  // Exatamente um dos dois (17/11/2026): disciplina ou atuação com formulário próprio (Professor TAE).
+  disciplinaId: z.number().int().nullish(),
+  atuacaoId: z.number().int().nullish(),
+}).refine((d) => ((d.disciplinaId ?? null) === null) !== ((d.atuacaoId ?? null) === null), { message: 'Informe a disciplina ou a atuação.' });
 
 // P2002 do Postgres/Prisma, mas só quando é mesmo a constraint única de identidade da Ficha
 // (aplicacaoId+alunoId+disciplinaId) — nunca trata um P2002 de outra entidade/constraint como
 // "corrida de criação de Ficha" (ver catch abaixo, que depende disto pra não mascarar erro real).
-function ehConflitoDeIdentidadeDaFicha(err: Prisma.PrismaClientKnownRequestError): boolean {
+function ehConflitoDeIdentidadeDaFicha(err: Prisma.PrismaClientKnownRequestError, alvo: AlvoFicha): boolean {
   const meta = err.meta as { target?: string[] | string; modelName?: string } | undefined;
   if (meta?.modelName && meta.modelName !== 'FichaPdi') return false;
-  const campos = ['aplicacaoId', 'alunoId', 'disciplinaId'];
+  const campos = ['aplicacaoId', 'alunoId', alvo.disciplinaId !== null ? 'disciplinaId' : 'atuacaoId'];
   const target = meta?.target;
   if (Array.isArray(target)) return campos.every((c) => target.includes(c));
   if (typeof target === 'string') return campos.every((c) => target.includes(c));
@@ -292,17 +300,19 @@ function ehConflitoDeIdentidadeDaFicha(err: Prisma.PrismaClientKnownRequestError
 // futuro, sobrescrever o contexto congelado.
 pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  const { aplicacaoId, alunoId, disciplinaId } = obterOuCriarSchema.parse(req.body);
-  const chave = { aplicacaoId_alunoId_disciplinaId: { aplicacaoId, alunoId, disciplinaId } };
+  const dados = obterOuCriarSchema.parse(req.body);
+  const { aplicacaoId, alunoId } = dados;
+  const alvo: AlvoFicha = { disciplinaId: dados.disciplinaId ?? null, atuacaoId: dados.atuacaoId ?? null };
+  const chave = { aplicacaoId, alunoId, ...filtroDoAlvo(alvo) };
 
   let ficha: Awaited<ReturnType<typeof prisma.fichaPdi.findUniqueOrThrow>>;
   let contextoFinal: Contexto;
   try {
     ficha = await prisma.$transaction(async (tx) => {
-      const contexto = await resolverContexto(tx, aplicacaoId, alunoId, disciplinaId);
+      const contexto = await resolverContexto(tx, aplicacaoId, alunoId, alvo);
       contextoFinal = contexto;
 
-      const existente = await tx.fichaPdi.findUnique({ where: chave });
+      const existente = await tx.fichaPdi.findFirst({ where: chave });
       if (existente) {
         // Mesmo já existindo, a autorização é obrigatória aqui também — nunca pular esta checagem
         // só porque a Ficha já existe, senão qualquer ator autenticado poderia "abrir" a Ficha de
@@ -315,7 +325,7 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
       // (seção 11) e o aluno precisa estar ATIVO (uma Ficha nova nunca nasce para aluno arquivado;
       // Fichas já existentes continuam legíveis normalmente).
       if (!contexto.ptd) {
-        throw new ValidationError('Não existe Professor responsável ativo para esta turma e disciplina. Configure o vínculo antes de abrir esta Ficha PDI.');
+        throw new ValidationError(alvo.atuacaoId !== null ? 'Esta turma não tem Professor TAE ativo.' : 'Não existe Professor responsável ativo para esta turma e disciplina. Configure o vínculo antes de abrir esta Ficha PDI.');
       }
       if (contexto.aluno.status !== 'ATIVO') {
         throw new ValidationError('Não é possível abrir uma nova Ficha PDI para um aluno arquivado.');
@@ -328,7 +338,8 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
           aplicacaoId,
           aplicacaoModeloId: contexto.aplicacaoModelo.id,
           alunoId,
-          disciplinaId,
+          disciplinaId: alvo.disciplinaId,
+          atuacaoId: alvo.atuacaoId,
           professorResponsavelId: contexto.ptd.professorId,
           alunoNomeSnapshot: contexto.aluno.nome,
           turmaId: contexto.aluno.turmaId,
@@ -346,7 +357,7 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
       });
     }, { timeout: 15000 });
   } catch (err) {
-    if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002' || !ehConflitoDeIdentidadeDaFicha(err)) {
+    if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002' || !ehConflitoDeIdentidadeDaFicha(err, alvo)) {
       throw err; // erro real (autorização, validação, outra constraint) — nunca mascarar.
     }
 
@@ -354,10 +365,10 @@ pdiFichasRouter.post('/obter-ou-criar', async (req, res) => {
     // vencedora com uma operação NOVA, fora da transação abortada. Só trata como sucesso se ela
     // realmente existir; e reaplica a mesma checagem de autorização que a requisição perdedora já
     // tinha passado antes de tentar criar, nunca pulando essa etapa.
-    const existente = await prisma.fichaPdi.findUnique({ where: chave });
+    const existente = await prisma.fichaPdi.findFirst({ where: chave });
     if (!existente) throw err; // estado inconsistente de verdade — não mascarar.
 
-    const contexto = await resolverContexto(prisma, aplicacaoId, alunoId, disciplinaId);
+    const contexto = await resolverContexto(prisma, aplicacaoId, alunoId, alvo);
     await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
     contextoFinal = contexto;
     ficha = existente;
@@ -381,36 +392,46 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
   const escolaIdsPermitidas = vinculosEscolares.map((v) => v.escolaId);
   if (escolaIdsPermitidas.length === 0) return res.json([]);
 
-  const ptds = await prisma.professorTurmaDisciplina.findMany({
-    where: { professorId: actor.id, status: 'ATIVO', turma: { escolaId: { in: escolaIdsPermitidas }, status: 'ATIVA' } },
-    include: { turma: { include: { escola: true } } },
-  });
-  if (ptds.length === 0) return res.json([]);
+  // "Vínculos" que geram obrigação: turma+disciplina (como sempre) e, desde 17/11/2026, turma+atuação com
+  // formulário próprio (Professor TAE) — só quando este professor é o RESPONSÁVEL (o ligado primeiro na turma).
+  const [ptds, taes] = await Promise.all([
+    prisma.professorTurmaDisciplina.findMany({
+      where: { professorId: actor.id, status: 'ATIVO', turma: { escolaId: { in: escolaIdsPermitidas }, status: 'ATIVA' } },
+      include: { turma: { include: { escola: true } } },
+    }),
+    responsaveisPorAtuacao(prisma, { escolaIds: escolaIdsPermitidas }).then((l) => l.filter((v) => v.professorId === actor.id)),
+  ]);
+  type Vinculo = { turmaId: number; turma: (typeof ptds)[number]['turma']; alvo: AlvoFicha };
+  const vinculos: Vinculo[] = [
+    ...ptds.map((p) => ({ turmaId: p.turmaId, turma: p.turma, alvo: { disciplinaId: p.disciplinaId, atuacaoId: null } })),
+    ...taes.map((v) => ({ turmaId: v.turmaId, turma: v.turma, alvo: { disciplinaId: null, atuacaoId: v.atuacaoId } })),
+  ];
+  if (vinculos.length === 0) return res.json([]);
 
-  const turmaIds = [...new Set(ptds.map((p) => p.turmaId))];
-  const escolaIdsDasTurmas = [...new Set(ptds.map((p) => p.turma.escolaId))];
+  const turmaIds = [...new Set(vinculos.map((p) => p.turmaId))];
+  const escolaIdsDasTurmas = [...new Set(vinculos.map((p) => p.turma.escolaId))];
 
   const [alunos, aplicacoes] = await Promise.all([
     prisma.alunoPdi.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' } }),
     prisma.aplicacaoPdi.findMany({
       where: { escolaId: { in: escolaIdsDasTurmas }, status: 'ATIVA' }, // removida (INATIVA) nunca aparece em Meus PDIs
-      include: { modelos: { select: { disciplinaId: true, disciplinaNome: true } } },
+      include: { modelos: { select: { disciplinaId: true, atuacaoId: true, disciplinaNome: true } } },
     }),
   ]);
 
-  // Candidatos: para cada vínculo (turma+disciplina) ATIVO hoje, cada aluno ATIVO da turma ×
-  // cada Aplicação da MESMA escola que tenha snapshot daquela disciplina — Aplicações encerradas
-  // aparecem normalmente aqui (leitura histórica de quem ainda ministra a turma/disciplina, seção
-  // 27 do pedido); só some quando o vínculo em si deixa de existir.
-  const candidatos: { aplicacaoId: number; alunoId: number; disciplinaId: number; ptd: (typeof ptds)[number] }[] = [];
-  for (const ptd of ptds) {
-    const alunosDaTurma = alunos.filter((a) => a.turmaId === ptd.turmaId);
+  // Candidatos: para cada vínculo ATIVO hoje, cada aluno ATIVO da turma × cada Aplicação da MESMA escola
+  // que tenha snapshot daquela disciplina/atuação — Aplicações encerradas aparecem normalmente aqui
+  // (leitura histórica de quem ainda ministra a turma, seção 27 do pedido); só some quando o vínculo deixa de existir.
+  const doAlvo = (m: { disciplinaId: number | null; atuacaoId: number | null }, alvo: AlvoFicha) => chaveDoAlvo(m) === chaveDoAlvo(alvo);
+  const candidatos: { aplicacaoId: number; alunoId: number; alvo: AlvoFicha; vinculo: Vinculo }[] = [];
+  for (const vinculo of vinculos) {
+    const alunosDaTurma = alunos.filter((a) => a.turmaId === vinculo.turmaId);
     if (alunosDaTurma.length === 0) continue;
-    const aplicacoesDaEscola = aplicacoes.filter((a) => a.escolaId === ptd.turma.escolaId);
+    const aplicacoesDaEscola = aplicacoes.filter((a) => a.escolaId === vinculo.turma.escolaId);
     for (const aplicacao of aplicacoesDaEscola) {
-      if (!aplicacao.modelos.some((m) => m.disciplinaId === ptd.disciplinaId)) continue;
+      if (!aplicacao.modelos.some((m) => doAlvo(m, vinculo.alvo))) continue;
       for (const aluno of alunosDaTurma) {
-        candidatos.push({ aplicacaoId: aplicacao.id, alunoId: aluno.id, disciplinaId: ptd.disciplinaId, ptd });
+        candidatos.push({ aplicacaoId: aplicacao.id, alunoId: aluno.id, alvo: vinculo.alvo, vinculo });
       }
     }
   }
@@ -419,7 +440,7 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
   const aplicacaoIds = [...new Set(candidatos.map((c) => c.aplicacaoId))];
   const [fichasExistentes, reaberturas] = await Promise.all([
     prisma.fichaPdi.findMany({
-      where: { OR: candidatos.map((c) => ({ aplicacaoId: c.aplicacaoId, alunoId: c.alunoId, disciplinaId: c.disciplinaId })) },
+      where: { OR: candidatos.map((c) => ({ aplicacaoId: c.aplicacaoId, alunoId: c.alunoId, ...filtroDoAlvo(c.alvo) })) },
     }),
     prisma.reaberturaPdi.findMany({ where: { aplicacaoId: { in: aplicacaoIds } }, select: { aplicacaoId: true, dataInicio: true, dataFim: true } }),
   ]);
@@ -433,7 +454,8 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
   const fichasComCorrecao = new Set(correcoesAbertasFicha.map((c) => c.fichaId));
   const blocosComCorrecao = new Set(correcoesAbertasBloco.map((c) => `${c.bloco.aplicacaoId}-${c.bloco.alunoId}-${c.bloco.turmaId}`));
 
-  const fichaPorChave = new Map(fichasExistentes.map((f) => [`${f.aplicacaoId}-${f.alunoId}-${f.disciplinaId}`, f]));
+  const chaveFicha = (aplicacaoId: number, alunoId: number, alvo: AlvoFicha) => `${aplicacaoId}-${alunoId}-${chaveDoAlvo(alvo)}`;
+  const fichaPorChave = new Map(fichasExistentes.map((f) => [chaveFicha(f.aplicacaoId, f.alunoId, alvoDaFicha(f)), f]));
   const alunoPorId = new Map(alunos.map((a) => [a.id, a]));
   const aplicacaoPorId = new Map(aplicacoes.map((a) => [a.id, a]));
   const reaberturasPorAplicacao = new Map<number, { dataInicio: Date; dataFim: Date }[]>();
@@ -443,13 +465,13 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
   });
 
   const linhas = candidatos.map((c) => {
-    const ficha = fichaPorChave.get(`${c.aplicacaoId}-${c.alunoId}-${c.disciplinaId}`);
+    const ficha = fichaPorChave.get(chaveFicha(c.aplicacaoId, c.alunoId, c.alvo));
     const aluno = alunoPorId.get(c.alunoId)!;
     const aplicacao = aplicacaoPorId.get(c.aplicacaoId)!;
-    const modelo = aplicacao.modelos.find((m) => m.disciplinaId === c.disciplinaId)!;
-    const correcaoSolicitada = (!!ficha && fichasComCorrecao.has(ficha.id)) || blocosComCorrecao.has(`${c.aplicacaoId}-${c.alunoId}-${c.ptd.turmaId}`);
+    const modelo = aplicacao.modelos.find((m) => doAlvo(m, c.alvo))!;
+    const correcaoSolicitada = (!!ficha && fichasComCorrecao.has(ficha.id)) || blocosComCorrecao.has(`${c.aplicacaoId}-${c.alunoId}-${c.vinculo.turmaId}`);
     const editavelAgora = fichaEditavelAgora(
-      c.ptd.turma.escola.status === 'ATIVA',
+      c.vinculo.turma.escola.status === 'ATIVA',
       editavelParaProfessor(isAplicacaoEditavelAgora(aplicacao, reaberturasPorAplicacao.get(c.aplicacaoId) || []), !!ficha && fichasComCorrecao.has(ficha.id)),
     );
     return {
@@ -457,11 +479,13 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
       aplicacaoNome: aplicacao.nome,
       alunoId: c.alunoId,
       alunoNome: aluno.nome,
-      escolaId: c.ptd.turma.escolaId,
-      escolaNome: c.ptd.turma.escola.nome,
-      turmaId: c.ptd.turmaId,
-      turmaNome: c.ptd.turma.nome,
-      disciplinaId: c.disciplinaId,
+      escolaId: c.vinculo.turma.escolaId,
+      escolaNome: c.vinculo.turma.escola.nome,
+      turmaId: c.vinculo.turmaId,
+      turmaNome: c.vinculo.turma.nome,
+      disciplinaId: c.alvo.disciplinaId,
+      // 17/11/2026: obrigação de atuação (Professor TAE) — disciplinaId nulo, disciplinaNome "Professor TAE".
+      atuacaoId: c.alvo.atuacaoId,
       disciplinaNome: modelo.disciplinaNome,
       dataInicio: aplicacao.dataInicio,
       dataFim: aplicacao.dataFim,
@@ -480,20 +504,22 @@ pdiFichasRouter.get('/meus-pdis', async (req, res) => {
 
 // Leitura pura — NUNCA cria (seção 25 do pedido: Diretora/Secretaria/Auxiliar só consultam).
 // 404 se a Ficha ainda não existir, em vez de materializá-la.
-pdiFichasRouter.get('/:aplicacaoId/:alunoId/:disciplinaId', async (req, res) => {
+async function lerFicha(req: Request, res: Response, alvo: AlvoFicha) {
   const actor = res.locals.pessoa as Actor;
   const aplicacaoId = Number(req.params.aplicacaoId);
   const alunoId = Number(req.params.alunoId);
-  const disciplinaId = Number(req.params.disciplinaId);
 
-  const contexto = await resolverContexto(prisma, aplicacaoId, alunoId, disciplinaId);
+  const contexto = await resolverContexto(prisma, aplicacaoId, alunoId, alvo);
   await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: false });
 
-  const ficha = await prisma.fichaPdi.findUnique({ where: { aplicacaoId_alunoId_disciplinaId: { aplicacaoId, alunoId, disciplinaId } } });
+  const ficha = await prisma.fichaPdi.findFirst({ where: { aplicacaoId, alunoId, ...filtroDoAlvo(alvo) } });
   if (!ficha) throw new NotFoundError('Esta Ficha PDI ainda não foi criada.');
 
   res.json(await respostaParaQuemPreenche(ficha, contexto));
-});
+}
+// Ficha de atuação (Professor TAE, 17/11/2026) — 4 segmentos, nunca confunde com a rota de disciplina abaixo.
+pdiFichasRouter.get('/atuacao/:aplicacaoId/:alunoId/:atuacaoId', (req, res) => lerFicha(req, res, { disciplinaId: null, atuacaoId: Number(req.params.atuacaoId) }));
+pdiFichasRouter.get('/:aplicacaoId/:alunoId/:disciplinaId', (req, res) => lerFicha(req, res, { disciplinaId: Number(req.params.disciplinaId), atuacaoId: null }));
 
 // Listagem/consulta de Fichas já existentes, escopada por perfil (seção 21 do pedido). Sempre
 // via relação VIVA aluno→turma (nunca os campos *Snapshot da própria Ficha, que são congelados e
@@ -521,8 +547,13 @@ pdiFichasRouter.get('/', async (req, res) => {
 async function escopoFichas(actor: Actor, where: Prisma.FichaPdiWhereInput): Promise<Prisma.FichaPdiWhereInput | null> {
   if (actor.perfil === 'PROFESSOR') {
     const ptds = await prisma.professorTurmaDisciplina.findMany({ where: { professorId: actor.id, status: 'ATIVO' }, select: { turmaId: true, disciplinaId: true } });
-    if (ptds.length === 0) return null;
-    where.OR = ptds.map((p) => ({ aluno: { turmaId: p.turmaId }, disciplinaId: p.disciplinaId }));
+    // Professor TAE responsável (o ligado primeiro na turma) também enxerga as Fichas da atuação.
+    const taes = (await responsaveisPorAtuacao(prisma, {})).filter((v) => v.professorId === actor.id);
+    if (ptds.length === 0 && taes.length === 0) return null;
+    where.OR = [
+      ...ptds.map((p) => ({ aluno: { turmaId: p.turmaId }, disciplinaId: p.disciplinaId })),
+      ...taes.map((v) => ({ aluno: { turmaId: v.turmaId }, atuacaoId: v.atuacaoId })),
+    ];
   } else if (actor.perfil === 'GESTOR' || actor.perfil === 'DIRETORA' || actor.perfil === 'SECRETARIA') {
     const permitidas = await escolasPermitidas(actor);
     if (permitidas) where.aluno = { turma: { escolaId: { in: permitidas } } };
@@ -644,7 +675,7 @@ pdiFichasRouter.put('/:id/respostas', async (req, res) => {
   // perguntasDoModelo só depende de ficha.aplicacaoModeloId (já em mãos) — nada a ver com
   // contexto/autorização, então roda em paralelo com resolverContexto em vez de depois dele.
   const [contexto, perguntasDoModelo] = await Promise.all([
-    resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId),
+    resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, alvoDaFicha(ficha)),
     perguntasDaFicha(prisma, ficha),
   ]);
   // As duas checagens de autorização são independentes entre si (nenhuma usa o resultado da
@@ -753,7 +784,7 @@ pdiFichasRouter.put('/:id/respostas-padrao', async (req, res) => {
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
 
   const [contexto, perguntasPadrao] = await Promise.all([
-    resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId),
+    resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, alvoDaFicha(ficha)),
     perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId),
   ]);
   const perguntasPorId = new Map(perguntasPadrao.map((p) => [p.id, p]));
@@ -851,7 +882,7 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
 
-  const contexto = await resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, ficha.disciplinaId);
+  const contexto = await resolverContexto(prisma, ficha.aplicacaoId, ficha.alunoId, alvoDaFicha(ficha));
   await exigirAcessoOperacional(prisma, actor, contexto, { exigirEscrita: true });
   // "Enviar correção" (fluxo de correções, 10/11/2026) também envia a correção das perguntas
   // comuns (bloco de quem responde agora). Quando SÓ o bloco foi devolvido e a Aplicação já

@@ -46,8 +46,13 @@ const normalizeRespostaCompleta = (payload) => ({
 // Item de listagem (Meus PDIs / consulta por aluno) — mais leve que a Ficha completa: não tem
 // perguntas/respostas, só o suficiente pra montar uma linha de tabela/card (seção 4 do pedido de
 // Meus PDIs). `statusVigencia` já vem no mesmo vocabulário de formStatusLabel/formStatusClasses.
+// Chave do formulário numa tela/rota: o id da disciplina (número, como sempre) ou "a<id>" para atuação (Professor TAE).
+export const chaveFormulario = (item) => (item.atuacaoId ? `a${item.atuacaoId}` : item.disciplinaId);
+const alvoDaChave = (chave) => (String(chave).startsWith('a') ? { atuacaoId: Number(String(chave).slice(1)) } : { disciplinaId: Number(chave) });
+
 const normalizeItemListagem = (item) => ({
   ...item,
+  chave: chaveFormulario(item),
   dataInicio: soData(item.dataInicio),
   dataFim: soData(item.dataFim),
   statusFicha: item.statusFicha ? (STATUS_FICHA_FROM_API[item.statusFicha] ?? item.statusFicha) : null,
@@ -68,11 +73,13 @@ export const listarFichasPdiReais = async (filtros = {}) => {
 
 export const obterOuCriarFichaReal = async (payload) => normalizeRespostaCompleta(await apiFetch('/api/pdi-fichas/obter-ou-criar', {
   method: 'POST',
-  body: { aplicacaoId: Number(payload.aplicacaoId), alunoId: Number(payload.alunoId), disciplinaId: Number(payload.disciplinaId) },
+  body: { aplicacaoId: Number(payload.aplicacaoId), alunoId: Number(payload.alunoId), ...alvoDaChave(payload.disciplinaId) },
 }));
 
 export const obterFichaReal = async (aplicacaoId, alunoId, disciplinaId) => normalizeRespostaCompleta(
-  await apiFetch(`/api/pdi-fichas/${aplicacaoId}/${alunoId}/${disciplinaId}`),
+  await apiFetch(String(disciplinaId).startsWith('a')
+    ? `/api/pdi-fichas/atuacao/${aplicacaoId}/${alunoId}/${String(disciplinaId).slice(1)}`
+    : `/api/pdi-fichas/${aplicacaoId}/${alunoId}/${disciplinaId}`),
 );
 
 export const salvarRespostasFichaReal = async (fichaId, respostas, baseUpdatedAt) => normalizeRespostaCompleta(await apiFetch(`/api/pdi-fichas/${fichaId}/respostas`, {

@@ -306,8 +306,10 @@ export const FormularioPdiAlunoPage = () => {
         setCarregando(false);
         return;
       }
+      // 17/11/2026: a linha do Professor TAE vem com disciplinaId nulo — a tela usa a chave do formulário ("a<id>").
       const doAluno = todas
         .filter(item => String(item.aplicacaoId) === String(aplicacaoId) && String(item.alunoId) === String(alunoId))
+        .map(item => ({ ...item, disciplinaId: item.chave }))
         .sort((a, b) => a.disciplinaNome.localeCompare(b.disciplinaNome, 'pt-BR'));
       // Em paralelo: cada obter-ou-criar é independente (transação própria, curta).
       const estados = await Promise.all(doAluno.map(carregarFicha));
@@ -470,7 +472,7 @@ export const FormularioPdiAlunoPage = () => {
     }
     for (const disciplinaId of Object.keys(fichasRef.current)) {
       const r = await salvarFicha(disciplinaId);
-      if (!r.ok) falhas.push({ disciplinaId: Number(disciplinaId) });
+      if (!r.ok) falhas.push({ disciplinaId: String(disciplinaId).startsWith('a') ? disciplinaId : Number(disciplinaId) });
       else if (r.fila) naFila += 1;
     }
     falhas.naFila = naFila;

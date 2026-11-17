@@ -474,9 +474,13 @@ const ProfessoresReaisManager = ({ user }) => {
         }
       }
       // 16/11/2026: turmas por atuação (ex.: Professor Regente sem disciplina).
+      const avisosTae = [];
       const paresAtuacao = [...new Map(validacoes.flatMap(v => v.vinculosAtuacao).map(p => [`${p.turmaId}-${p.atuacaoId}`, p])).values()];
       for (const par of paresAtuacao) {
-        try { await criarVinculoProfessorTurmaAtuacao({ ...par, professorId: resultado.pessoa.id }); }
+        try {
+          const r = await criarVinculoProfessorTurmaAtuacao({ ...par, professorId: resultado.pessoa.id });
+          if (r?.aviso) avisosTae.push(r.aviso); // turma já tinha TAE: o PDI fica com o primeiro
+        }
         catch {
           const turma = turmas.find(t => t.id === par.turmaId);
           const atuacao = atuacoes.find(a => a.id === par.atuacaoId);
@@ -485,7 +489,7 @@ const ProfessoresReaisManager = ({ user }) => {
       }
       fecharCadastro();
       await carregar();
-      setResultadoCriacao({ ...resultado, aviso: falhas.length ? `Não foi possível ligar: ${falhas.join(', ')}. Use o botão "Turmas".` : '' });
+      setResultadoCriacao({ ...resultado, aviso: [falhas.length ? `Não foi possível ligar: ${falhas.join(', ')}. Use o botão "Turmas".` : '', ...avisosTae].filter(Boolean).join(' ') });
     } catch (error) {
       setFormError(error.message);
     } finally {

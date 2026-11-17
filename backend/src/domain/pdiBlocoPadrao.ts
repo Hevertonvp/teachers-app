@@ -138,7 +138,7 @@ const formatarPerguntaPadraoSnapshot = (p: {
 // Sem `opcoes` (ex.: Correções da Secretaria) continua usando a fotografia — leitura histórica.
 export async function montarBlocoParaFicha(ficha: {
   id: number; aplicacaoId: number; aplicacaoModeloId: number; alunoId: number; turmaId: number;
-  professorResponsavelId: number; disciplinaId: number;
+  professorResponsavelId: number; disciplinaId: number | null;
 }, opcoes?: { identidade: IdentidadeBloco | null }) {
   const perguntas = await perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId);
   if (perguntas.length === 0) return null; // este Modelo não tem nenhuma pergunta padrão compartilhável

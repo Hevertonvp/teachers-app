@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { ValidationError } from '../../domain/errors.js';
-import { resolverAcessoAluno } from './pdiFichaAnual.js';
+import { filtroFichasPermitidas, resolverAcessoAluno } from './pdiFichaAnual.js';
 import type { Actor } from './pessoas.js';
 
 export const pdiIndicadoresRouter = Router();
@@ -30,11 +30,12 @@ pdiIndicadoresRouter.get('/alunos/:alunoId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   const alunoId = Number(req.params.alunoId);
   if (!Number.isInteger(alunoId)) throw new ValidationError('Aluno inválido.');
-  const { aluno, disciplinasPermitidas } = await resolverAcessoAluno(actor, alunoId);
+  const acesso = await resolverAcessoAluno(actor, alunoId);
+  const { aluno } = acesso;
 
   const [fichas, blocos] = await Promise.all([
     prisma.fichaPdi.findMany({
-      where: { alunoId, ...(disciplinasPermitidas ? { disciplinaId: { in: disciplinasPermitidas } } : {}) },
+      where: { alunoId, ...filtroFichasPermitidas(acesso) },
       include: {
         aplicacao: { select: { id: true, nome: true, dataInicio: true, dataFim: true, trimestre: true } },
         // Só perguntas do Modelo (perguntaIdOriginal): as de Computação (17/11/2026) não entram nos indicadores.
@@ -98,15 +99,17 @@ pdiIndicadoresRouter.get('/alunos/:alunoId', async (req, res) => {
   });
 
   // Por disciplina: uma série por Aplicação.
-  const disciplinas = new Map<number, { disciplinaId: number; nome: string; pontos: unknown[] }>();
+  // Chave "d<id>" ou "a<id>": a Ficha do Professor TAE (17/11/2026) é uma série própria, nunca misturada a disciplina.
+  const disciplinas = new Map<string, { disciplinaId: number | null; atuacaoId: number | null; nome: string; pontos: unknown[] }>();
   const fichasOrdenadas = [...fichas].sort((a, b) => a.aplicacao.dataInicio.getTime() - b.aplicacao.dataInicio.getTime());
   for (const f of fichasOrdenadas) {
-    if (!disciplinas.has(f.disciplinaId)) disciplinas.set(f.disciplinaId, { disciplinaId: f.disciplinaId, nome: f.disciplinaNomeSnapshot, pontos: [] });
+    const chaveSerie = f.disciplinaId !== null ? `d${f.disciplinaId}` : `a${f.atuacaoId}`;
+    if (!disciplinas.has(chaveSerie)) disciplinas.set(chaveSerie, { disciplinaId: f.disciplinaId, atuacaoId: f.atuacaoId, nome: f.disciplinaNomeSnapshot, pontos: [] });
     const perguntas = [...f.aplicacaoModelo.perguntas].sort((a, b) => a.ordem - b.ordem);
     const valorDe = (perguntaId: number) => (f.respostas.find((r) => r.aplicacaoPerguntaId === perguntaId)?.valor ?? null) as ValorResposta;
     const perguntaNota = perguntas.find((p) => p.tipoResposta === 'NUMERO');
     const notaBruta = perguntaNota ? valorDe(perguntaNota.id)?.resposta : null;
-    disciplinas.get(f.disciplinaId)!.pontos.push({
+    disciplinas.get(chaveSerie)!.pontos.push({
       aplicacaoId: f.aplicacaoId,
       fichaId: f.id,
       status: f.status,

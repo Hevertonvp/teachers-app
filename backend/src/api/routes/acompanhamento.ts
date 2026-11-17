@@ -57,7 +57,7 @@ type Painel = Awaited<ReturnType<typeof montarPainel>>;
 
 const carregarAplicacoes = (ano: number, escolaIds: number[]) => prisma.aplicacaoPdi.findMany({
   where: { status: 'ATIVA', escolaId: { in: escolaIds }, dataInicio: { gte: new Date(`${ano}-01-01`), lte: new Date(`${ano}-12-31`) } },
-  include: { modelos: { select: { disciplinaId: true, disciplinaNome: true } }, reaberturas: { select: { dataInicio: true, dataFim: true } }, fotografia: true },
+  include: { modelos: { select: { disciplinaId: true, atuacaoId: true, disciplinaNome: true } }, reaberturas: { select: { dataInicio: true, dataFim: true } }, fotografia: true },
   orderBy: { dataInicio: 'asc' },
 });
 
@@ -136,7 +136,11 @@ async function montarBase(ano: number, escopo: number[] | null, filtros: { trime
   const vivasIds = aplicacoes.filter((a) => ['aberto', 'reabertura'].includes(situacaoAplicacao(a)));
   const encerradasSemFoto = aplicacoes.filter((a) => situacaoAplicacao(a) === 'encerrado' && !a.fotografia).map((a) => a.id);
   const [vivas, absolutas] = await Promise.all([
-    contarFichasPdi(prisma, vivasIds.map((a) => ({ id: a.id, escolaId: a.escolaId, disciplinaIds: a.modelos.map((m) => m.disciplinaId) }))),
+    contarFichasPdi(prisma, vivasIds.map((a) => ({
+      id: a.id, escolaId: a.escolaId,
+      disciplinaIds: a.modelos.map((m) => m.disciplinaId).filter((id): id is number => id !== null),
+      atuacaoIds: a.modelos.map((m) => m.atuacaoId).filter((id): id is number => id !== null), // Professor TAE (17/11/2026)
+    }))),
     encerradasSemFoto.length
       ? prisma.fichaPdi.groupBy({ by: ['aplicacaoId'], where: { aplicacaoId: { in: encerradasSemFoto }, status: 'CONCLUIDA' }, _count: { _all: true } })
       : Promise.resolve([]),
@@ -386,15 +390,24 @@ acompanhamentoRouter.get('/escola/:id', async (req, res) => {
     const ciclo = base.focoCicloPorEscola.get(escolaId) ?? null;
 
     // PDI por disciplina: ao vivo se aberta/em reabertura; senão, só concluídas por disciplina.
-    let porDisciplina: { disciplinaId: number; disciplina: string; esperado: number | null; concluidas: number; emAndamento: number }[] = [];
+    // 17/11/2026: o formulário do Professor TAE entra como uma linha própria (disciplinaId nulo, atuacaoId preenchido).
+    let porDisciplina: { disciplinaId: number | null; atuacaoId: number | null; disciplina: string; esperado: number | null; concluidas: number; emAndamento: number }[] = [];
     if (aplicacao) {
-      const nomes = new Map(aplicacao.modelos.map((m) => [m.disciplinaId, m.disciplinaNome]));
+      const nomes = new Map(aplicacao.modelos.filter((m) => m.disciplinaId !== null).map((m) => [m.disciplinaId!, m.disciplinaNome]));
+      const nomesAtuacao = new Map(aplicacao.modelos.filter((m) => m.atuacaoId !== null).map((m) => [m.atuacaoId!, m.disciplinaNome]));
       const viva = base.vivas.get(aplicacao.id);
       if (viva) {
-        porDisciplina = [...viva.porDisciplina.entries()].map(([id, c]) => ({ disciplinaId: id, disciplina: nomes.get(id) ?? '', ...c }));
+        porDisciplina = [
+          ...[...viva.porDisciplina.entries()].map(([id, c]) => ({ disciplinaId: id, atuacaoId: null, disciplina: nomes.get(id) ?? '', ...c })),
+          ...[...viva.porAtuacao.entries()].map(([id, c]) => ({ disciplinaId: null, atuacaoId: id, disciplina: nomesAtuacao.get(id) ?? '', ...c })),
+        ];
       } else if (situacaoAplicacao(aplicacao) !== 'agendado') {
-        const grupos = await prisma.fichaPdi.groupBy({ by: ['disciplinaId'], where: { aplicacaoId: aplicacao.id, status: 'CONCLUIDA' }, _count: { _all: true } });
-        porDisciplina = grupos.map((g) => ({ disciplinaId: g.disciplinaId, disciplina: nomes.get(g.disciplinaId) ?? '', esperado: null, concluidas: g._count._all, emAndamento: 0 }));
+        const grupos = await prisma.fichaPdi.groupBy({ by: ['disciplinaId', 'atuacaoId'], where: { aplicacaoId: aplicacao.id, status: 'CONCLUIDA' }, _count: { _all: true } });
+        porDisciplina = grupos.map((g) => ({
+          disciplinaId: g.disciplinaId, atuacaoId: g.atuacaoId,
+          disciplina: (g.disciplinaId !== null ? nomes.get(g.disciplinaId) : nomesAtuacao.get(g.atuacaoId!)) ?? '',
+          esperado: null, concluidas: g._count._all, emAndamento: 0,
+        }));
       }
       porDisciplina.sort((a, b) => a.disciplina.localeCompare(b.disciplina));
     }

@@ -147,7 +147,7 @@ const VisaoGeral = ({ dados, categorias }) => {
                 const notas = d.pontos.map(p => p.nota).filter(n => n !== null);
                 const ultimo = d.pontos[d.pontos.length - 1];
                 return (
-                  <tr key={d.disciplinaId} className="border-b border-slate-200 last:border-0">
+                  <tr key={d.disciplinaId ?? `a${d.atuacaoId}`} className="border-b border-slate-200 last:border-0">
                     <td data-label="Disciplina" className="py-2.5 pr-4 font-medium text-slate-800">{d.nome}</td>
                     <td data-label="Nota" className="py-2.5 pr-4 font-bold tabular-nums text-slate-950">{formatarNumero(notas[notas.length - 1] ?? null)}</td>
                     <td data-label="Variação" className="py-2.5 pr-4"><Variacao atual={notas[notas.length - 1]} anterior={notas[notas.length - 2]} /></td>
@@ -355,8 +355,10 @@ export const IndicadoresAluno = ({ alunoId }) => {
   }
 
   const categorias = dados.aplicacoes.map(rotuloPeriodo);
-  const abas = [{ id: 'geral', nome: 'Visão geral' }, ...dados.disciplinas.map(d => ({ id: d.disciplinaId, nome: d.nome }))];
-  const disciplina = dados.disciplinas.find(d => d.disciplinaId === aba);
+  // Professor TAE (17/11/2026) vem com disciplinaId nulo: a aba usa "a<atuação>".
+  const idAba = (d) => d.disciplinaId ?? `a${d.atuacaoId}`;
+  const abas = [{ id: 'geral', nome: 'Visão geral' }, ...dados.disciplinas.map(d => ({ id: idAba(d), nome: d.nome }))];
+  const disciplina = dados.disciplinas.find(d => idAba(d) === aba);
 
   return (
     <div>
