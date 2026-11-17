@@ -1,7 +1,7 @@
 import type { Turma } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
-import { NIVEL_ANTIGO_NO_CATALOGO, validarECalcularTurma, validarECalcularTurmaInfantilLocal, type DadosTurma } from '../../domain/turma.js';
+import { NIVEL_ANTIGO_NO_CATALOGO, validarECalcularTurma, validarECalcularTurmaInfantilLocal, validarECalcularTurmaIntegral, type DadosTurma } from '../../domain/turma.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { prisma } from '../../lib/prisma.js';
 import { marcarDesativacao } from '../../lib/desativacao.js';
@@ -22,18 +22,21 @@ function exigirSecretaria(actor: Actor) {
 const salvarTurmaSchema = z.object({
   escolaId: z.number().int(),
   anoLetivo: z.number().int(),
-  etapa: z.enum(['FUNDAMENTAL', 'EDUCACAO_INFANTIL']),
+  // 17/11/2026: tipo da turma (omitido = REGULAR, como sempre). INTEGRAL: só escola, ano letivo, nome e turno.
+  tipo: z.enum(['REGULAR', 'INTEGRAL']).optional(),
+  nome: z.string().max(200).nullish(),
+  etapa: z.enum(['FUNDAMENTAL', 'EDUCACAO_INFANTIL']).nullish(),
   anoSerie: z.number().int().nullish(),
   segmento: z.enum(['CRECHE', 'PRE_ESCOLA']).nullish(),
   nivel: z.enum(['BERCARIO_I', 'BERCARIO_II', 'MATERNAL_I', 'MATERNAL_II', 'PRE_I', 'PRE_II']).nullish(),
   turno: z.enum(['MANHA', 'TARDE']),
-  identificador: z.number().int(),
+  identificador: z.number().int().nullish(),
   nivelLocalId: z.number().int().nullish(), // 16/11/2026: nível local da Educação Infantil (catálogo)
 });
 
 type SalvarTurmaInput = z.infer<typeof salvarTurmaSchema>;
 
-function paraDadosTurma(input: SalvarTurmaInput): DadosTurma {
+function paraDadosTurma(input: SalvarTurmaInput & { identificador: number }): DadosTurma {
   if (input.etapa === 'FUNDAMENTAL') {
     if (input.anoSerie == null) throw new ValidationError('anoSerie é obrigatório para Ensino Fundamental.');
     return {
@@ -72,13 +75,24 @@ function mensagemConflito(conflito: Turma): string {
 // - Infantil com nível LOCAL (nivelLocalId): a escola precisa ter etapas informadas e oferecer aquele nível.
 // - Infantil antiga (segmento + nível enum): só em escola sem etapas informadas, ou para EDITAR turma antiga.
 // Nada converte turma antiga para nível local.
-async function montarTurma(input: SalvarTurmaInput, existente: Turma | null) {
-  const escola = await prisma.escola.findUnique({ where: { id: input.escolaId }, include: { niveisInfantil: { select: { nivelId: true } } } });
+async function montarTurma(entrada: SalvarTurmaInput, existente: Turma | null) {
+  const escola = await prisma.escola.findUnique({ where: { id: entrada.escolaId }, include: { niveisInfantil: { select: { nivelId: true } } } });
   if (!escola) throw new NotFoundError('Escola não encontrada.');
   // 16/11/2026: escola inativa não recebe turma (criar ou mover para ela). Editar turma que já está nela continua.
   if (escola.status !== 'ATIVA' && (!existente || existente.escolaId !== escola.id)) throw new ValidationError('Esta escola está inativa.');
+  // 17/11/2026: o tipo não muda depois de criada (vínculos de uma turma regular não viram de Integral, nem o contrário).
+  const tipo = existente ? existente.tipo : (entrada.tipo ?? 'REGULAR');
+  if (existente && entrada.tipo && entrada.tipo !== existente.tipo) throw new ValidationError('O tipo da turma não pode ser alterado.');
+  if (tipo === 'INTEGRAL') {
+    // Integral: nome livre; sem etapa, ano/série, nível e número; não depende das etapas que a escola oferece.
+    const calculado = validarECalcularTurmaIntegral({ escolaId: entrada.escolaId, anoLetivo: entrada.anoLetivo, nome: entrada.nome });
+    return { tipo, escolaId: entrada.escolaId, anoLetivo: entrada.anoLetivo, turno: entrada.turno, ...calculado, etapa: null, identificador: null, anoSerie: null, segmento: null, nivel: null, nivelLocalId: null };
+  }
+  if (!entrada.etapa) throw new ValidationError('Informe a etapa da turma.');
+  if (entrada.identificador == null) throw new ValidationError('Informe o identificador da turma.');
+  const input = { ...entrada, etapa: entrada.etapa, identificador: entrada.identificador };
   const informada = escola.etapasOferecidas.length > 0;
-  const base = { escolaId: input.escolaId, anoLetivo: input.anoLetivo, etapa: input.etapa, turno: input.turno, identificador: input.identificador };
+  const base = { tipo, escolaId: input.escolaId, anoLetivo: input.anoLetivo, etapa: input.etapa, turno: input.turno, identificador: input.identificador };
 
   if (input.etapa === 'FUNDAMENTAL') {
     const dados = paraDadosTurma(input);
@@ -191,7 +205,7 @@ turmasRouter.post('/:id/reativar', async (req, res) => {
   // 16/11/2026: escola com etapas informadas só reativa turma do que ela oferece.
   const escola = await prisma.escola.findUnique({ where: { id: existente.escolaId }, include: { niveisInfantil: { select: { nivelId: true } } } });
   if (escola && escola.status !== 'ATIVA') throw new ConflictError('Esta escola está inativa.');
-  if (escola && escola.etapasOferecidas.length) {
+  if (escola && escola.etapasOferecidas.length && existente.tipo === 'REGULAR') { // Integral não depende das etapas
     const coberta = existente.etapa === 'FUNDAMENTAL'
       ? !!existente.anoSerie && escola.anosFundamental.includes(existente.anoSerie)
       : escola.etapasOferecidas.includes('EDUCACAO_INFANTIL') && (existente.nivelLocalId === null || escola.niveisInfantil.some((n) => n.nivelId === existente.nivelLocalId));

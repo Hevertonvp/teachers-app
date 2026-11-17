@@ -194,7 +194,7 @@ export const PdiHomePage = () => {
                   <div>
                     <p className="font-semibold text-slate-900">{aplicacao.escolaNome}</p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
-                      {aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.disciplinaNome}</Badge>)}
+                      {aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId ?? modelo.disciplinaNome} variant="blue">{modelo.disciplinaNome}</Badge>)}
                     </div>
                   </div>
                   <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${formStatusClasses(aplicacao.status)}`}>{formStatusLabel(aplicacao.status)}</span>

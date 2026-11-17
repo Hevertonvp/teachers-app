@@ -170,6 +170,8 @@ async function validarTurmaNoEscopo(actor: Actor, turmaId: number) {
   const turma = await prisma.turma.findUnique({ where: { id: turmaId }, include: { escola: true } });
   if (!turma) throw new NotFoundError('Turma não encontrada.');
   if (turma.status !== 'ATIVA') throw new ValidationError('Não é possível vincular o aluno a uma turma inativa.');
+  // 17/11/2026: turma Integral não gera PDI (decisão do usuário) — o aluno do PDI fica sempre na turma regular.
+  if (turma.tipo === 'INTEGRAL') throw new ValidationError('Turma de Integral não recebe aluno do PDI.');
   const permitidas = await escolasPermitidas(actor);
   if (permitidas && !permitidas.includes(turma.escolaId)) {
     throw new ForbiddenError('Você só pode gerenciar Alunos PDI das escolas sob sua administração.');

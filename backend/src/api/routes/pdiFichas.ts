@@ -572,9 +572,10 @@ async function escopoFichas(actor: Actor, where: Prisma.FichaPdiWhereInput): Pro
 
 // Resposta salva -> texto legível na planilha (sem interpretar nada além do que a tela já mostra).
 function valorEmTexto(tipo: string, valor: unknown): string | number {
-  const v = (valor ?? {}) as { resposta?: unknown; todas?: boolean; habilidades?: { codigo?: string; descricao?: string; descricaoOficial?: string }[] };
+  const v = (valor ?? {}) as { resposta?: unknown; todas?: boolean; nenhuma?: boolean; habilidades?: { codigo?: string; descricao?: string; descricaoOficial?: string }[] };
   if (tipo === 'HABILIDADE_CRMG' || tipo === 'HABILIDADE_COMPUTACAO') {
     if (v.todas) return 'Todas as habilidades';
+    if (v.nenhuma) return 'Nenhuma';
     return (v.habilidades ?? []).map((h) => [h.codigo, h.descricao ?? h.descricaoOficial].filter(Boolean).join(' — ')).join('; ');
   }
   if (tipo === 'MARCACAO') return v.resposta === true ? 'Sim' : v.resposta === false ? 'Não' : '';
@@ -651,6 +652,7 @@ const respostaItemSchema = z.object({
     // Só HABILIDADE_CRMG usa (ids do catálogo ou "todas"); ignorados para os demais tipos.
     habilidadeIds: z.array(z.number().int()).nullish(),
     todas: z.boolean().nullish(),
+    nenhuma: z.boolean().nullish(), // resposta "Nenhuma" (17/11/2026)
   }),
 });
 const salvarRespostasSchema = z.object({

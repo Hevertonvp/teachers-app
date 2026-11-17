@@ -44,6 +44,7 @@ export const criarPdiAplicacaoReal = async (payload) => normalizeAplicacao(await
     ...(payload.modeloIds ? { modeloIds: payload.modeloIds.map(Number) } : {}),
     // 17/11/2026: formulário do Professor TAE (só perguntas de Computação). Ausente = incluir.
     ...(payload.incluirTae !== undefined ? { incluirTae: !!payload.incluirTae } : {}),
+    ...(payload.incluirInformatica !== undefined ? { incluirInformatica: !!payload.incluirInformatica } : {}),
   },
 }));
 

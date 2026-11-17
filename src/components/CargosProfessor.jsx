@@ -210,14 +210,16 @@ const GRUPOS = [
   { chave: 'INF', rotulo: 'Infantil' },
   { chave: 'F1', rotulo: 'Fund. I' },
   { chave: 'F2', rotulo: 'Fund. II' },
+  { chave: 'INT', rotulo: 'Integral' }, // 17/11/2026: turma Integral (sem ano/série)
 ];
-const grupoDaTurma = (t) => (t.etapa === 'educacao_infantil' ? 'INF' : Number(t.anoSerie) <= 5 ? 'F1' : 'F2');
+const grupoDaTurma = (t) => (t.tipo === 'integral' ? 'INT' : t.etapa === 'educacao_infantil' ? 'INF' : Number(t.anoSerie) <= 5 ? 'F1' : 'F2');
 const listasIguais = (listas) => listas.every(l => [...l].sort().join() === [...(listas[0] ?? [])].sort().join());
 const uniao = (listas) => [...new Set(listas.flat())];
 const ordenarPorNome = (a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { numeric: true });
 
 // Linha (ano ou nível) de uma turma. Nível da Infantil vem do catálogo (nivelLocalId) ou do nível antigo — nunca do nome.
 const linhaDaTurma = (t, niveis) => {
+  if (t.tipo === 'integral') return { chave: 'integral', rotulo: 'Integral', ordem: 0 };
   if (t.etapa !== 'educacao_infantil') return { chave: `ano-${t.anoSerie}`, rotulo: `${t.anoSerie}º ano`, ordem: Number(t.anoSerie) };
   const local = niveis.find(n => n.id === t.nivelLocalId);
   if (local) return { chave: `niv-${local.id}`, rotulo: local.nome, ordem: local.ordem };

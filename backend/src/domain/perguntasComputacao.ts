@@ -19,7 +19,7 @@ export const perguntaVisivelNaFicha = (pergunta: { anos: number[] | null }, anoS
   !pergunta.anos || pergunta.anos.length === 0 || (anoSerie !== null && pergunta.anos.includes(anoSerie));
 
 // Ano (1–9) que a Ficha congela ao nascer: só turmas do Fundamental têm ano.
-export const anoSerieDaTurma = (turma: { etapa: string; anoSerie: number | null }) =>
+export const anoSerieDaTurma = (turma: { etapa: string | null; anoSerie: number | null }) =>
   (turma.etapa === 'FUNDAMENTAL' && turma.anoSerie && turma.anoSerie >= 1 && turma.anoSerie <= 9 ? turma.anoSerie : null);
 
 // Perguntas congeladas que ESTA Ficha mostra (Modelo + Computação do ano do aluno), em ordem.

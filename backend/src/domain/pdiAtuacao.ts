@@ -16,6 +16,14 @@ export const ATUACOES_COM_FORMULARIO_PDI = ['TAE'];
 const NOME_EXIBIDO: Record<string, string> = { TAE: 'Professor TAE' };
 export const nomeFormularioAtuacao = (nome: string) => NOME_EXIBIDO[nome] ?? nome;
 
+// Disciplinas com formulário PDI SÓ de Computação (17/11/2026, decisão do usuário): mesma regra do TAE (sem Modelo,
+// sem perguntas padrão, só as perguntas de Computação do ano do aluno), mas é DISCIPLINA — a Ficha usa disciplinaId
+// e o responsável é o professor da disciplina na turma, como em qualquer disciplina.
+export const DISCIPLINAS_SO_COMPUTACAO = ['Informática'];
+export async function disciplinasSoComputacao(db: Db) {
+  return db.disciplina.findMany({ where: { nome: { in: DISCIPLINAS_SO_COMPUTACAO } }, orderBy: { id: 'asc' } });
+}
+
 export async function atuacoesComFormularioAtivas(db: Db) {
   return db.atuacaoPedagogica.findMany({ where: { nome: { in: ATUACOES_COM_FORMULARIO_PDI }, status: 'ATIVA' }, orderBy: { id: 'asc' } });
 }

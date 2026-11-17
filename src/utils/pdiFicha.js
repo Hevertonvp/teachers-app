@@ -9,7 +9,7 @@ export const answerFromResposta = (question, respostaRow) => {
   }
   if (question.tipoResposta === 'selecao') return { opcao: valor.resposta || '', complementar: valor.complementarTexto || '' };
   // Habilidades do CRMG: o valor salvo já traz código/descrição congelados das marcadas.
-  if (question.tipoResposta === 'habilidade_crmg' || question.tipoResposta === 'habilidade_computacao') return { todas: !!valor.todas, habilidades: valor.habilidades || [], componenteNome: valor.componenteNome };
+  if (question.tipoResposta === 'habilidade_crmg' || question.tipoResposta === 'habilidade_computacao') return { todas: !!valor.todas, nenhuma: !!valor.nenhuma, habilidades: valor.habilidades || [], componenteNome: valor.componenteNome };
   if (question.tipoResposta === 'marcacao') return { marcado: !!valor.resposta, complementar: valor.complementarTexto || '' };
   return { texto: valor.resposta || '', complementar: '' };
 };

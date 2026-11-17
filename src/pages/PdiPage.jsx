@@ -44,7 +44,7 @@ export const PdiPage = () => {
   // Escola inativa vinculada à Supervisora: consulta sempre permitida, edição nunca.
   const escolaAtivaSelecionada = activeEscolaId ? escolas.find(item => item.id === activeEscolaId)?.status === 'ativa' : true;
   const canEditPdi = canManage && (!isGestor(user) || escolaAtivaSelecionada);
-  const turmasDaEscola = filterByEscola(turmas.filter(t => t.status === 'ativa'), activeEscolaId, user);
+  const turmasDaEscola = filterByEscola(turmas.filter(t => t.status === 'ativa' && t.tipo !== 'integral'), activeEscolaId, user); // Integral não tem PDI (17/11/2026)
   const [search, setSearch] = useState('');
   // DEF-10: filtro por ESCOLA e turma (nomes de turma se repetem entre escolas, ex.: 6M1).
   // Filtro de escola segue o seletor do topo (só no sentido topo → filtro).
@@ -304,7 +304,7 @@ export const PdiPage = () => {
                 <FormField label="Escola (filtro)"><select className={inputClass} value={form.escolaId ?? ''} onChange={event => { const escolaId = Number(event.target.value); setForm(prev => ({ ...prev, escolaId, turmaId: turmas.some(item => item.id === prev.turmaId && item.escolaId === escolaId) ? prev.turmaId : '' })); }} disabled={activeEscolaId !== null}>{(activeEscolaId !== null ? escolas.filter(item => item.id === activeEscolaId) : escolas).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
                 <FormField label="Turma"><select className={inputClass} value={form.turmaId} onChange={event => setForm(prev => ({ ...prev, turmaId: Number(event.target.value) }))} required>
                   <option value="" disabled>{form.escolaId ? 'Selecione a turma' : 'Selecione a escola primeiro'}</option>
-                  {turmas.filter(item => item.status === 'ativa' && item.escolaId === Number(form.escolaId)).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}
+                  {turmas.filter(item => item.status === 'ativa' && item.tipo !== 'integral' && item.escolaId === Number(form.escolaId)).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}
                 </select></FormField>
                 <ProfessoresDaTurmaPreview turmaId={form.turmaId} />
                 <div className="md:col-span-2 grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-2">

@@ -17,7 +17,7 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
   // resiliência). Só a BUSCA de novas habilidades exige conexão — o catálogo inteiro nunca é
   // baixado pra funcionar offline (seção "CRMG" do pedido).
   const { online } = useNetworkStatus();
-  const atual = { todas: !!value?.todas, habilidades: value?.habilidades || [] };
+  const atual = { todas: !!value?.todas, nenhuma: !!value?.nenhuma, habilidades: value?.habilidades || [] };
   const [busca, setBusca] = useState('');
   const [resultados, setResultados] = useState([]);
   const [carregando, setCarregando] = useState(false);
@@ -58,7 +58,7 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
 
   const adicionar = (habilidade) => {
     if (selecionadosIds.has(habilidade.id) || limiteAtingido) return;
-    onChange({ todas: false, habilidades: [...atual.habilidades, { id: habilidade.id, codigo: habilidade.codigo, descricaoOficial: habilidade.descricaoOficial }] });
+    onChange({ todas: false, nenhuma: false, habilidades: [...atual.habilidades, { id: habilidade.id, codigo: habilidade.codigo, descricaoOficial: habilidade.descricaoOficial }] });
     // Marcou: limpa a busca (a lista fecha) — cada habilidade nova é uma pesquisa nova.
     setBusca('');
   };
@@ -82,6 +82,7 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
 
   if (readOnly) {
     if (atual.todas) return <p className="text-sm font-semibold text-slate-700">Todas as habilidades{value?.componenteNome ? ` de ${value.componenteNome}` : ''}</p>;
+    if (atual.nenhuma) return <p className="text-sm font-semibold text-slate-700">Nenhuma</p>;
     return listaSelecionadas || <p className="text-sm text-slate-500">Nenhuma habilidade marcada.</p>;
   }
 
@@ -96,7 +97,11 @@ export const HabilidadesCrmgSelecao = ({ disciplinaId, value, onChange, readOnly
         </div>
       )}
 
-      {!atual.todas && (
+      {!atual.todas && <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <input type="checkbox" checked={atual.nenhuma} disabled={disabled} onChange={() => onChange(atual.nenhuma ? { todas: false, nenhuma: false, habilidades: [] } : { todas: false, nenhuma: true, habilidades: [] })} />
+        Nenhuma
+      </label>}
+      {!atual.todas && !atual.nenhuma && (
         <>
           <div>
             <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-slate-700">Buscar habilidade do CRMG</label>

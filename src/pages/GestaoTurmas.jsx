@@ -27,6 +27,9 @@ const ANO_LETIVO_PADRAO = 2026;
 const TURMAS_POR_PAGINA = 15;
 
 const blankTurma = (escolaId) => ({
+  // 17/11/2026: 'regular' (como sempre) ou 'integral' (nome livre, sem etapa/ano/série/número).
+  tipo: 'regular',
+  nome: '',
   escolaId: escolaId ?? '',
   anoLetivo: ANO_LETIVO_PADRAO,
   etapa: 'fundamental',
@@ -118,7 +121,7 @@ export const GestaoTurmas = () => {
   const turmasFiltradas = turmas
     .filter(turma => filtroEscolaId === 'todas' || turma.escolaId === Number(filtroEscolaId))
     .filter(turma => filtroAnoLetivo === 'todos' || Number(turma.anoLetivo) === Number(filtroAnoLetivo))
-    .filter(turma => filtroEtapa === 'todas' || turma.etapa === filtroEtapa)
+    .filter(turma => filtroEtapa === 'todas' || (filtroEtapa === 'integral' ? turma.tipo === 'integral' : turma.tipo !== 'integral' && turma.etapa === filtroEtapa))
     .filter(turma => filtroStatus === 'todas' || turma.status === filtroStatus)
     .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
@@ -173,6 +176,8 @@ export const GestaoTurmas = () => {
       turno: turma.turno || 'manha',
       identificador: turma.identificador || 1,
       anoSerie: turma.anoSerie || ANOS_FUNDAMENTAL[0].value,
+      etapa: turma.etapa || 'fundamental',
+      nome: turma.nome || '',
     });
   };
   const fecharModal = () => { setTurmaForm(null); setEditingTurma(null); setTurmaError(''); };
@@ -194,6 +199,18 @@ export const GestaoTurmas = () => {
   const salvarTurma = async (event) => {
     event.preventDefault();
     setTurmaError('');
+    if (turmaForm.tipo === 'integral') {
+      if (!turmaForm.nome.trim()) { setTurmaError('Informe o nome da turma.'); return; }
+      setSalvando(true);
+      const payloadIntegral = { tipo: 'integral', escolaId: Number(turmaForm.escolaId), anoLetivo: Number(turmaForm.anoLetivo), nome: turmaForm.nome.trim(), turno: turmaForm.turno };
+      const r = editingTurma ? await updateTurma(editingTurma.id, payloadIntegral) : await createTurma(payloadIntegral);
+      setSalvando(false);
+      if (!r.ok) { setTurmaError(r.error); return; }
+      if (!editingTurma) setUltimaEscolaId(Number(r.turma.escolaId));
+      setMessage(editingTurma ? `Turma "${r.turma.nome}" atualizada.` : `Turma "${r.turma.nome}" criada.`);
+      fecharModal();
+      return;
+    }
     const base = {
       escolaId: Number(turmaForm.escolaId),
       anoLetivo: Number(turmaForm.anoLetivo),
@@ -250,7 +267,7 @@ export const GestaoTurmas = () => {
         { nome: 'Turmas', linhas: ordenadas, colunas: [
           { titulo: 'Escola', valor: t => nomeEscola(t.escolaId), largura: 34 },
           { titulo: 'Turma', valor: t => t.nome, largura: 24 },
-          { titulo: 'Etapa', valor: t => rotulo(ETAPAS, t.etapa) ?? t.etapa, largura: 20 },
+          { titulo: 'Etapa', valor: t => (t.tipo === 'integral' ? 'Integral' : rotulo(ETAPAS, t.etapa) ?? t.etapa), largura: 20 },
           { titulo: 'Ano/série', valor: t => (t.anoSerie ? `${t.anoSerie}º ano` : '') },
           { titulo: 'Turno', valor: t => (t.turno ? turnoLabel(t.turno) : '') },
           { titulo: 'Ano letivo', valor: t => t.anoLetivo, tipo: 'numero' },
@@ -319,6 +336,7 @@ export const GestaoTurmas = () => {
               <select className={inputClass} value={filtroEtapa} onChange={event => { setFiltroEtapa(event.target.value); setPaginaTurmas(1); }}>
                 <option value="todas">Todas</option>
                 {ETAPAS.map(etapa => <option key={etapa.value} value={etapa.value}>{etapa.label}</option>)}
+                <option value="integral">Integral</option>
               </select>
             </FormField>
           </div>
@@ -346,6 +364,7 @@ export const GestaoTurmas = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-slate-900">{turma.nome}</p>
+                        {turma.tipo === 'integral' && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-800">Integral</span>}
                       </div>
                       <p className="mt-1 text-sm text-slate-600">{descricaoTurma(turma)}</p>
                       <p className="mt-1 text-xs text-slate-500">{escolaName(escolas, turma.escolaId)} • {turma.anoLetivo}{vinculos.total > 0 ? ` • ${vinculos.total} vínculo${vinculos.total > 1 ? 's' : ''} ativo${vinculos.total > 1 ? 's' : ''}` : ''}</p>
@@ -373,9 +392,24 @@ export const GestaoTurmas = () => {
           <Modal title={editingTurma ? `Editar turma — ${editingTurma.nome}` : 'Nova turma'} onClose={fecharModal}>
             <form onSubmit={salvarTurma} className="space-y-4">
               {turmaError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{turmaError}</div>}
-              {vinculosDaTurmaEmEdicao && vinculosDaTurmaEmEdicao.total > 0 && (
+              {vinculosDaTurmaEmEdicao && vinculosDaTurmaEmEdicao.total > 0 && turmaForm.tipo !== 'integral' && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   Esta turma tem {vinculosDaTurmaEmEdicao.total} vínculo(s) ativo(s) ({vinculosDaTurmaEmEdicao.professores} professor(es), {vinculosDaTurmaEmEdicao.alunos} aluno(s) PDI{vinculosDaTurmaEmEdicao.auxiliar ? ', 1 auxiliar' : ''}). Alterar série/segmento, turno ou identificador muda o nome de exibição desta turma, mas todos os vínculos continuam preservados (eles apontam para o mesmo registro).
+                </div>
+              )}
+
+              {/* 17/11/2026: tipo da turma — escolhido só na criação (depois fica fixo). */}
+              {editingTurma ? (
+                turmaForm.tipo === 'integral' && <p className="text-sm font-semibold text-violet-800">Turma de Integral</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo da turma">
+                  {[{ value: 'regular', label: 'Regular' }, { value: 'integral', label: 'Integral' }].map(op => (
+                    <button key={op.value} type="button" role="radio" aria-checked={turmaForm.tipo === op.value}
+                      onClick={() => setTurmaForm(prev => ({ ...prev, tipo: op.value }))}
+                      className={`rounded-lg border px-3 py-2 text-sm font-semibold ${turmaForm.tipo === op.value ? 'border-teal-600 bg-teal-50 text-teal-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                      {op.label}
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -386,6 +420,21 @@ export const GestaoTurmas = () => {
                 </select>
               </FormField>
 
+              {turmaForm.tipo === 'integral' ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField label="Nome da turma">
+                    <input className={inputClass} value={turmaForm.nome} maxLength={60} placeholder="Ex.: Integral A, Grupo Girassol" onChange={event => setTurmaForm(prev => ({ ...prev, nome: event.target.value }))} required />
+                  </FormField>
+                  <FormField label="Ano letivo">
+                    <input className={inputClass} type="number" value={turmaForm.anoLetivo} onChange={event => setTurmaForm(prev => ({ ...prev, anoLetivo: event.target.value }))} required />
+                  </FormField>
+                  <FormField label="Turno">
+                    <select className={inputClass} value={turmaForm.turno} onChange={event => setTurmaForm(prev => ({ ...prev, turno: event.target.value }))}>
+                      {TURNOS.map(turno => <option key={turno.value} value={turno.value}>{turno.label}</option>)}
+                    </select>
+                  </FormField>
+                </div>
+              ) : (<>
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Ano letivo">
                   <input className={inputClass} type="number" value={turmaForm.anoLetivo} onChange={event => setTurmaForm(prev => ({ ...prev, anoLetivo: event.target.value }))} required />
@@ -454,6 +503,7 @@ export const GestaoTurmas = () => {
                   </FormField>
                 </div>
               )}
+              </>)}
 
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="secondary" onClick={fecharModal} disabled={salvando}>Cancelar</Button>

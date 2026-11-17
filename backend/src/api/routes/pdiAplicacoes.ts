@@ -8,7 +8,7 @@ import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/p
 import { perguntaValeParaTrimestre, resolverTrimestreObrigatorio, travarCalendarioDoAno } from '../../domain/trimestres.js';
 import { escolasPermitidas } from './pessoas.js';
 import { perguntasComputacaoParaSnapshot } from '../../domain/perguntasComputacao.js';
-import { atuacoesComFormularioAtivas, nomeFormularioAtuacao } from '../../domain/pdiAtuacao.js';
+import { atuacoesComFormularioAtivas, disciplinasSoComputacao, nomeFormularioAtuacao } from '../../domain/pdiAtuacao.js';
 import { contarFichasPdi } from '../../lib/contagemFichasPdi.js';
 
 export const pdiAplicacoesRouter = Router();
@@ -301,6 +301,8 @@ const criarAplicacaoSchema = z.object({
   // 17/11/2026: formulário do Professor TAE (só perguntas de Computação). Vem marcado na tela; omitido = incluir.
   // Só é criado se houver ao menos uma pergunta de Computação ativa (formulário vazio não gera obrigação).
   incluirTae: z.boolean().optional(),
+  // 17/11/2026: formulário da Informática (só perguntas de Computação, como o TAE). Omitido = incluir.
+  incluirInformatica: z.boolean().optional(),
 });
 
 // Cria a Aplicação e, na MESMA transação, o snapshot imutável dos Modelos ATIVOS escolhidos (com
@@ -456,6 +458,18 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
           data: { aplicacaoId: aplicacao.id, atuacaoId: atuacao.id, nome, disciplinaNome: nome },
         });
         await tx.aplicacaoPerguntaPdi.createMany({ data: perguntasComputacao.map((p) => ({ ...p, aplicacaoModeloId: snapshotAtuacao.id })) });
+      }
+    }
+    // Formulário de DISCIPLINA só de Computação (Informática, 17/11/2026): snapshot sem Modelo e sem perguntas padrão.
+    // Se um dia a disciplina ganhar Modelo e ele entrar nesta Aplicação, vale o Modelo (nunca dois por disciplina).
+    if (dados.incluirInformatica !== false && perguntasComputacao.length > 0) {
+      const jaTemModelo = new Set(modelosParaUsar.map((m) => m.disciplinaId));
+      for (const disciplina of await disciplinasSoComputacao(tx)) {
+        if (jaTemModelo.has(disciplina.id)) continue;
+        const snapshotDisciplina = await tx.aplicacaoModeloPdi.create({
+          data: { aplicacaoId: aplicacao.id, disciplinaId: disciplina.id, nome: disciplina.nome, disciplinaNome: disciplina.nome },
+        });
+        await tx.aplicacaoPerguntaPdi.createMany({ data: perguntasComputacao.map((p) => ({ ...p, aplicacaoModeloId: snapshotDisciplina.id })) });
       }
     }
     return aplicacao;

@@ -285,7 +285,7 @@ export const PdiAlunoPerfil = () => {
                 <FormField label="Escola"><select className={inputClass} value={alunoForm.escolaId} onChange={event => { const escolaId = Number(event.target.value); setAlunoForm(prev => ({ ...prev, escolaId, turmaId: turmas.some(item => item.id === prev.turmaId && item.escolaId === escolaId) ? prev.turmaId : '' })); }} required disabled={activeEscolaId !== null}>{(activeEscolaId !== null ? escolas.filter(item => item.id === activeEscolaId) : escolas).map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></FormField>
                 <FormField label="Turma"><select className={inputClass} value={alunoForm.turmaId} onChange={event => setAlunoForm(prev => ({ ...prev, turmaId: Number(event.target.value) }))} required>
                   <option value="" disabled>{alunoForm.escolaId ? 'Selecione a turma' : 'Selecione a escola primeiro'}</option>
-                  {turmas.filter(item => item.status === 'ativa' && item.escolaId === Number(alunoForm.escolaId)).map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
+                  {turmas.filter(item => item.status === 'ativa' && item.tipo !== 'integral' && item.escolaId === Number(alunoForm.escolaId)).map(turma => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}
                 </select></FormField>
                 <ProfessoresDaTurmaPreview turmaId={alunoForm.turmaId} />
                 <div className="md:col-span-2 grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-2">
