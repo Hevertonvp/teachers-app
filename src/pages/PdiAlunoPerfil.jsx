@@ -126,6 +126,7 @@ export const PdiAlunoPerfil = () => {
         dataInicio: aplicacao.dataInicio,
         dataFim: aplicacao.dataFim,
         disciplinaId: modelo.disciplinaId,
+        atuacaoId: modelo.atuacaoId ?? null, // Professor TAE (17/11/2026)
         disciplinaNome: modelo.disciplinaNome,
       })))
     : [];
@@ -205,7 +206,7 @@ export const PdiAlunoPerfil = () => {
             <Link to={`/pdi/alunos/${aluno.id}/anamnese`}><Button variant="outline">Anamnese</Button></Link>
             <Link to={`/pdi/alunos/${aluno.id}/ficha-anual`}><Button variant="outline">Ficha Anual PDI</Button></Link>
             {(isGestor(user) || isDiretora(user)) && fichasGestor.map(ficha => (
-              <Link key={`${ficha.aplicacaoId}-${ficha.disciplinaId}`} to={`/pdi/fichas/${ficha.aplicacaoId}/${ficha.disciplinaId}/${aluno.id}`}>
+              <Link key={`${ficha.aplicacaoId}-${ficha.atuacaoId ? `a${ficha.atuacaoId}` : ficha.disciplinaId}`} to={`/pdi/fichas/${ficha.aplicacaoId}/${ficha.atuacaoId ? `a${ficha.atuacaoId}` : ficha.disciplinaId}/${aluno.id}`}>
                 <Button variant="outline">Formulário PDI — {ficha.disciplinaNome} ({formatFullDate(ficha.dataInicio)}–{formatFullDate(ficha.dataFim)})</Button>
               </Link>
             ))}

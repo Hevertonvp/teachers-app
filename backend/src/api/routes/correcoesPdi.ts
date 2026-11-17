@@ -9,6 +9,8 @@ import { prepararValoresResposta } from '../../domain/habilidadesCurriculares.js
 import { montarRespostaCompleta } from './pdiFichas.js';
 import { perguntasPadraoDaFicha, resolverOuCriarBloco } from '../../domain/pdiBlocoPadrao.js';
 import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
+import { perguntasDaFicha } from '../../domain/perguntasComputacao.js';
+import { responsavelDaAtuacao } from '../../domain/pdiAtuacao.js';
 
 export const correcoesPdiRouter = Router();
 
@@ -25,7 +27,7 @@ function exigirSecretaria(actor: Actor) {
 const formatarItemLista = (f: {
   id: number; alunoNomeSnapshot: string; escolaNomeSnapshot: string; turmaNomeSnapshot: string;
   disciplinaNomeSnapshot: string; professorNomeSnapshot: string; aplicacaoId: number;
-  concluidaEm: Date | null; alunoId: number; disciplinaId: number; turmaId: number; escolaId: number;
+  concluidaEm: Date | null; alunoId: number; disciplinaId: number | null; atuacaoId: number | null; turmaId: number; escolaId: number;
   professorResponsavelId: number;
 }, indicadorCorrecao: 'nenhuma' | SituacaoCorrecao) => ({
   id: f.id,
@@ -36,6 +38,7 @@ const formatarItemLista = (f: {
   turmaId: f.turmaId,
   turmaNome: f.turmaNomeSnapshot,
   disciplinaId: f.disciplinaId,
+  atuacaoId: f.atuacaoId, // 17/11/2026: Ficha do Professor TAE (disciplinaNome = "Professor TAE")
   disciplinaNome: f.disciplinaNomeSnapshot,
   professorResponsavelId: f.professorResponsavelId,
   professorNome: f.professorNomeSnapshot,
@@ -129,10 +132,12 @@ correcoesPdiRouter.get('/:fichaId', async (req, res) => {
   // PTD ATIVO, nunca o snapshot. null quando ninguém está vinculado agora (vínculo encerrado).
   const [respostaCompleta, ptdAtual, correcoes, historico] = await Promise.all([
     montarRespostaCompleta(ficha),
-    prisma.professorTurmaDisciplina.findFirst({
-      where: { turmaId: ficha.turmaId, disciplinaId: ficha.disciplinaId, status: 'ATIVO' },
-      include: { professor: { select: { id: true, nome: true } } },
-    }),
+    ficha.disciplinaId !== null
+      ? prisma.professorTurmaDisciplina.findFirst({
+        where: { turmaId: ficha.turmaId, disciplinaId: ficha.disciplinaId, status: 'ATIVO' },
+        include: { professor: { select: { id: true, nome: true } } },
+      })
+      : responsavelDaAtuacao(prisma, ficha.turmaId, ficha.atuacaoId!),
     prisma.correcaoFichaPdi.findMany({ where: { fichaId }, orderBy: { criadaEm: 'desc' } }),
     prisma.historicoCorrecaoResposta.findMany({ where: { fichaId }, orderBy: { alteradoEm: 'desc' } }),
   ]);
@@ -213,7 +218,7 @@ correcoesPdiRouter.put('/:fichaId/respostas', async (req, res) => {
     'Esta Ficha foi alterada enquanto você estava sem conexão. Suas alterações continuam protegidas e precisam ser revisadas antes da sincronização.',
   );
 
-  const perguntasDoModelo = await prisma.aplicacaoPerguntaPdi.findMany({ where: { aplicacaoModeloId: ficha.aplicacaoModeloId } });
+  const perguntasDoModelo = await perguntasDaFicha(prisma, ficha);
   const perguntasPorId = new Map(perguntasDoModelo.map((p) => [p.id, p]));
   if (respostas.some((item) => !perguntasPorId.has(item.aplicacaoPerguntaId))) {
     throw new ValidationError('Uma ou mais perguntas informadas não pertencem a esta Ficha.');
@@ -222,7 +227,7 @@ correcoesPdiRouter.put('/:fichaId/respostas', async (req, res) => {
     prisma,
     respostas.filter((item) => perguntasPorId.get(item.aplicacaoPerguntaId)!.tipoResposta !== 'ORIENTACAO'),
     new Map(perguntasDoModelo.map((p) => [p.id, p.tipoResposta])),
-    ficha.disciplinaId,
+    { disciplinaId: ficha.disciplinaId, anoSerie: ficha.anoSerieSnapshot },
   );
   if (respostasAplicaveis.length === 0) throw new ValidationError('Nenhuma resposta válida para corrigir.');
 
@@ -346,13 +351,19 @@ const devolverSchema = z.object({ observacao: z.string().trim().min(1, 'Escreva 
 // nesta disciplina, e só se o aluno ainda está na escola da Aplicação. Aluno transferido de escola
 // (ou sem professor agora): ninguém consegue editar aquela Ficha, então a devolução é recusada com
 // explicação, em vez de mandar mensagem para quem não teria como corrigir.
-async function professoresQuePodemCorrigir(db: Prisma.TransactionClient, ficha: { alunoId: number; aplicacaoId: number; disciplinaId: number }): Promise<{ ids: number[]; turmaAtualId: number | null; motivo: string | null }> {
+async function professoresQuePodemCorrigir(db: Prisma.TransactionClient, ficha: { alunoId: number; aplicacaoId: number; disciplinaId: number | null; atuacaoId: number | null }): Promise<{ ids: number[]; turmaAtualId: number | null; motivo: string | null }> {
   const [aluno, aplicacao] = await Promise.all([
     db.alunoPdi.findUnique({ where: { id: ficha.alunoId }, include: { turma: true } }),
     db.aplicacaoPdi.findUniqueOrThrow({ where: { id: ficha.aplicacaoId }, select: { escolaId: true } }),
   ]);
   if (!aluno || aluno.status !== 'ATIVO') return { ids: [], turmaAtualId: null, motivo: 'O aluno não está ativo. Use a correção direta.' };
   if (aluno.turma.escolaId !== aplicacao.escolaId) return { ids: [], turmaAtualId: null, motivo: 'O aluno foi transferido para outra escola; nenhum professor consegue editar esta Ficha agora. Use a correção direta.' };
+  // Ficha do Professor TAE (17/11/2026): quem corrige é o TAE responsável da turma atual (o ligado primeiro).
+  if (ficha.disciplinaId === null) {
+    const tae = await responsavelDaAtuacao(db, aluno.turmaId, ficha.atuacaoId!);
+    const ok = !!tae && tae.professor.status === 'ATIVO' && !!(await db.vinculoEscolar.findFirst({ where: { pessoaId: tae.professorId, escolaId: aplicacao.escolaId, status: 'ATIVO' }, select: { id: true } }));
+    return { ids: ok ? [tae!.professorId] : [], turmaAtualId: aluno.turmaId, motivo: ok ? null : 'A turma atual do aluno não tem Professor TAE ativo. Use a correção direta.' };
+  }
   const ptds = await db.professorTurmaDisciplina.findMany({
     where: { turmaId: aluno.turmaId, disciplinaId: ficha.disciplinaId, status: 'ATIVO', professor: { status: 'ATIVO', perfil: 'PROFESSOR', vinculosEscolares: { some: { escolaId: aplicacao.escolaId, status: 'ATIVO' } } } },
     select: { professorId: true },
@@ -391,7 +402,7 @@ correcoesPdiRouter.post('/:fichaId/devolver', async (req, res) => {
     const msgs = await criarMensagensDeCorrecao(tx, {
       remetenteId: actor.id, destinatarioIds: destinatarios, escolasPreferidas: [ficha.escolaId],
       assunto: `Correção pendente · PDI · ${ficha.alunoNomeSnapshot} · ${ficha.disciplinaNomeSnapshot}`,
-      conteudo: textoMensagemCorrecao({ formulario: `PDI (${id.nomeAplicacao})`, identificacao: [...id.linhas, `Disciplina: ${ficha.disciplinaNomeSnapshot}`], observacao, prazoAte: nova.prazoAte }),
+      conteudo: textoMensagemCorrecao({ formulario: `PDI (${id.nomeAplicacao})`, identificacao: [...id.linhas, ficha.atuacaoId !== null ? `Formulário: ${ficha.disciplinaNomeSnapshot}` : `Disciplina: ${ficha.disciplinaNomeSnapshot}`], observacao, prazoAte: nova.prazoAte }),
       link: `/pdi/aluno/${ficha.aplicacaoId}/${ficha.alunoId}`,
     });
     return { correcao: nova, criadas: msgs };

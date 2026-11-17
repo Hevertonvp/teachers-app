@@ -16,7 +16,8 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "crmg:extrair": "tsx scripts/crmg/extrair.ts",
-    "crmg:importar": "tsx scripts/crmg/importar.ts"
+    "crmg:importar": "tsx scripts/crmg/importar.ts",
+    "computacao:importar": "tsx scripts/bncc-computacao/importar.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

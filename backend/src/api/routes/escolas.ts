@@ -65,7 +65,7 @@ async function exigirTurmasCobertas(escolaId: number, estrutura: NonNullable<Awa
     : !estrutura.etapas.includes('EDUCACAO_INFANTIL') || (t.nivelLocalId !== null && !estrutura.niveis.includes(t.nivelLocalId))));
   if (fora.length) {
     const nomes = fora.map((t) => t.nome).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
-    throw new ConflictError(`Estas turmas ativas ficariam fora do que a escola oferece: ${nomes.slice(0, 8).join(', ')}${nomes.length > 8 ? '…' : ''}. Desative-as antes ou mantenha a etapa/ano/nível marcado.`);
+    throw new ConflictError(`Desative antes as turmas: ${nomes.slice(0, 8).join(', ')}${nomes.length > 8 ? '…' : ''}.`);
   }
 }
 

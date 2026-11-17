@@ -6,6 +6,7 @@ import { blankPerguntaPdi, PerguntaPdiFormModal, tipoRespostaLabel, trimestreLab
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { AtuacoesPedagogicasConfig } from '../components/AtuacoesPedagogicasConfig';
+import { PerguntasComputacaoConfig } from '../components/PerguntasComputacaoConfig';
 import { CabecalhoDesativados, ListaDesativados } from '../components/ListaDesativados';
 import { listarDesativados } from '../services/desativados';
 import { alterarAtuacao } from '../services/cargos';
@@ -287,6 +288,8 @@ export const ConfiguracoesPage = () => {
             <Link to="/configuracoes?ver=desativados&tipo=perguntas-padrao" className="mt-4 inline-block text-sm font-semibold text-teal-700 hover:underline">Ver perguntas padrão inativas ({perguntasPadraoInativas.length}) →</Link>
           </Card>
         )}
+
+        {podeConfigurar && <PerguntasComputacaoConfig />}
       </div>
       )}
 

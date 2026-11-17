@@ -7,6 +7,9 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { hojeComoData, statusVigencia, vigenciasSobrepoem } from '../../domain/pdiAplicacoes.js';
 import { perguntaValeParaTrimestre, resolverTrimestreObrigatorio, travarCalendarioDoAno } from '../../domain/trimestres.js';
 import { escolasPermitidas } from './pessoas.js';
+import { perguntasComputacaoParaSnapshot } from '../../domain/perguntasComputacao.js';
+import { atuacoesComFormularioAtivas, nomeFormularioAtuacao } from '../../domain/pdiAtuacao.js';
+import { contarFichasPdi } from '../../lib/contagemFichasPdi.js';
 
 export const pdiAplicacoesRouter = Router();
 
@@ -40,7 +43,7 @@ const formatarAplicacao = (aplicacao: {
   trimestre?: number | null;
   desativadoEm?: Date | null;
   escola?: { nome: string };
-  modelos?: { modeloIdOriginal: number; nome: string; disciplinaId: number; disciplinaNome: string }[];
+  modelos?: { modeloIdOriginal: number | null; nome: string; disciplinaId: number | null; atuacaoId: number | null; disciplinaNome: string }[];
   reaberturas?: { dataInicio: Date; dataFim: Date }[];
 }) => ({
   id: aplicacao.id,
@@ -61,7 +64,8 @@ const formatarAplicacao = (aplicacao: {
   // disciplinas esta Aplicação cobre (badges). O snapshot completo com perguntas mora em
   // GET /:id/snapshot, carregado à parte quando realmente precisar (seção 34 do pedido).
   ...(aplicacao.modelos ? {
-    modelos: aplicacao.modelos.map((m) => ({ modeloId: m.modeloIdOriginal, nome: m.nome, disciplinaId: m.disciplinaId, disciplinaNome: m.disciplinaNome })),
+    // 17/11/2026: formulário de atuação (Professor TAE) vem com disciplinaId nulo e atuacaoId preenchido.
+    modelos: aplicacao.modelos.map((m) => ({ modeloId: m.modeloIdOriginal, nome: m.nome, disciplinaId: m.disciplinaId, atuacaoId: m.atuacaoId, disciplinaNome: m.disciplinaNome })),
   } : {}),
   // Calculado na hora a partir de ReaberturaPdi — nunca um status persistido novo (a tela principal
   // de Aplicações usa isto pra saber se uma Aplicação ENCERRADA deve voltar a aparecer na visão
@@ -88,7 +92,7 @@ const formatarReabertura = (r: {
 });
 
 const formatarPerguntaSnapshot = (p: {
-  id: number; perguntaIdOriginal: number; secao: string; subsecao: string | null; codigo: string | null;
+  id: number; perguntaIdOriginal: number | null; secao: string; subsecao: string | null; codigo: string | null;
   texto: string; indicador: string | null; origem: string; tipoResposta: string;
   opcoes: unknown; complementar: unknown; ordem: number;
 }) => ({
@@ -107,13 +111,14 @@ const formatarPerguntaSnapshot = (p: {
 });
 
 const formatarModeloSnapshot = (m: {
-  id: number; modeloIdOriginal: number; nome: string; disciplinaId: number; disciplinaNome: string;
+  id: number; modeloIdOriginal: number | null; nome: string; disciplinaId: number | null; atuacaoId: number | null; disciplinaNome: string;
   perguntas: Parameters<typeof formatarPerguntaSnapshot>[0][];
 }) => ({
   id: m.id,
   modeloIdOriginal: m.modeloIdOriginal,
   nome: m.nome,
   disciplinaId: m.disciplinaId,
+  atuacaoId: m.atuacaoId,
   disciplinaNome: m.disciplinaNome,
   perguntas: m.perguntas.map(formatarPerguntaSnapshot).sort((a, b) => a.ordem - b.ordem),
 });
@@ -138,7 +143,7 @@ pdiAplicacoesRouter.get('/', async (req, res) => {
     where,
     include: {
       escola: true,
-      modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } },
+      modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, atuacaoId: true, disciplinaNome: true } },
       reaberturas: { select: { dataInicio: true, dataFim: true } },
     },
     orderBy: { dataInicio: 'desc' },
@@ -174,7 +179,7 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
   // escola, calculada em memória (statusVigencia é puro, sem I/O).
   const todasAplicacoes = await prisma.aplicacaoPdi.findMany({
     where: { escolaId: { in: escolaIds }, status: 'ATIVA' }, // removida (INATIVA) nunca conta como "ativa agora"
-    include: { modelos: { select: { disciplinaId: true } } },
+    include: { modelos: { select: { disciplinaId: true, atuacaoId: true } } },
   });
   const aplicacaoAtivaPorEscola = new Map<number, (typeof todasAplicacoes)[number]>();
   for (const aplicacao of todasAplicacoes) {
@@ -189,77 +194,22 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
     return res.json(escolas.map(semAplicacao));
   }
 
-  const aplicacaoIdsAtivas = [...aplicacaoAtivaPorEscola.values()].map((a) => a.id);
-
-  // 2) Todo ProfessorTurmaDisciplina ATIVO de turma ATIVA, só das escolas que têm Aplicação ativa
-  // agora (sem filtrar por disciplina aqui — disciplinas variam por escola, o filtro acontece em
-  // memória no passo 4) — e, em paralelo, todas as Fichas CONCLUIDA dessas Aplicações: nenhuma
-  // depende da outra, então não precisam esperar em sequência (cada round-trip até o Neon custa
-  // uns 100-500ms+ daqui; evitar encadear os independentes economiza isso de verdade).
-  const [ptds, fichasComProgresso] = await Promise.all([
-    prisma.professorTurmaDisciplina.findMany({
-      where: { status: 'ATIVO', turma: { escolaId: { in: escolasComAplicacaoAtiva }, status: 'ATIVA' } },
-      select: { turmaId: true, disciplinaId: true, turma: { select: { escolaId: true } } },
-    }),
-    prisma.fichaPdi.findMany({
-      where: { aplicacaoId: { in: aplicacaoIdsAtivas }, status: { in: ['CONCLUIDA', 'EM_ANDAMENTO'] } },
-      select: { aplicacaoId: true, alunoId: true, disciplinaId: true, status: true },
-    }),
-  ]);
-  const turmaIds = [...new Set(ptds.map((p) => p.turmaId))];
-
-  // 3) Todo AlunoPdi ATIVO dessas turmas, de uma vez.
-  const alunos = turmaIds.length
-    ? await prisma.alunoPdi.findMany({ where: { turmaId: { in: turmaIds }, status: 'ATIVO' }, select: { id: true, turmaId: true } })
-    : [];
-  const alunosPorTurma = new Map<number, number[]>();
-  for (const aluno of alunos) {
-    if (!alunosPorTurma.has(aluno.turmaId)) alunosPorTurma.set(aluno.turmaId, []);
-    alunosPorTurma.get(aluno.turmaId)!.push(aluno.id);
-  }
-
-  // 4) Candidatos (aluno×disciplina) por escola, em memória.
-  const candidatosPorEscola = new Map<number, Set<string>>();
-  for (const ptd of ptds) {
-    const escolaId = ptd.turma.escolaId;
-    const aplicacaoDaEscola = aplicacaoAtivaPorEscola.get(escolaId);
-    if (!aplicacaoDaEscola) continue;
-    const disciplinaIdsDaAplicacao = new Set(aplicacaoDaEscola.modelos.map((m) => m.disciplinaId));
-    if (!disciplinaIdsDaAplicacao.has(ptd.disciplinaId)) continue;
-    if (!candidatosPorEscola.has(escolaId)) candidatosPorEscola.set(escolaId, new Set());
-    const candidatos = candidatosPorEscola.get(escolaId)!;
-    for (const alunoId of alunosPorTurma.get(ptd.turmaId) ?? []) {
-      candidatos.add(`${alunoId}-${ptd.disciplinaId}`);
-    }
-  }
-
-  // 5) Agrupa as Fichas CONCLUIDA / EM_ANDAMENTO buscadas no passo 2 por Aplicação.
-  const concluidasPorAplicacao = new Map<number, Set<string>>();
-  const emAndamentoPorAplicacao = new Map<number, Set<string>>();
-  for (const ficha of fichasComProgresso) {
-    const alvo = ficha.status === 'CONCLUIDA' ? concluidasPorAplicacao : emAndamentoPorAplicacao;
-    if (!alvo.has(ficha.aplicacaoId)) alvo.set(ficha.aplicacaoId, new Set());
-    alvo.get(ficha.aplicacaoId)!.add(`${ficha.alunoId}-${ficha.disciplinaId}`);
-  }
+  // Mesma regra de sempre (aluno ATIVO × vínculo ATIVO numa disciplina da Aplicação, turma ATIVA), agora pelo
+  // contador comum (lib/contagemFichasPdi.ts), que desde 17/11/2026 também conta o formulário do Professor TAE.
+  const contagens = await contarFichasPdi(prisma, [...aplicacaoAtivaPorEscola.values()].map((a) => ({
+    id: a.id, escolaId: a.escolaId,
+    disciplinaIds: a.modelos.map((m) => m.disciplinaId).filter((id): id is number => id !== null),
+    atuacaoIds: a.modelos.map((m) => m.atuacaoId).filter((id): id is number => id !== null),
+  })));
 
   const resultado = escolas.map((escola) => {
     const ativa = aplicacaoAtivaPorEscola.get(escola.id);
     if (!ativa) return semAplicacao(escola);
-
-    const candidatos = candidatosPorEscola.get(escola.id) ?? new Set<string>();
-    const concluidasDaAplicacao = concluidasPorAplicacao.get(ativa.id) ?? new Set<string>();
-    const emAndamentoDaAplicacao = emAndamentoPorAplicacao.get(ativa.id) ?? new Set<string>();
-    let concluidas = 0;
-    let emAndamento = 0;
-    for (const chave of candidatos) {
-      if (concluidasDaAplicacao.has(chave)) concluidas++;
-      else if (emAndamentoDaAplicacao.has(chave)) emAndamento++;
-    }
-
+    const c = contagens.get(ativa.id)!;
     return {
       escolaId: escola.id, escolaNome: escola.nome, aplicacaoId: ativa.id, aplicacaoNome: ativa.nome,
       aplicacaoDataInicio: ativa.dataInicio, aplicacaoDataFim: ativa.dataFim,
-      totalEsperado: candidatos.size, concluidas, emAndamento,
+      totalEsperado: c.esperado, concluidas: c.concluidas, emAndamento: c.emAndamento,
     };
   });
 
@@ -269,7 +219,7 @@ pdiAplicacoesRouter.get('/indicadores', async (req, res) => {
 async function buscarAplicacaoNoEscopo(actor: Actor, id: number) {
   const aplicacao = await prisma.aplicacaoPdi.findUnique({
     where: { id },
-    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } } },
+    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, atuacaoId: true, disciplinaNome: true } } },
   });
   if (!aplicacao) throw new NotFoundError('Aplicação não encontrada.');
   const permitidas = await escolasPermitidas(actor);
@@ -348,6 +298,9 @@ const criarAplicacaoSchema = z.object({
   // Passado explicitamente, SEMPRE precisa de pelo menos 1 id — a Secretaria pode querer aplicar
   // só Inglês numa escola e Inglês+Matemática noutra, por exemplo.
   modeloIds: z.array(z.number().int()).optional(),
+  // 17/11/2026: formulário do Professor TAE (só perguntas de Computação). Vem marcado na tela; omitido = incluir.
+  // Só é criado se houver ao menos uma pergunta de Computação ativa (formulário vazio não gera obrigação).
+  incluirTae: z.boolean().optional(),
 });
 
 // Cria a Aplicação e, na MESMA transação, o snapshot imutável dos Modelos ATIVOS escolhidos (com
@@ -417,6 +370,9 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
     // MESMO snapshot AplicacaoPerguntaPadraoPdi, nunca um por disciplina (ver schema.prisma e
         // domain/pdiBlocoPadrao.ts). `snapshotPadraoPorOriginal` garante isso dentro do loop abaixo.
     const snapshotPadraoPorOriginal = new Map<number, number>(); // padraoOriginalId -> AplicacaoPerguntaPadraoPdi.id
+    // Perguntas de Computação ativas HOJE (17/11/2026): bloco adicional congelado em cada Modelo desta
+    // Aplicação, com os anos — cada Ficha só mostra as do ano do aluno (domain/perguntasComputacao.ts).
+    const perguntasComputacao = await perguntasComputacaoParaSnapshot(tx);
 
     for (const modelo of modelosParaUsar) {
       const aplicacaoModelo = await tx.aplicacaoModeloPdi.create({
@@ -485,13 +441,29 @@ pdiAplicacoesRouter.post('/', async (req, res) => {
           data: { aplicacaoModeloId: aplicacaoModelo.id, aplicacaoPerguntaPadraoId: snapshotPadraoId },
         });
       }
+
+      if (perguntasComputacao.length > 0) {
+        await tx.aplicacaoPerguntaPdi.createMany({ data: perguntasComputacao.map((p) => ({ ...p, aplicacaoModeloId: aplicacaoModelo.id })) });
+      }
+    }
+
+    // Formulário de atuação (Professor TAE, 17/11/2026): snapshot SEM Modelo e sem perguntas padrão — só as
+    // perguntas de Computação congeladas agora (cada aluno vê as do seu ano).
+    if (dados.incluirTae !== false && perguntasComputacao.length > 0) {
+      for (const atuacao of await atuacoesComFormularioAtivas(tx)) {
+        const nome = nomeFormularioAtuacao(atuacao.nome);
+        const snapshotAtuacao = await tx.aplicacaoModeloPdi.create({
+          data: { aplicacaoId: aplicacao.id, atuacaoId: atuacao.id, nome, disciplinaNome: nome },
+        });
+        await tx.aplicacaoPerguntaPdi.createMany({ data: perguntasComputacao.map((p) => ({ ...p, aplicacaoModeloId: snapshotAtuacao.id })) });
+      }
     }
     return aplicacao;
   }, { timeout: 20000 });
 
   const completa = await prisma.aplicacaoPdi.findUnique({
     where: { id: criada.id },
-    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } } },
+    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, atuacaoId: true, disciplinaNome: true } } },
   });
   res.status(201).json(formatarAplicacao(completa!));
 });
@@ -520,7 +492,7 @@ pdiAplicacoesRouter.put('/:id', async (req, res) => {
   const atualizada = await prisma.aplicacaoPdi.update({
     where: { id },
     data: { nome: dados.nome ?? null, dataInicio: dados.dataInicio, dataFim: dados.dataFim, updatedBy: String(actor.id) },
-    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, disciplinaNome: true } } },
+    include: { escola: true, modelos: { select: { modeloIdOriginal: true, nome: true, disciplinaId: true, atuacaoId: true, disciplinaNome: true } } },
   });
   res.json(formatarAplicacao(atualizada));
 });

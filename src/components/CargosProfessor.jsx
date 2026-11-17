@@ -492,7 +492,10 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
     }
     for (const [chave, p] of desejadas) {
       if (atuais.some(x => `${x.turmaId}-${x.atuacaoId}` === chave)) continue;
-      try { await criarVinculoProfessorTurmaAtuacao({ ...p, professorId: professor.id }); } catch { falhas.push(nome(p.turmaId, p.atuacaoId)); }
+      try {
+        const r = await criarVinculoProfessorTurmaAtuacao({ ...p, professorId: professor.id });
+        if (r?.aviso) (falhas.avisos ||= []).push(r.aviso); // turma já tinha TAE: o PDI fica com o primeiro
+      } catch { falhas.push(nome(p.turmaId, p.atuacaoId)); }
     }
     await recarregarAtuacao();
   };
@@ -514,7 +517,7 @@ export const CargosModal = ({ professor, podeEditar, escolas, disciplinas, atuac
       setCargos(lista); setEditando(null); setErros({ partes: {} }); setSaidasAlterar(null);
       const falhas = await aplicarTurmas(v, anterior);
       if (falhas.length) setErro(`Não foi possível acertar: ${falhas.join(', ')}. Use o botão "Turmas".`);
-      setMensagem(editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado.');
+      setMensagem(`${editando.id === 'novo' ? 'Cargo cadastrado.' : 'Cargo alterado.'}${falhas.avisos?.length ? ` ${falhas.avisos.join(' ')}` : ''}`);
       onAlterado?.();
     } catch (e) { setErro(e.message); } finally { setSalvando(false); }
   };

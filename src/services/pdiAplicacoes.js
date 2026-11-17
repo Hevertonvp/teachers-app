@@ -42,6 +42,8 @@ export const criarPdiAplicacaoReal = async (payload) => normalizeAplicacao(await
     // Omitido = backend usa todos os modelos ativos (compatibilidade); passar [] seria rejeitado
     // lá (precisa de ao menos 1), então só mandamos o campo quando há de fato uma seleção.
     ...(payload.modeloIds ? { modeloIds: payload.modeloIds.map(Number) } : {}),
+    // 17/11/2026: formulário do Professor TAE (só perguntas de Computação). Ausente = incluir.
+    ...(payload.incluirTae !== undefined ? { incluirTae: !!payload.incluirTae } : {}),
   },
 }));
 

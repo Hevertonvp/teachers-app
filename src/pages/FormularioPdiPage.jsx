@@ -48,7 +48,7 @@ const hojeISO = () => new Date().toISOString().slice(0, 10);
 // padrão, a Secretaria só precisa desmarcar quem não quer incluir. Edição continua sendo sempre de
 // uma aplicação já existente, então usa `escolaId` único e nunca mexe em modeloIds (seção 16 do
 // pedido original: edição nunca toca no snapshot).
-const blankAplicacao = (modeloIdsAtivos = []) => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO(), modeloIds: modeloIdsAtivos });
+const blankAplicacao = (modeloIdsAtivos = []) => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO(), modeloIds: modeloIdsAtivos, incluirTae: true });
 
 // Reabertura sempre começa sugerindo o dia seguinte ao fim original — o backend exige
 // estritamente depois disso, nunca dentro da vigência normal (ver domain/pdiAplicacoes.ts).
@@ -347,7 +347,7 @@ export const FormularioPdiPage = () => {
     const resultados = [];
     for (const escolaId of escolaIdsSelecionadas) {
       // eslint-disable-next-line no-await-in-loop
-      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim, modeloIds: aplicacaoForm.modeloIds });
+      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim, modeloIds: aplicacaoForm.modeloIds, incluirTae: aplicacaoForm.incluirTae !== false });
       resultados.push({ escolaId, ...resultado });
     }
     setSalvandoAplicacao(false);
@@ -958,6 +958,13 @@ export const FormularioPdiPage = () => {
                     </div>
                   )}
                 </FormField>
+              )}
+              {!editingAplicacao && (
+                // 17/11/2026: formulário próprio do Professor TAE (só perguntas de Computação, do ano do aluno).
+                <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
+                  <input type="checkbox" checked={aplicacaoForm.incluirTae !== false} onChange={() => setAplicacaoForm(prev => ({ ...prev, incluirTae: prev.incluirTae === false }))} />
+                  Professor TAE <span className="text-xs text-slate-400">(perguntas de Computação)</span>
+                </label>
               )}
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Início">

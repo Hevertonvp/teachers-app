@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../domain/errors.js';
 import { escolasPermitidas, type Actor } from './pessoas.js';
+import { responsaveisPorAtuacao } from '../../domain/pdiAtuacao.js';
 
 export const pdiFichaAnualRouter = Router();
 
@@ -20,12 +21,13 @@ export async function resolverAcessoAluno(actor: Actor, alunoId: number) {
   if (!aluno) throw new NotFoundError('Aluno não encontrado.');
   const escolaId = aluno.turma.escolaId;
 
-  if (actor.perfil === 'SECRETARIA') return { aluno, disciplinasPermitidas: null as number[] | null };
+  // `atuacoesPermitidas` (17/11/2026): Fichas do Professor TAE. null/null = sem restrição (vê todas).
+  if (actor.perfil === 'SECRETARIA') return { aluno, disciplinasPermitidas: null as number[] | null, atuacoesPermitidas: null as number[] | null };
 
   if (actor.perfil === 'GESTOR' || actor.perfil === 'DIRETORA') {
     const permitidas = await escolasPermitidas(actor);
     if (permitidas && !permitidas.includes(escolaId)) throw new ForbiddenError('Você não tem acesso a este aluno.');
-    return { aluno, disciplinasPermitidas: null as number[] | null };
+    return { aluno, disciplinasPermitidas: null as number[] | null, atuacoesPermitidas: null as number[] | null };
   }
 
   if (actor.perfil === 'PROFESSOR') {
@@ -35,19 +37,30 @@ export async function resolverAcessoAluno(actor: Actor, alunoId: number) {
       where: { professorId: actor.id, turmaId: aluno.turmaId, status: 'ATIVO' },
       select: { disciplinaId: true },
     });
-    if (ptds.length === 0) throw new ForbiddenError('Você não tem vínculo pedagógico atual com este aluno.');
-    return { aluno, disciplinasPermitidas: ptds.map((p) => p.disciplinaId) };
+    // Professor TAE responsável pela turma do aluno (o ligado primeiro) também tem vínculo pedagógico.
+    const taes = (await responsaveisPorAtuacao(prisma, { turmaIds: [aluno.turmaId] })).filter((v) => v.professorId === actor.id);
+    if (ptds.length === 0 && taes.length === 0) throw new ForbiddenError('Você não tem vínculo pedagógico atual com este aluno.');
+    return { aluno, disciplinasPermitidas: ptds.map((p) => p.disciplinaId), atuacoesPermitidas: taes.map((v) => v.atuacaoId) };
   }
 
   if (actor.perfil === 'AUXILIAR') {
     const vinculoEscolar = await prisma.vinculoEscolar.findFirst({ where: { pessoaId: actor.id, escolaId, status: 'ATIVO' } });
     const vinculoTurma = vinculoEscolar && await prisma.auxiliarTurma.findFirst({ where: { auxiliarId: actor.id, turmaId: aluno.turmaId, status: 'ATIVO' } });
     if (!vinculoTurma) throw new ForbiddenError('Você não tem acesso a este aluno.');
-    return { aluno, disciplinasPermitidas: null as number[] | null };
+    return { aluno, disciplinasPermitidas: null as number[] | null, atuacoesPermitidas: null as number[] | null };
   }
 
   throw new ForbiddenError('Você não tem permissão para consultar a Ficha Anual PDI.');
 }
+
+type AcessoAluno = { disciplinasPermitidas: number[] | null; atuacoesPermitidas: number[] | null };
+// Filtro Prisma das Fichas que este ator pode ver (disciplinas dele + Fichas do Professor TAE, se for o responsável).
+export const filtroFichasPermitidas = (a: AcessoAluno) => (a.disciplinasPermitidas
+  ? { OR: [{ disciplinaId: { in: a.disciplinasPermitidas } }, { atuacaoId: { in: a.atuacoesPermitidas ?? [] } }] }
+  : {});
+export const fichaPermitida = (a: AcessoAluno, f: { disciplinaId: number | null; atuacaoId: number | null }) => !a.disciplinasPermitidas
+  || (f.disciplinaId !== null && a.disciplinasPermitidas.includes(f.disciplinaId))
+  || (f.atuacaoId !== null && (a.atuacoesPermitidas ?? []).includes(f.atuacaoId));
 
 // Mesmo idioma de obterOuCriarFichaReal (pdiFichas.ts): nunca usa upsert (o branch de update
 // poderia por engano sobrescrever abertaEm/status já existentes); se outra requisição venceu a
@@ -102,11 +115,11 @@ pdiFichaAnualRouter.put('/ciclo/:ano', async (req, res) => {
 pdiFichaAnualRouter.get('/:alunoId/anos', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
   const alunoId = Number(req.params.alunoId);
-  const { disciplinasPermitidas } = await resolverAcessoAluno(actor, alunoId);
+  const acesso = await resolverAcessoAluno(actor, alunoId);
 
   const [fichas, fichasAnuais] = await Promise.all([
     prisma.fichaPdi.findMany({
-      where: { alunoId, ...(disciplinasPermitidas ? { disciplinaId: { in: disciplinasPermitidas } } : {}) },
+      where: { alunoId, ...filtroFichasPermitidas(acesso) },
       select: { aplicacao: { select: { dataInicio: true } } },
     }),
     prisma.fichaAnualPdi.findMany({ where: { alunoId }, select: { ano: true, status: true } }),
@@ -147,7 +160,8 @@ pdiFichaAnualRouter.get('/:alunoId/:ano', async (req, res) => {
   const ano = Number(req.params.ano);
   if (!Number.isInteger(ano) || ano < 2000 || ano > 2100) throw new ValidationError('Ano inválido.');
 
-  const { aluno, disciplinasPermitidas } = await resolverAcessoAluno(actor, alunoId);
+  const acesso = await resolverAcessoAluno(actor, alunoId);
+  const { aluno } = acesso;
 
   const [fichaAnual, todasFichas, movimentacoes] = await Promise.all([
     obterOuCriarFichaAnual(alunoId, ano, actor.id),
@@ -166,9 +180,7 @@ pdiFichaAnualRouter.get('/:alunoId/:ano', async (req, res) => {
   // decisão sinalizada no plano. Volume por aluno é sempre pequeno (poucas dezenas de Fichas no
   // máximo), filtrar em memória é mais simples e seguro que EXTRACT(YEAR) via SQL cru.
   const fichasDoAno = todasFichas.filter((f) => f.aplicacao.dataInicio.getUTCFullYear() === ano);
-  const fichasVisiveis = disciplinasPermitidas
-    ? fichasDoAno.filter((f) => disciplinasPermitidas.includes(f.disciplinaId))
-    : fichasDoAno;
+  const fichasVisiveis = fichasDoAno.filter((f) => fichaPermitida(acesso, f));
 
   const fichaIds = fichasVisiveis.map((f) => f.id);
   const correcoesPorFicha = new Map<number, { status: string; prazoAte: Date }>();
@@ -184,7 +196,7 @@ pdiFichaAnualRouter.get('/:alunoId/:ano', async (req, res) => {
   }
 
   const agora = new Date();
-  type ItemFicha = { fichaId: number; disciplinaId: number; disciplinaNome: string; escolaNome: string; turmaNome: string; professorNome: string; status: string; concluidaEm: Date | null; indicadorCorrecao: 'nenhuma' | 'solicitada' | 'resolvida' };
+  type ItemFicha = { fichaId: number; disciplinaId: number | null; atuacaoId: number | null; disciplinaNome: string; escolaNome: string; turmaNome: string; professorNome: string; status: string; concluidaEm: Date | null; indicadorCorrecao: 'nenhuma' | 'solicitada' | 'resolvida' };
   const periodos = new Map<number, { aplicacaoId: number; aplicacaoNome: string | null; dataInicio: Date; dataFim: Date; fichas: ItemFicha[] }>();
   for (const f of fichasVisiveis) {
     if (!periodos.has(f.aplicacaoId)) {
@@ -197,6 +209,7 @@ pdiFichaAnualRouter.get('/:alunoId/:ano', async (req, res) => {
     periodos.get(f.aplicacaoId)!.fichas.push({
       fichaId: f.id,
       disciplinaId: f.disciplinaId,
+      atuacaoId: f.atuacaoId, // Ficha do Professor TAE (17/11/2026)
       disciplinaNome: f.disciplinaNomeSnapshot,
       escolaNome: f.escolaNomeSnapshot,
       turmaNome: f.turmaNomeSnapshot,

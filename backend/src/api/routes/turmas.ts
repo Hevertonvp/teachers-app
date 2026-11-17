@@ -61,9 +61,10 @@ function paraDadosTurma(input: SalvarTurmaInput): DadosTurma {
 }
 
 function mensagemConflito(conflito: Turma): string {
+  // 16/11/2026: mensagens curtas (sem explicar a regra).
   return conflito.status === 'INATIVA'
-    ? `Já existe uma turma com essa configuração neste ano letivo (${conflito.nome}, inativa). Reative a turma existente em vez de criar uma nova.`
-    : `Já existe uma turma ativa com essa combinação de escola, ano letivo, série/segmento, turno e identificador (${conflito.nome}).`;
+    ? `A turma ${conflito.nome} já existe (inativa). Reative-a.`
+    : `A turma ${conflito.nome} já existe nesta escola.`;
 }
 
 // Monta os campos gravados da turma (16/11/2026). Caminhos:

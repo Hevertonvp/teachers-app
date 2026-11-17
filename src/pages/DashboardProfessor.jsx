@@ -170,9 +170,14 @@ export const DashboardProfessor = () => {
               ) : meusVinculos.length === 0 ? (
                 <p className="text-sm text-slate-500">Nenhuma turma/disciplina vinculada no momento.</p>
               ) : (
-                meusVinculos.map(vinculo => (
+                // 16/11/2026: uma linha por turma, com as disciplinas/funções juntas (antes repetia a turma).
+                [...meusVinculos.reduce((mapa, v) => {
+                  const g = mapa.get(v.turmaId) ?? { ...v, chave: `t${v.turmaId}`, funcoes: [] };
+                  if (!g.funcoes.includes(v.funcao)) g.funcoes.push(v.funcao);
+                  return mapa.set(v.turmaId, g);
+                }, new Map()).values()].map(vinculo => (
                   <div key={vinculo.chave} className="rounded-xl border border-slate-200 p-4">
-                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} · {vinculo.funcao}</p>
+                    <p className="font-semibold text-slate-900">{vinculo.turmaNome} · {vinculo.funcoes.join(', ')}</p>
                     <p className="mt-1 text-sm text-slate-600">{escolas.find(e => e.id === vinculo.escolaId)?.nome}</p>
                   </div>
                 ))
