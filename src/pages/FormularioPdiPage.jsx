@@ -48,7 +48,7 @@ const hojeISO = () => new Date().toISOString().slice(0, 10);
 // padrão, a Secretaria só precisa desmarcar quem não quer incluir. Edição continua sendo sempre de
 // uma aplicação já existente, então usa `escolaId` único e nunca mexe em modeloIds (seção 16 do
 // pedido original: edição nunca toca no snapshot).
-const blankAplicacao = (modeloIdsAtivos = []) => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO(), modeloIds: modeloIdsAtivos, incluirTae: true });
+const blankAplicacao = (modeloIdsAtivos = []) => ({ escolaIds: [], todasEscolas: false, dataInicio: hojeISO(), dataFim: hojeISO(), modeloIds: modeloIdsAtivos, incluirTae: true, incluirInformatica: true });
 
 // Reabertura sempre começa sugerindo o dia seguinte ao fim original — o backend exige
 // estritamente depois disso, nunca dentro da vigência normal (ver domain/pdiAplicacoes.ts).
@@ -347,7 +347,7 @@ export const FormularioPdiPage = () => {
     const resultados = [];
     for (const escolaId of escolaIdsSelecionadas) {
       // eslint-disable-next-line no-await-in-loop
-      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim, modeloIds: aplicacaoForm.modeloIds, incluirTae: aplicacaoForm.incluirTae !== false });
+      const resultado = await createPdiAplicacaoReal({ escolaId, dataInicio: aplicacaoForm.dataInicio, dataFim: aplicacaoForm.dataFim, modeloIds: aplicacaoForm.modeloIds, incluirTae: aplicacaoForm.incluirTae !== false, incluirInformatica: aplicacaoForm.incluirInformatica !== false });
       resultados.push({ escolaId, ...resultado });
     }
     setSalvandoAplicacao(false);
@@ -400,7 +400,7 @@ export const FormularioPdiPage = () => {
               ? <Badge variant="gray">Nenhum modelo disponível no momento da criação</Badge>
               // Mostra o nome do modelo já snapshotado, nunca re-consulta disciplina por id: o
               // snapshot é imutável e independente do Modelo/Disciplina vivos mudarem depois.
-              : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId} variant="blue">{modelo.nome}</Badge>)}
+              : aplicacao.modelos.map(modelo => <Badge key={modelo.modeloId ?? modelo.nome} variant="blue">{modelo.nome}</Badge>)}
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -964,6 +964,13 @@ export const FormularioPdiPage = () => {
                 <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
                   <input type="checkbox" checked={aplicacaoForm.incluirTae !== false} onChange={() => setAplicacaoForm(prev => ({ ...prev, incluirTae: prev.incluirTae === false }))} />
                   Professor TAE <span className="text-xs text-slate-400">(perguntas de Computação)</span>
+                </label>
+              )}
+              {!editingAplicacao && (
+                // 17/11/2026: formulário da Informática — também só perguntas de Computação, do ano do aluno.
+                <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
+                  <input type="checkbox" checked={aplicacaoForm.incluirInformatica !== false} onChange={() => setAplicacaoForm(prev => ({ ...prev, incluirInformatica: prev.incluirInformatica === false }))} />
+                  Informática <span className="text-xs text-slate-400">(perguntas de Computação)</span>
                 </label>
               )}
               <div className="grid gap-4 md:grid-cols-2">
