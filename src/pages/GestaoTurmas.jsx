@@ -66,6 +66,9 @@ export const GestaoTurmas = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const abrirNovaTurmaDaEscolaRef = useRef(null);
+  // 16/11/2026 (bug do teste como usuário): "+ Nova turma" continua na escola da última turma criada (antes voltava
+  // para a primeira escola da lista e a turma seguinte ia para a escola errada).
+  const [ultimaEscolaId, setUltimaEscolaId] = useState(null);
   // 16/11/2026: escola com etapas informadas só oferece as suas etapas/anos/níveis (níveis do catálogo local).
   const [niveisCatalogo, setNiveisCatalogo] = useState([]);
   useEffect(() => { listarNiveisInfantil().then(setNiveisCatalogo).catch(() => setNiveisCatalogo([])); }, []);
@@ -148,9 +151,17 @@ export const GestaoTurmas = () => {
   abrirNovaTurmaDaEscolaRef.current = (escolaId, mensagem) => {
     setEditingTurma(null); setTurmaError('');
     if (mensagem) setMessage(mensagem);
+    setUltimaEscolaId(escolaId);
     setTurmaForm(ajustarAEscola(blankTurma(escolaId), null));
   };
-  const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(ajustarAEscola(blankTurma(escolaDoTopo(escolasAtivas, escolasAtivas[0]?.id)), null)); };
+  // Escola inicial: a da última turma criada; senão a do filtro da lista; senão a do topo (ou a primeira).
+  const escolaInicialDaNovaTurma = () => {
+    const ativa = (id) => escolasAtivas.some(e => e.id === Number(id));
+    if (ultimaEscolaId && ativa(ultimaEscolaId)) return ultimaEscolaId;
+    if (filtroEscolaId !== 'todas' && ativa(filtroEscolaId)) return Number(filtroEscolaId);
+    return escolaDoTopo(escolasAtivas, escolasAtivas[0]?.id);
+  };
+  const abrirNovaTurma = () => { setEditingTurma(null); setTurmaError(''); setTurmaForm(ajustarAEscola(blankTurma(escolaInicialDaNovaTurma()), null)); };
   // Turmas legadas sem turno/identificador definidos (ver mockData.js) recebem aqui um valor de
   // partida editável — só passam a valer de fato quando a Secretaria confirmar "Salvar".
   const abrirEdicao = (turma) => {
@@ -208,6 +219,7 @@ export const GestaoTurmas = () => {
       setTurmaError(resultado.error);
       return;
     }
+    if (!editingTurma) setUltimaEscolaId(Number(resultado.turma.escolaId));
     setMessage(editingTurma ? `Turma "${resultado.turma.nome}" atualizada com sucesso.` : `Turma "${resultado.turma.nome}" criada com sucesso.`);
     fecharModal();
   };

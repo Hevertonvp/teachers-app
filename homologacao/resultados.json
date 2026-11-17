@@ -4914,7 +4914,7 @@
     "status": "APROVADO",
     "evidencia": "40-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-16T23:13:18.643Z"
+    "quando": "2026-11-17T01:01:59.516Z"
   },
   {
     "id": "UI-SEC-2a",
@@ -4925,7 +4925,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-16T23:13:26.543Z"
+    "quando": "2026-11-17T01:02:07.223Z"
   },
   {
     "id": "UI-SEC-2b",
@@ -4936,7 +4936,7 @@
     "status": "APROVADO",
     "evidencia": "40-modal-substituicao.png",
     "nota": "",
-    "quando": "2026-11-16T23:13:26.608Z"
+    "quando": "2026-11-17T01:02:07.283Z"
   },
   {
     "id": "UI-SEC-3",
@@ -4947,7 +4947,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:13:29.298Z"
+    "quando": "2026-11-17T01:02:09.972Z"
   },
   {
     "id": "UI-SEC-3b",
@@ -4958,7 +4958,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:13:29.382Z"
+    "quando": "2026-11-17T01:02:10.050Z"
   },
   {
     "id": "UI-SEC-4c-desktop",
@@ -4969,7 +4969,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T23:13:39.485Z"
+    "quando": "2026-11-17T01:02:17.916Z"
   },
   {
     "id": "UI-SEC-4d-desktop",
@@ -4980,7 +4980,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:13:42.432Z"
+    "quando": "2026-11-17T01:02:19.839Z"
   },
   {
     "id": "UI-SEC-4c-celular",
@@ -4991,7 +4991,7 @@
     "status": "APROVADO",
     "evidencia": "40-wizard-celular.png",
     "nota": "",
-    "quando": "2026-11-16T23:14:02.429Z"
+    "quando": "2026-11-17T01:02:34.031Z"
   },
   {
     "id": "UI-SEC-4d-celular",
@@ -5002,7 +5002,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:14:05.294Z"
+    "quando": "2026-11-17T01:02:36.012Z"
   },
   {
     "id": "ASSIST-1-desktop",
@@ -10755,7 +10755,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:23:12.930Z"
+    "quando": "2026-11-17T00:57:37.794Z"
   },
   {
     "id": "TURMAATU-2-desktop",
@@ -10766,7 +10766,7 @@
     "status": "APROVADO",
     "evidencia": "78-cadastro-regente-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T22:23:16.759Z"
+    "quando": "2026-11-17T00:57:44.237Z"
   },
   {
     "id": "TURMAATU-3-desktop",
@@ -10777,7 +10777,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:23:22.406Z"
+    "quando": "2026-11-17T00:57:50.624Z"
   },
   {
     "id": "TURMAATU-4-desktop",
@@ -10788,7 +10788,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:23:26.345Z"
+    "quando": "2026-11-17T00:57:54.721Z"
   },
   {
     "id": "TURMAATU-5-desktop",
@@ -10799,7 +10799,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:23:26.999Z"
+    "quando": "2026-11-17T00:57:56.038Z"
   },
   {
     "id": "TURMAATU-6-desktop",
@@ -10810,7 +10810,7 @@
     "status": "APROVADO",
     "evidencia": "78-minhas-turmas-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T22:23:34.721Z"
+    "quando": "2026-11-17T00:58:07.524Z"
   },
   {
     "id": "TURMAATU-7-desktop",
@@ -10821,7 +10821,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:23:44.962Z"
+    "quando": "2026-11-17T00:58:22.124Z"
   },
   {
     "id": "TURMAATU-1-celular",
@@ -10832,7 +10832,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:23:52.924Z"
+    "quando": "2026-11-17T00:58:37.006Z"
   },
   {
     "id": "TURMAATU-2-celular",
@@ -10843,7 +10843,7 @@
     "status": "APROVADO",
     "evidencia": "78-cadastro-regente-celular.png",
     "nota": "",
-    "quando": "2026-11-16T22:23:56.549Z"
+    "quando": "2026-11-17T00:58:42.709Z"
   },
   {
     "id": "TURMAATU-3-celular",
@@ -10854,7 +10854,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:24:02.233Z"
+    "quando": "2026-11-17T00:58:49.127Z"
   },
   {
     "id": "TURMAATU-4-celular",
@@ -10865,7 +10865,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:24:06.170Z"
+    "quando": "2026-11-17T00:58:53.272Z"
   },
   {
     "id": "TURMAATU-5-celular",
@@ -10876,7 +10876,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:24:06.679Z"
+    "quando": "2026-11-17T00:58:54.416Z"
   },
   {
     "id": "TURMAATU-6-celular",
@@ -10887,7 +10887,7 @@
     "status": "APROVADO",
     "evidencia": "78-minhas-turmas-celular.png",
     "nota": "",
-    "quando": "2026-11-16T22:24:14.201Z"
+    "quando": "2026-11-17T00:59:05.672Z"
   },
   {
     "id": "TURMAATU-7-celular",
@@ -10898,7 +10898,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T22:24:24.232Z"
+    "quando": "2026-11-17T00:59:20.143Z"
   },
   {
     "id": "ESTRUTURA-1-desktop",
@@ -10909,7 +10909,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:43:45.738Z"
+    "quando": "2026-11-17T00:59:36.545Z"
   },
   {
     "id": "ESTRUTURA-2-desktop",
@@ -10920,7 +10920,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-escola-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T23:43:49.017Z"
+    "quando": "2026-11-17T00:59:39.904Z"
   },
   {
     "id": "ESTRUTURA-3-desktop",
@@ -10931,18 +10931,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:43:51.141Z"
+    "quando": "2026-11-17T00:59:41.989Z"
   },
   {
     "id": "ESTRUTURA-4-desktop",
     "modulo": "Escola: etapas e níveis",
     "cenario": "desktop: a lista mostra as etapas da escola",
     "esperado": "\"Infantil · Fund. I\"",
-    "observado": "ZZ-ESTR Escola desktop 234333 Infantil · Fund. I Editar",
+    "observado": "ZZ-ESTR Escola desktop 005926 Infantil · Fund. I Editar",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:43:53.579Z"
+    "quando": "2026-11-17T00:59:44.771Z"
   },
   {
     "id": "ESTRUTURA-5-desktop",
@@ -10953,7 +10953,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-turma-infantil-desktop.png",
     "nota": "",
-    "quando": "2026-11-16T23:44:08.028Z"
+    "quando": "2026-11-17T00:59:58.097Z"
   },
   {
     "id": "ESTRUTURA-6-desktop",
@@ -10964,18 +10964,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:10.027Z"
+    "quando": "2026-11-17T01:00:00.103Z"
   },
   {
     "id": "ESTRUTURA-7-desktop",
     "modulo": "Escola: etapas e níveis",
     "cenario": "desktop: não deixa tirar nível/etapa com turma ativa nem criar turma fora do que a escola oferece",
     "esperado": "409, 409, 400, 400; escola sem mudança",
-    "observado": "409 \"Estas turmas ativas ficariam fora do que a escola oferece: Maternal 3 \", 409, 400, 400; níveis 2, etapas EDUCACAO_INFANTIL,FUNDAMENTAL_I",
+    "observado": "409 \"Desative antes as turmas: Maternal 3 B — Manhã.\", 409, 400, 400; níveis 2, etapas EDUCACAO_INFANTIL,FUNDAMENTAL_I",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:11.631Z"
+    "quando": "2026-11-17T01:00:01.473Z"
   },
   {
     "id": "ESTRUTURA-1-celular",
@@ -10986,7 +10986,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:21.826Z"
+    "quando": "2026-11-17T01:00:11.118Z"
   },
   {
     "id": "ESTRUTURA-2-celular",
@@ -10997,7 +10997,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-escola-celular.png",
     "nota": "",
-    "quando": "2026-11-16T23:44:24.515Z"
+    "quando": "2026-11-17T01:00:13.965Z"
   },
   {
     "id": "ESTRUTURA-3-celular",
@@ -11008,18 +11008,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:26.420Z"
+    "quando": "2026-11-17T01:00:15.992Z"
   },
   {
     "id": "ESTRUTURA-4-celular",
     "modulo": "Escola: etapas e níveis",
     "cenario": "celular: a lista mostra as etapas da escola",
     "esperado": "\"Infantil · Fund. I\"",
-    "observado": "ZZ-ESTR Escola celular 234333 Infantil · Fund. I Editar",
+    "observado": "ZZ-ESTR Escola celular 005926 Infantil · Fund. I Editar",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:28.688Z"
+    "quando": "2026-11-17T01:00:18.446Z"
   },
   {
     "id": "ESTRUTURA-5-celular",
@@ -11030,7 +11030,7 @@
     "status": "APROVADO",
     "evidencia": "79-nova-turma-infantil-celular.png",
     "nota": "",
-    "quando": "2026-11-16T23:44:41.057Z"
+    "quando": "2026-11-17T01:00:30.789Z"
   },
   {
     "id": "ESTRUTURA-6-celular",
@@ -11041,18 +11041,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:43.203Z"
+    "quando": "2026-11-17T01:00:32.769Z"
   },
   {
     "id": "ESTRUTURA-7-celular",
     "modulo": "Escola: etapas e níveis",
     "cenario": "celular: não deixa tirar nível/etapa com turma ativa nem criar turma fora do que a escola oferece",
     "esperado": "409, 409, 400, 400; escola sem mudança",
-    "observado": "409 \"Estas turmas ativas ficariam fora do que a escola oferece: Maternal 3 \", 409, 400, 400; níveis 2, etapas EDUCACAO_INFANTIL,FUNDAMENTAL_I",
+    "observado": "409 \"Desative antes as turmas: Maternal 3 B — Manhã.\", 409, 400, 400; níveis 2, etapas EDUCACAO_INFANTIL,FUNDAMENTAL_I",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:44.312Z"
+    "quando": "2026-11-17T01:00:34.065Z"
   },
   {
     "id": "ESTRUTURA-8",
@@ -11063,7 +11063,7 @@
     "status": "APROVADO",
     "evidencia": "79-sugerir-pelas-turmas.png",
     "nota": "",
-    "quando": "2026-11-16T23:44:55.131Z"
+    "quando": "2026-11-17T01:00:45.443Z"
   },
   {
     "id": "ESTRUTURA-9",
@@ -11074,7 +11074,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:58.645Z"
+    "quando": "2026-11-17T01:00:48.874Z"
   },
   {
     "id": "ESTRUTURA-10",
@@ -11085,7 +11085,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:44:59.012Z"
+    "quando": "2026-11-17T01:00:49.292Z"
   },
   {
     "id": "TURMASCARGO-1-desktop",
@@ -11333,12 +11333,12 @@
     "id": "NOVAESCOLA-1-desktop",
     "modulo": "Nova escola vai para Turmas",
     "cenario": "desktop: criar escola leva a Turmas com \"Nova turma\" aberto, a escola nova escolhida, só os anos dela e o aviso",
-    "esperado": "URL /turmas; Nova turma; escola #455; 1º–5º ano; aviso",
-    "observado": "/turmas; \"Nova turma\"; escola 455; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
+    "esperado": "URL /turmas; Nova turma; escola #467; 1º–5º ano; aviso",
+    "observado": "/turmas; \"Nova turma\"; escola 467; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:41:02.063Z"
+    "quando": "2026-11-17T01:01:07.479Z"
   },
   {
     "id": "NOVAESCOLA-2-desktop",
@@ -11349,7 +11349,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:41:09.550Z"
+    "quando": "2026-11-17T01:01:14.536Z"
   },
   {
     "id": "NOVAESCOLA-3-desktop",
@@ -11360,18 +11360,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:41:14.885Z"
+    "quando": "2026-11-17T01:01:19.222Z"
   },
   {
     "id": "NOVAESCOLA-1-celular",
     "modulo": "Nova escola vai para Turmas",
     "cenario": "celular: criar escola leva a Turmas com \"Nova turma\" aberto, a escola nova escolhida, só os anos dela e o aviso",
-    "esperado": "URL /turmas; Nova turma; escola #456; 1º–5º ano; aviso",
-    "observado": "/turmas; \"Nova turma\"; escola 456; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
+    "esperado": "URL /turmas; Nova turma; escola #468; 1º–5º ano; aviso",
+    "observado": "/turmas; \"Nova turma\"; escola 468; 1º ano,2º ano,3º ano,4º ano,5º ano; aviso: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:41:30.231Z"
+    "quando": "2026-11-17T01:01:31.530Z"
   },
   {
     "id": "NOVAESCOLA-2-celular",
@@ -11382,7 +11382,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:41:38.636Z"
+    "quando": "2026-11-17T01:01:39.413Z"
   },
   {
     "id": "NOVAESCOLA-3-celular",
@@ -11393,6 +11393,50 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-16T23:41:43.760Z"
+    "quando": "2026-11-17T01:01:43.896Z"
+  },
+  {
+    "id": "USOFIX-1",
+    "modulo": "Correções do teste de uso",
+    "cenario": "\"+ Nova turma\" depois de criar uma turma continua na mesma escola",
+    "esperado": "escola #464",
+    "observado": "escola #464",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T00:56:36.104Z"
+  },
+  {
+    "id": "USOFIX-2",
+    "modulo": "Correções do teste de uso",
+    "cenario": "Turma repetida: mensagem curta",
+    "esperado": "\"A turma 3M1 já existe nesta escola.\"",
+    "observado": "A turma 3M1 já existe nesta escola.",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T00:56:38.141Z"
+  },
+  {
+    "id": "USOFIX-3",
+    "modulo": "Correções do teste de uso",
+    "cenario": "Sem turma criada, \"+ Nova turma\" usa a escola escolhida no filtro da lista",
+    "esperado": "escola #464",
+    "observado": "escola #464",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T00:56:47.203Z"
+  },
+  {
+    "id": "USOFIX-4",
+    "modulo": "Correções do teste de uso",
+    "cenario": "\"Minhas turmas\": uma linha por turma, com as disciplinas juntas",
+    "esperado": "[\"6M1 · Redação, Geografia\"] (ordem livre)",
+    "observado": "[\"6M1 · Geografia, Redação\"]",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-17T00:57:09.858Z"
   }
 ]
