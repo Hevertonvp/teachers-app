@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
 import { useEscola, useFiltroEscolaDoTopo } from '../context/EscolaContext';
-import { isDiretora, isSecretaria } from '../utils/roles';
+import { isDiretora, isGestor, isSecretaria } from '../utils/roles';
 import { obterAcompanhamentoEscola, obterAcompanhamentoRede } from '../services/acompanhamento';
 import { BarraSituacao, fmt, fmtData, GraficoRitmo, LegendaSituacao, LinhaTempo, Paginacao, pct, usePaginas } from '../components/acompanhamento/Graficos';
 import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
@@ -404,7 +404,8 @@ export const AcompanhamentoEscolarPage = () => {
   const { userEscolas } = useEscola();
   const [params, setParams] = useSearchParams();
   const secretaria = isSecretaria(user);
-  const diretora = isDiretora(user);
+  // 18/11/2026: a Supervisora (Gestor) vê como a Diretora — só as próprias escolas.
+  const diretora = isDiretora(user) || isGestor(user);
   const anoAtual = new Date().getFullYear();
   const ano = Number(params.get('ano')) || anoAtual;
   // PDI desligado (src/config/modulos.js): a tela fica presa no 1/3.

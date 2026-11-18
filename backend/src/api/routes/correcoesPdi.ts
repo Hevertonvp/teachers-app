@@ -11,18 +11,27 @@ import { perguntasPadraoDaFicha, resolverOuCriarBloco } from '../../domain/pdiBl
 import { exigirSemConflitoDeVersao } from '../../domain/offlineConflito.js';
 import { perguntasDaFicha } from '../../domain/perguntasComputacao.js';
 import { responsavelDaAtuacao } from '../../domain/pdiAtuacao.js';
+import { escolasPermitidas } from './pessoas.js';
+import { avisarCorrecaoPdi } from '../../lib/avisosCorrecaoPdi.js';
 
 export const correcoesPdiRouter = Router();
 
 type Actor = { id: number; perfil: string };
 
-// Único perfil autorizado em toda a área — nunca Diretora/Gestor/Professor/Auxiliar (seção 38 do
-// pedido: nenhum outro perfil lista a fila global, corrige diretamente ou devolve Ficha).
-function exigirSecretaria(actor: Actor) {
-  if (actor.perfil !== 'SECRETARIA') {
-    throw new ForbiddenError('Somente a Secretaria pode acessar Correções > PDI.');
-  }
+// Quem corrige: Secretaria (rede inteira) e, desde 18/11/2026 (decisão do usuário), a Supervisora
+// (perfil GESTOR) só nas escolas onde tem vínculo ATIVO. Nunca Diretora/Professor/Auxiliar.
+// Devolve o escopo: null = todas as escolas; lista = só essas.
+async function escopoDeCorrecao(actor: Actor): Promise<number[] | null> {
+  if (actor.perfil === 'SECRETARIA') return null;
+  if (actor.perfil === 'GESTOR') return escolasPermitidas(actor);
+  throw new ForbiddenError('Somente a Secretaria e a Supervisão podem acessar Correções > PDI.');
 }
+
+function exigirFichaNoEscopo(escopo: number[] | null, ficha: { escolaId: number }) {
+  if (escopo && !escopo.includes(ficha.escolaId)) throw new ForbiddenError('Esta Ficha é de uma escola fora do seu acesso.');
+}
+
+const origemDaCorrecaoDireta = (actor: Actor) => (actor.perfil === 'GESTOR' ? 'SUPERVISAO_DIRETA' as const : 'SECRETARIA_DIRETA' as const);
 
 const formatarItemLista = (f: {
   id: number; alunoNomeSnapshot: string; escolaNomeSnapshot: string; turmaNomeSnapshot: string;
@@ -64,12 +73,13 @@ const listaQuerySchema = z.object({
 
 correcoesPdiRouter.get('/', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const filtros = listaQuerySchema.parse(req.query);
+  if (escopo && filtros.escolaId && !escopo.includes(filtros.escolaId)) return res.json([]);
 
   const where: Prisma.FichaPdiWhereInput = {
     status: 'CONCLUIDA',
-    ...(filtros.escolaId ? { escolaId: filtros.escolaId } : {}),
+    ...(filtros.escolaId ? { escolaId: filtros.escolaId } : escopo ? { escolaId: { in: escopo } } : {}),
     ...(filtros.professorId ? { professorResponsavelId: filtros.professorId } : {}),
     ...(filtros.turmaId ? { turmaId: filtros.turmaId } : {}),
     ...(filtros.disciplinaId ? { disciplinaId: filtros.disciplinaId } : {}),
@@ -121,11 +131,12 @@ correcoesPdiRouter.get('/', async (req, res) => {
 // montarRespostaCompleta, já existente) + histórico de correções e de alterações de valor.
 correcoesPdiRouter.get('/:fichaId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
 
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+  exigirFichaNoEscopo(escopo, ficha);
   if (ficha.status !== 'CONCLUIDA') throw new ValidationError('Esta Ficha ainda não foi concluída — não aparece em Correções.');
 
   // Professor responsável ATUAL (seção 26: "diferente, quando aplicável") — resolvido ao vivo via
@@ -205,12 +216,13 @@ const corrigirSchema = z.object({
 // anterior (lido antes do upsert) — "não sobrescrever sem histórico" (seção 30).
 correcoesPdiRouter.put('/:fichaId/respostas', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
   const { respostas, baseUpdatedAt } = corrigirSchema.parse(req.body);
 
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+  exigirFichaNoEscopo(escopo, ficha);
   if (ficha.status !== 'CONCLUIDA') throw new ValidationError('Só é possível corrigir diretamente uma Ficha já concluída.');
   await exigirSemConflitoDeVersao(
     baseUpdatedAt,
@@ -251,11 +263,12 @@ correcoesPdiRouter.put('/:fichaId/respostas', async (req, res) => {
         valorAnterior: valoresAntes.get(item.aplicacaoPerguntaId) ?? Prisma.JsonNull,
         valorNovo: item.valor,
         alteradoPor: String(actor.id),
-        origem: 'SECRETARIA_DIRETA' as const,
+        origem: origemDaCorrecaoDireta(actor),
       })),
     }),
   ]);
 
+  await avisarCorrecaoPdi(prisma, actor, ficha, 'corrigida');
   const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });
   res.json(await montarRespostaCompleta(atualizada));
 });
@@ -280,12 +293,13 @@ const corrigirPadraoSchema = z.object({
 // do upsert) da correção específica, só gravando em HistoricoCorrecaoRespostaPadrao/blocoId.
 correcoesPdiRouter.put('/:fichaId/respostas-padrao', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
   const { respostas, version } = corrigirPadraoSchema.parse(req.body);
 
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+  exigirFichaNoEscopo(escopo, ficha);
   if (ficha.status !== 'CONCLUIDA') throw new ValidationError('Só é possível corrigir diretamente uma Ficha já concluída.');
 
   const perguntasPadrao = await perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId);
@@ -329,11 +343,12 @@ correcoesPdiRouter.put('/:fichaId/respostas-padrao', async (req, res) => {
         valorAnterior: valoresAntes.get(item.aplicacaoPerguntaPadraoId) ?? Prisma.JsonNull,
         valorNovo: item.valor,
         alteradoPor: String(actor.id),
-        origem: 'SECRETARIA_DIRETA' as const,
+        origem: origemDaCorrecaoDireta(actor),
       })),
     }),
   ]);
 
+  await avisarCorrecaoPdi(prisma, actor, ficha, 'corrigida');
   const atualizada = await prisma.fichaPdi.findUniqueOrThrow({ where: { id: fichaId } });
   res.json(await montarRespostaCompleta(atualizada));
 });
@@ -381,14 +396,15 @@ async function identificacaoDaFicha(db: Prisma.TransactionClient, ficha: { aplic
 
 correcoesPdiRouter.post('/:fichaId/devolver', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
   const { observacao } = devolverSchema.parse(req.body);
 
-  const { correcao, criadas } = await prisma.$transaction(async (tx) => {
+  const { correcao, criadas, ficha } = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM fichas_pdi WHERE id = ${fichaId} FOR UPDATE`;
     const ficha = await tx.fichaPdi.findUnique({ where: { id: fichaId } });
     if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+    exigirFichaNoEscopo(escopo, ficha);
     if (ficha.status !== 'CONCLUIDA') throw new ValidationError('Só é possível devolver uma Ficha já concluída.');
     const aberta = await tx.correcaoFichaPdi.findFirst({ where: { fichaId, status: 'ABERTA' } });
     if (aberta) throw new ConflictError('Esta Ficha já tem uma correção aguardando o professor. Aguarde o envio para devolver de novo.');
@@ -406,9 +422,10 @@ correcoesPdiRouter.post('/:fichaId/devolver', async (req, res) => {
       conteudo: textoMensagemCorrecao({ formulario: `PDI (${id.nomeAplicacao})`, identificacao: [...id.linhas, ficha.atuacaoId !== null ? `Formulário: ${ficha.disciplinaNomeSnapshot}` : `Disciplina: ${ficha.disciplinaNomeSnapshot}`], observacao, prazoAte: nova.prazoAte }),
       link: `/pdi/aluno/${ficha.aplicacaoId}/${ficha.alunoId}`,
     });
-    return { correcao: nova, criadas: msgs };
+    return { correcao: nova, criadas: msgs, ficha };
   });
   await notificarMensagensDeCorrecao(prisma, actor.id, criadas, `correcao-pdi-${correcao.id}`);
+  await avisarCorrecaoPdi(prisma, actor, ficha, 'devolvida', `correcao-pdi-${correcao.id}`);
   res.status(201).json({ ...formatarCorrecao(correcao), mensagensEnviadas: criadas.length });
 });
 
@@ -416,12 +433,13 @@ correcoesPdiRouter.post('/:fichaId/devolver', async (req, res) => {
 // Professor corrige uma vez e envia por "Enviar correção" em qualquer Ficha do aluno.
 correcoesPdiRouter.post('/:fichaId/devolver-padrao', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
   const { observacao } = devolverSchema.parse(req.body);
 
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+  exigirFichaNoEscopo(escopo, ficha);
   if (ficha.status !== 'CONCLUIDA') throw new ValidationError('Só é possível devolver uma Ficha já concluída.');
   const perguntasPadrao = await perguntasPadraoDaFicha(prisma, ficha.aplicacaoModeloId);
   if (perguntasPadrao.length === 0) throw new ValidationError('Esta Ficha não tem nenhuma pergunta padrão compartilhada para devolver.');
@@ -457,6 +475,7 @@ correcoesPdiRouter.post('/:fichaId/devolver-padrao', async (req, res) => {
     return { correcao: nova, criadas: msgs };
   });
   await notificarMensagensDeCorrecao(prisma, actor.id, criadas, `correcao-pdi-bloco-${correcao.id}`);
+  await avisarCorrecaoPdi(prisma, actor, ficha, 'devolvida', `correcao-pdi-bloco-${correcao.id}`);
   res.status(201).json({ ...formatarCorrecao(correcao), mensagensEnviadas: criadas.length });
 });
 
@@ -464,8 +483,11 @@ correcoesPdiRouter.post('/:fichaId/devolver-padrao', async (req, res) => {
 // ainda. O updateMany com a condição completa não aceita duas vezes.
 correcoesPdiRouter.post('/:fichaId/aceitar', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
+  const fichaDoAceite = await prisma.fichaPdi.findUnique({ where: { id: fichaId }, select: { escolaId: true } });
+  if (!fichaDoAceite) throw new NotFoundError('Ficha não encontrada.');
+  exigirFichaNoEscopo(escopo, fichaDoAceite);
   const ultima = await prisma.correcaoFichaPdi.findFirst({ where: { fichaId }, orderBy: { criadaEm: 'desc' } });
   if (!ultima || ultima.status !== 'RESOLVIDA' || ultima.conferencia) throw new ConflictError('Não há correção recebida aguardando conferência nesta Ficha.');
   await prisma.correcaoFichaPdi.updateMany({ where: { id: ultima.id, status: 'RESOLVIDA', conferencia: null }, data: { conferencia: 'ACEITA', conferidaEm: new Date(), conferidaPor: String(actor.id) } });
@@ -474,10 +496,11 @@ correcoesPdiRouter.post('/:fichaId/aceitar', async (req, res) => {
 
 correcoesPdiRouter.post('/:fichaId/aceitar-padrao', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeCorrecao(actor);
   const fichaId = Number(req.params.fichaId);
   const ficha = await prisma.fichaPdi.findUnique({ where: { id: fichaId } });
   if (!ficha) throw new NotFoundError('Ficha não encontrada.');
+  exigirFichaNoEscopo(escopo, ficha);
   const blocoId = (await montarRespostaCompleta(ficha)).blocoPadrao?.blocoId ?? null;
   const ultima = blocoId ? await prisma.correcaoBlocoPadraoPdi.findFirst({ where: { blocoId }, orderBy: { criadaEm: 'desc' } }) : null;
   if (!ultima || ultima.status !== 'RESOLVIDA' || ultima.conferencia) throw new ConflictError('Não há correção recebida das perguntas comuns aguardando conferência.');

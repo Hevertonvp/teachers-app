@@ -39,7 +39,8 @@ export const PdiPage = () => {
   const { activeEscolaId, userEscolas, isExplicitBatchSelection } = useEscola();
 
   const isProfessor = isProfessorRole(user);
-  const canManage = canManagePedagogico(user); // Secretaria + Gestor: cria/edita/arquiva/reativa
+  // 18/11/2026: só a Secretaria cria/edita/arquiva/reativa Aluno PDI; a Supervisora (Gestor) só consulta.
+  const canManage = isSecretaria(user);
   const canView = canViewPdiAlunos(user); // + Diretora: só consulta
   // Escola inativa vinculada à Supervisora: consulta sempre permitida, edição nunca.
   const escolaAtivaSelecionada = activeEscolaId ? escolas.find(item => item.id === activeEscolaId)?.status === 'ativa' : true;

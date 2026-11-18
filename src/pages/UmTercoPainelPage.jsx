@@ -4,6 +4,7 @@ import { BackButton, Badge, Button, Card, EmptyState, LoadingBlock, Modal, StatC
 import { MainLayout } from '../layouts/Layouts';
 import { BotaoExportarExcel } from '../components/BotaoExportarExcel';
 import { useAuth } from '../context/AuthContext';
+import { isSecretaria } from '../utils/roles';
 import { useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { exportarUmTerco } from '../utils/exportarUmTerco';
 import { aceitarCorrecaoUmTerco, devolverEntregaUmTerco, obterEntregaUmTerco, obterPainelUmTerco } from '../services/formularioUmTerco';
@@ -18,7 +19,8 @@ const EVENTO_ROTULO = {
   COBERTURA_ADICIONADA: 'Passou a valer para uma turma (modelo antigo)', COBERTURA_ENCERRADA: 'Deixou de valer para uma turma (modelo antigo)',
 };
 
-const DetalheEntregaModal = ({ cicloId, linha, onClose, onAlterado }) => {
+// `somenteLeitura` (18/11/2026): Supervisora consulta o formulário, sem devolver, aceitar nem corrigir.
+const DetalheEntregaModal = ({ cicloId, linha, onClose, onAlterado, somenteLeitura = false }) => {
   const [detalhe, setDetalhe] = useState(null);
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
@@ -46,7 +48,9 @@ const DetalheEntregaModal = ({ cicloId, linha, onClose, onAlterado }) => {
       {detalhe && (
         <div className="space-y-5">
           {aviso && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{aviso}</p>}
-          {devolvendo ? (
+          {somenteLeitura ? (
+            ultima && <div className="flex flex-wrap items-center gap-2"><SeloCorrecao situacao={ultima.situacao} /></div>
+          ) : devolvendo ? (
             <FormEnviarParaCorrecao descricao="Só este formulário (este cargo) é liberado para o professor corrigir." onConfirmar={devolver} onFechar={() => setDevolvendo(false)} />
           ) : (
             <div className="flex flex-wrap items-center gap-2">
@@ -239,7 +243,7 @@ export const UmTercoPainelPage = () => {
           </Card>
         )}
       </div>
-      {detalhe && <DetalheEntregaModal cicloId={cicloId} linha={detalhe} onClose={() => setDetalhe(null)} onAlterado={() => setFiltros(prev => ({ ...prev }))} />}
+      {detalhe && <DetalheEntregaModal cicloId={cicloId} linha={detalhe} somenteLeitura={!isSecretaria(user)} onClose={() => setDetalhe(null)} onAlterado={() => setFiltros(prev => ({ ...prev }))} />}
     </MainLayout>
   );
 };

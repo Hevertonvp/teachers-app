@@ -143,20 +143,24 @@ Pode:
 
 - vinculada a escolas específicas;
 - atua somente nas próprias escolas;
-- pode administrar Professores das próprias escolas;
+- **desde 13/11/2026 NÃO cadastra nem vincula Professor** (só a Secretaria, com cargo) — a antiga linha "pode administrar Professores" ficou desatualizada;
+- menu: Dashboard, Acompanhamento Escolar (própria escola), Notícias, Mensagens, Feedback;
 - não cria Modelos PDI;
 - não cria Aplicações;
-- originalmente PDI é consulta, não preenchimento.
+- PDI é consulta, não preenchimento; não acessa Correções nem o painel do 1/3.
+- recebe os avisos de entrega da própria escola (1/3 e PDI) — ver Registro de 18/11/2026.
 
 ---
 
 # 7. Gestor / Supervisora
 
-- vinculado a escolas;
-- pode preencher/editar Fichas PDI conforme regra atual;
-- não administra Modelos;
-- não cria Aplicações;
-- não reabre globalmente.
+Perfil `GESTOR` = Supervisora. **Redefinido em 18/11/2026 (decisão do usuário):**
+- vinculada a escolas; tudo vale só nas escolas com vínculo ATIVO;
+- **PDI**: acompanha; preenche Fichas (como antes); **corrige direto e devolve** Fichas dos professores da escola (Correções > PDI), com selo "Corrigido pela supervisão";
+- **só leitura**: Alunos PDI (não cadastra/edita mais), Anamnese, Ficha Anual, lista de professores (não cadastra), **Formulário 1/3** (ciclos, painel e folhas — nunca preenche, corrige, devolve nem administra) e Acompanhamento Escolar;
+- recebe avisos: correção/devolução de Ficha PDI feita pela Secretaria; prazos (PDI e 1/3);
+- não administra Modelos, não cria Aplicações, não reabre;
+- mensagens: hierarquia inalterada (fala com Diretora, Professor e Auxiliar da escola).
 
 ---
 
@@ -1588,6 +1592,8 @@ Push depende de chaves VAPID.
 
 Foi identificado que VAPID talvez não estivesse configurado em produção.
 
+**18/11/2026:** o usuário conferiu o Render e configurou `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `FRONTEND_URL=https://educasaojoao.com.br` (chaves geradas na sessão, só para a produção; a privada nunca foi para o repositório). Ele respondeu "deu certo". O Claude **não** conseguiu conferir a produção (acesso ao banco de produção bloqueado sem autorização explícita). Cada aparelho precisa desativar e ativar de novo as notificações (janela "Instalar app") para assinar com as chaves novas.
+
 Não afirmar que push funciona sem verificar variáveis e teste real.
 
 ---
@@ -3006,3 +3012,15 @@ Por isso, antes de executar qualquer mudança sensível, confirmar o estado real
   - **Banco**: migration `20261117220000_turma_integral` — enum `TipoTurma` (REGULAR/INTEGRAL), `turmas.tipo` (padrão REGULAR — todas as existentes), `etapa` e `identificador` passam a aceitar nulo + CHECK `turmas_tipo_campos_chk` (Regular: etapa e identificador obrigatórios, como sempre; Integral: etapa, identificador, ano/série, segmento, nível e nível local nulos). Nenhuma turma existente muda.
   - **Arquivos**: backend `domain/turma.ts` (`validarECalcularTurmaIntegral`, `normalizarNomeTurma`), `routes/turmas.ts`, `routes/escolas.ts` (estrutura ignora Integral), `routes/acompanhamento.ts` (conta Integral como etapa "INTEGRAL"), `routes/pdiAlunos.ts`, `domain/perguntasComputacao.ts` (tipo); frontend `GestaoTurmas.jsx` (seletor Regular/Integral só na criação; Integral mostra Nome, Ano letivo, Turno; etiqueta "Integral" na lista; filtro "Integral"; exportação), `services/turmas.js`, `utils/turmas.js`, `CargosProfessor.jsx` (aba "Integral"), `PdiPage.jsx`/`PdiAlunoPerfil.jsx` (não listam Integral).
   - Testes (banco local): novo `homologacao/90-turma-integral.mjs` **8/8** (API: criar, nome igual recusado, sem nome recusado, Regular continua exigindo etapa, tipo não muda, renomear, inativar/reativar, vínculo de Professor, aluno do PDI recusado; telas computador e celular: formulário só com Nome/Ano letivo/Turno, etiqueta na lista, aba "Integral" no cadastro do Professor e vínculo gravado, sem rolagem lateral, 0 erros de console). Regressão: 79 17/17, 83 6/6, 84 4/4, 78 14/14, 73 10/10, 40 9/9, 42 8/8, `testar-cargos.ts` (1/3) **54/54**. `tsc` e `vite build` ok.
+
+- **18/11/2026 — Notificações push (VAPID na produção) + Supervisora corrige PDI + avisos de entrega por escola (frontend + backend + banco).** Pedidos do usuário nesta sessão, com decisões tomadas por perguntas (o usuário confundiu PDI e 1/3 duas vezes; o que vale está abaixo). Camadas: banco (migration aditiva), backend, frontend.
+  - **Push no Android**: diagnóstico — o código do push estava certo; faltavam as chaves VAPID no Render. Chaves geradas na sessão e coladas pelo usuário no Render (ver seção 95). Nada de código mudou para isso. Não testado pelo Claude na produção.
+  - **Supervisora (perfil GESTOR) — regras novas** (seção 7 atualizada): no **PDI** acompanha, preenche e agora **corrige direto e devolve** Fichas dos professores da escola dela (Correções > PDI, só escolas com vínculo ATIVO). **Só leitura**: Alunos PDI (perdeu criar/editar), professores (lista nova, sem cadastrar), **Formulário 1/3** (ciclos, painel e folha das escolas dela — nunca preenche, corrige, devolve nem administra), Acompanhamento Escolar. Mensagens: hierarquia inalterada (decisão do usuário: "as mensagens é assim mesmo").
+  - **Selo**: Ficha PDI mostra "Corrigido pela Secretaria" / "Corrigido pela supervisão" (correção direta mais recente da Ficha ou do bloco comum), para Professor, Secretaria e Supervisora. Histórico ganhou a origem `SUPERVISAO_DIRETA`.
+  - **Avisos de correção do PDI** (só notificação — sino + celular; nunca mensagem, porque Secretaria não conversa com Gestor): Secretaria corrige direto → Supervisoras da escola: "Formulário do professor X corrigido pela Secretaria" (salvar várias vezes em 30 min = 1 aviso); Secretaria devolve → "… devolvido pela Secretaria"; Supervisora corrige direto → Professor: "PDI corrigido pela supervisão"; Supervisora devolve → mensagem automática dela ao Professor (fluxo de sempre). A Secretaria **não** é avisada das correções da Supervisora (decisão do usuário: vê pelo selo e histórico). A correção direta da Secretaria continua sem aviso ao Professor no PDI (não pedido).
+  - **Avisos de entrega por escola (1/3 e PDI)**: escola chega a 100% → Secretaria + Diretora e Supervisora da escola (na hora, ao concluir; em segundo plano, nunca atrasa nem derruba a conclusão); **véspera do prazo** e **prazo vencido** (1 a 3 dias depois) → Secretaria recebe **um resumo** (1/3: por ciclo; PDI: por dia de prazo) e Diretora/Supervisora recebem só a escola delas. Job `jobs/avisosEntregaJob.ts` às **08:45** e na subida do servidor; tudo com chave de idempotência (sai uma vez só). Links: Secretaria/Supervisora → painel do 1/3; Diretora → Acompanhamento Escolar; PDI → Acompanhamento Escolar. O aviso de prazo do PDI que já existia (Professor/Gestor, 3 e 1 dia) não mudou.
+  - **PDI na interface**: continua `MODO_PDI = 'ativo'` (não mexido). Na produção não há Aplicação do PDI, então nada do PDI dispara; o usuário pediu "faz e mantém escondido" — **pendente confirmar** se quer `MODO_PDI = 'desenvolvimento'`/`'oculto'`, porque com 'ativo' o menu da Supervisora mostra PDI e Correções.
+  - **Banco**: migration `20261118120000_supervisao_pdi_avisos_entrega` — só `ALTER TYPE … ADD VALUE`: `OrigemHistoricoCorrecao.SUPERVISAO_DIRETA`; `TipoNotificacao` CORRECAO_FORMULARIO, ENTREGA_ESCOLA_COMPLETA, ENTREGA_PRAZO_AMANHA, ENTREGA_ATRASADA. Aplicada só no banco local; na produção roda no próximo deploy do Render.
+  - **Arquivos**: backend `routes/correcoesPdi.ts` (escopo Secretaria/Supervisora, origem, avisos), `lib/avisosCorrecaoPdi.ts` (novo), `lib/avisosEntrega.ts` (novo), `jobs/avisosEntregaJob.ts` (novo), `scheduler.ts`, `routes/formularioUmTerco.ts` (leitura da Supervisora em GET ciclos/painel/folha/exportação com escopo; `montarPainel(…, escopo)`; aviso de 100% depois de concluir — **gravação do Professor não mudou**), `routes/pdiFichas.ts` (`correcaoDireta` na resposta; aviso de 100% ao concluir), `routes/pdiAlunos.ts` (escrita só Secretaria), `routes/pessoas.ts` (GET /professores para Gestor), `routes/acompanhamento.ts` (Gestor como Diretora), `routes/correcoesUmTerco.ts` (só o rótulo do enum novo), `lib/notificacoes.ts` (tipos). Frontend: `Sidebar.jsx` (menu da Supervisora), `App.jsx` (rotas), `pages/UmTercoSupervisaoPage.jsx` e `pages/ProfessoresConsultaPage.jsx` (novas), `UmTercoPainelPage.jsx` (detalhe só leitura para quem não é Secretaria), `CorrecoesPdiListaPage.jsx`/`CorrecoesPdiDetalhePage.jsx` (escolas do usuário; selo; rótulos de origem), `FormularioPdiAlunoPage.jsx` (selo), `components/Correcoes.jsx` (`SeloCorrecaoDireta`), `PdiPage.jsx`/`PdiAlunoPerfil.jsx` (Aluno PDI só Secretaria edita), `AcompanhamentoEscolarPage.jsx` (Gestor entra), `NotificacoesBell.jsx` (ícones), `utils/roles.js`.
+  - **Testes (banco local)**: novo `homologacao/91-supervisao-pdi-avisos.mjs` **21/21** (API: escopo da Supervisora nas Correções do PDI, 403 fora da escola, Diretora sem acesso; correção direta com origem/selo/aviso ao Professor; Secretaria corrige → Supervisora avisada 1 vez; devoluções; Aluno PDI/professores só leitura; 1/3 só leitura e 403 para devolver/corrigir/criar; Acompanhamento; avisos de véspera/atraso/100% do 1/3 e véspera do PDI, sem repetir) — duas execuções seguidas, limpa o que cria; auxiliar `91-avisos-job.mts`. Novo `92-supervisao-telas.mjs` **12/12** (computador e celular: menu, 1/3 sem "+ Novo ciclo"/"Enviar para correção", Correções > PDI, Professores e Alunos PDI só consulta, Acompanhamento, aviso no sino, sem rolagem lateral, 0 erros no console). `tsc` e `vite build` ok. Regressão do 1/3: suíte `rodar-um-terco.sh` (30 roteiros, navegador real): preenchimento, conclusão e correções do 1/3 sem falhas (04, 05, 07, 08, 10, 12, 15, 24, 32, 33, 35, 44, 45, 46, 52, 57, 58, 59 11/11, 62 25/25, 63 12/12, 68, 36 14/14). Falhas **antigas, iguais com o código ANTERIOR** (conferido com `git stash` e os mesmos testes): 13 (P14 e contagens 13×14), 14 (UT-EST-02/03 + timeout), 48 (REAB-1), 60 (timeout), 61 (XLS13-3/6/10, P14) — dados do professor P14 no banco local, a investigar à parte; 56 TOPO-12 "não testado" (p04 sem escola); 55 (32 reprovações esperadas: testa o modo "PDI em desenvolvimento", desligado desde 12/11). 50 ACP-4 **atualizado** para a regra nova (Supervisora vê o Acompanhamento só da escola dela) e aprovado.
+  - **Não testado**: produção (push real no Android, deploy da migration); aviso de 100% do PDI com uma Aplicação de fato completa (testado com situação simulada e com Aplicação incompleta).

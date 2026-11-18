@@ -124,11 +124,15 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     itemFeedback,
   ];
 
+  // Supervisora (perfil GESTOR), 18/11/2026: acompanha e corrige o PDI da escola; 1/3, Acompanhamento e
+  // professores só para consulta.
   const menuGestor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
+    { name: 'Acompanhamento Escolar', path: '/acompanhamento-escolar', icon: 'acompanhamento' },
+    { name: 'Formulário 1/3', path: '/formulario-um-terco', icon: 'formulario' },
     { name: 'PDI', path: '/pdi', icon: 'pdi' },
     { name: 'Correções', path: '/correcoes', icon: 'correcoes' },
-    { name: 'Gestão de Professores(as)', path: '/gestao-professores', icon: 'pessoas' },
+    { name: 'Professores(as)', path: '/gestao-professores', icon: 'pessoas' },
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },

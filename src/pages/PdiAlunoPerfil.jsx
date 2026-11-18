@@ -34,7 +34,8 @@ export const PdiAlunoPerfil = () => {
 
   const aluno = pdiAlunosReais.find(item => item.id === Number(id));
   const isProfessor = isProfessorRole(user);
-  const canManagePdi = canManagePedagogico(user);
+  // 18/11/2026: editar Aluno PDI é só da Secretaria; a Supervisora (Gestor) só consulta.
+  const canManagePdi = isSecretaria(user);
   const canView = canViewPdiAlunos(user);
   const { activeEscolaId, userEscolas, vinculosReais, vinculosLoading } = useEscola();
   // DEF-17: o escopo vem dos VinculoEscolar REAIS do usuário (EscolaContext, GET

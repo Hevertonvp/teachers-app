@@ -38,6 +38,12 @@ export function formatarPrazoCorrecao(iso) {
 export const SeloCorrecao = ({ situacao, mapa = SITUACAO_CORRECAO }) => (mapa[situacao] ? <Badge variant={mapa[situacao].variant}>{mapa[situacao].rotulo}</Badge> : null);
 
 // Uma correção ainda nas mãos do Professor (pode corrigir e enviar).
+// Selo "Corrigido pela Secretaria/supervisão" (18/11/2026): quem fez a correção DIRETA mais recente da
+// Ficha PDI (campo `correcaoDireta` da API: { por: 'secretaria' | 'supervisao', em }). Nada quando não houve.
+export const SeloCorrecaoDireta = ({ correcaoDireta, className = '' }) => (correcaoDireta
+  ? <Badge variant="blue" className={className}>{correcaoDireta.por === 'supervisao' ? 'Corrigido pela supervisão' : 'Corrigido pela Secretaria'}</Badge>
+  : null);
+
 export const correcaoPendente = (c) => !!c && (c.situacao === 'solicitada' || c.situacao === 'prazo_encerrado');
 
 // Modal da Secretaria: "O que precisa ser corrigido?" (obrigatório) + confirmação antes de enviar.

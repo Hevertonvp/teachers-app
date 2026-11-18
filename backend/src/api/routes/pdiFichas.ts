@@ -15,6 +15,7 @@ import { formatarCorrecao } from '../../domain/correcoes.js';
 import { escolasPermitidas } from './pessoas.js';
 import { anoSerieDaTurma, perguntasDaFicha } from '../../domain/perguntasComputacao.js';
 import { alvoDaFicha, chaveDoAlvo, filtroDoAlvo, responsavelDaAtuacao, responsaveisPorAtuacao, type AlvoFicha } from '../../domain/pdiAtuacao.js';
+import { verificarPdiCompleto } from '../../lib/avisosEntrega.js';
 
 export const pdiFichasRouter = Router();
 
@@ -249,6 +250,14 @@ export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof pr
     prisma.correcaoFichaPdi.findFirst({ where: { fichaId: ficha.id }, orderBy: { criadaEm: 'desc' } }),
     blocoPadrao?.blocoId ? prisma.correcaoBlocoPadraoPdi.findFirst({ where: { blocoId: blocoPadrao.blocoId }, orderBy: { criadaEm: 'desc' } }) : Promise.resolve(null),
   ]);
+  // Selo "Corrigido pela Secretaria/supervisão" (18/11/2026): a correção DIRETA mais recente desta Ficha
+  // ou do bloco comum dela. Só leitura do histórico que já existia; nada novo é gravado aqui.
+  const origensDiretas = ['SECRETARIA_DIRETA', 'SUPERVISAO_DIRETA'] as const;
+  const [diretaFicha, diretaBloco] = await Promise.all([
+    prisma.historicoCorrecaoResposta.findFirst({ where: { fichaId: ficha.id, origem: { in: [...origensDiretas] } }, orderBy: { alteradoEm: 'desc' }, select: { origem: true, alteradoEm: true } }),
+    blocoPadrao?.blocoId ? prisma.historicoCorrecaoRespostaPadrao.findFirst({ where: { blocoId: blocoPadrao.blocoId, origem: { in: [...origensDiretas] } }, orderBy: { alteradoEm: 'desc' }, select: { origem: true, alteradoEm: true } }) : Promise.resolve(null),
+  ]);
+  const ultimaDireta = [diretaFicha, diretaBloco].filter((d): d is NonNullable<typeof d> => !!d).sort((a, b) => b.alteradoEm.getTime() - a.alteradoEm.getTime())[0] ?? null;
 
   return {
     ficha: formatarFicha(ficha),
@@ -263,6 +272,7 @@ export async function montarRespostaCompleta(ficha: Awaited<ReturnType<typeof pr
       ficha: ultimaDaFicha ? formatarCorrecao(ultimaDaFicha) : null,
       bloco: ultimaDoBloco ? formatarCorrecao(ultimaDoBloco) : null,
     },
+    correcaoDireta: ultimaDireta ? { por: ultimaDireta.origem === 'SUPERVISAO_DIRETA' ? 'supervisao' : 'secretaria', em: ultimaDireta.alteradoEm.toISOString() } : null,
   };
 }
 
@@ -935,6 +945,9 @@ pdiFichasRouter.post('/:id/concluir', async (req, res) => {
       where: { id: fichaId },
       data: { status: 'CONCLUIDA', concluidaEm: new Date(), concluidaPor: String(actor.id), updatedBy: String(actor.id) },
     });
+    // Escola chegou a 100% nesta Aplicação? (aviso de 18/11/2026; em segundo plano, nunca atrasa nem
+    // derruba a conclusão — a função não lança e cada aviso sai uma vez só).
+    void verificarPdiCompleto(prisma, ficha.aplicacaoId);
   }
 
   // Fora do `if` acima de propósito: o caso real de "concluir de novo depois de uma devolução"

@@ -81,4 +81,10 @@ export const canManageTurmas = (user) => isSecretaria(user);
 // Correções > PDI (localizar/corrigir diretamente/devolver Fichas PDI concluídas) — exclusiva da
 // Secretaria, nunca herdada de canManagePedagogico: Gestor administra Aplicações/Modelos, mas
 // não entra na fila de correção (backend aplica a mesma restrição; aqui é só o gate de UI).
-export const canViewCorrecoesPdi = (user) => isSecretaria(user);
+// 18/11/2026 (decisão do usuário): a Supervisora (Gestor) também corrige e devolve Fichas PDI, só das
+// escolas onde tem vínculo ativo (o backend aplica o escopo).
+export const canViewCorrecoesPdi = (user) => isSecretaria(user) || isGestor(user);
+
+// 18/11/2026: Formulário 1/3 só para CONSULTA da Supervisora (Gestor): ciclos, painel e folhas das escolas
+// dela. Nunca preenche, corrige, devolve nem administra.
+export const canConsultarUmTerco = (user) => isSecretaria(user) || isGestor(user);

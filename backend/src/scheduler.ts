@@ -3,6 +3,7 @@ import { prisma } from './lib/prisma.js';
 import { executarVerificacaoPrazosPdi } from './jobs/pdiPrazoJob.js';
 import { executarFechamentoAutomaticoFichaAnual } from './jobs/fichaAnualFechamentoJob.js';
 import { executarFotografiaPdi } from './jobs/fotografiaPdiJob.js';
+import { executarAvisosDeEntrega } from './jobs/avisosEntregaJob.js';
 import { TIMEZONE_OPERACIONAL } from './domain/notificacoes.js';
 
 // Scheduler in-process: roda dentro do mesmo processo Express (sem serviço externo), por isso
@@ -44,4 +45,15 @@ export function iniciarScheduler(): void {
   cron.schedule('30 8 * * *', fotografar, { timezone: TIMEZONE_OPERACIONAL });
   fotografar();
   console.log(`[scheduler] foto do PDI no prazo agendada para 08:30 (${TIMEZONE_OPERACIONAL}) e executada na subida`);
+
+  // Avisos de entrega por escola (1/3 e PDI; 18/11/2026): prazo amanhã e prazo vencido. Também na subida,
+  // para um deploy perto das 08:45 não pular o dia (idempotente: cada aviso sai uma vez só).
+  const avisarEntregas = () => {
+    executarAvisosDeEntrega(prisma).catch((err) => {
+      console.error('[scheduler] falha ao executar avisos de entrega', err);
+    });
+  };
+  cron.schedule('45 8 * * *', avisarEntregas, { timezone: TIMEZONE_OPERACIONAL });
+  avisarEntregas();
+  console.log(`[scheduler] avisos de entrega (1/3 e PDI) agendados para 08:45 (${TIMEZONE_OPERACIONAL}) e executados na subida`);
 }

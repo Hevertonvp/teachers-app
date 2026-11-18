@@ -63,9 +63,10 @@ pessoasRouter.get('/minhas-escolas', async (req, res) => {
 // Lista professores dentro do escopo de quem pergunta: Secretaria vê todos; Diretora só quem tem
 // vínculo ATIVO numa escola dela — e, mesmo assim, só enxerga os vínculos dela nesse professor,
 // nunca os vínculos dele em outras escolas (ver seções 5/6 do pedido).
+// 18/11/2026: a Supervisora (GESTOR) também consulta (só leitura), com o mesmo escopo da Diretora.
 pessoasRouter.get('/professores', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretariaOuDiretora(actor);
+  if (actor.perfil !== 'GESTOR') exigirSecretariaOuDiretora(actor);
   const permitidas = await escolasPermitidas(actor);
 
   const professores = await prisma.pessoa.findMany({

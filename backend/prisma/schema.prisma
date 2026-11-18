@@ -1126,6 +1126,7 @@ enum StatusCorrecaoFichaPdi {
 enum OrigemHistoricoCorrecao {
   SECRETARIA_DIRETA
   PROFESSOR_POS_DEVOLUCAO
+  SUPERVISAO_DIRETA // 18/11/2026: correção direta de Ficha PDI pela Supervisora (Gestor) da escola
 }
 
 // Trilha de "onde o aluno estava": hoje trocar a turma de um AlunoPdi só sobrescreve o campo
@@ -1512,6 +1513,12 @@ enum TipoNotificacao {
   PDI_PRAZO_GESTOR
   NOVO_FEEDBACK_SISTEMA
   RESPOSTA_FEEDBACK_SISTEMA
+  // 18/11/2026: correção/devolução de Ficha PDI (aviso à Supervisora ou ao Professor)
+  CORRECAO_FORMULARIO
+  // 18/11/2026: entregas por escola (1/3 e PDI) — 100%, prazo amanhã e prazo vencido
+  ENTREGA_ESCOLA_COMPLETA
+  ENTREGA_PRAZO_AMANHA
+  ENTREGA_ATRASADA
 }
 
 // Uma Notificação pertence sempre a UM destinatário (nunca em massa/genérica). `chaveIdempotencia`

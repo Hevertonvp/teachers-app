@@ -59,7 +59,7 @@ try {
   const vazou = nomes.filter((n) => texto.includes(n));
   r('3', 'Resposta da rede não traz nomes de professores', 'nenhum nome', vazou.length ? vazou.slice(0, 3).join(', ') : 'nenhum nome', vazou.length === 0);
 
-  // 4) Permissões: Diretora só a própria escola; Gestor e Professor recusados.
+  // 4) Permissões: Diretora e (desde 18/11/2026) Supervisora/Gestor só a própria escola; Professor recusado.
   const tkD = await token('diretora.aur@homolog.nexo', SENHA);
   const redeD = (await get(tkD, '/api/acompanhamento/rede')).json;
   const outra = await get(tkD, '/api/acompanhamento/escola/2');
@@ -68,8 +68,8 @@ try {
   const gestor = await get(tkG, '/api/acompanhamento/rede');
   const tkP = await token('p04@homolog.nexo', 'Nexo!Prof04-2026').catch(() => null);
   const prof = tkP ? await get(tkP, '/api/acompanhamento/rede') : { status: 'sem conta' };
-  const okPerm = redeD.escolas?.length === 1 && redeD.escolas[0].id === 1 && outra.status === 403 && propria.status === 200 && gestor.status === 403 && (prof.status === 403 || prof.status === 'sem conta');
-  r('4', 'Diretora vê só a própria escola (outra = 403); Gestor e Professor = 403', 'rede 1 escola (1); outra 403; própria 200; gestor 403; professor 403', `rede ${redeD.escolas?.map((e) => e.id).join(',')}; outra ${outra.status}; própria ${propria.status}; gestor ${gestor.status}; professor ${prof.status}`, okPerm);
+  const okPerm = redeD.escolas?.length === 1 && redeD.escolas[0].id === 1 && outra.status === 403 && propria.status === 200 && gestor.status === 200 && gestor.json?.escolas?.length === 1 && gestor.json.escolas[0].id === 1 && (prof.status === 403 || prof.status === 'sem conta');
+  r('4', 'Diretora vê só a própria escola (outra = 403); Supervisora (Gestor) vê só a dela desde 18/11/2026; Professor = 403', 'rede 1 escola (1); outra 403; própria 200; gestor 200 (só a escola dela); professor 403', `rede ${redeD.escolas?.map((e) => e.id).join(',')}; outra ${outra.status}; própria ${propria.status}; gestor ${gestor.status}; professor ${prof.status}`, okPerm);
 
   // 5) Foto do PDI: fotografa encerrada há 2 dias; ignora encerrada há 10; é idempotente.
   const { executarFotografiaPdi } = await import('../backend/src/jobs/fotografiaPdiJob.ts').catch(() => ({}));

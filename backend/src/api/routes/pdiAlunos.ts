@@ -31,8 +31,9 @@ function exigirLeituraIndividual(actor: Actor) {
   }
 }
 
+// 18/11/2026 (decisão do usuário): a Supervisora (GESTOR) passou a só consultar Alunos PDI.
 function exigirEscrita(actor: Actor) {
-  if (!['SECRETARIA', 'GESTOR'].includes(actor.perfil)) {
+  if (actor.perfil !== 'SECRETARIA') {
     throw new ForbiddenError('Você não tem permissão para gerenciar Alunos PDI.');
   }
 }

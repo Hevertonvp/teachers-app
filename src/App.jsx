@@ -46,6 +46,8 @@ import { FeedbackSistemaPage } from './pages/FeedbackSistemaPage';
 import { FeedbackSistemaDetalhePage } from './pages/FeedbackSistemaDetalhePage';
 import { FeedbacksSistemaListaPage } from './pages/FeedbacksSistemaListaPage';
 import { AcompanhamentoEscolarPage } from './pages/AcompanhamentoEscolarPage';
+import { UmTercoSupervisaoPage } from './pages/UmTercoSupervisaoPage';
+import { ProfessoresConsultaPage } from './pages/ProfessoresConsultaPage';
 
 // PDI (src/config/modulos.js): ativo → a tela normal; em desenvolvimento → aviso "PDI em desenvolvimento";
 // oculto → volta ao Dashboard. Vale também para links diretos (mensagens, notificações, favoritos).
@@ -74,11 +76,22 @@ const UmTercoEntrada = () => {
   const { user } = useAuth();
   if (isSecretaria(user)) return <UmTercoSecretariaPage />;
   if (isProfessor(user)) return <UmTercoProfessorPage />;
+  if (isGestor(user)) return <UmTercoSupervisaoPage />; // 18/11/2026: só consulta
   return <Navigate to="/dashboard" replace />;
 };
 const UmTercoSomenteSecretaria = ({ children }) => {
   const { user } = useAuth();
   return isSecretaria(user) ? children : <Navigate to="/dashboard" replace />;
+};
+// 18/11/2026: telas que a Supervisora (Gestor) também abre — painel do 1/3 (só leitura) e Correções do PDI.
+const SecretariaOuSupervisao = ({ children }) => {
+  const { user } = useAuth();
+  return isSecretaria(user) || isGestor(user) ? children : <Navigate to="/dashboard" replace />;
+};
+// Professores: a Supervisora consulta a lista (sem cadastrar nem editar); os demais seguem como antes.
+const ProfessoresEntrada = () => {
+  const { user } = useAuth();
+  return isGestor(user) ? <ProfessoresConsultaPage /> : <EmConstrucaoPage />;
 };
 const UmTercoSomenteProfessor = ({ children }) => {
   const { user } = useAuth();
@@ -114,13 +127,13 @@ const AppRoutes = () => <Routes>
   <Route path="/correcoes" element={<ProtectedRoute><CorrecoesHomePage /></ProtectedRoute>} />
   <Route path="/correcoes/um-terco" element={<ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesUmTercoListaPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
   <Route path="/correcoes/um-terco/:entregaId" element={<ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesUmTercoDetalhePage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
-  {/* Formulário 1/3: só Secretaria (administra) e Professor (preenche) — qualquer outro perfil volta ao dashboard. */}
+  {/* Formulário 1/3: Secretaria (administra), Professor (preenche) e Supervisora (consulta, 18/11/2026) — os demais voltam ao dashboard. */}
   <Route path="/formulario-um-terco" element={<ProtectedRoute><UmTercoEntrada /></ProtectedRoute>} />
-  <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><UmTercoSomenteSecretaria><UmTercoPainelPage /></UmTercoSomenteSecretaria></ProtectedRoute>} />
+  <Route path="/formulario-um-terco/ciclos/:cicloId" element={<ProtectedRoute><SecretariaOuSupervisao><UmTercoPainelPage /></SecretariaOuSupervisao></ProtectedRoute>} />
   <Route path="/formulario-um-terco/:cicloId/cargo/:cargoId" element={<ProtectedRoute><UmTercoSomenteProfessor><UmTercoPreenchimentoPage /></UmTercoSomenteProfessor></ProtectedRoute>} />
-  {/* Correções do PDI: só a Secretaria (a API recusa os demais; 15/11/2026 — antes o endereço direto abria a tela e dava 403). */}
-  <Route path="/correcoes/pdi" element={<SoComPdi><ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesPdiListaPage /></UmTercoSomenteSecretaria></ProtectedRoute></SoComPdi>} />
-  <Route path="/correcoes/pdi/:fichaId" element={<SoComPdi><ProtectedRoute><UmTercoSomenteSecretaria><CorrecoesPdiDetalhePage /></UmTercoSomenteSecretaria></ProtectedRoute></SoComPdi>} />
+  {/* Correções do PDI: Secretaria e, desde 18/11/2026, a Supervisora (Gestor) das próprias escolas (a API recusa os demais). */}
+  <Route path="/correcoes/pdi" element={<SoComPdi><ProtectedRoute><SecretariaOuSupervisao><CorrecoesPdiListaPage /></SecretariaOuSupervisao></ProtectedRoute></SoComPdi>} />
+  <Route path="/correcoes/pdi/:fichaId" element={<SoComPdi><ProtectedRoute><SecretariaOuSupervisao><CorrecoesPdiDetalhePage /></SecretariaOuSupervisao></ProtectedRoute></SoComPdi>} />
 
   {/* Fora do escopo desta entrega (só PDI) — "em construção" para todos os perfis. */}
   <Route path="/pdi/acompanhamento" element={<SoComPdi><ProtectedRoute><EmConstrucaoPage /></ProtectedRoute></SoComPdi>} />
@@ -139,7 +152,7 @@ const AppRoutes = () => <Routes>
   <Route path="/novo-planejamento" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/planejamento/:id" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
   <Route path="/calendario" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
-  <Route path="/gestao-professores" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />
+  <Route path="/gestao-professores" element={<ProtectedRoute><ProfessoresEntrada /></ProtectedRoute>} />
   {/* Acompanhamento Escolar: só leitura; Secretaria (rede) e Diretora (própria escola). A página redireciona os demais. */}
   <Route path="/acompanhamento-escolar" element={<ProtectedRoute><AcompanhamentoEscolarPage /></ProtectedRoute>} />
   <Route path="/notificacoes-atraso" element={<ProtectedRoute><EmConstrucaoPage /></ProtectedRoute>} />

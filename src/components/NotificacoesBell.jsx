@@ -11,6 +11,11 @@ const TITULOS_TIPO = {
   NOVA_MENSAGEM: '💬',
   PDI_PRAZO_PROFESSOR: '⏰',
   PDI_PRAZO_GESTOR: '⏰',
+  // 18/11/2026
+  CORRECAO_FORMULARIO: '✏️',
+  ENTREGA_ESCOLA_COMPLETA: '✅',
+  ENTREGA_PRAZO_AMANHA: '⏰',
+  ENTREGA_ATRASADA: '⚠️',
 };
 
 function formatarQuando(iso) {

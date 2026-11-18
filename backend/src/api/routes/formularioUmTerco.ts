@@ -13,6 +13,7 @@ import { correcaoUmTercoVigente, formatarCorrecaoUmTerco, formatarPrazo, idsDePe
 import { criarMensagensDeCorrecao, nomesDePessoas, notificarMensagensDeCorrecao } from '../../lib/mensagemCorrecao.js';
 import { criarNotificacao } from '../../lib/notificacoes.js';
 import { textoNovaMensagem } from '../../domain/notificacoes.js';
+import { avisarEscolasCompletas, refUmTerco } from '../../lib/avisosEntrega.js';
 
 // Formulário 1/3 — registro dos conteúdos ensinados, por semana.
 // POR CARGO (decisão do usuário, 12/11/2026; substitui ano/série + disciplina): a identidade do
@@ -29,6 +30,17 @@ type Db = Prisma.TransactionClient | typeof prisma;
 
 const exigirSecretaria = (actor: Actor) => {
   if (actor.perfil !== 'SECRETARIA') throw new ForbiddenError('Somente a Secretaria pode administrar o Formulário 1/3.');
+};
+// Consulta (18/11/2026, decisão do usuário): a Supervisora (GESTOR) LÊ o 1/3 das escolas onde tem vínculo
+// ATIVO — lista de ciclos, painel, folha e exportação. Nunca preenche, corrige, devolve nem administra.
+// Devolve o escopo de escolas: null = rede inteira (Secretaria).
+const escopoDeLeitura = async (actor: Actor): Promise<number[] | null> => {
+  if (actor.perfil === 'SECRETARIA') return null;
+  if (actor.perfil === 'GESTOR') {
+    const vinculos = await prisma.vinculoEscolar.findMany({ where: { pessoaId: actor.id, status: 'ATIVO' }, select: { escolaId: true } });
+    return vinculos.map((v) => v.escolaId);
+  }
+  throw new ForbiddenError('Somente a Secretaria pode administrar o Formulário 1/3.');
 };
 const exigirProfessor = (actor: Actor) => {
   if (actor.perfil !== 'PROFESSOR') throw new ForbiddenError('Somente o Professor preenche o Formulário 1/3.');
@@ -346,8 +358,10 @@ async function carregarParaProfessor(actor: Actor, cicloId: number, cargoId: num
 
 formularioUmTercoRouter.get('/ciclos', async (_req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
-  const ciclos = await prisma.cicloUmTerco.findMany({ include: cicloInclude, orderBy: [{ anoLetivo: 'desc' }, { trimestre: 'desc' }, { id: 'desc' }] });
+  const escopo = await escopoDeLeitura(actor);
+  // Supervisora: só ciclos ativos que atendem alguma escola dela.
+  const ciclos = (await prisma.cicloUmTerco.findMany({ include: cicloInclude, orderBy: [{ anoLetivo: 'desc' }, { trimestre: 'desc' }, { id: 'desc' }] }))
+    .filter((c) => !escopo || (c.status === 'ATIVA' && (c.todasEscolas || c.escolas.some((e) => escopo.includes(e.escolaId)))));
   const contagens = await prisma.entregaUmTerco.groupBy({ by: ['cicloId'], _count: { _all: true } });
   const porCiclo = new Map(contagens.map((c) => [c.cicloId, c._count._all]));
   res.json(ciclos.map((c) => formatarCiclo(c, { entregasIniciadas: porCiclo.get(c.id) ?? 0 })));
@@ -490,8 +504,8 @@ formularioUmTercoRouter.post('/ciclos/:id/reaberturas', async (req, res) => {
 
 formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
-  res.json(await montarPainel(lerId(req.params.id), req.query));
+  const escopo = await escopoDeLeitura(actor);
+  res.json(await montarPainel(lerId(req.params.id), req.query, escopo));
 });
 
 // Cálculo do painel (esperado/concluído/andamento/não iniciado, por folha e por escola) com os filtros
@@ -501,8 +515,12 @@ formularioUmTercoRouter.get('/ciclos/:id/painel', async (req, res) => {
 // cada uma e conta UMA vez no total (regra mantida por enquanto, a discutir com a equipe).
 // Folhas fora do esperado (cargo encerrado durante o ciclo, já com texto) vão em `foraDoEsperado`:
 // preservadas para consulta, sem entrar nas contagens nem nos percentuais.
-export async function montarPainel(cicloId: number, q: Record<string, unknown>) {
+// `escopo` (18/11/2026): escolas visíveis (Supervisora). null = todas. Fora dele, nada aparece nem conta.
+export async function montarPainel(cicloId: number, q: Record<string, unknown>, escopo: number[] | null = null) {
   const ciclo = await buscarCiclo(prisma, cicloId);
+  if (escopo && (ciclo.status !== 'ATIVA' || !(ciclo.todasEscolas || ciclo.escolas.some((e) => escopo.includes(e.escolaId))))) {
+    throw new ForbiddenError('Este Formulário 1/3 não atende as suas escolas.');
+  }
   const filtroEscola = q.escolaId ? lerId(q.escolaId, 'Escola') : null;
   const filtroDisciplina = q.disciplinaId ? lerId(q.disciplinaId, 'Disciplina') : null;
   const filtroProfessor = q.professorId ? lerId(q.professorId, 'Professor') : null;
@@ -526,7 +544,8 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
     };
   };
   type Linha = ReturnType<typeof linha>;
-  const passaFiltros = (l: Linha) => (!filtroEscola || l.escolas.some((e) => e.escolaId === filtroEscola))
+  const passaFiltros = (l: Linha) => (!escopo || l.escolas.some((e) => escopo.includes(e.escolaId)))
+    && (!filtroEscola || l.escolas.some((e) => e.escolaId === filtroEscola))
     && (!filtroDisciplina || l.disciplinas.some((d) => d.id === filtroDisciplina))
     && (!filtroProfessor || l.professorId === filtroProfessor)
     && (!filtroStatus || l.status === filtroStatus)
@@ -545,6 +564,7 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
   const porEscola = new Map<number, { escolaId: number; escolaNome: string; esperado: number; concluidas: number }>();
   for (const l of todas) {
     for (const e of l.escolas) {
+      if (escopo && !escopo.includes(e.escolaId)) continue;
       const item = porEscola.get(e.escolaId) ?? { escolaId: e.escolaId, escolaNome: e.escolaNome, esperado: 0, concluidas: 0 };
       item.esperado += 1;
       if (l.status === 'concluida') item.concluidas += 1;
@@ -565,8 +585,7 @@ export async function montarPainel(cicloId: number, q: Record<string, unknown>) 
 // tela, mais os conteúdos registrados em cada semana das entregas listadas. Nada novo é calculado.
 formularioUmTercoRouter.get('/ciclos/:id/exportacao', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
-  const painel = await montarPainel(lerId(req.params.id), req.query);
+  const painel = await montarPainel(lerId(req.params.id), req.query, await escopoDeLeitura(actor));
   const entregaIds = painel.linhas.map((l) => l.entregaId).filter((id): id is number => id !== null);
   const respostas = entregaIds.length
     ? await prisma.respostaSemanaUmTerco.findMany({ where: { entregaId: { in: entregaIds } }, include: { semana: true }, orderBy: [{ entregaId: 'asc' }, { semana: { numero: 'asc' } }] })
@@ -644,10 +663,12 @@ formularioUmTercoRouter.post('/entregas/:entregaId/aceitar', async (req, res) =>
 // Secretaria consulta uma folha específica (somente leitura, com histórico).
 formularioUmTercoRouter.get('/ciclos/:cicloId/entregas/:professorId/cargos/:cargoId', async (req, res) => {
   const actor = res.locals.pessoa as Actor;
-  exigirSecretaria(actor);
+  const escopo = await escopoDeLeitura(actor);
   const { cicloId, cargoId } = paramsFormulario(req);
   const ciclo = await buscarCiclo(prisma, cicloId);
-  res.json(await montarDetalhe(prisma, ciclo, lerId(req.params.professorId, 'Professor'), cargoId, { podeEditar: false }));
+  const detalhe = await montarDetalhe(prisma, ciclo, lerId(req.params.professorId, 'Professor'), cargoId, { podeEditar: false });
+  if (escopo && !detalhe.composicao.some((p) => escopo.includes(p.escolaId))) throw new ForbiddenError('Este formulário é de uma escola fora do seu acesso.');
+  res.json(detalhe);
 });
 
 // ===== Professor ===============================================================================
@@ -815,7 +836,10 @@ formularioUmTercoRouter.post('/ciclos/:cicloId/cargos/:cargoId/concluir', async 
       throw new ValidationError(`Preencha todas as semanas antes de concluir. Faltam: ${faltando.map((s) => `Semana ${s.numero}`).join(', ')}.`);
     }
     const { count } = await tx.entregaUmTerco.updateMany({ where: { id: entrega.id, status: 'EM_ANDAMENTO' }, data: { status: 'CONCLUIDA', concluidaEm: new Date(), updatedAt: new Date() } });
-    if (count === 1) await registrarEvento(tx, entrega.id, 'CONCLUIDA', actor.id);
+    if (count === 1) {
+      await registrarEvento(tx, entrega.id, 'CONCLUIDA', actor.id);
+      return { concluiuAgora: true as const, escolaIds: folha.composicao.map((p) => p.escolaId) };
+    }
     return null;
   }, { timeout: 15000 }).catch(async (error) => {
     if (error instanceof ConflitoVersaoError) {
@@ -823,7 +847,14 @@ formularioUmTercoRouter.post('/ciclos/:cicloId/cargos/:cargoId/concluir', async 
     }
     throw error;
   });
-  if (aviso && Number.isInteger(aviso.destinatarioId)) {
+  // Escola(s) desta folha chegaram a 100%? (aviso de 18/11/2026). Em segundo plano e sem lançar: a
+  // conclusão do Professor já foi gravada e a resposta dele nunca espera nem falha por causa disso.
+  if (aviso && 'concluiuAgora' in aviso) {
+    const escolaIds: number[] = aviso.escolaIds ?? [];
+    void montarPainel(cicloId, {})
+      .then((painel) => avisarEscolasCompletas(prisma, refUmTerco(cicloId), painel.porEscola.filter((e) => escolaIds.includes(e.escolaId))))
+      .catch((err) => console.error('[umTerco] falha ao verificar escola completa', cicloId, err));
+  } else if (aviso && Number.isInteger(aviso.destinatarioId)) {
     const professor = await prisma.pessoa.findUnique({ where: { id: actor.id }, select: { nome: true } });
     const { titulo, corpo } = textoNovaMensagem(professor?.nome ?? 'o Professor');
     await criarNotificacao(prisma, { destinatarioId: aviso.destinatarioId, tipo: 'NOVA_MENSAGEM', titulo, corpo, linkContexto: `/mensagens?conversa=${aviso.conversaId}`, metadata: { conversaId: aviso.conversaId }, chaveIdempotencia: `reenvio-um-terco-${aviso.correcaoId}` });

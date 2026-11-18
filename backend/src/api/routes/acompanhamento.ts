@@ -25,7 +25,8 @@ const DIA_MS = 86400000;
 
 async function escopoDoAtor(actor: Actor): Promise<number[] | null> {
   if (actor.perfil === 'SECRETARIA') return null;
-  if (actor.perfil === 'DIRETORA') return escolasPermitidas(actor);
+  // 18/11/2026: a Supervisora (GESTOR) também acompanha, só as próprias escolas (decisão do usuário).
+  if (actor.perfil === 'DIRETORA' || actor.perfil === 'GESTOR') return escolasPermitidas(actor);
   throw new ForbiddenError('Você não tem permissão para ver o Acompanhamento Escolar.');
 }
 

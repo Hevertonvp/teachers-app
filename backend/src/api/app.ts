@@ -120,7 +120,7 @@ export function createApp() {
   app.use('/api/habilidades-curriculares', habilidadesCurricularesRouter);
   app.use('/api/trimestres', trimestresRouter);
   app.use('/api/pdi-indicadores', pdiIndicadoresRouter);
-  app.use('/api/acompanhamento', acompanhamentoRouter); // Acompanhamento Escolar: só leitura (Secretaria e Diretora)
+  app.use('/api/acompanhamento', acompanhamentoRouter); // Acompanhamento Escolar: só leitura (Secretaria, Diretora e Supervisora)
 
   app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada.' }));
 
