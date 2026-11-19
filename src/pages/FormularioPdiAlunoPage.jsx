@@ -12,7 +12,7 @@ import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 import { chaveFila, enfileirar, removerDaFila } from '../offline/syncQueue';
 import { listarMeusPdisReais, paraPayloadValor } from '../services/pdiFichas';
 import { aplicarAutoCorrecao } from '../utils/autoCorrecao';
-import { AvisoCorrecaoProfessor, correcaoPendente } from '../components/Correcoes';
+import { AvisoCorrecaoProfessor, SeloCorrecaoDireta, correcaoPendente } from '../components/Correcoes';
 import { inputClass } from '../utils/display';
 import { formatFullDate } from '../utils/formAvailability';
 import { agruparPorSecao, analisarRascunho, answerFromResposta, MENSAGEM_CONFLITO_RASCUNHO } from '../utils/pdiFicha';
@@ -707,6 +707,7 @@ export const FormularioPdiAlunoPage = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={STATUS_VARIANT[ficha.status]}>{STATUS_LABEL[ficha.status]}</Badge>
                   <Badge variant={editavelAgora ? 'green' : 'gray'}>{editavelAgora ? 'Preenchimento disponível' : 'Somente consulta'}</Badge>
+                  <SeloCorrecaoDireta correcaoDireta={f.dados.correcaoDireta} />
                 </div>
               </div>
               <div className="mt-3"><AvisoCorrecaoProfessor itens={[{ chave: `f-${ficha.id}`, titulo: f.disciplinaNome, correcao: f.dados.correcao?.ficha }]} /></div>

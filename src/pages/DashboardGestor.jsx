@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { useEscola } from '../context/EscolaContext';
 import { FeedbackSistemaBanner } from '../components/FeedbackSistemaBanner';
 import { MainLayout } from '../layouts/Layouts';
-import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { AVISO_PDI_DESENVOLVIMENTO, useModoPdi } from '../config/modulos';
 import { SeloDesenvolvimento } from '../components/PdiDesenvolvimento';
 
 export const DashboardGestor = () => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { user } = useAuth();
   const { userEscolas } = useEscola();
 

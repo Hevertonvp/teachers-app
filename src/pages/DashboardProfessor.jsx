@@ -11,10 +11,11 @@ import { useEscola } from '../context/EscolaContext';
 import { listarVinculosProfessorTurmaDisciplina } from '../services/professorTurmaDisciplina';
 import { listarVinculosProfessorTurmaAtuacao } from '../services/professorTurmaAtuacao';
 import { MainLayout } from '../layouts/Layouts';
-import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { AVISO_PDI_DESENVOLVIMENTO, useModoPdi } from '../config/modulos';
 import { SeloDesenvolvimento } from '../components/PdiDesenvolvimento';
 
 export const DashboardProfessor = () => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { user } = useAuth();
   const { escolas, meusPdisReais, meusPdisReaisLoading, loadMeusPdisReais } = useData();
   const { userEscolas } = useEscola();

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } from '../config/modulos';
+import { useModoPdi } from '../config/modulos';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -100,6 +100,7 @@ const NavIcon = ({ id, className = 'h-4.5 w-4.5' }) => (
 );
 
 export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { user } = useAuth();
   const { mensagensNaoLidas, loadMensagensNaoLidas, loadNotificacoesNaoLidas } = useData();
   const location = useLocation();
@@ -124,11 +125,15 @@ export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     itemFeedback,
   ];
 
+  // Supervisora (perfil GESTOR), 18/11/2026: acompanha e corrige o PDI da escola; 1/3, Acompanhamento e
+  // professores só para consulta.
   const menuGestor = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
+    { name: 'Acompanhamento Escolar', path: '/acompanhamento-escolar', icon: 'acompanhamento' },
+    { name: 'Formulário 1/3', path: '/formulario-um-terco', icon: 'formulario' },
     { name: 'PDI', path: '/pdi', icon: 'pdi' },
     { name: 'Correções', path: '/correcoes', icon: 'correcoes' },
-    { name: 'Gestão de Professores(as)', path: '/gestao-professores', icon: 'pessoas' },
+    { name: 'Professores(as)', path: '/gestao-professores', icon: 'pessoas' },
     { name: 'Eventos', path: '/eventos', icon: 'eventos' },
     { name: 'Notícias', path: '/noticias', icon: 'noticias' },
     { name: 'Mensagens', path: '/mensagens', icon: 'mensagens' },

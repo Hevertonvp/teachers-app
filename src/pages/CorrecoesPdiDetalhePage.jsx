@@ -4,14 +4,14 @@ import { Button, Card } from '../components/Common';
 import { HabilidadesCrmgSelecao } from '../components/HabilidadesCrmgSelecao';
 import { inputClass } from '../utils/display';
 import { obterCorrecaoPdiReal, corrigirDiretamenteReal, devolverFichaPdiReal, corrigirDiretamentePadraoReal, devolverPadraoReal, aceitarCorrecaoPdiReal, aceitarCorrecaoPadraoReal } from '../services/correcoesPdi';
-import { HistoricoCorrecoes, ModalEnviarParaCorrecao, SeloCorrecao, correcaoPendente } from '../components/Correcoes';
+import { HistoricoCorrecoes, ModalEnviarParaCorrecao, SeloCorrecao, SeloCorrecaoDireta, correcaoPendente } from '../components/Correcoes';
 import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
 import { lerDraft, salvarDraft, apagarDraft } from '../offline/db';
 import { enfileirar } from '../offline/syncQueue';
 import { SavingIndicator } from '../components/SavingIndicator';
 
-const ORIGEM_LABEL = { SECRETARIA_DIRETA: 'Correção direta', PROFESSOR_POS_DEVOLUCAO: 'Professor (pós-devolução)' };
+const ORIGEM_LABEL = { SECRETARIA_DIRETA: 'Correção direta (Secretaria)', SUPERVISAO_DIRETA: 'Correção direta (supervisão)', PROFESSOR_POS_DEVOLUCAO: 'Professor (pós-devolução)' };
 
 const formatarDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
 const formatarValor = (valor) => (valor && typeof valor === 'object' ? (valor.resposta ?? '—') : (valor ?? '—'));
@@ -191,6 +191,7 @@ export const CorrecoesPdiDetalhePage = () => {
           <Link to="/correcoes/pdi" className="text-sm font-semibold text-teal-700 hover:underline">← Correções &gt; PDI</Link>
           <h1 className="mt-3 text-3xl font-bold text-slate-950">{ficha.alunoNome}</h1>
           <p className="mt-1 text-slate-600">{ficha.escolaNome} · {ficha.turmaNome} · {ficha.disciplinaNome}</p>
+          <SeloCorrecaoDireta correcaoDireta={dados.correcaoDireta} className="mt-2" />
         </div>
 
         {conflito && (

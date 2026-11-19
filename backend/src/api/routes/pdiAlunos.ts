@@ -31,8 +31,9 @@ function exigirLeituraIndividual(actor: Actor) {
   }
 }
 
+// 18/11/2026 (decisão do usuário): a Supervisora (GESTOR) passou a só consultar Alunos PDI.
 function exigirEscrita(actor: Actor) {
-  if (!['SECRETARIA', 'GESTOR'].includes(actor.perfil)) {
+  if (actor.perfil !== 'SECRETARIA') {
     throw new ForbiddenError('Você não tem permissão para gerenciar Alunos PDI.');
   }
 }
@@ -163,7 +164,9 @@ const dadosAlunoSchema = z.object({
   turmaId: z.number().int(),
   responsavelNome: z.string().trim().min(1, 'Nome do responsável é obrigatório.'),
   responsavelParentesco: z.string().trim().min(1, 'Parentesco é obrigatório.'),
-  responsavelTelefone: z.string().trim().min(1, 'Telefone do responsável é obrigatório.'),
+  // 19/11/2026 (decisão do usuário): telefone opcional. Sem telefone grava vazio (a coluna não aceita nulo;
+  // as telas já mostram "Não informado").
+  responsavelTelefone: z.string().trim().max(30, 'Telefone muito longo.').nullish().transform((v) => v ?? ''),
 });
 
 async function validarTurmaNoEscopo(actor: Actor, turmaId: number) {

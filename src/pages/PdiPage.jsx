@@ -39,7 +39,8 @@ export const PdiPage = () => {
   const { activeEscolaId, userEscolas, isExplicitBatchSelection } = useEscola();
 
   const isProfessor = isProfessorRole(user);
-  const canManage = canManagePedagogico(user); // Secretaria + Gestor: cria/edita/arquiva/reativa
+  // 18/11/2026: só a Secretaria cria/edita/arquiva/reativa Aluno PDI; a Supervisora (Gestor) só consulta.
+  const canManage = isSecretaria(user);
   const canView = canViewPdiAlunos(user); // + Diretora: só consulta
   // Escola inativa vinculada à Supervisora: consulta sempre permitida, edição nunca.
   const escolaAtivaSelecionada = activeEscolaId ? escolas.find(item => item.id === activeEscolaId)?.status === 'ativa' : true;
@@ -135,8 +136,9 @@ export const PdiPage = () => {
       setMessage('Preencha nome e turma antes de salvar.');
       return;
     }
-    if (!form.responsavelNome?.trim() || !form.responsavelParentesco || !form.responsavelTelefone?.trim()) {
-      setMessage('Informe nome, parentesco e telefone do responsável legal.');
+    // 19/11/2026: telefone do responsável é opcional.
+    if (!form.responsavelNome?.trim() || !form.responsavelParentesco) {
+      setMessage('Informe nome e parentesco do responsável legal.');
       return;
     }
     setSalvando(true);
@@ -311,7 +313,7 @@ export const PdiPage = () => {
                   <p className="text-sm font-semibold text-slate-700 md:col-span-2">Responsável legal</p>
                   <FormField label="Nome do responsável"><input className={inputClass} value={form.responsavelNome} onChange={event => setForm(prev => ({ ...prev, responsavelNome: event.target.value }))} required /></FormField>
                   <FormField label="Parentesco"><select className={inputClass} value={form.responsavelParentesco} onChange={event => setForm(prev => ({ ...prev, responsavelParentesco: event.target.value }))} required><option value="" disabled>Selecione</option>{parentescoOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FormField>
-                  <FormField label="Telefone principal"><input className={inputClass} value={form.responsavelTelefone} onChange={event => setForm(prev => ({ ...prev, responsavelTelefone: event.target.value }))} required /></FormField>
+                  <FormField label="Telefone principal (opcional)"><input className={inputClass} value={form.responsavelTelefone} onChange={event => setForm(prev => ({ ...prev, responsavelTelefone: event.target.value }))} required /></FormField>
                 </div>
                 {!editing && isSecretaria(user) && (
                   <label className="md:col-span-2 flex items-start gap-2.5 rounded-lg border border-slate-200 p-4 text-sm">

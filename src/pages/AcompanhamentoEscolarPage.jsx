@@ -3,10 +3,10 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
 import { useEscola, useFiltroEscolaDoTopo } from '../context/EscolaContext';
-import { isDiretora, isSecretaria } from '../utils/roles';
+import { isDiretora, isGestor, isSecretaria } from '../utils/roles';
 import { obterAcompanhamentoEscola, obterAcompanhamentoRede } from '../services/acompanhamento';
 import { BarraSituacao, fmt, fmtData, GraficoRitmo, LegendaSituacao, LinhaTempo, Paginacao, pct, usePaginas } from '../components/acompanhamento/Graficos';
-import { AVISO_PDI_DESENVOLVIMENTO, PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { AVISO_PDI_DESENVOLVIMENTO, useModoPdi } from '../config/modulos';
 import '../styles/acompanhamento.css';
 
 // Acompanhamento Escolar (decisões do usuário, 10/11/2026; ver PROPOSTA_ACOMPANHAMENTO_ESCOLAR.md).
@@ -298,6 +298,7 @@ const EstruturaRede = ({ escolas, totais }) => {
 
 // ---------------------------------------------------------------------------------------------
 const VisaoRede = ({ dados, form, abrirEscola }) => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { totais, limites } = dados;
   const minimo = limites.minimoParaPercentual;
   const itens = dados.acompanhamento.filter((i) => form === 'ambos' || i.formulario === form);
@@ -333,6 +334,7 @@ const HBarras = ({ itens, vazio }) => (itens.length === 0 ? <p className="acp-va
 ));
 
 const VisaoEscola = ({ dados, form, secretaria }) => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const navigate = useNavigate();
   const minimo = dados.limites.minimoParaPercentual;
   const { pdi, umTerco, estrutura } = dados;
@@ -400,11 +402,13 @@ const VisaoEscola = ({ dados, form, secretaria }) => {
 
 // ---------------------------------------------------------------------------------------------
 export const AcompanhamentoEscolarPage = () => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { user } = useAuth();
   const { userEscolas } = useEscola();
   const [params, setParams] = useSearchParams();
   const secretaria = isSecretaria(user);
-  const diretora = isDiretora(user);
+  // 18/11/2026: a Supervisora (Gestor) vê como a Diretora — só as próprias escolas.
+  const diretora = isDiretora(user) || isGestor(user);
   const anoAtual = new Date().getFullYear();
   const ano = Number(params.get('ano')) || anoAtual;
   // PDI desligado (src/config/modulos.js): a tela fica presa no 1/3.

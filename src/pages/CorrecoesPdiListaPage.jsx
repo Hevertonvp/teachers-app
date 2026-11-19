@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, DataTable, EmptyState, FormField } from '../components/Common';
 import { useData } from '../context/DataContext';
-import { useFiltroEscolaDoTopo } from '../context/EscolaContext';
+import { useEscola, useFiltroEscolaDoTopo } from '../context/EscolaContext';
 import { inputClass } from '../utils/display';
 import { listarCorrecoesPdiReais } from '../services/correcoesPdi';
 import { SeloCorrecao } from '../components/Correcoes';
@@ -13,11 +13,13 @@ import { MainLayout } from '../layouts/Layouts';
 const formatarDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
 
 // Correções > PDI (seção 22-27 do pedido de Ficha Anual/Correções): lista as Fichas PDI
-// CONCLUIDA mais recentes por padrão, com filtros — exclusivo da Secretaria (backend garante,
-// isto é só a tela). Nunca lista Aplicação inteira nem aluno sem Ficha concluída.
+// CONCLUIDA mais recentes por padrão, com filtros — Secretaria e, desde 18/11/2026, a Supervisora (Gestor)
+// só nas escolas dela (o backend garante; isto é só a tela). Nunca lista Aplicação inteira nem aluno sem Ficha concluída.
 export const CorrecoesPdiListaPage = () => {
   const navigate = useNavigate();
-  const { escolas, turmas, disciplinasReais } = useData();
+  const { turmas, disciplinasReais } = useData();
+  // Escolas do seletor (18/11/2026): as do próprio usuário (Secretaria: todas; Supervisora: só as dela).
+  const { userEscolas: escolas } = useEscola();
   const [filtros, setFiltros] = useState({ escolaId: '', turmaId: '', disciplinaId: '', busca: '' });
   const [itens, setItens] = useState([]);
   const [carregando, setCarregando] = useState(true);

@@ -10,6 +10,7 @@ import {
 } from '../domain/notificacoes.js';
 import { criarNotificacao } from '../lib/notificacoes.js';
 import { responsaveisPorAtuacao } from '../domain/pdiAtuacao.js';
+import { pdiSoSecretaria } from '../config/modulos.js';
 
 // Para UMA Aplicação, recalcula ao vivo quantas Fichas pendentes cada Professor atualmente
 // responsável possui — mesma lógica de candidatos de GET /pdi-fichas/meus-pdis
@@ -84,6 +85,8 @@ export type ResultadoJobPrazoPdi = {
 // Idempotente: cada Notificacao carrega uma chaveIdempotencia única; rodar isto 2x no mesmo dia
 // não duplica nada (criarNotificacao ignora silenciosamente o conflito).
 export async function executarVerificacaoPrazosPdi(prisma: PrismaClient, opts: { agora?: Date } = {}): Promise<ResultadoJobPrazoPdi> {
+  // PDI em desenvolvimento (19/11/2026): estes avisos são todos para Professor/Gestor — em silêncio.
+  if (pdiSoSecretaria()) return { aplicacoesAvaliadas: 0, notificacoesProfessorTentadas: 0, notificacoesGestorTentadas: 0 };
   const agora = opts.agora ?? new Date();
   const hojeISO = dataCivilSP(agora);
 

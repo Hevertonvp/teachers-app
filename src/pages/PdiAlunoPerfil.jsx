@@ -34,7 +34,8 @@ export const PdiAlunoPerfil = () => {
 
   const aluno = pdiAlunosReais.find(item => item.id === Number(id));
   const isProfessor = isProfessorRole(user);
-  const canManagePdi = canManagePedagogico(user);
+  // 18/11/2026: editar Aluno PDI é só da Secretaria; a Supervisora (Gestor) só consulta.
+  const canManagePdi = isSecretaria(user);
   const canView = canViewPdiAlunos(user);
   const { activeEscolaId, userEscolas, vinculosReais, vinculosLoading } = useEscola();
   // DEF-17: o escopo vem dos VinculoEscolar REAIS do usuário (EscolaContext, GET
@@ -138,8 +139,9 @@ export const PdiAlunoPerfil = () => {
       setMessage('Preencha nome e turma antes de salvar.');
       return;
     }
-    if (!alunoForm.responsavelNome?.trim() || !alunoForm.responsavelParentesco || !alunoForm.responsavelTelefone?.trim()) {
-      setMessage('Informe nome, parentesco e telefone do responsável legal.');
+    // 19/11/2026: telefone do responsável é opcional.
+    if (!alunoForm.responsavelNome?.trim() || !alunoForm.responsavelParentesco) {
+      setMessage('Informe nome e parentesco do responsável legal.');
       return;
     }
     const resultado = await updatePdiAlunoReal(aluno.id, alunoForm);
@@ -292,7 +294,7 @@ export const PdiAlunoPerfil = () => {
                   <p className="text-sm font-semibold text-slate-700 md:col-span-2">Responsável legal</p>
                   <FormField label="Nome do responsável"><input className={inputClass} value={alunoForm.responsavelNome || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelNome: event.target.value }))} required /></FormField>
                   <FormField label="Parentesco"><select className={inputClass} value={alunoForm.responsavelParentesco || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelParentesco: event.target.value }))} required><option value="" disabled>Selecione</option>{parentescoOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FormField>
-                  <FormField label="Telefone principal"><input className={inputClass} value={alunoForm.responsavelTelefone || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelTelefone: event.target.value }))} required /></FormField>
+                  <FormField label="Telefone principal (opcional)"><input className={inputClass} value={alunoForm.responsavelTelefone || ''} onChange={event => setAlunoForm(prev => ({ ...prev, responsavelTelefone: event.target.value }))} required /></FormField>
                 </div>
               </div>
               <div className="flex justify-end gap-3"><Button type="button" variant="secondary" onClick={() => setAlunoForm(null)}>Cancelar</Button><Button type="submit">Salvar</Button></div>

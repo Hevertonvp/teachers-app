@@ -95,7 +95,8 @@ correcoesUmTercoRouter.get('/', async (req, res) => {
 });
 
 // ----- Detalhe ----------------------------------------------------------------------------------
-const ORIGEM_TEXTO = { SECRETARIA_DIRETA: 'Secretaria corrigiu diretamente', PROFESSOR_POS_DEVOLUCAO: 'Professor alterou durante a correção' } as const;
+// SUPERVISAO_DIRETA (18/11/2026) só existe no PDI; está aqui apenas para o tipo do enum ficar completo.
+const ORIGEM_TEXTO = { SECRETARIA_DIRETA: 'Secretaria corrigiu diretamente', PROFESSOR_POS_DEVOLUCAO: 'Professor alterou durante a correção', SUPERVISAO_DIRETA: 'Supervisão corrigiu diretamente' } as const;
 
 async function montarDetalhe(entregaId: number) {
   const e = await prisma.entregaUmTerco.findUnique({
