@@ -14,7 +14,7 @@ const r = (id, cen, esp, obs, ok) => registrar(`SUP-${id}`, 'Supervisora PDI e a
 const token = async (email, senha = '12345678') => (await (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha }) })).json()).token;
 const api = async (t, method, path, body) => { const x = await fetch(API + path, { method, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + t }, body: body ? JSON.stringify(body) : undefined }); let j = null; try { j = await x.json(); } catch {} return { status: x.status, json: j }; };
 const novas = (destinatarioId, tipo) => prisma.notificacao.findMany({ where: { destinatarioId, tipo, createdAt: { gte: INICIO } }, orderBy: { id: 'asc' } });
-const job = (...args) => execSync(`npx tsx ../homologacao/91-avisos-job.mts ${args.join(' ')}`, { cwd: new URL('../backend/', import.meta.url), env: { ...process.env, DATABASE_URL: URL_LOCAL, DIRECT_URL: URL_LOCAL }, encoding: 'utf8' }).trim();
+const job = (...args) => execSync(`npx tsx ../homologacao/91-avisos-job.mts ${args.join(' ')}`, { cwd: new URL('../backend/', import.meta.url), env: { ...process.env, DATABASE_URL: URL_LOCAL, DIRECT_URL: URL_LOCAL, PDI_LIBERADO: 'true' }, encoding: 'utf8' }).trim();
 
 const SUP = 35, DIR = 36, ESCOLA = 1;
 const tSec = await token('secretaria@escola.gov.br');
@@ -22,6 +22,9 @@ const tSup = await token('gestor.aur@homolog.nexo', 'Nexo!Homolog-2026');
 const tDir = await token('diretora.aur@homolog.nexo', 'Nexo!Homolog-2026');
 const sec = await prisma.pessoa.findUnique({ where: { email: 'secretaria@escola.gov.br' } });
 const vinculosTemporarios = [];
+// Avisos de entrega já gerados no banco LOCAL (ex.: o backend avisa na subida quando hoje é véspera de um prazo real)
+// impediriam os testes de criá-los de novo (cada aviso sai uma vez só): começa sem eles.
+await prisma.notificacao.deleteMany({ where: { chaveIdempotencia: { startsWith: 'entrega-' } } });
 
 try {
   // --- Correções do PDI: escopo -------------------------------------------------------------------

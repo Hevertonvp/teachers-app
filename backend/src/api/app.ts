@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { CalendarioTrimestresError, ConflictError, ConflitoVersaoError, ForbiddenError, NotFoundError, SenhaTemporariaPendenteError, UnauthorizedError, ValidationError } from '../domain/errors.js';
 import { bloquearSenhaTemporariaPendente, requireAuth } from './middleware/auth.js';
+import { bloquearPdiEmDesenvolvimento } from './middleware/pdiEmDesenvolvimento.js';
 import { authProtectedRouter, authRouter } from './routes/auth.js';
 import { escolasRouter, niveisInfantilRouter } from './routes/escolas.js';
 import { desativadosRouter } from './routes/desativados.js';
@@ -84,6 +85,13 @@ export function createApp() {
   // Enquanto a pessoa não trocar a senha temporária, nenhuma rota normal responde — nem por
   // chamada direta à API (ver seção 9 do pedido de autenticação).
   app.use('/api', bloquearSenhaTemporariaPendente);
+
+  // PDI em desenvolvimento para quem não é Secretaria (19/11/2026; chave PDI_LIBERADO — ver config/modulos.ts).
+  app.use([
+    '/api/pdi-alunos', '/api/pdi-modelos', '/api/pdi-perguntas', '/api/pdi-perguntas-padrao', '/api/pdi-perguntas-computacao',
+    '/api/pdi-aplicacoes', '/api/pdi-fichas', '/api/pdi-ficha-anual', '/api/correcoes-pdi',
+    '/api/anamnese-modelos', '/api/anamnese-perguntas', '/api/anamneses', '/api/pdi-indicadores',
+  ], bloquearPdiEmDesenvolvimento);
 
   app.use('/api/desativados', desativadosRouter); // 15/11/2026: telas de desativados (só Secretaria)
   app.use('/api/escolas', escolasRouter);

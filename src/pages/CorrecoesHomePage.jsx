@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, EmptyState } from '../components/Common';
 import { PdiDesenvolvimentoPage, SeloDesenvolvimento } from '../components/PdiDesenvolvimento';
 import { useAuth } from '../context/AuthContext';
-import { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from '../config/modulos';
+import { useModoPdi } from '../config/modulos';
 import { canViewCorrecoesPdi, isSecretaria } from '../utils/roles';
 import { MainLayout } from '../layouts/Layouts';
 
@@ -10,6 +10,7 @@ import { MainLayout } from '../layouts/Layouts';
 // mais do PDI: com o PDI "em desenvolvimento", a Secretaria vê o 1/3 normalmente e o PDI com o selo; os
 // demais perfis (que não têm subárea de correções) continuam vendo o mesmo aviso de antes.
 export const CorrecoesHomePage = () => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { user } = useAuth();
   const umTerco = isSecretaria(user);
   const pdi = canViewCorrecoesPdi(user);

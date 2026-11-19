@@ -1,5 +1,5 @@
 import { HashRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
-import { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO } from './config/modulos';
+import { useModoPdi } from './config/modulos';
 import { PdiDesenvolvimentoPage } from './components/PdiDesenvolvimento';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -52,6 +52,7 @@ import { ProfessoresConsultaPage } from './pages/ProfessoresConsultaPage';
 // PDI (src/config/modulos.js): ativo → a tela normal; em desenvolvimento → aviso "PDI em desenvolvimento";
 // oculto → volta ao Dashboard. Vale também para links diretos (mensagens, notificações, favoritos).
 const SoComPdi = ({ children }) => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   if (PDI_ATIVO) return children;
   if (PDI_EM_DESENVOLVIMENTO) return <ProtectedRoute><PdiDesenvolvimentoPage /></ProtectedRoute>;
   return <Navigate to="/dashboard" replace />;

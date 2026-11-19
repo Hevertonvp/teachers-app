@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { criarNotificacao } from './notificacoes.js';
 import { contarFichasPdi } from './contagemFichasPdi.js';
+import { pdiSoSecretaria } from '../config/modulos.js';
 
 // Avisos de entrega por escola (decisão do usuário, 18/11/2026), no Formulário 1/3 e no PDI:
 //   - escola chegou a 100%            → Secretaria + Diretora e Supervisora da escola (na hora);
@@ -21,8 +22,10 @@ async function secretarias(prisma: PrismaClient): Promise<number[]> {
   return (await prisma.pessoa.findMany({ where: { perfil: 'SECRETARIA', status: 'ATIVO' }, select: { id: true } })).map((p) => p.id);
 }
 
-// Diretora e Supervisora (GESTOR) com vínculo ATIVO na escola.
-async function gestaoDaEscola(prisma: PrismaClient, escolaId: number): Promise<{ id: number; perfil: string }[]> {
+// Diretora e Supervisora (GESTOR) com vínculo ATIVO na escola. PDI em desenvolvimento (19/11/2026): elas ainda
+// não têm acesso ao PDI, então os avisos do PDI ficam só com a Secretaria.
+async function gestaoDaEscola(prisma: PrismaClient, escolaId: number, modulo: Modulo): Promise<{ id: number; perfil: string }[]> {
+  if (modulo === 'PDI' && pdiSoSecretaria()) return [];
   const vinculos = await prisma.vinculoEscolar.findMany({
     where: { escolaId, status: 'ATIVO', pessoa: { status: 'ATIVO', perfil: { in: ['DIRETORA', 'GESTOR'] } } },
     select: { pessoa: { select: { id: true, perfil: true } } },
@@ -45,7 +48,7 @@ export async function avisarEscolasCompletas(prisma: PrismaClient, ref: Referenc
       const titulo = `${NOME[ref.modulo]} completo`;
       const corpo = `${e.escolaNome}: todos os formulários foram entregues.`;
       const chave = (dest: number) => `entrega-completa:${prefixo(ref)}:${e.escolaId}:${dest}`;
-      const gestao = await gestaoDaEscola(prisma, e.escolaId);
+      const gestao = await gestaoDaEscola(prisma, e.escolaId, ref.modulo);
       await Promise.all([
         ...sec.map((id) => criarNotificacao(prisma, { destinatarioId: id, tipo: 'ENTREGA_ESCOLA_COMPLETA', titulo, corpo, linkContexto: ref.linkSecretaria, metadata: { ...ref, escolaId: e.escolaId }, chaveIdempotencia: chave(id) })),
         ...gestao.map((p) => criarNotificacao(prisma, { destinatarioId: p.id, tipo: 'ENTREGA_ESCOLA_COMPLETA', titulo, corpo, linkContexto: linkDe(ref, p.perfil), metadata: { ...ref, escolaId: e.escolaId }, chaveIdempotencia: chave(p.id) })),
@@ -88,7 +91,7 @@ export async function avisarPendencias(prisma: PrismaClient, modulo: Modulo, ite
       const corpo = marco === 'prazo_amanha'
         ? `${e.escolaNome}: faltam ${faltam(e)} de ${e.esperado}. Prazo: amanhã.`
         : `${e.escolaNome}: ficaram ${faltam(e)} de ${e.esperado} sem entregar.`;
-      for (const p of await gestaoDaEscola(prisma, e.escolaId)) {
+      for (const p of await gestaoDaEscola(prisma, e.escolaId, e.ref.modulo)) {
         await criarNotificacao(prisma, { destinatarioId: p.id, tipo, titulo, corpo, linkContexto: linkDe(e.ref, p.perfil), metadata: { ...e.ref, marco, escolaId: e.escolaId }, chaveIdempotencia: `entrega-${marco}:${prefixo(e.ref)}:${e.escolaId}:${p.id}` });
         tentadas++;
       }

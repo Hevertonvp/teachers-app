@@ -12,7 +12,8 @@ import { readFileSync } from 'node:fs';
 import { cargosDe, folhaDoCargo, resetarFolhas } from './cargos-homolog.mjs';
 const [C1, C2] = await cargosDe('p04');
 await resetarFolhas('p04', 1);
-const PDI_LIGADO = /MODO_PDI = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
+// 19/11/2026: estes passos do PDI rodam como Professor, que usa MODO_PDI_DEMAIS (a Secretaria usa MODO_PDI).
+const PDI_LIGADO = /MODO_PDI_DEMAIS = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
 const FASE = (process.argv[2] || 'depois').toUpperCase();
 const TAG = new Date().toISOString().slice(11, 19).replace(/:/g, '');
 const API = 'http://localhost:3340';

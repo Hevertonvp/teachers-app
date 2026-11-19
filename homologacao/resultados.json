@@ -261,7 +261,7 @@
     "status": "APROVADO",
     "evidencia": "05-defeito-troca-semana-durante-espera.png",
     "nota": "",
-    "quando": "2026-11-18T17:24:36.507Z"
+    "quando": "2026-11-19T13:49:52.416Z"
   },
   {
     "id": "UT-P04-01",
@@ -272,7 +272,7 @@
     "status": "APROVADO",
     "evidencia": "04-p04-lista-1-3.png",
     "nota": "",
-    "quando": "2026-11-18T17:23:48.436Z"
+    "quando": "2026-11-19T13:49:06.982Z"
   },
   {
     "id": "UT-P04-02-6ºIng",
@@ -360,18 +360,18 @@
     "status": "APROVADO",
     "evidencia": "04-p04-salvo-parcial-semana2.png",
     "nota": "",
-    "quando": "2026-11-18T17:24:04.769Z"
+    "quando": "2026-11-19T13:49:22.279Z"
   },
   {
     "id": "UT-P04-04",
     "modulo": "Formulário 1/3",
     "cenario": "Uma folha só para o Cargo 1 (sem bloco por disciplina) e nenhuma para o Cargo 2 ainda",
     "esperado": "1 entrega ligada só ao Cargo 1, com a foto Aurora",
-    "observado": "1 entrega(s); cargos: 5831; foto: [{\"atuacoes\":[],\"escolaId\":1,\"escolaNome\":\"ZZ-HOMOLOG Escola Aurora\",\"disciplinas\":[{\"id\":",
+    "observado": "1 entrega(s); cargos: 6304; foto: [{\"atuacoes\":[],\"escolaId\":1,\"escolaNome\":\"ZZ-HOMOLOG Escola Aurora\",\"disciplinas\":[{\"id\":",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:04.803Z"
+    "quando": "2026-11-19T13:49:22.321Z"
   },
   {
     "id": "UT-P04-05",
@@ -382,7 +382,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:07.188Z"
+    "quando": "2026-11-19T13:49:24.556Z"
   },
   {
     "id": "UT-P04-06",
@@ -393,7 +393,7 @@
     "status": "APROVADO",
     "evidencia": "04-p04-concluido.png",
     "nota": "",
-    "quando": "2026-11-18T17:24:09.975Z"
+    "quando": "2026-11-19T13:49:27.261Z"
   },
   {
     "id": "UT-T-S01",
@@ -668,7 +668,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.597Z"
+    "quando": "2026-11-19T13:49:54.292Z"
   },
   {
     "id": "UT-SRV-A02",
@@ -679,7 +679,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.616Z"
+    "quando": "2026-11-19T13:49:54.315Z"
   },
   {
     "id": "UT-SRV-A03",
@@ -690,7 +690,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.632Z"
+    "quando": "2026-11-19T13:49:54.335Z"
   },
   {
     "id": "UT-SRV-A04",
@@ -701,7 +701,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.652Z"
+    "quando": "2026-11-19T13:49:54.361Z"
   },
   {
     "id": "UT-SRV-A05",
@@ -712,7 +712,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.673Z"
+    "quando": "2026-11-19T13:49:54.389Z"
   },
   {
     "id": "UT-SRV-A06",
@@ -723,7 +723,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.693Z"
+    "quando": "2026-11-19T13:49:54.413Z"
   },
   {
     "id": "UT-SRV-A07",
@@ -734,7 +734,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.714Z"
+    "quando": "2026-11-19T13:49:54.434Z"
   },
   {
     "id": "UT-SRV-A08",
@@ -745,7 +745,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.736Z"
+    "quando": "2026-11-19T13:49:54.455Z"
   },
   {
     "id": "UT-SRV-A09",
@@ -756,7 +756,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.757Z"
+    "quando": "2026-11-19T13:49:54.478Z"
   },
   {
     "id": "UT-SRV-A10",
@@ -767,7 +767,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.780Z"
+    "quando": "2026-11-19T13:49:54.496Z"
   },
   {
     "id": "UT-SRV-A11",
@@ -778,7 +778,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.800Z"
+    "quando": "2026-11-19T13:49:54.516Z"
   },
   {
     "id": "UT-SRV-A12",
@@ -789,7 +789,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.827Z"
+    "quando": "2026-11-19T13:49:54.549Z"
   },
   {
     "id": "UT-SRV-A13",
@@ -800,7 +800,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.846Z"
+    "quando": "2026-11-19T13:49:54.572Z"
   },
   {
     "id": "UT-PERM-P01",
@@ -811,7 +811,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.876Z"
+    "quando": "2026-11-19T13:49:54.587Z"
   },
   {
     "id": "UT-PERM-P02",
@@ -822,7 +822,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.895Z"
+    "quando": "2026-11-19T13:49:54.604Z"
   },
   {
     "id": "UT-PERM-P03",
@@ -833,7 +833,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.917Z"
+    "quando": "2026-11-19T13:49:54.618Z"
   },
   {
     "id": "UT-PERM-P04",
@@ -844,7 +844,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.938Z"
+    "quando": "2026-11-19T13:49:54.634Z"
   },
   {
     "id": "UT-PERM-P05",
@@ -855,7 +855,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.953Z"
+    "quando": "2026-11-19T13:49:54.662Z"
   },
   {
     "id": "UT-PERM-P06",
@@ -866,7 +866,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.967Z"
+    "quando": "2026-11-19T13:49:54.676Z"
   },
   {
     "id": "UT-PERM-P07",
@@ -877,7 +877,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.980Z"
+    "quando": "2026-11-19T13:49:54.688Z"
   },
   {
     "id": "UT-PERM-P08",
@@ -888,7 +888,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:38.994Z"
+    "quando": "2026-11-19T13:49:54.700Z"
   },
   {
     "id": "UT-PERM-P09",
@@ -899,7 +899,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.029Z"
+    "quando": "2026-11-19T13:49:54.733Z"
   },
   {
     "id": "UT-PERM-P10",
@@ -910,7 +910,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.069Z"
+    "quando": "2026-11-19T13:49:54.786Z"
   },
   {
     "id": "UT-PERM-P11",
@@ -921,7 +921,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.110Z"
+    "quando": "2026-11-19T13:49:54.834Z"
   },
   {
     "id": "UT-PERM-P12",
@@ -932,7 +932,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.136Z"
+    "quando": "2026-11-19T13:49:54.874Z"
   },
   {
     "id": "UT-PERM-P13",
@@ -943,7 +943,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.178Z"
+    "quando": "2026-11-19T13:49:54.917Z"
   },
   {
     "id": "UT-CONC-C01",
@@ -954,7 +954,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.244Z"
+    "quando": "2026-11-19T13:49:54.967Z"
   },
   {
     "id": "UT-CONC-C02",
@@ -965,7 +965,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.286Z"
+    "quando": "2026-11-19T13:49:55.003Z"
   },
   {
     "id": "UT-CONC-C03",
@@ -976,7 +976,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.342Z"
+    "quando": "2026-11-19T13:49:55.046Z"
   },
   {
     "id": "UT-CONC-C04",
@@ -987,7 +987,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.437Z"
+    "quando": "2026-11-19T13:49:55.125Z"
   },
   {
     "id": "UT-CONC-C05",
@@ -998,7 +998,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.494Z"
+    "quando": "2026-11-19T13:49:55.183Z"
   },
   {
     "id": "UT-CONC-INV",
@@ -1009,7 +1009,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.507Z"
+    "quando": "2026-11-19T13:49:55.195Z"
   },
   {
     "id": "UT-ED-01",
@@ -1020,7 +1020,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.572Z"
+    "quando": "2026-11-19T13:49:55.263Z"
   },
   {
     "id": "UT-ED-02",
@@ -1031,7 +1031,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.650Z"
+    "quando": "2026-11-19T13:49:55.334Z"
   },
   {
     "id": "UT-ED-03",
@@ -1042,7 +1042,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.686Z"
+    "quando": "2026-11-19T13:49:55.360Z"
   },
   {
     "id": "UT-ED-04",
@@ -1053,7 +1053,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.759Z"
+    "quando": "2026-11-19T13:49:55.412Z"
   },
   {
     "id": "UT-ED-05",
@@ -1064,7 +1064,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "Pedido de homologação lista \"excluir ciclo com/sem entregas\": só existe Inativar.",
-    "quando": "2026-11-18T17:24:39.777Z"
+    "quando": "2026-11-19T13:49:55.428Z"
   },
   {
     "id": "UT-REA-01",
@@ -1075,7 +1075,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.825Z"
+    "quando": "2026-11-19T13:49:55.472Z"
   },
   {
     "id": "UT-REA-02",
@@ -1086,7 +1086,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:39.852Z"
+    "quando": "2026-11-19T13:49:55.494Z"
   },
   {
     "id": "UT-REA-03",
@@ -1097,7 +1097,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "ACEITA: dois formulários podem ficar editáveis ao mesmo tempo via reabertura.",
-    "quando": "2026-11-18T17:24:40.176Z"
+    "quando": "2026-11-19T13:49:55.523Z"
   },
   {
     "id": "UT-REA-04",
@@ -1108,7 +1108,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:40.205Z"
+    "quando": "2026-11-19T13:49:55.549Z"
   },
   {
     "id": "UT-REA-05",
@@ -1119,7 +1119,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:40.241Z"
+    "quando": "2026-11-19T13:49:55.581Z"
   },
   {
     "id": "UT-PERM-P10b",
@@ -1130,7 +1130,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:41.666Z"
+    "quando": "2026-11-19T13:49:56.845Z"
   },
   {
     "id": "UT-SW-01",
@@ -1152,7 +1152,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:47.922Z"
+    "quando": "2026-11-19T13:50:02.888Z"
   },
   {
     "id": "UT-OFF-UX-desktop",
@@ -1181,11 +1181,11 @@
     "modulo": "Offline",
     "cenario": "Salvar sem rede NÃO perde o texto: vai para a fila local; servidor ainda sem a semana 2",
     "esperado": "fila com 1 item pendente; banco com 1 resposta",
-    "observado": "fila: [{\"key\":\"p04@homolog.nexo::um-terco-resposta::1-cargo-5847::respostas\",\"status\":\"pending\",\"attempts\":0,\"lastError\":null,\"resourceId\":\"1-cargo-5847\"}]; banco: 1 resposta(s)",
+    "observado": "fila: [{\"key\":\"p04@homolog.nexo::um-terco-resposta::1-cargo-6320::respostas\",\"status\":\"pending\",\"attempts\":0,\"lastError\":null,\"resourceId\":\"1-cargo-6320\"}]; banco: 1 resposta(s)",
     "status": "APROVADO",
     "evidencia": "10-offline-apos-salvar.png",
     "nota": "",
-    "quando": "2026-11-18T17:24:53.701Z"
+    "quando": "2026-11-19T13:50:08.551Z"
   },
   {
     "id": "UT-OFF-03",
@@ -1196,7 +1196,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-apos-salvar.png",
     "nota": "",
-    "quando": "2026-11-18T17:24:53.732Z"
+    "quando": "2026-11-19T13:50:08.575Z"
   },
   {
     "id": "UT-OFF-04",
@@ -1207,7 +1207,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:25:02.455Z"
+    "quando": "2026-11-19T13:50:17.230Z"
   },
   {
     "id": "UT-OFF-05",
@@ -1218,7 +1218,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "10-offline-recarga-sem-rede.png",
     "nota": "Limitação de produto, não defeito: só é possível continuar na página já aberta. Para suporte offline real seria preciso cachear o shell (decisão de produto).",
-    "quando": "2026-11-18T17:25:02.831Z"
+    "quando": "2026-11-19T13:50:17.545Z"
   },
   {
     "id": "UT-OFF-06",
@@ -1229,7 +1229,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:25:04.415Z"
+    "quando": "2026-11-19T13:50:19.114Z"
   },
   {
     "id": "UT-OFF-07",
@@ -1240,7 +1240,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:25:04.449Z"
+    "quando": "2026-11-19T13:50:19.166Z"
   },
   {
     "id": "UT-OFF-08",
@@ -1262,7 +1262,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:26:45.286Z"
+    "quando": "2026-11-19T13:51:59.896Z"
   },
   {
     "id": "UT-OFF-11",
@@ -1273,7 +1273,7 @@
     "status": "APROVADO",
     "evidencia": "12-fila-pendente-online.png",
     "nota": "envio só ocorre ao enfileirar com rede ou ao reconectar (syncQueue.js:32 e :111); sem envio na abertura.",
-    "quando": "2026-11-18T17:26:45.322Z"
+    "quando": "2026-11-19T13:51:59.923Z"
   },
   {
     "id": "UT-OFF-12",
@@ -1284,7 +1284,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:26:47.945Z"
+    "quando": "2026-11-19T13:52:02.495Z"
   },
   {
     "id": "UT-OFF-13",
@@ -1295,7 +1295,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:26:55.988Z"
+    "quando": "2026-11-19T13:52:10.536Z"
   },
   {
     "id": "UT-OFF-09",
@@ -1306,7 +1306,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-conflito.png",
     "nota": "",
-    "quando": "2026-11-18T17:25:26.434Z"
+    "quando": "2026-11-19T13:50:40.903Z"
   },
   {
     "id": "UT-OFF-10",
@@ -1317,7 +1317,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-conflito.png",
     "nota": "",
-    "quando": "2026-11-18T17:25:26.467Z"
+    "quando": "2026-11-19T13:50:40.937Z"
   },
   {
     "id": "UT-OFF-10b",
@@ -1328,7 +1328,7 @@
     "status": "APROVADO",
     "evidencia": "10-offline-conflito-reaberto.png",
     "nota": "",
-    "quando": "2026-11-18T17:25:30.341Z"
+    "quando": "2026-11-19T13:50:44.745Z"
   },
   {
     "id": "UT-VIN-00",
@@ -1350,7 +1350,7 @@
     "status": "APROVADO",
     "evidencia": "13-P07-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:23.100Z"
+    "quando": "2026-11-19T13:52:16.693Z"
   },
   {
     "id": "UT-VIN-P08",
@@ -1361,7 +1361,7 @@
     "status": "APROVADO",
     "evidencia": "13-P08-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:27.704Z"
+    "quando": "2026-11-19T13:52:20.696Z"
   },
   {
     "id": "UT-VIN-P09",
@@ -1372,7 +1372,7 @@
     "status": "APROVADO",
     "evidencia": "13-P09-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:32.334Z"
+    "quando": "2026-11-19T13:52:24.772Z"
   },
   {
     "id": "UT-VIN-P10",
@@ -1383,7 +1383,7 @@
     "status": "APROVADO",
     "evidencia": "13-P10-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:36.829Z"
+    "quando": "2026-11-19T13:52:28.887Z"
   },
   {
     "id": "UT-VIN-P11",
@@ -1394,7 +1394,7 @@
     "status": "APROVADO",
     "evidencia": "13-P11-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:41.642Z"
+    "quando": "2026-11-19T13:52:32.940Z"
   },
   {
     "id": "UT-VIN-P12",
@@ -1405,7 +1405,7 @@
     "status": "APROVADO",
     "evidencia": "13-P12-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:46.193Z"
+    "quando": "2026-11-19T13:52:37.071Z"
   },
   {
     "id": "UT-VIN-P13",
@@ -1416,7 +1416,7 @@
     "status": "APROVADO",
     "evidencia": "13-P13-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:50.662Z"
+    "quando": "2026-11-19T13:52:41.096Z"
   },
   {
     "id": "UT-VIN-P14",
@@ -1427,7 +1427,7 @@
     "status": "REPROVADO",
     "evidencia": "13-P14-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:55.149Z"
+    "quando": "2026-11-19T13:52:45.116Z"
   },
   {
     "id": "UT-VIN-P15",
@@ -1438,7 +1438,7 @@
     "status": "APROVADO",
     "evidencia": "13-P15-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:40:59.720Z"
+    "quando": "2026-11-19T13:52:49.200Z"
   },
   {
     "id": "UT-VIN-PAINEL1",
@@ -1449,7 +1449,7 @@
     "status": "REPROVADO",
     "evidencia": "13-painel.png",
     "nota": "",
-    "quando": "2026-11-18T17:41:09.043Z"
+    "quando": "2026-11-19T13:52:57.448Z"
   },
   {
     "id": "UT-VIN-PAINEL1b",
@@ -1460,7 +1460,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:09.069Z"
+    "quando": "2026-11-19T13:52:57.474Z"
   },
   {
     "id": "UT-VIN-CARDS",
@@ -1471,7 +1471,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:09.225Z"
+    "quando": "2026-11-19T13:52:57.644Z"
   },
   {
     "id": "UT-EST-01",
@@ -1482,7 +1482,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:42:25.886Z"
+    "quando": "2026-11-19T13:53:12.249Z"
   },
   {
     "id": "UT-EST-02",
@@ -1493,7 +1493,7 @@
     "status": "REPROVADO",
     "evidencia": "14-painel-antes.png",
     "nota": "",
-    "quando": "2026-11-18T17:42:31.740Z"
+    "quando": "2026-11-19T13:53:17.317Z"
   },
   {
     "id": "UT-EST-03",
@@ -1504,7 +1504,7 @@
     "status": "REPROVADO",
     "evidencia": "14-painel-p11-inativo.png",
     "nota": "",
-    "quando": "2026-11-18T17:42:37.593Z"
+    "quando": "2026-11-19T13:53:22.363Z"
   },
   {
     "id": "UT-EST-04",
@@ -1515,29 +1515,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:42:55.275Z"
+    "quando": "2026-11-19T13:53:39.699Z"
   },
   {
     "id": "UT-EST-05",
     "modulo": "Estados administrativos",
     "cenario": "Reativar o professor devolve a folha concluída ao esperado",
     "esperado": "14 / 1; fora 0",
-    "observado": "HTTP 200; 14 / 1; fora 0",
-    "status": "APROVADO",
+    "observado": "HTTP 200; 13 / 1; fora 0",
+    "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-15T19:30:47.821Z"
+    "quando": "2026-11-19T13:53:45.271Z"
   },
   {
     "id": "UT-EST-06",
     "modulo": "Estados administrativos",
     "cenario": "Cargo encerrado durante o ciclo (com texto): sai do esperado e aparece em \"Fora do esperado\" no painel",
     "esperado": "esperadas 13; fora 1",
-    "observado": "HTTP 200; esperadas 13; fora 1",
-    "status": "APROVADO",
+    "observado": "HTTP 200; esperadas 12; fora 1",
+    "status": "REPROVADO",
     "evidencia": "14-painel-p15-encerrado.png",
     "nota": "",
-    "quando": "2026-11-15T19:30:52.331Z"
+    "quando": "2026-11-19T13:53:50.672Z"
   },
   {
     "id": "UT-EST-07",
@@ -1548,7 +1548,7 @@
     "status": "APROVADO",
     "evidencia": "14-p15-cargo-encerrado.png",
     "nota": "",
-    "quando": "2026-11-15T19:30:56.660Z"
+    "quando": "2026-11-19T13:53:55.452Z"
   },
   {
     "id": "UT-PRZ-00",
@@ -1559,7 +1559,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:28:30.584Z"
+    "quando": "2026-11-19T13:53:57.240Z"
   },
   {
     "id": "UT-PRZ-01",
@@ -1570,7 +1570,7 @@
     "status": "APROVADO",
     "evidencia": "15-prazo-vencido-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:28:34.392Z"
+    "quando": "2026-11-19T13:54:01.422Z"
   },
   {
     "id": "UT-PRZ-02",
@@ -1581,7 +1581,7 @@
     "status": "APROVADO",
     "evidencia": "15-prazo-vencido-formulario.png",
     "nota": "",
-    "quando": "2026-11-18T17:28:35.433Z"
+    "quando": "2026-11-19T13:54:02.554Z"
   },
   {
     "id": "UT-PRZ-03",
@@ -1592,7 +1592,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:28:35.647Z"
+    "quando": "2026-11-19T13:54:02.961Z"
   },
   {
     "id": "UT-PRZ-04",
@@ -1603,7 +1603,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:28:35.663Z"
+    "quando": "2026-11-19T13:54:02.999Z"
   },
   {
     "id": "UT-PRZ-05",
@@ -1614,7 +1614,7 @@
     "status": "APROVADO",
     "evidencia": "15-vence-com-tela-aberta.png",
     "nota": "Para o texto digitado: ver se fica preservado localmente (rascunho) — conferir em 15-vence-com-tela-aberta.png",
-    "quando": "2026-11-18T17:28:39.872Z"
+    "quando": "2026-11-19T13:54:07.529Z"
   },
   {
     "id": "UT-PRZ-06",
@@ -1625,7 +1625,7 @@
     "status": "APROVADO",
     "evidencia": "15-reabertura-secretaria.png",
     "nota": "",
-    "quando": "2026-11-18T17:28:48.373Z"
+    "quando": "2026-11-19T13:54:18.069Z"
   },
   {
     "id": "UT-PRZ-07",
@@ -1636,7 +1636,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:28:51.553Z"
+    "quando": "2026-11-19T13:54:21.584Z"
   },
   {
     "id": "UT-PRZ-08",
@@ -1647,7 +1647,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:28:53.085Z"
+    "quando": "2026-11-19T13:54:23.128Z"
   },
   {
     "id": "PDI-SET-01",
@@ -2065,7 +2065,7 @@
     "status": "APROVADO",
     "evidencia": "24-p01-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:28:57.182Z"
+    "quando": "2026-11-19T13:54:27.646Z"
   },
   {
     "id": "UT-CARD-P02",
@@ -2076,7 +2076,7 @@
     "status": "APROVADO",
     "evidencia": "24-p02-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:28:59.225Z"
+    "quando": "2026-11-19T13:54:30.793Z"
   },
   {
     "id": "UT-CARD-P03",
@@ -2087,7 +2087,7 @@
     "status": "APROVADO",
     "evidencia": "24-p03-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:29:01.506Z"
+    "quando": "2026-11-19T13:54:33.890Z"
   },
   {
     "id": "UT-CARD-P05",
@@ -2098,7 +2098,7 @@
     "status": "APROVADO",
     "evidencia": "24-p05-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:29:03.636Z"
+    "quando": "2026-11-19T13:54:36.939Z"
   },
   {
     "id": "UT-CARD-P06",
@@ -2109,7 +2109,7 @@
     "status": "APROVADO",
     "evidencia": "24-p06-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:29:05.669Z"
+    "quando": "2026-11-19T13:54:39.977Z"
   },
   {
     "id": "PDI-TRF-T0-Lucas",
@@ -3297,7 +3297,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:35.917Z"
+    "quando": "2026-11-19T14:07:15.197Z"
   },
   {
     "id": "REG-LOGIN-2",
@@ -3308,7 +3308,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:35.934Z"
+    "quando": "2026-11-19T14:07:15.221Z"
   },
   {
     "id": "REG-LOGIN-3",
@@ -3319,7 +3319,7 @@
     "status": "APROVADO",
     "evidencia": "33-login.png",
     "nota": "",
-    "quando": "2026-11-18T17:31:35.945Z"
+    "quando": "2026-11-19T14:07:15.248Z"
   },
   {
     "id": "REG-MULTI-1",
@@ -3330,7 +3330,7 @@
     "status": "APROVADO",
     "evidencia": "33-cartoes-p04.png",
     "nota": "",
-    "quando": "2026-11-18T17:31:38.054Z"
+    "quando": "2026-11-19T14:07:17.403Z"
   },
   {
     "id": "REG-MULTI-2",
@@ -3341,7 +3341,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:38.069Z"
+    "quando": "2026-11-19T14:07:17.430Z"
   },
   {
     "id": "REG-PDI-1",
@@ -5992,18 +5992,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:21.188Z"
+    "quando": "2026-11-19T13:57:53.470Z"
   },
   {
     "id": "UT-MODAL-2-desktop",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "desktop: abertura ontem (2026-11-17) → aviso na hora e Salvar bloqueado",
+    "cenario": "desktop: abertura ontem (2026-11-18) → aviso na hora e Salvar bloqueado",
     "esperado": "aviso \"não pode ser no passado\"; bloqueado",
     "observado": "A abertura não pode ser no passado: escolha hoje ou uma data futura.; bloqueado: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:21.505Z"
+    "quando": "2026-11-19T13:57:53.841Z"
   },
   {
     "id": "UT-MODAL-3-desktop",
@@ -6014,7 +6014,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:22.147Z"
+    "quando": "2026-11-19T13:57:54.605Z"
   },
   {
     "id": "UT-MODAL-1-celular",
@@ -6025,18 +6025,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:33.385Z"
+    "quando": "2026-11-19T13:58:07.600Z"
   },
   {
     "id": "UT-MODAL-2-celular",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "celular: abertura ontem (2026-11-17) → aviso na hora e Salvar bloqueado",
+    "cenario": "celular: abertura ontem (2026-11-18) → aviso na hora e Salvar bloqueado",
     "esperado": "aviso \"não pode ser no passado\"; bloqueado",
     "observado": "A abertura não pode ser no passado: escolha hoje ou uma data futura.; bloqueado: true",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:33.706Z"
+    "quando": "2026-11-19T13:58:07.963Z"
   },
   {
     "id": "UT-MODAL-3-celular",
@@ -6047,7 +6047,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:34.350Z"
+    "quando": "2026-11-19T13:58:08.681Z"
   },
   {
     "id": "UT-MODAL-8",
@@ -6058,7 +6058,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:26.327Z"
+    "quando": "2026-11-19T13:57:59.468Z"
   },
   {
     "id": "DASH-1-desktop",
@@ -6069,7 +6069,7 @@
     "status": "APROVADO",
     "evidencia": "45-dashboard-desktop.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:42.488Z"
+    "quando": "2026-11-19T13:58:19.196Z"
   },
   {
     "id": "DASH-2-desktop",
@@ -6080,7 +6080,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:42.570Z"
+    "quando": "2026-11-19T13:58:19.375Z"
   },
   {
     "id": "DASH-3-desktop",
@@ -6091,7 +6091,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:42.604Z"
+    "quando": "2026-11-19T13:58:19.440Z"
   },
   {
     "id": "DASH-4",
@@ -6102,7 +6102,7 @@
     "status": "APROVADO",
     "evidencia": "45-dashboard-aurora.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:45.921Z"
+    "quando": "2026-11-19T13:58:23.045Z"
   },
   {
     "id": "DASH-5",
@@ -6113,7 +6113,7 @@
     "status": "APROVADO",
     "evidencia": "45-pdi-home.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:48.063Z"
+    "quando": "2026-11-19T13:58:25.297Z"
   },
   {
     "id": "DASH-1-celular",
@@ -6124,7 +6124,7 @@
     "status": "APROVADO",
     "evidencia": "45-dashboard-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:52.990Z"
+    "quando": "2026-11-19T13:58:31.137Z"
   },
   {
     "id": "DASH-2-celular",
@@ -6135,7 +6135,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:53.079Z"
+    "quando": "2026-11-19T13:58:31.317Z"
   },
   {
     "id": "DASH-3-celular",
@@ -6146,18 +6146,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:53.113Z"
+    "quando": "2026-11-19T13:58:31.386Z"
   },
   {
     "id": "UT-MODAL-2b-desktop",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "desktop: abertura hoje (2026-11-18) é aceita",
+    "cenario": "desktop: abertura hoje (2026-11-19) é aceita",
     "esperado": "sem aviso de passado",
     "observado": "sem aviso",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:21.801Z"
+    "quando": "2026-11-19T13:57:54.210Z"
   },
   {
     "id": "UT-MODAL-4-desktop",
@@ -6168,7 +6168,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:22.565Z"
+    "quando": "2026-11-19T13:57:55.134Z"
   },
   {
     "id": "UT-MODAL-5-desktop",
@@ -6179,7 +6179,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-desktop.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:23.391Z"
+    "quando": "2026-11-19T13:57:56.178Z"
   },
   {
     "id": "UT-MODAL-6-desktop",
@@ -6190,7 +6190,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:23.744Z"
+    "quando": "2026-11-19T13:57:56.595Z"
   },
   {
     "id": "UT-MODAL-7-desktop",
@@ -6201,7 +6201,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:24.234Z"
+    "quando": "2026-11-19T13:57:57.332Z"
   },
   {
     "id": "UT-MODAL-9",
@@ -6212,18 +6212,18 @@
     "status": "APROVADO",
     "evidencia": "44-ciclo-antigo.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:27.891Z"
+    "quando": "2026-11-19T13:58:01.310Z"
   },
   {
     "id": "UT-MODAL-10",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
     "cenario": "API recusa (400) abertura no passado, semanas sobrepostas, fora de ordem e semana depois do prazo — mesmo sem passar pela tela",
     "esperado": "400 nos 4",
-    "observado": "passado: 400 A abertura (17/11/2026) não pode ser no passado: escolha hoje ou uma data futura. | sobreposta: 400 Semana 2 (início 27/11/2026) precisa começar depois do fim da Semana 1 (27/11/2026): as semanas ficam em ordem e não | foraDeOrdem: 400 Semana 2 (início 23/11/2026) precisa começar depois",
+    "observado": "passado: 400 A abertura (18/11/2026) não pode ser no passado: escolha hoje ou uma data futura. | sobreposta: 400 Semana 2 (início 27/11/2026) precisa começar depois do fim da Semana 1 (27/11/2026): as semanas ficam em ordem e não | foraDeOrdem: 400 Semana 2 (início 23/11/2026) precisa começar depois",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:27.996Z"
+    "quando": "2026-11-19T13:58:01.525Z"
   },
   {
     "id": "UT-MODAL-11",
@@ -6234,18 +6234,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:29.066Z"
+    "quando": "2026-11-19T13:58:02.695Z"
   },
   {
     "id": "UT-MODAL-2b-celular",
     "modulo": "Formulário 1/3 — modal de novo ciclo",
-    "cenario": "celular: abertura hoje (2026-11-18) é aceita",
+    "cenario": "celular: abertura hoje (2026-11-19) é aceita",
     "esperado": "sem aviso de passado",
     "observado": "sem aviso",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:34.011Z"
+    "quando": "2026-11-19T13:58:08.304Z"
   },
   {
     "id": "UT-MODAL-4-celular",
@@ -6256,7 +6256,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:34.750Z"
+    "quando": "2026-11-19T13:58:09.184Z"
   },
   {
     "id": "UT-MODAL-5-celular",
@@ -6267,7 +6267,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:35.597Z"
+    "quando": "2026-11-19T13:58:10.270Z"
   },
   {
     "id": "UT-MODAL-6-celular",
@@ -6278,7 +6278,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:35.967Z"
+    "quando": "2026-11-19T13:58:10.733Z"
   },
   {
     "id": "UT-MODAL-7-celular",
@@ -6289,7 +6289,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:36.449Z"
+    "quando": "2026-11-19T13:58:11.432Z"
   },
   {
     "id": "UT-MODAL-12-celular",
@@ -6300,7 +6300,7 @@
     "status": "APROVADO",
     "evidencia": "44-validacao-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:36.460Z"
+    "quando": "2026-11-19T13:58:11.455Z"
   },
   {
     "id": "UT-ESC-1",
@@ -6311,7 +6311,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:59.440Z"
+    "quando": "2026-11-19T13:58:38.947Z"
   },
   {
     "id": "UT-ESC-2",
@@ -6322,7 +6322,7 @@
     "status": "APROVADO",
     "evidencia": "46-modal-escolas.png",
     "nota": "",
-    "quando": "2026-11-18T17:34:02.128Z"
+    "quando": "2026-11-19T13:58:41.685Z"
   },
   {
     "id": "UT-ESC-3",
@@ -6333,7 +6333,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:02.199Z"
+    "quando": "2026-11-19T13:58:41.850Z"
   },
   {
     "id": "UT-ESC-4",
@@ -6344,7 +6344,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:02.527Z"
+    "quando": "2026-11-19T13:58:42.588Z"
   },
   {
     "id": "UT-ESC-5",
@@ -6355,7 +6355,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:02.593Z"
+    "quando": "2026-11-19T13:58:42.690Z"
   },
   {
     "id": "UT-ESC-6",
@@ -6366,7 +6366,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:02.611Z"
+    "quando": "2026-11-19T13:58:42.727Z"
   },
   {
     "id": "UT-ESC-7",
@@ -6377,7 +6377,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:02.869Z"
+    "quando": "2026-11-19T13:58:43.288Z"
   },
   {
     "id": "UT-ESC-8",
@@ -6388,7 +6388,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:07.779Z"
+    "quando": "2026-11-19T13:58:49.582Z"
   },
   {
     "id": "UT-MODAL-4",
@@ -6564,7 +6564,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:15.044Z"
+    "quando": "2026-11-19T13:59:41.986Z"
   },
   {
     "id": "REAB-2",
@@ -6575,7 +6575,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:15.261Z"
+    "quando": "2026-11-19T13:59:42.165Z"
   },
   {
     "id": "REAB-3",
@@ -6586,7 +6586,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:15.317Z"
+    "quando": "2026-11-19T13:59:42.224Z"
   },
   {
     "id": "ACP-1",
@@ -6597,7 +6597,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:37.419Z"
+    "quando": "2026-11-19T14:09:26.725Z"
   },
   {
     "id": "ACP-2",
@@ -6608,7 +6608,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:37.469Z"
+    "quando": "2026-11-19T14:09:26.770Z"
   },
   {
     "id": "ACP-3",
@@ -6619,7 +6619,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:37.534Z"
+    "quando": "2026-11-19T14:09:26.868Z"
   },
   {
     "id": "ACP-4",
@@ -6630,7 +6630,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:37.871Z"
+    "quando": "2026-11-19T14:09:27.715Z"
   },
   {
     "id": "ACP-5",
@@ -6641,7 +6641,7 @@
     "status": "NAO_EXECUTADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:37.960Z"
+    "quando": "2026-11-19T14:09:27.865Z"
   },
   {
     "id": "ACP-6",
@@ -6652,7 +6652,7 @@
     "status": "APROVADO",
     "evidencia": "50-acompanhamento-rede.png, 50-acompanhamento-escola.png",
     "nota": "",
-    "quando": "2026-11-18T18:08:43.284Z"
+    "quando": "2026-11-19T14:09:33.830Z"
   },
   {
     "id": "ACP-7",
@@ -6663,7 +6663,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:43.473Z"
+    "quando": "2026-11-19T14:09:34.168Z"
   },
   {
     "id": "ACP-8",
@@ -6674,7 +6674,7 @@
     "status": "APROVADO",
     "evidencia": "50-acompanhamento-noturno.png, 50-acompanhamento-celular.png",
     "nota": "",
-    "quando": "2026-11-18T18:08:47.019Z"
+    "quando": "2026-11-19T14:09:39.034Z"
   },
   {
     "id": "ACP-9",
@@ -6971,7 +6971,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:15.280Z"
+    "quando": "2026-11-19T14:00:20.324Z"
   },
   {
     "id": "INA-2",
@@ -6982,7 +6982,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:15.324Z"
+    "quando": "2026-11-19T14:00:20.390Z"
   },
   {
     "id": "INA-3",
@@ -6993,7 +6993,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:15.378Z"
+    "quando": "2026-11-19T14:00:20.467Z"
   },
   {
     "id": "PDI-DESL-prof-pc-menu",
@@ -7506,66 +7506,66 @@
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof (pc): PDI no menu com selo \"em desenvolvimento\"",
     "esperado": "PDI…em desenvolvimento",
-    "observado": "Dashboard | Formulário 1/3 | PDI | Correções | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
-    "status": "REPROVADO",
+    "observado": "Dashboard | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:18.595Z"
+    "quando": "2026-11-19T14:00:23.836Z"
   },
   {
     "id": "PDI-DESENV-prof-pc-dash",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof (pc): Dashboard mostra PDI \"Em desenvolvimento\"",
     "esperado": "aviso visível",
-    "observado": "Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.\n\nMINHA ROTINA PEDAGÓGICA\n\nBem-vindo, Daniela Moreira\n\nMinhas turmas\n\n6\n\nturmas vinculadas\n\nFormulário 1/3",
-    "status": "REPROVADO",
+    "observado": "ok",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:19.706Z"
+    "quando": "2026-11-19T14:00:25.040Z"
   },
   {
     "id": "PDI-DESENV-prof-rota/pdi",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof: /pdi mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:19.895Z"
+    "quando": "2026-11-19T14:00:25.204Z"
   },
   {
     "id": "PDI-DESENV-prof-rota/pdi/meus-pdis",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:20.100Z"
+    "quando": "2026-11-19T14:00:25.280Z"
   },
   {
     "id": "PDI-DESENV-prof-rota/correcoes",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof: /correcoes mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:20.284Z"
+    "quando": "2026-11-19T14:00:25.370Z"
   },
   {
     "id": "PDI-DESENV-prof-rota/correcoes/pdi",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:20.452Z"
+    "quando": "2026-11-19T14:00:25.476Z"
   },
   {
     "id": "PDI-DESENV-prof-pc-1-3",
@@ -7576,7 +7576,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:21.033Z"
+    "quando": "2026-11-19T14:00:25.750Z"
   },
   {
     "id": "PDI-DESENV-prof-pc-console",
@@ -7587,29 +7587,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:21.065Z"
+    "quando": "2026-11-19T14:00:25.777Z"
   },
   {
     "id": "PDI-DESENV-prof-cel-menu",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof (cel): PDI no menu com selo \"em desenvolvimento\"",
     "esperado": "PDI…em desenvolvimento",
-    "observado": "Dashboard | Formulário 1/3 | PDI | Correções | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
-    "status": "REPROVADO",
+    "observado": "Dashboard | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:24.124Z"
+    "quando": "2026-11-19T14:00:28.847Z"
   },
   {
     "id": "PDI-DESENV-prof-cel-dash",
     "modulo": "PDI em desenvolvimento",
     "cenario": "prof (cel): Dashboard mostra PDI \"Em desenvolvimento\"",
     "esperado": "aviso visível",
-    "observado": "Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.\n\nMINHA ROTINA PEDAGÓGICA\n\nBem-vindo, Daniela Moreira\n\nMinhas turmas\n\n6\n\nturmas vinculadas\n\nFormulário 1/3",
-    "status": "REPROVADO",
+    "observado": "ok",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:25.176Z"
+    "quando": "2026-11-19T14:00:29.913Z"
   },
   {
     "id": "PDI-DESENV-prof-cel-1-3",
@@ -7620,7 +7620,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:25.367Z"
+    "quando": "2026-11-19T14:00:30.025Z"
   },
   {
     "id": "PDI-DESENV-prof-cel-console",
@@ -7631,7 +7631,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:25.393Z"
+    "quando": "2026-11-19T14:00:30.052Z"
   },
   {
     "id": "PDI-DESENV-sec-pc-menu",
@@ -7642,7 +7642,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:28.465Z"
+    "quando": "2026-11-19T14:00:32.682Z"
   },
   {
     "id": "PDI-DESENV-sec-pc-dash",
@@ -7653,7 +7653,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:29.789Z"
+    "quando": "2026-11-19T14:00:33.943Z"
   },
   {
     "id": "PDI-DESENV-sec-rota/pdi",
@@ -7664,7 +7664,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:29.978Z"
+    "quando": "2026-11-19T14:00:34.093Z"
   },
   {
     "id": "PDI-DESENV-sec-rota/pdi/meus-pdis",
@@ -7675,7 +7675,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:30.262Z"
+    "quando": "2026-11-19T14:00:34.328Z"
   },
   {
     "id": "PDI-DESENV-sec-rota/correcoes",
@@ -7686,7 +7686,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:30.435Z"
+    "quando": "2026-11-19T14:00:34.507Z"
   },
   {
     "id": "PDI-DESENV-sec-rota/correcoes/pdi",
@@ -7697,7 +7697,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:30.605Z"
+    "quando": "2026-11-19T14:00:34.655Z"
   },
   {
     "id": "PDI-DESENV-sec-pc-acomp",
@@ -7708,7 +7708,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:32.875Z"
+    "quando": "2026-11-19T14:00:36.738Z"
   },
   {
     "id": "PDI-DESENV-sec-pc-console",
@@ -7719,7 +7719,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:32.905Z"
+    "quando": "2026-11-19T14:00:36.761Z"
   },
   {
     "id": "PDI-DESENV-sec-cel-menu",
@@ -7730,7 +7730,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:35.714Z"
+    "quando": "2026-11-19T14:00:39.441Z"
   },
   {
     "id": "PDI-DESENV-sec-cel-dash",
@@ -7741,7 +7741,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:36.966Z"
+    "quando": "2026-11-19T14:00:40.678Z"
   },
   {
     "id": "PDI-DESENV-sec-cel-acomp",
@@ -7752,7 +7752,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:38.540Z"
+    "quando": "2026-11-19T14:00:42.194Z"
   },
   {
     "id": "PDI-DESENV-sec-cel-console",
@@ -7763,73 +7763,73 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:38.571Z"
+    "quando": "2026-11-19T14:00:42.228Z"
   },
   {
     "id": "PDI-DESENV-gestor-pc-menu",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor (pc): PDI no menu com selo \"em desenvolvimento\"",
     "esperado": "PDI…em desenvolvimento",
-    "observado": "Dashboard | Acompanhamento Escolar | Formulário 1/3 | PDI | Correções | Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
-    "status": "REPROVADO",
+    "observado": "Dashboard | Acompanhamento Escolar | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:41.095Z"
+    "quando": "2026-11-19T14:00:44.590Z"
   },
   {
     "id": "PDI-DESENV-gestor-pc-dash",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor (pc): Dashboard mostra PDI \"Em desenvolvimento\"",
     "esperado": "aviso visível",
-    "observado": "Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.\n\nVISÃO GERAL DA ESCOLA\n\nBem-vinda(o), gestor.aur\nPDI\nAcessar PDI\nVer Alunos PDI",
-    "status": "REPROVADO",
+    "observado": "ok",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:42.057Z"
+    "quando": "2026-11-19T14:00:45.547Z"
   },
   {
     "id": "PDI-DESENV-gestor-rota/pdi",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor: /pdi mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:42.213Z"
+    "quando": "2026-11-19T14:00:45.723Z"
   },
   {
     "id": "PDI-DESENV-gestor-rota/pdi/meus-pdis",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:42.452Z"
+    "quando": "2026-11-19T14:00:45.796Z"
   },
   {
     "id": "PDI-DESENV-gestor-rota/correcoes",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor: /correcoes mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:42.585Z"
+    "quando": "2026-11-19T14:00:45.890Z"
   },
   {
     "id": "PDI-DESENV-gestor-rota/correcoes/pdi",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:42.730Z"
+    "quando": "2026-11-19T14:00:45.963Z"
   },
   {
     "id": "PDI-DESENV-gestor-pc-console",
@@ -7840,29 +7840,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:43.196Z"
+    "quando": "2026-11-19T14:00:46.107Z"
   },
   {
     "id": "PDI-DESENV-gestor-cel-menu",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor (cel): PDI no menu com selo \"em desenvolvimento\"",
     "esperado": "PDI…em desenvolvimento",
-    "observado": "Dashboard | Acompanhamento Escolar | Formulário 1/3 | PDI | Correções | Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
-    "status": "REPROVADO",
+    "observado": "Dashboard | Acompanhamento Escolar | Formulário 1/3 | PDIem desenvolvimento | Correçõesem desenvolvimento | Professores(as) | Eventos | Notícias | Mensagens | Feedback | Perfil | Configurações",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:46.195Z"
+    "quando": "2026-11-19T14:00:48.622Z"
   },
   {
     "id": "PDI-DESENV-gestor-cel-dash",
     "modulo": "PDI em desenvolvimento",
     "cenario": "gestor (cel): Dashboard mostra PDI \"Em desenvolvimento\"",
     "esperado": "aviso visível",
-    "observado": "Encontrou um problema ou tem uma sugestão para melhorar o sistema? Avise o desenvolvedor aqui.\n\nVISÃO GERAL DA ESCOLA\n\nBem-vinda(o), gestor.aur\nPDI\nAcessar PDI\nVer Alunos PDI",
-    "status": "REPROVADO",
+    "observado": "ok",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:47.144Z"
+    "quando": "2026-11-19T14:00:49.555Z"
   },
   {
     "id": "PDI-DESENV-gestor-cel-console",
@@ -7873,7 +7873,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:47.166Z"
+    "quando": "2026-11-19T14:00:49.580Z"
   },
   {
     "id": "PDI-DESENV-diretora-pc-menu",
@@ -7884,62 +7884,62 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:50.390Z"
+    "quando": "2026-11-19T14:00:51.905Z"
   },
   {
     "id": "PDI-DESENV-diretora-rota/pdi",
     "modulo": "PDI em desenvolvimento",
     "cenario": "diretora: /pdi mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:51.500Z"
+    "quando": "2026-11-19T14:00:52.986Z"
   },
   {
     "id": "PDI-DESENV-diretora-rota/pdi/meus-pdis",
     "modulo": "PDI em desenvolvimento",
     "cenario": "diretora: /pdi/meus-pdis mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:51.636Z"
+    "quando": "2026-11-19T14:00:53.048Z"
   },
   {
     "id": "PDI-DESENV-diretora-rota/correcoes",
     "modulo": "PDI em desenvolvimento",
     "cenario": "diretora: /correcoes mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:51.732Z"
+    "quando": "2026-11-19T14:00:53.138Z"
   },
   {
     "id": "PDI-DESENV-diretora-rota/correcoes/pdi",
     "modulo": "PDI em desenvolvimento",
     "cenario": "diretora: /correcoes/pdi mostra \"PDI em desenvolvimento\"",
     "esperado": "aviso",
-    "observado": "0",
-    "status": "REPROVADO",
+    "observado": "1",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:51.857Z"
+    "quando": "2026-11-19T14:00:53.220Z"
   },
   {
     "id": "PDI-DESENV-diretora-pc-acomp",
     "modulo": "PDI em desenvolvimento",
     "cenario": "diretora (pc): Acompanhamento com PDI em desenvolvimento e 1/3 normal",
     "esperado": "cartão em desenvolvimento, botão PDI desabilitado, 1/3, sem rolagem",
-    "observado": "desenv: false; botão desab: null; 1/3: true; largura: true",
-    "status": "REPROVADO",
+    "observado": "desenv: true; botão desab: true; 1/3: true; largura: true",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:53.657Z"
+    "quando": "2026-11-19T14:00:54.797Z"
   },
   {
     "id": "PDI-DESENV-diretora-pc-console",
@@ -7950,7 +7950,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:53.680Z"
+    "quando": "2026-11-19T14:00:54.819Z"
   },
   {
     "id": "PDI-DESENV-diretora-cel-menu",
@@ -7961,18 +7961,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:56.294Z"
+    "quando": "2026-11-19T14:00:57.178Z"
   },
   {
     "id": "PDI-DESENV-diretora-cel-acomp",
     "modulo": "PDI em desenvolvimento",
     "cenario": "diretora (cel): Acompanhamento com PDI em desenvolvimento e 1/3 normal",
     "esperado": "cartão em desenvolvimento, botão PDI desabilitado, 1/3, sem rolagem",
-    "observado": "desenv: false; botão desab: null; 1/3: true; largura: true",
-    "status": "REPROVADO",
+    "observado": "desenv: true; botão desab: true; 1/3: true; largura: true",
+    "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:58.601Z"
+    "quando": "2026-11-19T14:00:59.386Z"
   },
   {
     "id": "PDI-DESENV-diretora-cel-console",
@@ -7983,7 +7983,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:35:58.628Z"
+    "quando": "2026-11-19T14:00:59.402Z"
   },
   {
     "id": "TOPO-0",
@@ -7994,7 +7994,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:02.947Z"
+    "quando": "2026-11-19T14:01:03.581Z"
   },
   {
     "id": "TOPO-1",
@@ -8005,7 +8005,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:04.385Z"
+    "quando": "2026-11-19T14:01:04.988Z"
   },
   {
     "id": "TOPO-2",
@@ -8016,7 +8016,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:05.769Z"
+    "quando": "2026-11-19T14:01:06.320Z"
   },
   {
     "id": "TOPO-3",
@@ -8027,7 +8027,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:06.976Z"
+    "quando": "2026-11-19T14:01:07.412Z"
   },
   {
     "id": "TOPO-4",
@@ -8038,7 +8038,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:08.086Z"
+    "quando": "2026-11-19T14:01:08.526Z"
   },
   {
     "id": "TOPO-5",
@@ -8049,7 +8049,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:09.271Z"
+    "quando": "2026-11-19T14:01:09.602Z"
   },
   {
     "id": "TOPO-6",
@@ -8060,7 +8060,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:10.938Z"
+    "quando": "2026-11-19T14:01:11.150Z"
   },
   {
     "id": "TOPO-7",
@@ -8071,7 +8071,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:13.336Z"
+    "quando": "2026-11-19T14:01:13.527Z"
   },
   {
     "id": "TOPO-8",
@@ -8082,7 +8082,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:15.174Z"
+    "quando": "2026-11-19T14:01:15.267Z"
   },
   {
     "id": "TOPO-9",
@@ -8093,7 +8093,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:16.548Z"
+    "quando": "2026-11-19T14:01:16.569Z"
   },
   {
     "id": "TOPO-10",
@@ -8104,7 +8104,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:16.578Z"
+    "quando": "2026-11-19T14:01:16.594Z"
   },
   {
     "id": "TOPO-11",
@@ -8115,7 +8115,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:21.083Z"
+    "quando": "2026-11-19T14:01:20.338Z"
   },
   {
     "id": "TOPO-12",
@@ -8126,7 +8126,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:23.820Z"
+    "quando": "2026-11-19T14:01:22.705Z"
   },
   {
     "id": "FILTRO-1",
@@ -8137,7 +8137,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:29.598Z"
+    "quando": "2026-11-19T14:01:28.208Z"
   },
   {
     "id": "FILTRO-2",
@@ -8148,7 +8148,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:30.591Z"
+    "quando": "2026-11-19T14:01:29.180Z"
   },
   {
     "id": "FILTRO-3",
@@ -8159,7 +8159,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:31.804Z"
+    "quando": "2026-11-19T14:01:30.332Z"
   },
   {
     "id": "FILTRO-4",
@@ -8170,7 +8170,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:32.846Z"
+    "quando": "2026-11-19T14:01:31.331Z"
   },
   {
     "id": "FILTRO-5",
@@ -8181,7 +8181,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:33.898Z"
+    "quando": "2026-11-19T14:01:32.345Z"
   },
   {
     "id": "FILTRO-6",
@@ -8192,7 +8192,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:35.084Z"
+    "quando": "2026-11-19T14:01:33.527Z"
   },
   {
     "id": "FILTRO-7",
@@ -8203,7 +8203,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:35.960Z"
+    "quando": "2026-11-19T14:01:34.391Z"
   },
   {
     "id": "FILTRO-8",
@@ -8214,7 +8214,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:37.216Z"
+    "quando": "2026-11-19T14:01:35.589Z"
   },
   {
     "id": "FILTRO-9",
@@ -8225,7 +8225,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:38.177Z"
+    "quando": "2026-11-19T14:01:36.512Z"
   },
   {
     "id": "FILTRO-10",
@@ -8236,7 +8236,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:38.709Z"
+    "quando": "2026-11-19T14:01:36.958Z"
   },
   {
     "id": "FILTRO-11",
@@ -8247,7 +8247,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:43.787Z"
+    "quando": "2026-11-19T14:01:41.669Z"
   },
   {
     "id": "CARGO-1",
@@ -8258,7 +8258,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:49.019Z"
+    "quando": "2026-11-19T14:01:46.804Z"
   },
   {
     "id": "CARGO-2",
@@ -8269,7 +8269,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:49.365Z"
+    "quando": "2026-11-19T14:01:47.171Z"
   },
   {
     "id": "CARGO-3",
@@ -8280,7 +8280,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:50.317Z"
+    "quando": "2026-11-19T14:01:48.068Z"
   },
   {
     "id": "CARGO-4",
@@ -8291,7 +8291,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:50.735Z"
+    "quando": "2026-11-19T14:01:48.535Z"
   },
   {
     "id": "CARGO-5",
@@ -8302,7 +8302,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:51.446Z"
+    "quando": "2026-11-19T14:01:49.187Z"
   },
   {
     "id": "CARGO-6",
@@ -8313,7 +8313,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:54.942Z"
+    "quando": "2026-11-19T14:01:52.523Z"
   },
   {
     "id": "CARGO-7",
@@ -8324,7 +8324,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:36:59.921Z"
+    "quando": "2026-11-19T14:01:56.924Z"
   },
   {
     "id": "CARGO-8",
@@ -8335,7 +8335,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:01.654Z"
+    "quando": "2026-11-19T14:01:58.579Z"
   },
   {
     "id": "CARGO-9",
@@ -8346,7 +8346,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:02.545Z"
+    "quando": "2026-11-19T14:01:59.474Z"
   },
   {
     "id": "CARGO-10",
@@ -8357,7 +8357,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:02.958Z"
+    "quando": "2026-11-19T14:01:59.843Z"
   },
   {
     "id": "CARGO-11",
@@ -8368,18 +8368,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:07.869Z"
+    "quando": "2026-11-19T14:02:04.220Z"
   },
   {
     "id": "CARGO-12-computador",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (computador): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 28/11/2026, 14:37InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
+    "observado": "Não iniciadoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 29/11/2026, 11:02InglêsUm formulário para os dois cargos, que têm as mesmas escolas e discipl",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:11.370Z"
+    "quando": "2026-11-19T14:02:07.431Z"
   },
   {
     "id": "CARGO-13",
@@ -8390,18 +8390,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:12.261Z"
+    "quando": "2026-11-19T14:02:08.303Z"
   },
   {
     "id": "CARGO-14",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Concluir grava UMA entrega cobrindo os 2 cargos, com a foto da composição",
     "esperado": "CONCLUIDA; 2 cargos; 2 respostas",
-    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":564,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
+    "observado": "CONCLUIDA; 2 cargos; 2 respostas; [{\"atuacoes\":[],\"escolaId\":589,\"escolaNome\":\"ZZCARGO-UI Prudenciana\",\"disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:14.944Z"
+    "quando": "2026-11-19T14:02:10.948Z"
   },
   {
     "id": "CARGO-15-computador",
@@ -8412,18 +8412,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:15.177Z"
+    "quando": "2026-11-19T14:02:11.103Z"
   },
   {
     "id": "CARGO-12-celular",
     "modulo": "Cargos e 1/3 por cargo",
     "cenario": "Professor (celular): dois cargos iguais → um card \"Cargos 1 e 2\" com \"Escola — disciplina\", sem turmas",
     "esperado": "card único com Prudenciana — Inglês",
-    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 28/11/2026, 14:37InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
+    "observado": "ConcluídoCargos 1 e 2ZZCARGO-UI Prudenciana3º trimestre · prazo 29/11/2026, 11:02InglêsUm formulário para os dois cargos, que têm as mesmas escolas e disciplina",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:18.738Z"
+    "quando": "2026-11-19T14:02:14.452Z"
   },
   {
     "id": "CARGO-15-celular",
@@ -8434,7 +8434,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:18.865Z"
+    "quando": "2026-11-19T14:02:14.580Z"
   },
   {
     "id": "CARGO-16",
@@ -8445,7 +8445,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:23.063Z"
+    "quando": "2026-11-19T14:02:18.405Z"
   },
   {
     "id": "CARGO-17",
@@ -8456,7 +8456,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:23.089Z"
+    "quando": "2026-11-19T14:02:18.428Z"
   },
   {
     "id": "UT-P04-02",
@@ -8467,7 +8467,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:23:48.475Z"
+    "quando": "2026-11-19T13:49:07.008Z"
   },
   {
     "id": "UT-P04-07",
@@ -8478,18 +8478,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:24:10.002Z"
+    "quando": "2026-11-19T13:49:27.282Z"
   },
   {
     "id": "UT-OFF-04b",
     "modulo": "Offline",
     "cenario": "O item da fila usa a chave nova por ciclo + cargo",
-    "esperado": "resourceId 1-cargo-5847",
-    "observado": "[\"1-cargo-5847\"]",
+    "esperado": "resourceId 1-cargo-6320",
+    "observado": "[\"1-cargo-6320\"]",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:25:02.423Z"
+    "quando": "2026-11-19T13:50:17.202Z"
   },
   {
     "id": "OFF-CARGO-1a",
@@ -8500,7 +8500,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:29:18.558Z"
+    "quando": "2026-11-19T14:06:30.265Z"
   },
   {
     "id": "OFF-CARGO-1b",
@@ -8511,18 +8511,18 @@
     "status": "APROVADO",
     "evidencia": "32-CARGO-1-offline.png",
     "nota": "",
-    "quando": "2026-11-18T17:29:18.572Z"
+    "quando": "2026-11-19T14:06:30.288Z"
   },
   {
     "id": "OFF-CARGO-1c",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "DEF-07: reabrir o Nexo com internet envia sozinho a fila pendente (sem abrir o formulário)",
     "esperado": "semana 2 no banco em até 15 s; fila vazia",
-    "observado": "fila antes [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]; banco S2: \"Semana 2 OFFLINE 172907 (fechar e reabrir)\"; fila depois []",
+    "observado": "fila antes [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]; banco S2: \"Semana 2 OFFLINE 140617 (fechar e reabrir)\"; fila depois []",
     "status": "APROVADO",
     "evidencia": "32-CARGO-1-reaberto.png",
     "nota": "",
-    "quando": "2026-11-18T17:29:21.895Z"
+    "quando": "2026-11-19T14:06:34.074Z"
   },
   {
     "id": "OFF-CARGO-2",
@@ -8643,18 +8643,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:25.947Z"
+    "quando": "2026-11-19T14:02:20.923Z"
   },
   {
     "id": "COR13-2",
     "modulo": "Correções do 1/3 por cargo",
     "cenario": "Duplo clique devolve uma vez só; duas folhas do mesmo professor viram duas mensagens, cada uma com o link do seu cargo",
-    "esperado": "201+409; 2 conversas; link /formulario-um-terco/1/cargo/6045",
-    "observado": "201+409; 201; 2 conversas; /formulario-um-terco/1/cargo/6045",
+    "esperado": "201+409; 2 conversas; link /formulario-um-terco/1/cargo/6518",
+    "observado": "201+409; 201; 2 conversas; /formulario-um-terco/1/cargo/6518",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.093Z"
+    "quando": "2026-11-19T14:02:21.062Z"
   },
   {
     "id": "COR13-3",
@@ -8665,7 +8665,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.102Z"
+    "quando": "2026-11-19T14:02:21.069Z"
   },
   {
     "id": "COR13-4",
@@ -8676,7 +8676,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.135Z"
+    "quando": "2026-11-19T14:02:21.108Z"
   },
   {
     "id": "COR13-5",
@@ -8687,7 +8687,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.329Z"
+    "quando": "2026-11-19T14:02:21.255Z"
   },
   {
     "id": "COR13-6",
@@ -8698,7 +8698,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.669Z"
+    "quando": "2026-11-19T14:02:21.503Z"
   },
   {
     "id": "COR13-7",
@@ -8709,7 +8709,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.910Z"
+    "quando": "2026-11-19T14:02:21.685Z"
   },
   {
     "id": "COR13-8",
@@ -8720,7 +8720,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:26.949Z"
+    "quando": "2026-11-19T14:02:21.702Z"
   },
   {
     "id": "COR13-9",
@@ -8731,7 +8731,7 @@
     "status": "APROVADO",
     "evidencia": "59-secretaria-devolveu.png",
     "nota": "",
-    "quando": "2026-11-18T17:37:31.397Z"
+    "quando": "2026-11-19T14:02:25.173Z"
   },
   {
     "id": "COR13-10",
@@ -8742,7 +8742,7 @@
     "status": "APROVADO",
     "evidencia": "59-professor-correcao-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:37:43.057Z"
+    "quando": "2026-11-19T14:02:36.266Z"
   },
   {
     "id": "COR13-11",
@@ -8753,7 +8753,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:37:43.330Z"
+    "quando": "2026-11-19T14:02:36.491Z"
   },
   {
     "id": "ACP-2b",
@@ -8764,40 +8764,40 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:37.522Z"
+    "quando": "2026-11-19T14:09:26.844Z"
   },
   {
     "id": "DEF01-a-CARGO",
     "modulo": "Formulário 1/3 (DEF-01)",
     "cenario": "Rede lenta: depois de \"Próximo\", o texto digitado vai para a semana 2 e a semana 1 fica intacta",
     "esperado": "tela na Semana 2 em 300 ms; banco: S1 sem o texto; S2 com o texto",
-    "observado": "tela aos 300 ms: Semana 2; S1: \"SEMANA-UM 173148\"; S2: \" SEMANA-DOIS-DIGITADA-APOS-PROXIMO 173148\"",
+    "observado": "tela aos 300 ms: Semana 2; S1: \"SEMANA-UM 140751\"; S2: \" SEMANA-DOIS-DIGITADA-APOS-PROXIMO 140751\"",
     "status": "APROVADO",
     "evidencia": "35-CARGO-def01-durante.png",
     "nota": "",
-    "quando": "2026-11-18T17:32:10.287Z"
+    "quando": "2026-11-19T14:08:13.830Z"
   },
   {
     "id": "DEF01-b-CARGO",
     "modulo": "Formulário 1/3 (DEF-01)",
     "cenario": "Rede lenta: o que é digitado DURANTE um salvamento também chega ao servidor (não é perdido nem marcado como salvo antes da hora)",
     "esperado": "S3 com as duas partes",
-    "observado": "S3: \"TERCEIRA-PARTE-1 173148 TERCEIRA-PARTE-2 173148\"",
+    "observado": "S3: \"TERCEIRA-PARTE-1 140751 TERCEIRA-PARTE-2 140751\"",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:32:30.401Z"
+    "quando": "2026-11-19T14:08:34.313Z"
   },
   {
     "id": "DEF01-c-CARGO",
     "modulo": "Formulário 1/3 (DEF-01)",
     "cenario": "Rede lenta: \"Sair\" logo depois de trocar de semana espera o envio em andamento e não perde a semana 4",
     "esperado": "S4 no banco ao sair",
-    "observado": "rota: /formulario-um-terco; S4: \"QUARTA 173148\"",
+    "observado": "rota: /formulario-um-terco; S4: \"QUARTA 140751\"",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:32:36.393Z"
+    "quando": "2026-11-19T14:08:40.414Z"
   },
   {
     "id": "DEF06-desktop-CARGO",
@@ -8808,7 +8808,7 @@
     "status": "APROVADO",
     "evidencia": "35-CARGO-def06-desktop.png",
     "nota": "",
-    "quando": "2026-11-18T17:32:45.800Z"
+    "quando": "2026-11-19T14:08:50.320Z"
   },
   {
     "id": "DEF13-desktop-CARGO",
@@ -8852,7 +8852,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:03.588Z"
+    "quando": "2026-11-19T13:52:52.541Z"
   },
   {
     "id": "UT-VIN-PAINEL1c",
@@ -8863,7 +8863,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:09.095Z"
+    "quando": "2026-11-19T13:52:57.507Z"
   },
   {
     "id": "INTEG-CARGO-1",
@@ -8874,7 +8874,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.582Z"
+    "quando": "2026-11-19T14:04:18.059Z"
   },
   {
     "id": "INTEG-CARGO-2",
@@ -8885,7 +8885,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.601Z"
+    "quando": "2026-11-19T14:04:18.073Z"
   },
   {
     "id": "INTEG-CARGO-3",
@@ -8896,7 +8896,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.611Z"
+    "quando": "2026-11-19T14:04:18.087Z"
   },
   {
     "id": "INTEG-CARGO-4",
@@ -8907,7 +8907,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.625Z"
+    "quando": "2026-11-19T14:04:18.102Z"
   },
   {
     "id": "INTEG-CARGO-5",
@@ -8918,7 +8918,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.637Z"
+    "quando": "2026-11-19T14:04:18.116Z"
   },
   {
     "id": "INTEG-CARGO-6",
@@ -8929,7 +8929,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.648Z"
+    "quando": "2026-11-19T14:04:18.125Z"
   },
   {
     "id": "INTEG-CARGO-7",
@@ -8940,7 +8940,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.660Z"
+    "quando": "2026-11-19T14:04:18.135Z"
   },
   {
     "id": "INTEG-CARGO-8",
@@ -8951,7 +8951,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.676Z"
+    "quando": "2026-11-19T14:04:18.144Z"
   },
   {
     "id": "INTEG-CARGO-9",
@@ -8962,7 +8962,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.688Z"
+    "quando": "2026-11-19T14:04:18.156Z"
   },
   {
     "id": "INTEG-CARGO-10",
@@ -8973,7 +8973,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.700Z"
+    "quando": "2026-11-19T14:04:18.166Z"
   },
   {
     "id": "INTEG-CARGO-11",
@@ -8984,7 +8984,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.711Z"
+    "quando": "2026-11-19T14:04:18.176Z"
   },
   {
     "id": "INTEG-CARGO-12",
@@ -8995,7 +8995,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.723Z"
+    "quando": "2026-11-19T14:04:18.185Z"
   },
   {
     "id": "INTEG-CARGO-13",
@@ -9006,7 +9006,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.740Z"
+    "quando": "2026-11-19T14:04:18.195Z"
   },
   {
     "id": "INTEG-CARGO-14",
@@ -9017,7 +9017,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:28.751Z"
+    "quando": "2026-11-19T14:04:18.203Z"
   },
   {
     "id": "XLS13-1",
@@ -9028,7 +9028,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.236Z"
+    "quando": "2026-11-19T14:03:24.122Z"
   },
   {
     "id": "XLS13-2",
@@ -9039,7 +9039,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.286Z"
+    "quando": "2026-11-19T14:03:24.145Z"
   },
   {
     "id": "XLS13-3",
@@ -9050,7 +9050,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.326Z"
+    "quando": "2026-11-19T14:03:24.164Z"
   },
   {
     "id": "XLS13-4",
@@ -9061,7 +9061,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.376Z"
+    "quando": "2026-11-19T14:03:24.206Z"
   },
   {
     "id": "XLS13-5",
@@ -9072,7 +9072,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.406Z"
+    "quando": "2026-11-19T14:03:24.230Z"
   },
   {
     "id": "XLS13-6",
@@ -9083,7 +9083,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.431Z"
+    "quando": "2026-11-19T14:03:24.273Z"
   },
   {
     "id": "XLS13-7",
@@ -9094,7 +9094,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.493Z"
+    "quando": "2026-11-19T14:03:24.313Z"
   },
   {
     "id": "XLS13-8",
@@ -9105,7 +9105,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.521Z"
+    "quando": "2026-11-19T14:03:24.340Z"
   },
   {
     "id": "XLS13-9",
@@ -9116,7 +9116,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.553Z"
+    "quando": "2026-11-19T14:03:24.364Z"
   },
   {
     "id": "XLS13-10",
@@ -9127,7 +9127,7 @@
     "status": "REPROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.583Z"
+    "quando": "2026-11-19T14:03:24.386Z"
   },
   {
     "id": "XLS13-11",
@@ -9138,7 +9138,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:29.651Z"
+    "quando": "2026-11-19T14:03:28.174Z"
   },
   {
     "id": "XLS13-12",
@@ -9149,7 +9149,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:29.680Z"
+    "quando": "2026-11-19T14:03:28.207Z"
   },
   {
     "id": "XLS13-13",
@@ -9160,7 +9160,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:29.723Z"
+    "quando": "2026-11-19T14:03:28.228Z"
   },
   {
     "id": "EI-1",
@@ -9171,7 +9171,7 @@
     "status": "APROVADO",
     "evidencia": "60-cargo-educacao-infantil.png",
     "nota": "",
-    "quando": "2026-11-18T17:41:37.669Z"
+    "quando": "2026-11-19T14:02:42.716Z"
   },
   {
     "id": "EI-2",
@@ -9182,7 +9182,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:37.714Z"
+    "quando": "2026-11-19T14:02:42.745Z"
   },
   {
     "id": "EI-3",
@@ -9226,7 +9226,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:40.578Z"
+    "quando": "2026-11-19T14:03:31.643Z"
   },
   {
     "id": "CORR13-02",
@@ -9237,7 +9237,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:40.620Z"
+    "quando": "2026-11-19T14:03:31.677Z"
   },
   {
     "id": "CORR13-03/05",
@@ -9248,7 +9248,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:40.688Z"
+    "quando": "2026-11-19T14:03:31.725Z"
   },
   {
     "id": "CORR13-04",
@@ -9259,7 +9259,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:40.732Z"
+    "quando": "2026-11-19T14:03:31.752Z"
   },
   {
     "id": "CORR13-06/07",
@@ -9270,7 +9270,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:40.888Z"
+    "quando": "2026-11-19T14:03:31.878Z"
   },
   {
     "id": "CORR13-08",
@@ -9281,7 +9281,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:40.929Z"
+    "quando": "2026-11-19T14:03:31.897Z"
   },
   {
     "id": "CORR13-26",
@@ -9292,7 +9292,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.007Z"
+    "quando": "2026-11-19T14:03:31.952Z"
   },
   {
     "id": "CORR13-23",
@@ -9303,7 +9303,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.034Z"
+    "quando": "2026-11-19T14:03:31.960Z"
   },
   {
     "id": "CORR13-28",
@@ -9314,7 +9314,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.113Z"
+    "quando": "2026-11-19T14:03:32.015Z"
   },
   {
     "id": "CORR13-10",
@@ -9325,7 +9325,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.145Z"
+    "quando": "2026-11-19T14:03:32.029Z"
   },
   {
     "id": "CORR13-09/12",
@@ -9336,7 +9336,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.239Z"
+    "quando": "2026-11-19T14:03:32.090Z"
   },
   {
     "id": "CORR13-11",
@@ -9347,7 +9347,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.264Z"
+    "quando": "2026-11-19T14:03:32.100Z"
   },
   {
     "id": "CORR13-13/24/25",
@@ -9358,7 +9358,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.473Z"
+    "quando": "2026-11-19T14:03:32.259Z"
   },
   {
     "id": "CORR13-22a",
@@ -9369,7 +9369,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.501Z"
+    "quando": "2026-11-19T14:03:32.287Z"
   },
   {
     "id": "CORR13-14",
@@ -9380,7 +9380,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.793Z"
+    "quando": "2026-11-19T14:03:32.529Z"
   },
   {
     "id": "CORR13-15",
@@ -9391,7 +9391,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.876Z"
+    "quando": "2026-11-19T14:03:32.599Z"
   },
   {
     "id": "CORR13-15b",
@@ -9402,7 +9402,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:41.937Z"
+    "quando": "2026-11-19T14:03:32.652Z"
   },
   {
     "id": "CORR13-16/17/18/19",
@@ -9413,7 +9413,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:42.709Z"
+    "quando": "2026-11-19T14:03:33.326Z"
   },
   {
     "id": "CORR13-11b",
@@ -9424,7 +9424,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:42.817Z"
+    "quando": "2026-11-19T14:03:33.408Z"
   },
   {
     "id": "CORR13-20",
@@ -9435,7 +9435,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:43.051Z"
+    "quando": "2026-11-19T14:03:33.566Z"
   },
   {
     "id": "CORR13-21",
@@ -9446,7 +9446,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:43.167Z"
+    "quando": "2026-11-19T14:03:33.653Z"
   },
   {
     "id": "CORR13-27",
@@ -9457,7 +9457,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:43.289Z"
+    "quando": "2026-11-19T14:03:33.757Z"
   },
   {
     "id": "CORR13-C-ENC",
@@ -9468,7 +9468,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:43.455Z"
+    "quando": "2026-11-19T14:03:33.919Z"
   },
   {
     "id": "CORR13-22",
@@ -9479,7 +9479,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:43.519Z"
+    "quando": "2026-11-19T14:03:33.965Z"
   },
   {
     "id": "CORR13-PERM",
@@ -9490,7 +9490,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:43.550Z"
+    "quando": "2026-11-19T14:03:33.991Z"
   },
   {
     "id": "CORR13UI-1",
@@ -9501,7 +9501,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:49.927Z"
+    "quando": "2026-11-19T14:03:39.969Z"
   },
   {
     "id": "CORR13UI-2",
@@ -9512,18 +9512,18 @@
     "status": "APROVADO",
     "evidencia": "63-lista.png",
     "nota": "",
-    "quando": "2026-11-18T17:38:56.007Z"
+    "quando": "2026-11-19T14:03:46.073Z"
   },
   {
     "id": "CORR13UI-3",
     "modulo": "Correções do 1/3 (telas)",
     "cenario": "Abrir a folha: Professor, cargo, ciclo, escola → disciplina, semanas e conteúdos (sem turmas)",
     "esperado": "Ana Paula Ribeiro — Cargo 1; Aurora — Matemática; 4 semanas",
-    "observado": "← Correções > Formulário 1/3 FORMULÁRIO 1/3 — NOV/2026 (HOMOLOG) · 3º TRIMESTRE DE 2026 Ana Paula Ribeiro — Cargo 1 Sem correção Concluída em 18/11/2026, às 14h38 ZZ-HOMOLOG Escola Aurora — Matemática",
+    "observado": "← Correções > Formulário 1/3 FORMULÁRIO 1/3 — NOV/2026 (HOMOLOG) · 3º TRIMESTRE DE 2026 Ana Paula Ribeiro — Cargo 1 Sem correção Concluída em 19/11/2026, às 11h03 ZZ-HOMOLOG Escola Aurora — Matemática",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:56.880Z"
+    "quando": "2026-11-19T14:03:46.920Z"
   },
   {
     "id": "CORR13UI-4",
@@ -9534,7 +9534,7 @@
     "status": "APROVADO",
     "evidencia": "63-correcao-direta.png",
     "nota": "",
-    "quando": "2026-11-18T17:38:57.745Z"
+    "quando": "2026-11-19T14:03:47.666Z"
   },
   {
     "id": "CORR13UI-5",
@@ -9545,7 +9545,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:38:58.426Z"
+    "quando": "2026-11-19T14:03:48.291Z"
   },
   {
     "id": "CORR13UI-6",
@@ -9556,7 +9556,7 @@
     "status": "APROVADO",
     "evidencia": "63-professor-correcao-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:39:03.924Z"
+    "quando": "2026-11-19T14:03:53.901Z"
   },
   {
     "id": "CORR13UI-7",
@@ -9567,7 +9567,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:16.097Z"
+    "quando": "2026-11-19T14:04:05.956Z"
   },
   {
     "id": "CORR13UI-8",
@@ -9578,7 +9578,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:17.140Z"
+    "quando": "2026-11-19T14:04:06.993Z"
   },
   {
     "id": "CORR13UI-9",
@@ -9589,7 +9589,7 @@
     "status": "APROVADO",
     "evidencia": "63-professor-reenviado-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:39:19.735Z"
+    "quando": "2026-11-19T14:04:09.596Z"
   },
   {
     "id": "CORR13UI-10",
@@ -9600,7 +9600,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:21.992Z"
+    "quando": "2026-11-19T14:04:11.801Z"
   },
   {
     "id": "CORR13UI-11",
@@ -9611,7 +9611,7 @@
     "status": "APROVADO",
     "evidencia": "63-professor-expirada-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:39:27.283Z"
+    "quando": "2026-11-19T14:04:16.921Z"
   },
   {
     "id": "CORR13UI-12",
@@ -9622,7 +9622,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:39:27.499Z"
+    "quando": "2026-11-19T14:04:17.130Z"
   },
   {
     "id": "ATU-CAT",
@@ -9688,7 +9688,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:41:25.462Z"
+    "quando": "2026-11-19T14:03:24.295Z"
   },
   {
     "id": "ESC-1",
@@ -9992,11 +9992,11 @@
     "modulo": "Desativados por área",
     "cenario": "computador: Escolas — lista principal sem inativas; \"Ver escolas desativadas\" abre TABELA paginada (20 por página), mais recente primeiro, com motivo",
     "esperado": "sem ZZDES inativa na principal; tabela; 20 linhas; 1ª = inativa 22; \"Página 1 de N\"; sem rolagem lateral",
-    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 18/11/2026,\"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
+    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 19/11/2026,\"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
     "status": "APROVADO",
     "evidencia": "68-escolas-desativadas-computador.png",
     "nota": "",
-    "quando": "2026-11-18T17:34:13.794Z"
+    "quando": "2026-11-19T13:58:56.544Z"
   },
   {
     "id": "DESAT-2",
@@ -10007,7 +10007,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:15.447Z"
+    "quando": "2026-11-19T13:58:58.305Z"
   },
   {
     "id": "DESAT-3-computador",
@@ -10018,7 +10018,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:17.692Z"
+    "quando": "2026-11-19T13:59:00.557Z"
   },
   {
     "id": "DESAT-4-computador",
@@ -10029,7 +10029,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:20.948Z"
+    "quando": "2026-11-19T13:59:03.788Z"
   },
   {
     "id": "DESAT-5-computador",
@@ -10040,29 +10040,29 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:23.160Z"
+    "quando": "2026-11-19T13:59:06.039Z"
   },
   {
     "id": "DESAT-6-computador",
     "modulo": "Desativados por área",
     "cenario": "computador: 1/3 — vencido e inativo fora da principal; tela \"Encerrados e inativos\" em tabela (sem cartões) com \"Encerrado pelo prazo\" (Painel/Excel/Reabrir) e \"Desativado manualmente\" (Reativar, sem Reabrir)",
     "esperado": "fora; vencido: Encerrado pelo prazo + Reabrir; inativo: Desativado manualmente + Reativar; 0 cartões",
-    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 15/11/2026, 14:34 · prazo 18/11/2026, 14:33 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
+    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 16/11/2026, 10:58 · prazo 19/11/2026, 10:57 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
     "status": "APROVADO",
     "evidencia": "68-um-terco-encerrados-computador.png",
     "nota": "",
-    "quando": "2026-11-18T17:34:25.584Z"
+    "quando": "2026-11-19T13:59:08.716Z"
   },
   {
     "id": "DESAT-7",
     "modulo": "Desativados por área",
     "cenario": "1/3 — \"Painel\" na linha do ciclo vencido abre o painel de entregas dele",
-    "esperado": "/formulario-um-terco/ciclos/495",
-    "observado": "/formulario-um-terco/ciclos/495",
+    "esperado": "/formulario-um-terco/ciclos/512",
+    "observado": "/formulario-um-terco/ciclos/512",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:27.148Z"
+    "quando": "2026-11-19T13:59:10.306Z"
   },
   {
     "id": "DESAT-8-computador",
@@ -10073,18 +10073,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:30.237Z"
+    "quando": "2026-11-19T13:59:13.402Z"
   },
   {
     "id": "DESAT-1-celular",
     "modulo": "Desativados por área",
     "cenario": "celular: Escolas — lista principal sem inativas; \"Ver escolas desativadas\" abre TABELA paginada (20 por página), mais recente primeiro, com motivo",
     "esperado": "sem ZZDES inativa na principal; tabela; 20 linhas; 1ª = inativa 22; \"Página 1 de N\"; sem rolagem lateral",
-    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 18/11/2026, \"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
+    "observado": "principal tem inativa: false; link \"Ver escolas desativadas (22) →\"; tabelas 1; linhas 20; 1ª: \"ZZDES Escola inativa 22 Desativado manualmente 19/11/2026, \"; \"Página 1 de 2 · 22 no total\"; sem rolagem: true",
     "status": "APROVADO",
     "evidencia": "68-escolas-desativadas-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:34:34.776Z"
+    "quando": "2026-11-19T13:59:18.779Z"
   },
   {
     "id": "DESAT-3-celular",
@@ -10095,7 +10095,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:36.971Z"
+    "quando": "2026-11-19T13:59:21.014Z"
   },
   {
     "id": "DESAT-4-celular",
@@ -10106,7 +10106,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:40.191Z"
+    "quando": "2026-11-19T13:59:24.253Z"
   },
   {
     "id": "DESAT-5-celular",
@@ -10117,18 +10117,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:42.388Z"
+    "quando": "2026-11-19T13:59:26.493Z"
   },
   {
     "id": "DESAT-6-celular",
     "modulo": "Desativados por área",
     "cenario": "celular: 1/3 — vencido e inativo fora da principal; tela \"Encerrados e inativos\" em tabela (sem cartões) com \"Encerrado pelo prazo\" (Painel/Excel/Reabrir) e \"Desativado manualmente\" (Reativar, sem Reabrir)",
     "esperado": "fora; vencido: Encerrado pelo prazo + Reabrir; inativo: Desativado manualmente + Reativar; 0 cartões",
-    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 15/11/2026, 14:34 · prazo 18/11/2026, 14:33 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
+    "observado": "principal tem: false; vencido: \"ZZDES vencido — 3º trimestre de 2026 Abre 16/11/2026, 10:58 · prazo 19/11/2026, 10:57 · 0 preenchimentos · 1 escola Ence\"; inativo: \"ZZDES inativo — 3º trimestre de 2026 Abre 08/09/2026 · prazo 11/09/2026 · 0 preenchimentos · 1 escola Desativado manualm\"; cartões: 0; ",
     "status": "APROVADO",
     "evidencia": "68-um-terco-encerrados-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:34:44.835Z"
+    "quando": "2026-11-19T13:59:29.195Z"
   },
   {
     "id": "DESAT-8-celular",
@@ -10139,7 +10139,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:47.914Z"
+    "quando": "2026-11-19T13:59:32.286Z"
   },
   {
     "id": "DESAT-9",
@@ -10150,7 +10150,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:51.626Z"
+    "quando": "2026-11-19T13:59:36.578Z"
   },
   {
     "id": "DESAT-10",
@@ -10161,7 +10161,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:34:51.768Z"
+    "quando": "2026-11-19T13:59:36.759Z"
   },
   {
     "id": "CORRPDI-professor",
@@ -12031,7 +12031,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.382Z"
+    "quando": "2026-11-19T13:48:20.599Z"
   },
   {
     "id": "SUP-2",
@@ -12042,7 +12042,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.416Z"
+    "quando": "2026-11-19T13:48:20.678Z"
   },
   {
     "id": "SUP-3",
@@ -12053,7 +12053,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.431Z"
+    "quando": "2026-11-19T13:48:20.697Z"
   },
   {
     "id": "SUP-4",
@@ -12064,7 +12064,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.497Z"
+    "quando": "2026-11-19T13:48:20.919Z"
   },
   {
     "id": "SUP-5",
@@ -12075,7 +12075,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.508Z"
+    "quando": "2026-11-19T13:48:20.933Z"
   },
   {
     "id": "SUP-6",
@@ -12086,7 +12086,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.615Z"
+    "quando": "2026-11-19T13:48:21.179Z"
   },
   {
     "id": "SUP-7",
@@ -12097,7 +12097,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.624Z"
+    "quando": "2026-11-19T13:48:21.190Z"
   },
   {
     "id": "SUP-8",
@@ -12108,7 +12108,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.700Z"
+    "quando": "2026-11-19T13:48:21.311Z"
   },
   {
     "id": "SUP-9",
@@ -12119,7 +12119,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.736Z"
+    "quando": "2026-11-19T13:48:21.382Z"
   },
   {
     "id": "SUP-10",
@@ -12130,7 +12130,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.761Z"
+    "quando": "2026-11-19T13:48:21.424Z"
   },
   {
     "id": "SUP-11",
@@ -12141,7 +12141,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.787Z"
+    "quando": "2026-11-19T13:48:21.472Z"
   },
   {
     "id": "SUP-12",
@@ -12152,7 +12152,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.852Z"
+    "quando": "2026-11-19T13:48:21.630Z"
   },
   {
     "id": "SUP-13",
@@ -12163,7 +12163,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.871Z"
+    "quando": "2026-11-19T13:48:21.665Z"
   },
   {
     "id": "SUP-14",
@@ -12174,7 +12174,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.884Z"
+    "quando": "2026-11-19T13:48:21.680Z"
   },
   {
     "id": "SUP-15",
@@ -12185,7 +12185,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:19.906Z"
+    "quando": "2026-11-19T13:48:21.788Z"
   },
   {
     "id": "SUP-16",
@@ -12196,7 +12196,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:23.756Z"
+    "quando": "2026-11-19T13:48:26.335Z"
   },
   {
     "id": "SUP-17",
@@ -12207,7 +12207,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:27.364Z"
+    "quando": "2026-11-19T13:48:31.009Z"
   },
   {
     "id": "SUP-18",
@@ -12218,7 +12218,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:29.014Z"
+    "quando": "2026-11-19T13:48:32.939Z"
   },
   {
     "id": "SUP-19",
@@ -12229,7 +12229,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:32.583Z"
+    "quando": "2026-11-19T13:48:37.632Z"
   },
   {
     "id": "SUP-20",
@@ -12240,7 +12240,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:38.132Z"
+    "quando": "2026-11-19T13:48:43.185Z"
   },
   {
     "id": "SUP-21",
@@ -12251,7 +12251,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:09:36.435Z"
+    "quando": "2026-11-19T13:48:41.447Z"
   },
   {
     "id": "SUPT-1-desktop",
@@ -12384,5 +12384,115 @@
     "evidencia": "",
     "nota": "",
     "quando": "2026-11-18T17:25:12.170Z"
+  },
+  {
+    "id": "PDISEC-1",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "Aluno PDI sem telefone: cadastra e edita; com telefone continua igual; nome do responsável segue obrigatório",
+    "esperado": "201 \"\" / 201 \"\" / 201 tel / 200 / 400",
+    "observado": "201 \"\" / 201 \"\" / 201 \"(31) 99999-0000\" / 200 / 400",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:45:41.228Z"
+  },
+  {
+    "id": "PDISEC-2",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "PDI em desenvolvimento: Supervisora e Professor não gravam nada no PDI (servidor); leitura continua",
+    "esperado": "403 / 403 / 200",
+    "observado": "403 \"O PDI está em desenvolvimento.\" / 403 / 200",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:45:41.293Z"
+  },
+  {
+    "id": "PDISEC-3",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "Secretaria não devolve ao Professor (ele não tem acesso), mas corrige direto — e a Supervisora NÃO é avisada",
+    "esperado": "403 / 200 / 0 avisos",
+    "observado": "403 \"O PDI está em desenvolvimento: use a correção direta.\" / 200 / 0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:45:41.464Z"
+  },
+  {
+    "id": "PDISEC-4",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "Véspera do prazo do PDI: só a Secretaria é avisada (Diretora e Supervisora não)",
+    "esperado": "1 / 0",
+    "observado": "1 / 0",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:45:43.827Z"
+  },
+  {
+    "id": "PDISEC-5-professor-desktop",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "professor (desktop): /pdi e /correcoes/pdi mostram \"PDI em desenvolvimento\"; selo no menu/dashboard; sem erro no console",
+    "esperado": "1 / 1 / selo ≥1 / 0 erros",
+    "observado": "1 / 1 / 5 / 0 ",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:45:49.457Z"
+  },
+  {
+    "id": "PDISEC-5-supervisora-desktop",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "supervisora (desktop): /pdi e /correcoes/pdi mostram \"PDI em desenvolvimento\"; selo no menu/dashboard; sem erro no console",
+    "esperado": "1 / 1 / selo ≥1 / 0 erros",
+    "observado": "1 / 1 / 4 / 0 ",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:45:54.948Z"
+  },
+  {
+    "id": "PDISEC-6-secretaria-desktop",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "Secretaria (desktop): PDI normal; cadastro de aluno com \"Telefone principal (opcional)\"",
+    "esperado": "PDI 1 / dev 0 / opcional 1",
+    "observado": "1 / 0 / 1 / rolagem ok true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:46:02.335Z"
+  },
+  {
+    "id": "PDISEC-5-professor-celular",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "professor (celular): /pdi e /correcoes/pdi mostram \"PDI em desenvolvimento\"; selo no menu/dashboard; sem erro no console",
+    "esperado": "1 / 1 / selo ≥1 / 0 erros",
+    "observado": "1 / 1 / 5 / 0 ",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:46:08.263Z"
+  },
+  {
+    "id": "PDISEC-5-supervisora-celular",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "supervisora (celular): /pdi e /correcoes/pdi mostram \"PDI em desenvolvimento\"; selo no menu/dashboard; sem erro no console",
+    "esperado": "1 / 1 / selo ≥1 / 0 erros",
+    "observado": "1 / 1 / 4 / 0 ",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:46:14.230Z"
+  },
+  {
+    "id": "PDISEC-6-secretaria-celular",
+    "modulo": "PDI só Secretaria / telefone opcional",
+    "cenario": "Secretaria (celular): PDI normal; cadastro de aluno com \"Telefone principal (opcional)\"",
+    "esperado": "PDI 1 / dev 0 / opcional 1",
+    "observado": "1 / 0 / 1 / rolagem ok true",
+    "status": "APROVADO",
+    "evidencia": "",
+    "nota": "",
+    "quando": "2026-11-19T13:46:20.810Z"
   }
 ]

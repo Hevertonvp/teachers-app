@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button, Card } from './Common';
 import { MainLayout } from '../layouts/Layouts';
 import { useAuth } from '../context/AuthContext';
-import { isProfessor, isSecretaria } from '../utils/roles';
+import { isGestor, isProfessor, isSecretaria } from '../utils/roles';
 import { AVISO_PDI_DESENVOLVIMENTO } from '../config/modulos';
 
 // Selo "Em desenvolvimento" (PDI em MODO_PDI = 'desenvolvimento', ver config/modulos.js).
@@ -26,7 +26,7 @@ export const CartaoPdiDesenvolvimento = ({ titulo = 'PDI', className = '' }) => 
 // Página mostrada em qualquer rota do PDI (ou das Correções do PDI) enquanto está em desenvolvimento.
 export const PdiDesenvolvimentoPage = () => {
   const { user } = useAuth();
-  const temUmTerco = isProfessor(user) || isSecretaria(user);
+  const temUmTerco = isProfessor(user) || isSecretaria(user) || isGestor(user); // Supervisora consulta o 1/3 (18/11/2026)
   return (
     <MainLayout>
       <div className="mx-auto max-w-2xl">

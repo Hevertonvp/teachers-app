@@ -9,6 +9,8 @@ import { registrar } from './resultados.mjs';
 import { readFileSync } from 'node:fs';
 import { cargosDe, prepararCargosHomolog, SENHA as SENHA_PROF } from './cargos-homolog.mjs';
 const PDI_LIGADO = /MODO_PDI = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
+// 19/11/2026: a Diretora (e todos menos a Secretaria) usa MODO_PDI_DEMAIS.
+const PDI_LIGADO_DEMAIS = /MODO_PDI_DEMAIS = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
 await prepararCargosHomolog();
 const require = createRequire(new URL('../backend/package.json', import.meta.url));
 const bcrypt = require('bcryptjs');
@@ -140,7 +142,7 @@ try {
   await login(D.page, 'diretora.aur@homolog.nexo', SENHA);
   const noMenu = await D.page.getByRole('link', { name: 'Acompanhamento Escolar' }).count();
   await D.page.goto(BASE + '/#/acompanhamento-escolar'); await D.page.waitForLoadState('networkidle');
-  await D.page.getByRole('heading', { name: PDI_LIGADO ? 'PDI por disciplina' : 'Histórico do 1/3' }).waitFor({ timeout: 15000 });
+  await D.page.getByRole('heading', { name: PDI_LIGADO_DEMAIS ? 'PDI por disciplina' : 'Histórico do 1/3' }).waitFor({ timeout: 15000 });
   const tituloD = await D.page.locator('.acp-hero h1').textContent();
   const voltar = await D.page.getByRole('button', { name: '← Rede' }).count();
   await D.page.waitForTimeout(900);

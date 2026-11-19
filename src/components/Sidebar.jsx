@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } from '../config/modulos';
+import { useModoPdi } from '../config/modulos';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -100,6 +100,7 @@ const NavIcon = ({ id, className = 'h-4.5 w-4.5' }) => (
 );
 
 export const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
+  const { PDI_ATIVO, PDI_EM_DESENVOLVIMENTO, PDI_VISIVEL } = useModoPdi(); // 19/11/2026: modo do PDI por perfil
   const { user } = useAuth();
   const { mensagensNaoLidas, loadMensagensNaoLidas, loadNotificacoesNaoLidas } = useData();
   const location = useLocation();

@@ -6,7 +6,8 @@ import { abrir, login, foto, abrirCartao, BASE } from './lib.mjs';
 import { prisma } from './db.mjs';
 import { registrar } from './resultados.mjs';
 import { readFileSync } from 'node:fs';
-const PDI_LIGADO = /MODO_PDI = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
+// 19/11/2026: estes passos do PDI rodam como Professor, que usa MODO_PDI_DEMAIS (a Secretaria usa MODO_PDI).
+const PDI_LIGADO = /MODO_PDI_DEMAIS = 'ativo'/.test(readFileSync(new URL('../src/config/modulos.js', import.meta.url), 'utf8'));
 import { cargosDe, folhaDoCargo, prepararCargosHomolog } from './cargos-homolog.mjs';
 await prepararCargosHomolog();
 const [C1, C2] = await cargosDe('p04');

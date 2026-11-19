@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { criarNotificacao } from './notificacoes.js';
+import { pdiSoSecretaria } from '../config/modulos.js';
 // Janela de 30 min: vários "Salvar" seguidos da mesma correção viram um aviso só; uma nova correção depois avisa de novo.
 const janela30min = () => Math.floor(Date.now() / (30 * 60 * 1000));
 
@@ -22,6 +23,8 @@ export async function avisarCorrecaoPdi(
   acao: 'corrigida' | 'devolvida',
   chaveDaDevolucao?: string,
 ): Promise<void> {
+  // PDI em desenvolvimento (19/11/2026): Supervisora e Professor ainda não têm acesso — sem aviso.
+  if (pdiSoSecretaria()) return;
   try {
     const contexto = `${ficha.alunoNomeSnapshot} · ${ficha.disciplinaNomeSnapshot}`;
     if (actor.perfil === 'SECRETARIA') {
