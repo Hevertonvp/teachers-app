@@ -9,7 +9,7 @@
 // 19/11/2026 (decisão do usuário): o modo passou a depender do perfil — a Secretaria usa MODO_PDI (ativo, para
 // montar Modelos/Aplicações); TODOS os demais perfis usam MODO_PDI_DEMAIS ("em desenvolvimento", sem mexer).
 // O servidor faz o mesmo bloqueio (backend/src/config/modulos.ts, chave PDI_LIBERADO). Para lançar o PDI para
-// todos: MODO_PDI_DEMAIS = 'ativo' aqui E PDI_LIBERADO=true no Render.
+// todos: trocar MODO_PDI_DEMAIS para 'ativo' aqui E PDI_LIBERADO=true no Render.
 import { useAuth } from '../context/AuthContext';
 import { isSecretaria } from '../utils/roles';
 

@@ -3297,7 +3297,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:07:15.197Z"
+    "quando": "2026-11-20T17:08:24.244Z"
   },
   {
     "id": "REG-LOGIN-2",
@@ -3308,7 +3308,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:07:15.221Z"
+    "quando": "2026-11-20T17:08:24.272Z"
   },
   {
     "id": "REG-LOGIN-3",
@@ -3319,7 +3319,7 @@
     "status": "APROVADO",
     "evidencia": "33-login.png",
     "nota": "",
-    "quando": "2026-11-19T14:07:15.248Z"
+    "quando": "2026-11-20T17:08:24.303Z"
   },
   {
     "id": "REG-MULTI-1",
@@ -3330,7 +3330,7 @@
     "status": "APROVADO",
     "evidencia": "33-cartoes-p04.png",
     "nota": "",
-    "quando": "2026-11-19T14:07:17.403Z"
+    "quando": "2026-11-20T17:08:26.589Z"
   },
   {
     "id": "REG-MULTI-2",
@@ -3341,18 +3341,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:07:17.430Z"
+    "quando": "2026-11-20T17:08:26.611Z"
   },
   {
     "id": "REG-PDI-1",
-    "modulo": "Regressão pós-correções",
-    "cenario": "PDI online: Salvar confirma \"Respostas salvas.\" e os textos persistem ao reabrir (tela e banco)",
-    "esperado": "mensagem de sucesso; textos iguais; bloco no banco",
-    "observado": "mensagem: Respostas salvas.; comum ok: true; disciplina ok: true; banco: true",
-    "status": "APROVADO",
-    "evidencia": "33-pdi-persistencia.png",
+    "modulo": "Regressão",
+    "cenario": "PDI online (persistência)",
+    "esperado": "só com o PDI ligado",
+    "observado": "pulado: PDI em desenvolvimento",
+    "status": "OBSERVAÇÃO (regra não especificada)",
+    "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:46.478Z"
+    "quando": "2026-11-20T17:08:26.639Z"
   },
   {
     "id": "REG-PERM-1",
@@ -3363,7 +3363,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:46.802Z"
+    "quando": "2026-11-20T17:08:27.649Z"
   },
   {
     "id": "REG-PERM-2",
@@ -3374,7 +3374,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:46.819Z"
+    "quando": "2026-11-20T17:08:27.691Z"
   },
   {
     "id": "REG-PERM-3",
@@ -3385,7 +3385,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:46.840Z"
+    "quando": "2026-11-20T17:08:27.725Z"
   },
   {
     "id": "REG-PERM-4",
@@ -3396,7 +3396,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:46.944Z"
+    "quando": "2026-11-20T17:08:27.784Z"
   },
   {
     "id": "REG-PERM-5",
@@ -3407,7 +3407,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:46.980Z"
+    "quando": "2026-11-20T17:08:27.850Z"
   },
   {
     "id": "REG-PERM-6",
@@ -3418,7 +3418,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:47.002Z"
+    "quando": "2026-11-20T17:08:27.902Z"
   },
   {
     "id": "REG-PERM-7",
@@ -3429,7 +3429,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:47.020Z"
+    "quando": "2026-11-20T17:08:27.936Z"
   },
   {
     "id": "DEF14-REGRESSAO-S1a",
@@ -6597,7 +6597,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:26.725Z"
+    "quando": "2026-11-20T17:12:14.725Z"
   },
   {
     "id": "ACP-2",
@@ -6608,7 +6608,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:26.770Z"
+    "quando": "2026-11-20T17:12:14.781Z"
   },
   {
     "id": "ACP-3",
@@ -6619,7 +6619,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:26.868Z"
+    "quando": "2026-11-20T17:12:14.861Z"
   },
   {
     "id": "ACP-4",
@@ -6630,7 +6630,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:27.715Z"
+    "quando": "2026-11-20T17:12:15.799Z"
   },
   {
     "id": "ACP-5",
@@ -6641,7 +6641,7 @@
     "status": "NAO_EXECUTADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:27.865Z"
+    "quando": "2026-11-20T17:12:15.963Z"
   },
   {
     "id": "ACP-6",
@@ -6652,7 +6652,7 @@
     "status": "APROVADO",
     "evidencia": "50-acompanhamento-rede.png, 50-acompanhamento-escola.png",
     "nota": "",
-    "quando": "2026-11-19T14:09:33.830Z"
+    "quando": "2026-11-20T17:12:23.380Z"
   },
   {
     "id": "ACP-7",
@@ -6663,7 +6663,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:34.168Z"
+    "quando": "2026-11-20T17:12:23.665Z"
   },
   {
     "id": "ACP-8",
@@ -6674,7 +6674,7 @@
     "status": "APROVADO",
     "evidencia": "50-acompanhamento-noturno.png, 50-acompanhamento-celular.png",
     "nota": "",
-    "quando": "2026-11-19T14:09:39.034Z"
+    "quando": "2026-11-20T17:12:29.323Z"
   },
   {
     "id": "ACP-9",
@@ -6685,7 +6685,7 @@
     "status": "APROVADO",
     "evidencia": "50-acompanhamento-diretora.png",
     "nota": "",
-    "quando": "2026-11-18T18:08:50.789Z"
+    "quando": "2026-11-20T17:12:34.421Z"
   },
   {
     "id": "ACP-10",
@@ -6696,7 +6696,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T18:08:50.926Z"
+    "quando": "2026-11-20T17:12:34.627Z"
   },
   {
     "id": "COR-1",
@@ -8500,7 +8500,7 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:06:30.265Z"
+    "quando": "2026-11-20T17:09:59.403Z"
   },
   {
     "id": "OFF-CARGO-1b",
@@ -8511,18 +8511,18 @@
     "status": "APROVADO",
     "evidencia": "32-CARGO-1-offline.png",
     "nota": "",
-    "quando": "2026-11-19T14:06:30.288Z"
+    "quando": "2026-11-20T17:09:59.433Z"
   },
   {
     "id": "OFF-CARGO-1c",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "DEF-07: reabrir o Nexo com internet envia sozinho a fila pendente (sem abrir o formulário)",
     "esperado": "semana 2 no banco em até 15 s; fila vazia",
-    "observado": "fila antes [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]; banco S2: \"Semana 2 OFFLINE 140617 (fechar e reabrir)\"; fila depois []",
+    "observado": "fila antes [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"pending\"}]; banco S2: \"Semana 2 OFFLINE 170945 (fechar e reabrir)\"; fila depois []",
     "status": "APROVADO",
     "evidencia": "32-CARGO-1-reaberto.png",
     "nota": "",
-    "quando": "2026-11-19T14:06:34.074Z"
+    "quando": "2026-11-20T17:10:03.978Z"
   },
   {
     "id": "OFF-CARGO-2",
@@ -8533,7 +8533,7 @@
     "status": "OBSERVAÇÃO (regra não especificada)",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-12T15:43:08.666Z"
+    "quando": "2026-11-20T17:10:04.133Z"
   },
   {
     "id": "OFF-CARGO-3a",
@@ -8544,18 +8544,18 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:29:52.750Z"
+    "quando": "2026-11-20T17:10:25.459Z"
   },
   {
     "id": "OFF-CARGO-3b",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "Depois do novo login do mesmo professor, a fila é enviada",
     "esperado": "semana 2 no banco; fila vazia",
-    "observado": "banco S2: \"Semana 2 OFFLINE 172907 (sessão expirada)\"; fila []",
+    "observado": "banco S2: \"Semana 2 OFFLINE 170945 (sessão expirada)\"; fila []",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:29:52.761Z"
+    "quando": "2026-11-20T17:10:25.484Z"
   },
   {
     "id": "OFF-CARGO-4a",
@@ -8566,73 +8566,73 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:30:14.193Z"
+    "quando": "2026-11-20T17:10:49.599Z"
   },
   {
     "id": "OFF-CARGO-4b",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "Quando a P04 volta a entrar, a alteração dela é enviada",
     "esperado": "semana 2 no banco",
-    "observado": "banco S2: \"Semana 2 OFFLINE 172907 (dois usuários)\"",
+    "observado": "banco S2: \"Semana 2 OFFLINE 170945 (dois usuários)\"",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:30:16.277Z"
+    "quando": "2026-11-20T17:10:52.292Z"
   },
   {
     "id": "OFF-CARGO-5",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "Item preso em \"enviando\" (aba fechada no meio do envio) é reenviado ao abrir, sem duplicar",
     "esperado": "semana 2 no banco; 1 entrega; fila vazia",
-    "observado": "banco S2: \"Semana 2 OFFLINE 172907 (envio interromp\"; entregas 1; fila []",
+    "observado": "banco S2: \"Semana 2 OFFLINE 170945 (envio interromp\"; entregas 1; fila []",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:30:30.546Z"
+    "quando": "2026-11-20T17:11:08.289Z"
   },
   {
     "id": "OFF-CARGO-6a",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "DEF-08: outro aparelho salvou antes; ao reabrir, a fila NÃO sobrescreve o servidor",
     "esperado": "banco com o texto do outro aparelho",
-    "observado": "outro aparelho HTTP 200; fila ao abrir [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"conflict\"}]; banco S2: \"Semana 2 do OUTRO APARELHO 172907-M\"",
+    "observado": "outro aparelho HTTP 200; fila ao abrir [{\"userId\":\"p04@homolog.nexo\",\"tipo\":\"um-terco-resposta\",\"status\":\"conflict\"}]; banco S2: \"Semana 2 do OUTRO APARELHO 170945-M\"",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:30:55.849Z"
+    "quando": "2026-11-20T17:11:35.659Z"
   },
   {
     "id": "OFF-CARGO-6b",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "DEF-08: ao abrir o formulário, aparecem as opções de conflito, com o texto deste aparelho preservado, sem \"Salvo\"/\"Sincronizado\", e trocar de semana NÃO envia nada",
     "esperado": "botões de conflito; texto local na tela; banco ainda com o texto do outro aparelho",
-    "observado": "opções: true; texto na tela: \"Semana 2 OFFLINE 172907-M (este aparelho\"; indicador de sucesso falso: false; banco após trocar de semana: \"Semana 2 do OUTRO APARELHO 172907-M\"",
+    "observado": "opções: true; texto na tela: \"Semana 2 OFFLINE 170945-M (este aparelho\"; indicador de sucesso falso: false; banco após trocar de semana: \"Semana 2 do OUTRO APARELHO 170945-M\"",
     "status": "APROVADO",
-    "evidencia": "32-CARGO-6-conflito-172907-M.png",
+    "evidencia": "32-CARGO-6-conflito-170945-M.png",
     "nota": "",
-    "quando": "2026-11-18T17:30:55.860Z"
+    "quando": "2026-11-20T17:11:35.681Z"
   },
   {
     "id": "OFF-CARGO-6c",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "DEF-08: \"Manter o meu texto\" envia o texto deste aparelho e limpa a fila",
     "esperado": "banco com o texto deste aparelho; fila vazia",
-    "observado": "banco S2: \"Semana 2 OFFLINE 172907-M (este aparelho\"; fila []",
+    "observado": "banco S2: \"Semana 2 OFFLINE 170945-M (este aparelho\"; fila []",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:00.445Z"
+    "quando": "2026-11-20T17:11:40.286Z"
   },
   {
     "id": "OFF-CARGO-6d",
     "modulo": "Offline (DEF-07/DEF-08)",
     "cenario": "DEF-08: \"Usar a versão salva\" mantém o servidor e descarta o envio pendente",
     "esperado": "banco com o texto do outro aparelho; fila vazia",
-    "observado": "banco S2: \"Semana 2 do OUTRO APARELHO 172907-U\"; fila []",
+    "observado": "banco S2: \"Semana 2 do OUTRO APARELHO 170945-U\"; fila []",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:31:30.319Z"
+    "quando": "2026-11-20T17:12:11.555Z"
   },
   {
     "id": "COR13-1",
@@ -8764,40 +8764,40 @@
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:09:26.844Z"
+    "quando": "2026-11-20T17:12:14.849Z"
   },
   {
     "id": "DEF01-a-CARGO",
     "modulo": "Formulário 1/3 (DEF-01)",
     "cenario": "Rede lenta: depois de \"Próximo\", o texto digitado vai para a semana 2 e a semana 1 fica intacta",
     "esperado": "tela na Semana 2 em 300 ms; banco: S1 sem o texto; S2 com o texto",
-    "observado": "tela aos 300 ms: Semana 2; S1: \"SEMANA-UM 140751\"; S2: \" SEMANA-DOIS-DIGITADA-APOS-PROXIMO 140751\"",
+    "observado": "tela aos 300 ms: Semana 2; S1: \"SEMANA-UM 170829\"; S2: \" SEMANA-DOIS-DIGITADA-APOS-PROXIMO 170829\"",
     "status": "APROVADO",
     "evidencia": "35-CARGO-def01-durante.png",
     "nota": "",
-    "quando": "2026-11-19T14:08:13.830Z"
+    "quando": "2026-11-20T17:08:52.793Z"
   },
   {
     "id": "DEF01-b-CARGO",
     "modulo": "Formulário 1/3 (DEF-01)",
     "cenario": "Rede lenta: o que é digitado DURANTE um salvamento também chega ao servidor (não é perdido nem marcado como salvo antes da hora)",
     "esperado": "S3 com as duas partes",
-    "observado": "S3: \"TERCEIRA-PARTE-1 140751 TERCEIRA-PARTE-2 140751\"",
+    "observado": "S3: \"TERCEIRA-PARTE-1 170829 TERCEIRA-PARTE-2 170829\"",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:08:34.313Z"
+    "quando": "2026-11-20T17:09:13.467Z"
   },
   {
     "id": "DEF01-c-CARGO",
     "modulo": "Formulário 1/3 (DEF-01)",
     "cenario": "Rede lenta: \"Sair\" logo depois de trocar de semana espera o envio em andamento e não perde a semana 4",
     "esperado": "S4 no banco ao sair",
-    "observado": "rota: /formulario-um-terco; S4: \"QUARTA 140751\"",
+    "observado": "rota: /formulario-um-terco; S4: \"QUARTA 170829\"",
     "status": "APROVADO",
     "evidencia": "",
     "nota": "",
-    "quando": "2026-11-19T14:08:40.414Z"
+    "quando": "2026-11-20T17:09:19.618Z"
   },
   {
     "id": "DEF06-desktop-CARGO",
@@ -8808,18 +8808,18 @@
     "status": "APROVADO",
     "evidencia": "35-CARGO-def06-desktop.png",
     "nota": "",
-    "quando": "2026-11-19T14:08:50.320Z"
+    "quando": "2026-11-20T17:09:31.539Z"
   },
   {
     "id": "DEF13-desktop-CARGO",
     "modulo": "Offline (DEF-13)",
-    "cenario": "PDI sem rede (desktop), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
-    "esperado": "Salvar livre",
-    "observado": "Salvar livre: true",
-    "status": "APROVADO",
-    "evidencia": "35-CARGO-def13-desktop.png",
+    "cenario": "PDI sem rede (desktop)",
+    "esperado": "só com o PDI ligado",
+    "observado": "pulado: PDI em desenvolvimento",
+    "status": "OBSERVAÇÃO (regra não especificada)",
+    "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:32:55.934Z"
+    "quando": "2026-11-20T17:09:32.101Z"
   },
   {
     "id": "DEF06-celular-CARGO",
@@ -8830,18 +8830,18 @@
     "status": "APROVADO",
     "evidencia": "35-CARGO-def06-celular.png",
     "nota": "",
-    "quando": "2026-11-18T17:33:05.203Z"
+    "quando": "2026-11-20T17:09:42.892Z"
   },
   {
     "id": "DEF13-celular-CARGO",
     "modulo": "Offline (DEF-13)",
-    "cenario": "PDI sem rede (celular), página rolada até o fim: botão \"Salvar\" não fica coberto pelo aviso",
-    "esperado": "Salvar livre",
-    "observado": "Salvar livre: true",
-    "status": "APROVADO",
-    "evidencia": "35-CARGO-def13-celular.png",
+    "cenario": "PDI sem rede (celular)",
+    "esperado": "só com o PDI ligado",
+    "observado": "pulado: PDI em desenvolvimento",
+    "status": "OBSERVAÇÃO (regra não especificada)",
+    "evidencia": "",
     "nota": "",
-    "quando": "2026-11-18T17:33:15.329Z"
+    "quando": "2026-11-20T17:09:43.451Z"
   },
   {
     "id": "UT-VIN-P07b",
